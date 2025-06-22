@@ -23,14 +23,21 @@ function renderCogVisualization(cogAnalysis, stepCount) {
     const centerX = 100;
     const centerY = 100;
     
-    // Calculate CoG position
-    const cogX = centerX + coordinates.x * radius;
-    const cogY = centerY + coordinates.y * radius;
+    // Calculate CoG position - scale coordinates appropriately
+    // For perfectly balanced patterns, coordinates should be very close to (0,0)
+    // Treat tiny floating-point values as exactly zero
+    const adjustedX = Math.abs(coordinates.x) < 1e-10 ? 0 : coordinates.x;
+    const adjustedY = Math.abs(coordinates.y) < 1e-10 ? 0 : coordinates.y;
     
-    // Generate onset points
+    const cogX = centerX + adjustedX * radius * 0.8; // Scale down to fit better in circle
+    const cogY = centerY + adjustedY * radius * 0.8;
+    
+    // Generate onset points - only show dots where there are actual beats
     let onsetPoints = '';
-    for (let i = 0; i < stepCount; i++) {
-        const angle = (i / stepCount) * 2 * Math.PI - Math.PI / 2;
+    const onsetPositions = cogAnalysis.onsetPositions || [];
+    
+    for (const position of onsetPositions) {
+        const angle = (position / stepCount) * 2 * Math.PI - Math.PI / 2;
         const x = centerX + Math.cos(angle) * radius;
         const y = centerY + Math.sin(angle) * radius;
         
@@ -43,7 +50,32 @@ function renderCogVisualization(cogAnalysis, stepCount) {
                 height: 8px;
                 border-radius: 50%;
                 background: #4CAF50;
-                border: 1px solid #fff;
+                border: 2px solid #fff;
+                box-sizing: border-box;
+                transform: translate(0, 0);
+            "></div>
+        `;
+    }
+    
+    // Also show step markers (lighter) for reference
+    let stepMarkers = '';
+    for (let i = 0; i < stepCount; i++) {
+        const angle = (i / stepCount) * 2 * Math.PI - Math.PI / 2;
+        const x = centerX + Math.cos(angle) * radius;
+        const y = centerY + Math.sin(angle) * radius;
+        
+        stepMarkers += `
+            <div class="step-marker" style="
+                position: absolute;
+                left: ${x - 3}px;
+                top: ${y - 3}px;
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                background: #eee;
+                border: 1px solid #ccc;
+                box-sizing: border-box;
+                transform: translate(0, 0);
             "></div>
         `;
     }
@@ -61,6 +93,7 @@ function renderCogVisualization(cogAnalysis, stepCount) {
             border-radius: 50%;
             background: radial-gradient(circle, #f9f9f9, #e9e9e9);
         ">
+            ${stepMarkers}
             ${onsetPoints}
             <div class="cog-center" style="
                 position: absolute;
@@ -70,18 +103,24 @@ function renderCogVisualization(cogAnalysis, stepCount) {
                 height: 4px;
                 border-radius: 50%;
                 background: #333;
+                box-sizing: border-box;
+                transform: translate(0, 0);
             "></div>
             <div class="cog-point" style="
                 position: absolute;
-                left: ${cogX - 6}px;
-                top: ${cogY - 6}px;
-                width: 12px;
-                height: 12px;
+                left: ${cogX - (normalizedMagnitude < 0.05 ? 3 : 6)}px;
+                top: ${cogY - (normalizedMagnitude < 0.05 ? 3 : 6)}px;
+                width: ${normalizedMagnitude < 0.05 ? 6 : 12}px;
+                height: ${normalizedMagnitude < 0.05 ? 6 : 12}px;
                 border-radius: 50%;
                 background: ${cogColor};
-                border: 2px solid #fff;
+                border: ${normalizedMagnitude < 0.05 ? 1 : 2}px solid #fff;
                 box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                box-sizing: border-box;
+                transform: translate(0, 0);
+                ${normalizedMagnitude < 0.01 ? 'opacity: 0.7;' : ''}
             "></div>
+            ${normalizedMagnitude > 0.01 ? `
             <div class="cog-line" style="
                 position: absolute;
                 left: ${centerX}px;
@@ -91,7 +130,9 @@ function renderCogVisualization(cogAnalysis, stepCount) {
                 background: ${cogColor};
                 transform-origin: 0 50%;
                 transform: rotate(${Math.atan2(cogY - centerY, cogX - centerX)}rad);
+                opacity: ${normalizedMagnitude < 0.05 ? 0.5 : 1};
             "></div>
+            ` : ''}
         </div>
     `;
 }
