@@ -48,3 +48,8 @@ class MathUtils {
         return factors;
     }
 }
+
+// Export to global scope for browser compatibility
+if (typeof window !== 'undefined') {
+    window.MathUtils = MathUtils;
+}

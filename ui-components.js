@@ -821,6 +821,42 @@ function clearInputError(input) {
 // === UTILITY CLASSES ===
 
 /**
+ * UIComponents class for compatibility
+ * Provides a single class interface to all UI utilities
+ */
+class UIComponents {
+    static renderCogVisualization = renderCogVisualization;
+    static updateProgress = updateProgress;
+    static getBalanceColor = getBalanceColor;
+    static showModal = showModal;
+    static hideModal = hideModal;
+    static updateModalContent = updateModalContent;
+    static showReportModal = showReportModal;
+    static showExportModal = showExportModal;
+    static showImportModal = showImportModal;
+    static copyToClipboard = copyToClipboard;
+    static showCopyFeedback = showCopyFeedback;
+    static copyCurrentHex = copyCurrentHex;
+    static createElement = createElement;
+    static addClass = addClass;
+    static removeClass = removeClass;
+    static toggleClass = toggleClass;
+    static clearErrors = clearErrors;
+    static showError = showError;
+    static createPatternEntry = createPatternEntry;
+    static addEvent = addEvent;
+    static removeEvent = removeEvent;
+    static debounce = debounce;
+    static throttle = throttle;
+    static animate = animate;
+    static fadeIn = fadeIn;
+    static fadeOut = fadeOut;
+    static validateInput = validateInput;
+    static showInputError = showInputError;
+    static clearInputError = clearInputError;
+}
+
+/**
  * UI Utilities namespace for organized access
  */
 const UIUtils = {
@@ -915,3 +951,45 @@ const DOMUtils = {
     clearErrors,
     showError
 };
+
+// Export to global scope for browser compatibility
+if (typeof window !== 'undefined') {
+    // Main UIComponents class for compatibility
+    window.UIComponents = UIComponents;
+    
+    // Core UI utilities
+    window.UIUtils = UIUtils;
+    window.VisualizationHelpers = VisualizationHelpers;
+    window.ModalManager = ModalManager;
+    window.ClipboardUtils = ClipboardUtils;
+    window.DOMUtils = DOMUtils;
+    
+    // Individual functions for direct access
+    window.renderCogVisualization = renderCogVisualization;
+    window.updateProgress = updateProgress;
+    window.showModal = showModal;
+    window.hideModal = hideModal;
+    window.updateModalContent = updateModalContent;
+    window.showReportModal = showReportModal;
+    window.showExportModal = showExportModal;
+    window.showImportModal = showImportModal;
+    window.copyToClipboard = copyToClipboard;
+    window.createElement = createElement;
+    window.addClass = addClass;
+    window.removeClass = removeClass;
+    window.toggleClass = toggleClass;
+    window.clearErrors = clearErrors;
+    window.showError = showError;
+    window.createPatternEntry = createPatternEntry;
+    window.addEvent = addEvent;
+    window.removeEvent = removeEvent;
+    window.debounce = debounce;
+    window.throttle = throttle;
+    window.animate = animate;
+    window.fadeIn = fadeIn;
+    window.fadeOut = fadeOut;
+    window.validateInput = validateInput;
+    window.showInputError = showInputError;
+    window.clearInputError = clearInputError;
+    window.getBalanceColor = getBalanceColor;
+}

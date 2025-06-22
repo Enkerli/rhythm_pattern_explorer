@@ -277,4 +277,16 @@ class UnifiedPatternParser {
         
         return result;
     }
+    
+    // Alias method for compatibility
+    static parseUniversalInput(input) {
+        return this.parse(input);
+    }
+}
+
+// Export to global scope for browser compatibility
+if (typeof window !== 'undefined') {
+    window.PatternConverter = PatternConverter;
+    window.AdvancedPatternCombiner = AdvancedPatternCombiner;
+    window.UnifiedPatternParser = UnifiedPatternParser;
 }

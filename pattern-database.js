@@ -445,3 +445,11 @@ const DatabaseUtils = {
         }
     }
 };
+
+// Export to global scope for browser compatibility
+if (typeof window !== 'undefined') {
+    window.DATABASE_STORAGE_KEY = DATABASE_STORAGE_KEY;
+    window.PatternDatabase = PatternDatabase;
+    window.createDatabasePattern = createDatabasePattern;
+    window.DatabaseUtils = DatabaseUtils;
+}

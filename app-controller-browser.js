@@ -228,16 +228,21 @@ class EnhancedPatternApp {
             console.log(`🎵 Parsing pattern: ${inputValue}`);
             
             // Use UnifiedPatternParser to parse the input
-            const result = UnifiedPatternParser.parseUniversalInput(inputValue);
+            const result = UnifiedPatternParser.parse(inputValue);
             
-            if (result.success) {
+            if (result.type === 'single') {
                 this.currentPattern = result.pattern;
                 this.displayPatternAnalysis(this.currentPattern);
                 this.showCompactOutput(this.currentPattern);
                 console.log('✅ Pattern parsed successfully');
+            } else if (result.type === 'combination') {
+                this.currentPattern = result.combined;
+                this.displayPatternAnalysis(this.currentPattern);
+                this.showCompactOutput(this.currentPattern);
+                console.log('✅ Combined pattern parsed successfully');
             } else {
-                alert('Failed to parse pattern: ' + result.error);
-                console.error('❌ Pattern parsing failed:', result.error);
+                alert('Failed to parse pattern: Unknown result type');
+                console.error('❌ Pattern parsing failed: Unknown result type');
             }
             
         } catch (error) {
@@ -282,22 +287,25 @@ class EnhancedPatternApp {
         content += '<div class="analysis-item">';
         content += '<div class="analysis-title">📊 Basic Properties</div>';
         content += '<div class="analysis-content">';
-        content += `<strong>Pattern:</strong> ${PatternConverter.toBinary(pattern.steps)}<br>`;
-        content += `<strong>Hex:</strong> ${PatternConverter.toHex(pattern.steps)}<br>`;
-        content += `<strong>Decimal:</strong> ${PatternConverter.toDecimal(pattern.steps)}<br>`;
+        const binary = PatternConverter.toBinary(pattern.steps, pattern.stepCount);
+        const decimal = PatternConverter.toDecimal(binary);
+        const hex = PatternConverter.toHex(decimal);
+        content += `<strong>Pattern:</strong> ${binary}<br>`;
+        content += `<strong>Hex:</strong> ${hex}<br>`;
+        content += `<strong>Decimal:</strong> ${decimal}<br>`;
         content += `<strong>Steps:</strong> ${pattern.stepCount}<br>`;
         content += `<strong>Beats:</strong> ${pattern.steps.filter(step => step).length}<br>`;
         content += `<strong>Density:</strong> ${((pattern.steps.filter(step => step).length / pattern.stepCount) * 100).toFixed(1)}%`;
         content += '</div></div>';
         
         // Perfect balance analysis
-        const balanceAnalysis = PerfectBalanceAnalyzer.analyzePattern(pattern.steps);
+        const balanceAnalysis = PerfectBalanceAnalyzer.calculateBalance(pattern.steps, pattern.stepCount);
         content += '<div class="analysis-item perfect-balance">';
         content += '<div class="analysis-title">🎼 Perfect Balance Analysis (Milne)</div>';
         content += '<div class="analysis-content">';
         content += `<div class="mathematical-formula">|∑(e^(i2πkⱼ/n))| / onsets = ${balanceAnalysis.normalizedMagnitude.toFixed(6)}</div>`;
         content += `<strong>Balance Quality:</strong> `;
-        content += `<span class="balance-score balance-${balanceAnalysis.quality.toLowerCase()}">${balanceAnalysis.quality}</span><br>`;
+        content += `<span class="balance-score balance-${balanceAnalysis.balanceScore.toLowerCase()}">${balanceAnalysis.balanceScore}</span><br>`;
         content += `<strong>Status:</strong> ${balanceAnalysis.isPerfectlyBalanced ? '✨ PERFECTLY BALANCED - Center of gravity at origin!' : 'Not perfectly balanced'}`;
         content += '</div></div>';
         
@@ -334,7 +342,7 @@ class EnhancedPatternApp {
         content += '<div class="analysis-item center-gravity">';
         content += '<div class="analysis-title">📐 Center of Gravity Analysis</div>';
         content += '<div class="analysis-content">';
-        content += UIComponents.createCogVisualization(cogAnalysis);
+        content += UIComponents.renderCogVisualization(cogAnalysis, pattern.stepCount);
         content += '</div></div>';
         
         content += '</div>';
@@ -354,7 +362,7 @@ class EnhancedPatternApp {
         
         if (!compactOutput || !compactResult) return;
         
-        const compact = PatternConverter.toCompactOutput(pattern);
+        const compact = UnifiedPatternParser.formatCompact(pattern);
         compactResult.innerHTML = compact;
         compactOutput.style.display = 'block';
     }
@@ -369,7 +377,7 @@ class EnhancedPatternApp {
         }
         
         try {
-            const patternId = this.database.addPattern(this.currentPattern);
+            const patternId = this.database.add(this.currentPattern);
             console.log(`✅ Pattern added to database with ID: ${patternId}`);
             alert(AppConfig.MESSAGES.ALERTS.PATTERN_ADDED);
             
@@ -392,7 +400,9 @@ class EnhancedPatternApp {
             return;
         }
         
-        const hex = PatternConverter.toHex(this.currentPattern.steps);
+        const binary = PatternConverter.toBinary(this.currentPattern.steps, this.currentPattern.stepCount);
+        const decimal = PatternConverter.toDecimal(binary);
+        const hex = PatternConverter.toHex(decimal);
         UIComponents.copyToClipboard(hex);
     }
     
@@ -446,7 +456,7 @@ class EnhancedPatternApp {
             // Add results to database
             results.forEach(result => {
                 try {
-                    this.database.addPattern(result.pattern);
+                    this.database.add(result.pattern);
                 } catch (error) {
                     // Pattern might already exist, that's okay
                 }
@@ -480,7 +490,7 @@ class EnhancedPatternApp {
      */
     generatePerfectBalanceReport() {
         const perfectBalancePatterns = this.database.getPatterns().filter(pattern => {
-            const analysis = PerfectBalanceAnalyzer.analyzePattern(pattern.steps);
+            const analysis = PerfectBalanceAnalyzer.calculateBalance(pattern.steps, pattern.stepCount);
             return analysis.isPerfectlyBalanced;
         });
         
@@ -511,7 +521,16 @@ class EnhancedPatternApp {
      */
     exportDatabase() {
         try {
-            this.database.exportToFile();
+            const exportData = this.database.export();
+            const blob = new Blob([exportData], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `pattern-database-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
             console.log('📤 Database exported successfully');
         } catch (error) {
             console.error('❌ Export failed:', error);
@@ -543,7 +562,7 @@ class EnhancedPatternApp {
         if (!importData) return;
         
         try {
-            this.database.importFromJSON(importData);
+            this.database.import(importData);
             this.updatePatternList();
             this.updateDatabaseStats();
             UIComponents.hideModal();
@@ -560,7 +579,7 @@ class EnhancedPatternApp {
      */
     clearDatabase() {
         if (confirm(AppConfig.MESSAGES.ALERTS.CLEAR_CONFIRM)) {
-            this.database.clearAll();
+            this.database.clear();
             this.updatePatternList();
             this.updateDatabaseStats();
             console.log('🗑️ Database cleared');
@@ -601,7 +620,22 @@ class EnhancedPatternApp {
             const searchTerm = document.getElementById('searchInput')?.value || '';
             const filterType = document.getElementById('filterSelect')?.value || 'all';
             
-            const patterns = this.database.searchPatterns(searchTerm, filterType);
+            let patterns = this.database.patterns || [];
+            
+            // Apply search filter if there's a search term
+            if (searchTerm) {
+                patterns = this.database.search(searchTerm);
+            }
+            
+            // Apply type filter if specified
+            if (filterType && filterType !== 'all') {
+                patterns = this.database.filter(filterType);
+                // If we have both search and filter, we need to apply both
+                if (searchTerm) {
+                    const searchResults = this.database.search(searchTerm);
+                    patterns = patterns.filter(p => searchResults.some(sr => sr.id === p.id));
+                }
+            }
             const sortedPatterns = this.sortByDate ? 
                 patterns.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)) :
                 patterns.sort((a, b) => a.stepCount - b.stepCount);
@@ -617,11 +651,37 @@ class EnhancedPatternApp {
     }
     
     /**
+     * Get pattern representations for display
+     */
+    getPatternRepresentations(pattern) {
+        const representations = [];
+        
+        // Binary representation
+        const binary = PatternConverter.toBinary(pattern.steps, pattern.stepCount);
+        representations.push(`b${binary}`);
+        
+        // Decimal representation
+        const decimal = PatternConverter.toDecimal(binary);
+        representations.push(`${decimal}`);
+        
+        // Hex representation
+        const hex = PatternConverter.toHex(decimal);
+        representations.push(`${hex}`);
+        
+        // Enhanced notation if available
+        if (pattern.stepCount) {
+            representations.push(`${decimal}:${pattern.stepCount}`);
+        }
+        
+        return representations;
+    }
+
+    /**
      * Create HTML for pattern entry
      */
     createPatternEntryHTML(pattern) {
-        const analysis = PerfectBalanceAnalyzer.analyzePattern(pattern.steps);
-        const representations = PatternConverter.getAllRepresentations(pattern);
+        const analysis = PerfectBalanceAnalyzer.calculateBalance(pattern.steps, pattern.stepCount);
+        const representations = this.getPatternRepresentations(pattern);
         
         return `
             <div class="pattern-entry ${analysis.isPerfectlyBalanced ? 'perfect-balance' : ''} ${pattern.favorite ? 'favorite' : ''}">
@@ -651,14 +711,60 @@ class EnhancedPatternApp {
     updateDatabaseStats() {
         const stats = this.database.getStatistics();
         
-        document.getElementById('totalPatterns').textContent = stats.total || '0';
-        document.getElementById('perfectBalanceCount').textContent = stats.perfectBalance || '0';
-        document.getElementById('favoriteCount').textContent = stats.favorites || '0';
-        document.getElementById('polygonCount').textContent = stats.polygons || '0';
-        document.getElementById('euclideanCount').textContent = stats.euclidean || '0';
-        document.getElementById('combinedCount').textContent = stats.combined || '0';
-        document.getElementById('wellformedCount').textContent = stats.wellformed || '0';
-        document.getElementById('avgCogValue').textContent = (stats.avgCog || 0).toFixed(3);
+        // Calculate additional stats that aren't provided by the database
+        const allPatterns = this.database.patterns || [];
+        const perfectBalancePatterns = allPatterns.filter(pattern => {
+            if (pattern.perfectBalance && pattern.perfectBalance.isPerfectlyBalanced) {
+                return true;
+            }
+            // For patterns without pre-calculated perfect balance, calculate it
+            try {
+                const analysis = PerfectBalanceAnalyzer.calculateBalance(pattern.steps, pattern.stepCount);
+                return analysis.isPerfectlyBalanced;
+            } catch (e) {
+                return false;
+            }
+        });
+        
+        const wellformedPatterns = allPatterns.filter(pattern => {
+            try {
+                const analysis = PerfectBalanceAnalyzer.calculateBalance(pattern.steps, pattern.stepCount);
+                return analysis.balanceScore === 'excellent' || analysis.balanceScore === 'good';
+            } catch (e) {
+                return false;
+            }
+        });
+        
+        const avgCog = allPatterns.length > 0 ? 
+            allPatterns.reduce((sum, pattern) => {
+                try {
+                    const cogAnalysis = CenterOfGravityCalculator.calculateCenterOfGravity(pattern.steps);
+                    return sum + cogAnalysis.normalizedMagnitude;
+                } catch (e) {
+                    return sum;
+                }
+            }, 0) / allPatterns.length : 0;
+        
+        // Merge with database stats
+        stats.perfectBalance = perfectBalancePatterns.length;
+        stats.wellformed = wellformedPatterns.length;
+        stats.avgCog = avgCog;
+        
+        const updateElement = (id, value) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = value;
+            }
+        };
+        
+        updateElement('totalPatterns', stats.totalPatterns || '0');
+        updateElement('perfectBalanceCount', stats.perfectBalance || '0');
+        updateElement('favoriteCount', stats.favorites || '0');
+        updateElement('polygonCount', stats.polygons || '0');
+        updateElement('euclideanCount', stats.euclidean || '0');
+        updateElement('combinedCount', stats.combined || '0');
+        updateElement('wellformedCount', stats.wellformed || '0');
+        updateElement('avgCogValue', (stats.avgCog || 0).toFixed(3));
     }
     
     /**
@@ -736,7 +842,10 @@ class EnhancedPatternApp {
      * Toggle pattern favorite status
      */
     toggleFavorite(patternId) {
-        this.database.toggleFavorite(patternId);
+        const pattern = this.database.getById(patternId);
+        if (pattern) {
+            this.database.update(patternId, { favorite: !pattern.favorite });
+        }
         this.updatePatternList();
         this.updateDatabaseStats();
     }
@@ -745,12 +854,12 @@ class EnhancedPatternApp {
      * Edit pattern name
      */
     editPatternName(patternId) {
-        const pattern = this.database.getPattern(patternId);
+        const pattern = this.database.getById(patternId);
         if (!pattern) return;
         
         const newName = prompt('Enter pattern name:', pattern.name || '');
         if (newName !== null) {
-            this.database.updatePattern(patternId, { name: newName });
+            this.database.update(patternId, { name: newName });
             this.updatePatternList();
         }
     }
@@ -759,12 +868,14 @@ class EnhancedPatternApp {
      * Load pattern into input
      */
     loadPattern(patternId) {
-        const pattern = this.database.getPattern(patternId);
+        const pattern = this.database.getById(patternId);
         if (!pattern) return;
         
         const input = document.getElementById('universalInput');
         if (input) {
-            input.value = PatternConverter.toHex(pattern.steps);
+            const binary = PatternConverter.toBinary(pattern.steps, pattern.stepCount);
+            const decimal = PatternConverter.toDecimal(binary);
+            input.value = PatternConverter.toHex(decimal);
             this.parseUniversalInput();
         }
     }
@@ -774,7 +885,7 @@ class EnhancedPatternApp {
      */
     deletePattern(patternId) {
         if (confirm('Delete this pattern?')) {
-            this.database.removePattern(patternId);
+            this.database.remove(patternId);
             this.updatePatternList();
             this.updateDatabaseStats();
         }
