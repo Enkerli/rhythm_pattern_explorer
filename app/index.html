@@ -12,6 +12,9 @@
     <!-- MAIN APPLICATION HEADER -->
     <h1>🎼 Enhanced Pattern Database with Perfect Balance Explorer</h1>
 
+    <!-- NOTIFICATION CONTAINER -->
+    <div id="notification-container" class="notification-container"></div>
+
     <!-- MAIN APPLICATION CONTAINER -->
     <div class="main-container">
         
@@ -138,6 +141,12 @@
                     <option value="geometric_centered">Geometrically Centered (CoG < 0.1)</option>
                     <option value="coprime">Coprime Combinations</option>
                 </select>
+                <div class="step-count-filter">
+                    <label class="step-count-label">Step Count Range:</label>
+                    <input type="number" class="input step-count-input" id="minStepCount" placeholder="Min" min="1" max="64" value="">
+                    <span class="step-count-separator">-</span>
+                    <input type="number" class="input step-count-input" id="maxStepCount" placeholder="Max" min="1" max="64" value="">
+                </div>
                 <button class="btn" id="sortBtn">Sort by Date</button>
             </div>
 

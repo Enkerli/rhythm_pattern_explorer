@@ -450,7 +450,7 @@ async function copyToClipboard(text) {
         // Try modern clipboard API first
         if (navigator.clipboard && navigator.clipboard.writeText) {
             await navigator.clipboard.writeText(text);
-            showCopyFeedback();
+            showNotification(`Copied to clipboard: ${text}`, 'success', 3000);
             return true;
         } else {
             // Fallback for older browsers
@@ -482,7 +482,7 @@ function fallbackCopy(text) {
         document.body.removeChild(textArea);
         
         if (success) {
-            showCopyFeedback();
+            showNotification(`Copied to clipboard: ${text}`, 'success', 3000);
         }
         return success;
     } catch (err) {
@@ -1059,4 +1059,214 @@ if (typeof window !== 'undefined') {
     window.showInputError = showInputError;
     window.clearInputError = clearInputError;
     window.getBalanceColor = getBalanceColor;
+    
+    // Notification system
+    window.showNotification = showNotification;
+    window.hideNotification = hideNotification;
+    window.clearNotifications = clearNotifications;
+    
+    // File operations
+    window.downloadFile = downloadFile;
+    window.selectFile = selectFile;
+}
+
+// === NOTIFICATION SYSTEM ===
+
+/**
+ * Show a notification message
+ * @param {string} message - Notification message
+ * @param {string} type - Notification type ('success', 'error', 'warning', 'info')
+ * @param {number} duration - Auto-hide duration in milliseconds (0 = no auto-hide)
+ * @returns {HTMLElement} Notification element
+ */
+function showNotification(message, type = 'info', duration = 5000) {
+    const container = document.getElementById('notification-container') || createNotificationContainer();
+    
+    // Create notification element
+    const notification = createElement('div', {
+        class: `notification ${type}`
+    });
+    
+    // Add icon based on type
+    const iconMap = {
+        success: '✅',
+        error: '❌',
+        warning: '⚠️',
+        info: 'ℹ️'
+    };
+    
+    const icon = createElement('span', {
+        class: 'notification-icon'
+    }, iconMap[type] || iconMap.info);
+    
+    // Add content
+    const content = createElement('div', {
+        class: 'notification-content'
+    });
+    
+    // Split message into title and content if it contains newlines
+    const lines = message.split('\n');
+    if (lines.length > 1) {
+        const title = createElement('div', {
+            class: 'notification-title'
+        }, lines[0]);
+        
+        const messageDiv = createElement('div', {
+            class: 'notification-message'
+        }, lines.slice(1).join('\n'));
+        
+        content.appendChild(title);
+        content.appendChild(messageDiv);
+    } else {
+        content.textContent = message;
+    }
+    
+    // Add close button
+    const closeBtn = createElement('button', {
+        class: 'notification-close',
+        'aria-label': 'Close notification'
+    }, '×');
+    
+    // Assemble notification
+    notification.appendChild(icon);
+    notification.appendChild(content);
+    notification.appendChild(closeBtn);
+    
+    // Add to container
+    container.appendChild(notification);
+    
+    // Show with animation
+    setTimeout(() => {
+        notification.classList.add('show');
+    }, 10);
+    
+    // Auto-hide
+    let autoHideTimeout;
+    if (duration > 0) {
+        autoHideTimeout = setTimeout(() => {
+            hideNotification(notification);
+        }, duration);
+    }
+    
+    // Close button event
+    closeBtn.addEventListener('click', () => {
+        if (autoHideTimeout) clearTimeout(autoHideTimeout);
+        hideNotification(notification);
+    });
+    
+    // Store reference for potential cleanup
+    notification._autoHideTimeout = autoHideTimeout;
+    
+    return notification;
+}
+
+/**
+ * Hide a specific notification
+ * @param {HTMLElement} notification - Notification element to hide
+ */
+function hideNotification(notification) {
+    if (!notification || !notification.parentNode) return;
+    
+    // Clear auto-hide timeout
+    if (notification._autoHideTimeout) {
+        clearTimeout(notification._autoHideTimeout);
+    }
+    
+    // Hide with animation
+    notification.classList.remove('show');
+    
+    // Remove from DOM after animation
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+        }
+    }, 300);
+}
+
+/**
+ * Clear all notifications
+ */
+function clearNotifications() {
+    const container = document.getElementById('notification-container');
+    if (!container) return;
+    
+    const notifications = container.querySelectorAll('.notification');
+    notifications.forEach(notification => {
+        hideNotification(notification);
+    });
+}
+
+/**
+ * Create notification container if it doesn't exist
+ * @returns {HTMLElement} Notification container
+ */
+function createNotificationContainer() {
+    let container = document.getElementById('notification-container');
+    if (!container) {
+        container = createElement('div', {
+            id: 'notification-container',
+            class: 'notification-container'
+        });
+        document.body.appendChild(container);
+    }
+    return container;
+}
+
+// === FILE OPERATIONS ===
+
+/**
+ * Download content as a file
+ * @param {string} content - File content
+ * @param {string} filename - Name of the file to download
+ * @param {string} mimeType - MIME type of the file (default: 'text/plain')
+ */
+function downloadFile(content, filename, mimeType = 'text/plain') {
+    try {
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.style.display = 'none';
+        
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        return true;
+    } catch (error) {
+        console.error('Download failed:', error);
+        return false;
+    }
+}
+
+/**
+ * Open file selection dialog
+ * @param {string} accept - File types to accept (e.g., '.json', '.txt', 'image/*')
+ * @param {boolean} multiple - Allow multiple file selection
+ * @returns {Promise<File[]>} Promise that resolves with selected files
+ */
+function selectFile(accept = '*', multiple = false) {
+    return new Promise((resolve, reject) => {
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = accept;
+        fileInput.multiple = multiple;
+        fileInput.style.display = 'none';
+        
+        fileInput.addEventListener('change', (event) => {
+            const files = Array.from(event.target.files);
+            document.body.removeChild(fileInput);
+            resolve(files);
+        });
+        
+        fileInput.addEventListener('cancel', () => {
+            document.body.removeChild(fileInput);
+            resolve([]);
+        });
+        
+        document.body.appendChild(fileInput);
+        fileInput.click();
+    });
 }

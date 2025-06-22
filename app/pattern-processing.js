@@ -114,6 +114,26 @@ class PatternConverter {
     static toEnhancedDecimal(decimal, stepCount) {
         return `${decimal}:${stepCount}`;
     }
+    
+    static toOnsetArray(steps, stepCount) {
+        const onsets = [];
+        for (let i = 0; i < stepCount; i++) {
+            if (steps[i]) {
+                onsets.push(i);
+            }
+        }
+        return `[${onsets.join(',')}]`;
+    }
+    
+    static toEnhancedOnsetArray(steps, stepCount) {
+        const onsets = [];
+        for (let i = 0; i < stepCount; i++) {
+            if (steps[i]) {
+                onsets.push(i);
+            }
+        }
+        return `[${onsets.join(',')}]:${stepCount}`;
+    }
 }
 
 class AdvancedPatternCombiner {
@@ -278,6 +298,42 @@ class UnifiedPatternParser {
                 offset,
                 isEuclidean: true,
                 formula: `E(${beats},${steps},${offset})`
+            };
+        }
+        
+        // Onset array notation: [0,3,6] or [0,3,6]:8
+        const onsetMatch = cleaned.match(/^\[([0-9,\s]+)\](?::(\d+))?$/);
+        if (onsetMatch) {
+            const onsetString = onsetMatch[1];
+            const explicitStepCount = onsetMatch[2] ? parseInt(onsetMatch[2]) : null;
+            
+            // Parse onset positions
+            const onsets = onsetString.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+            if (onsets.length === 0) {
+                throw new Error(`Invalid onset array: ${cleaned}. No valid onset positions found`);
+            }
+            
+            // Determine step count
+            const maxOnset = Math.max(...onsets);
+            const stepCount = explicitStepCount || (maxOnset + 1);
+            
+            // Validate onsets are within step count
+            if (onsets.some(onset => onset >= stepCount || onset < 0)) {
+                throw new Error(`Invalid onset array: ${cleaned}. Onset positions must be between 0 and ${stepCount - 1}`);
+            }
+            
+            // Convert to steps array
+            const steps = new Array(stepCount).fill(false);
+            onsets.forEach(onset => {
+                steps[onset] = true;
+            });
+            
+            return {
+                steps,
+                stepCount,
+                onsets,
+                isOnsetArray: true,
+                formula: explicitStepCount ? `[${onsets.join(',')}]:${stepCount}` : `[${onsets.join(',')}]`
             };
         }
         
