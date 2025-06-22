@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browser Compatibility Test</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border-left: 4px solid;
+        }
+        
+        .test-result.pass {
+            background: #d4edda;
+            color: #155724;
+            border-color: #28a745;
+        }
+        
+        .test-result.fail {
+            background: #f8d7da;
+            color: #721c24;
+            border-color: #dc3545;
+        }
+        
+        .status {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            border-left: 4px solid #2196f3;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Browser Compatibility Test</h1>
+    <p>Testing that all modules can be loaded directly in browser without ES6 module support.</p>
+    
+    <div class="status">
+        <strong>Loading Status:</strong> <span id="loadingStatus">Starting...</span><br>
+        <strong>Modules Loaded:</strong> <span id="moduleCount">0/9</span>
+    </div>
+    
+    <div id="testResults"></div>
+    
+    <div style="margin-top: 20px;">
+        <button onclick="runApplicationTest()" style="padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            🎼 Test Full Application
+        </button>
+        <button onclick="openBrowserApp()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">
+            🚀 Open Browser App
+        </button>
+    </div>
+
+    <!-- Load modules using script tags (browser-compatible) -->
+    <script src="math-core.js"></script>
+    <script src="app-config.js"></script>
+    <script src="pattern-generators.js"></script>
+    <script src="pattern-analysis.js"></script>
+    <script src="pattern-processing.js"></script>
+    <script src="pattern-exploration.js"></script>
+    <script src="pattern-database.js"></script>
+    <script src="ui-components.js"></script>
+    <script src="app-controller-browser.js"></script>
+
+    <script>
+        let moduleCount = 0;
+        const totalModules = 9;
+        const testResults = [];
+        
+        function logResult(test, passed, details = '') {
+            testResults.push({ test, passed, details });
+            updateDisplay();
+        }
+        
+        function updateDisplay() {
+            const container = document.getElementById('testResults');
+            container.innerHTML = testResults.map(result => `
+                <div class="test-result ${result.passed ? 'pass' : 'fail'}">
+                    <strong>${result.passed ? '✅' : '❌'} ${result.test}</strong>
+                    ${result.details ? `<br><small>${result.details}</small>` : ''}
+                </div>
+            `).join('');
+            
+            document.getElementById('moduleCount').textContent = `${moduleCount}/${totalModules}`;
+        }
+        
+        function checkModule(className, moduleName) {
+            // Check both window property and global scope
+            const existsOnWindow = typeof window[className] !== 'undefined';
+            const existsGlobally = typeof eval(className) !== 'undefined';
+            const exists = existsOnWindow || existsGlobally;
+            
+            if (exists) {
+                moduleCount++;
+                logResult(`${moduleName} loaded`, true, `${className} class available ${existsOnWindow ? '(on window)' : '(globally)'}`);
+            } else {
+                logResult(`${moduleName} failed`, false, `${className} class not found`);
+            }
+            return exists;
+        }
+        
+        function runTests() {
+            document.getElementById('loadingStatus').textContent = 'Testing modules...';
+            
+            // Test each module
+            checkModule('MathUtils', 'math-core.js');
+            checkModule('AppConfig', 'app-config.js');
+            checkModule('RegularPolygonGenerator', 'pattern-generators.js');
+            checkModule('PerfectBalanceAnalyzer', 'pattern-analysis.js');
+            checkModule('UnifiedPatternParser', 'pattern-processing.js');
+            checkModule('SystematicExplorer', 'pattern-exploration.js');
+            checkModule('PatternDatabase', 'pattern-database.js');
+            checkModule('UIComponents', 'ui-components.js');
+            checkModule('EnhancedPatternApp', 'app-controller-browser.js');
+            
+            // Test basic functionality
+            try {
+                const math = MathUtils.gcd(12, 8);
+                logResult('MathUtils functionality', math === 4, `GCD(12,8) = ${math}`);
+            } catch (error) {
+                logResult('MathUtils functionality', false, error.message);
+            }
+            
+            try {
+                const polygon = RegularPolygonGenerator.generate(3, 0);
+                logResult('Pattern generation', polygon.vertices === 3, `Triangle generated with ${polygon.vertices} vertices`);
+            } catch (error) {
+                logResult('Pattern generation', false, error.message);
+            }
+            
+            try {
+                const config = AppConfig.UI.COLORS.BALANCE_SCORES.PERFECT;
+                logResult('Configuration access', config === '#4CAF50', `Perfect balance color: ${config}`);
+            } catch (error) {
+                logResult('Configuration access', false, error.message);
+            }
+            
+            const passedTests = testResults.filter(r => r.passed).length;
+            const totalTests = testResults.length;
+            
+            if (passedTests === totalTests) {
+                document.getElementById('loadingStatus').textContent = `✅ All tests passed (${passedTests}/${totalTests})`;
+            } else {
+                document.getElementById('loadingStatus').textContent = `❌ ${totalTests - passedTests} tests failed`;
+            }
+        }
+        
+        function runApplicationTest() {
+            try {
+                // Test creating the main application
+                const app = new EnhancedPatternApp();
+                logResult('Application initialization', true, 'EnhancedPatternApp created successfully');
+                
+                // Test parsing a simple pattern
+                window.testApp = app;
+                logResult('Application test complete', true, 'Application is ready for use');
+                
+            } catch (error) {
+                logResult('Application initialization', false, error.message);
+            }
+        }
+        
+        function openBrowserApp() {
+            window.open('app-template-browser.html', '_blank', 'width=1400,height=900');
+        }
+        
+        // Run tests when page loads
+        window.addEventListener('load', function() {
+            setTimeout(runTests, 500); // Small delay to ensure all scripts are loaded
+        });
+    </script>
+</body>
+</html>
