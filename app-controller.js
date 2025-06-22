@@ -775,7 +775,9 @@ export class EnhancedPatternApp {
                 polygonType: polygonDetection.polygonType,
                 formula: polygonDetection.formula
             } : null,
+            isRegularPolygon: this.currentPattern.isRegularPolygon || (polygonDetection ? true : false),
             euclidean: euclideanDetection ? euclideanDetection.formula : null,
+            isEuclidean: this.currentPattern.isEuclidean || (euclideanDetection ? true : false),
             combined: this.currentPattern.isCombined ? {
                 originalPatterns: this.currentPattern.originalPatterns,
                 lcmUsed: this.currentPattern.stepCount,
@@ -784,6 +786,7 @@ export class EnhancedPatternApp {
                 vertices: this.currentPattern.vertices || null,
                 offsets: this.currentPattern.offsets || null
             } : null,
+            isCombined: this.currentPattern.isCombined || false,
             hasSubtraction: this.currentPattern.hasSubtraction || false,
             // Coprime analysis
             coprime: coprimeAnalysis,
@@ -850,7 +853,8 @@ export class EnhancedPatternApp {
         container.innerHTML = '';
         
         patterns.forEach(pattern => {
-            const entry = this.createPatternEntry(pattern);
+            // Use the ui-components createPatternEntry function which has combination info display
+            const entry = createPatternEntry(pattern);
             container.appendChild(entry);
         });
         
@@ -859,125 +863,8 @@ export class EnhancedPatternApp {
         }
     }
     
-    /**
-     * Create pattern entry element with all metadata
-     * @param {Object} pattern - Pattern object
-     * @returns {HTMLElement} Pattern entry element
-     */
-    createPatternEntry(pattern) {
-        const entry = document.createElement('div');
-        let entryClass = 'pattern-entry';
-        if (pattern.favorite) entryClass += ' favorite';
-        if (pattern.perfectBalance && pattern.perfectBalance.isPerfectlyBalanced) entryClass += ' perfect-balance';
-        
-        entry.className = entryClass;
-        
-        let representations = [
-            { text: pattern.binary, title: 'Binary' },
-            { text: pattern.hex, title: 'Hexadecimal', highlight: true },
-            { text: pattern.decimal, title: 'Decimal' },
-            { text: `${pattern.stepCount} steps`, title: 'Step count' }
-        ];
-        
-        // Add perfect balance indicator
-        if (pattern.perfectBalance && pattern.perfectBalance.isPerfectlyBalanced) {
-            representations.push({ 
-                text: `✨ Perfect Balance`, 
-                title: `Perfect Balance: magnitude ${pattern.perfectBalance.magnitude.toFixed(6)}`,
-                special: 'perfect-balance-badge'
-            });
-        }
-        
-        // Add pattern type information
-        if (pattern.polygon) {
-            representations.push({ 
-                text: `🔺 ${pattern.polygon.polygonType}`, 
-                title: `Regular Polygon: ${pattern.polygon.formula}`,
-                special: 'polygon-type'
-            });
-        }
-        
-        if (pattern.euclidean) {
-            representations.push({ 
-                text: `🌀 ${pattern.euclidean}`, 
-                title: `Euclidean Rhythm: ${pattern.euclidean}`,
-                special: 'euclidean-type'
-            });
-        }
-        
-        if (pattern.combined) {
-            representations.push({ 
-                text: `🎯 Combined`, 
-                title: `Combined Pattern${pattern.hasSubtraction ? ' with subtraction' : ''}`,
-                special: 'combined-type'
-            });
-        }
-        
-        if (pattern.hasSubtraction) {
-            representations.push({ 
-                text: `➖ Subtraction`, 
-                title: `Uses subtraction operation`,
-                special: 'combined-type'
-            });
-        }
-        
-        if (pattern.cogAnalysis) {
-            const cogValue = pattern.cogAnalysis.normalizedMagnitude.toFixed(3);
-            representations.push({ 
-                text: `CoG: ${cogValue}`, 
-                title: `Center of Gravity: ${pattern.cogAnalysis.geometricBalance}`,
-                special: 'cog-value'
-            });
-        }
-        
-        if (pattern.milne) {
-            const milneText = pattern.milne.wellformed && pattern.milne.perfectlyBalanced ? '✨WF+PB' :
-                            pattern.milne.wellformed ? '⚖️WF' : '🎯PB';
-            representations.push({ 
-                text: milneText, 
-                title: pattern.milne.wellformed && pattern.milne.perfectlyBalanced ? 'Well-formed & Perfectly Balanced' :
-                       pattern.milne.wellformed ? 'Well-formed' : 'Perfectly Balanced'
-            });
-        }
-        
-        if (pattern.coprime && pattern.coprime.areCoprimes) {
-            representations.push({ 
-                text: `🔢 Coprime`,
-                title: `Coprime polygon vertices: ${pattern.coprime.primeCount} unique primes`
-            });
-        }
-        
-        if (pattern.repetition) {
-            representations.push({ 
-                text: `🔄 ${pattern.repetition.repetitions}×`,
-                title: 'Repetitive pattern'
-            });
-        }
-        
-        const reprHTML = representations.map(repr => 
-            `<span class="pattern-repr ${repr.highlight ? 'highlight' : ''} ${repr.special || ''}" 
-                   data-value="${repr.text}" 
-                   title="${repr.title}">${repr.text}</span>`
-        ).join('');
-        
-        entry.innerHTML = `
-            <span class="pattern-star ${pattern.favorite ? 'active' : ''}" data-id="${pattern.id}">★</span>
-            <div class="pattern-info">
-                <div class="pattern-name ${pattern.name ? '' : 'unnamed'}" data-id="${pattern.id}">
-                    ${pattern.name || 'Click to name'}
-                </div>
-                <div class="pattern-representations">
-                    ${reprHTML}
-                </div>
-            </div>
-            <div class="pattern-actions">
-                <button class="btn" data-action="load" data-id="${pattern.id}">Load</button>
-                <button class="btn danger" data-action="delete" data-id="${pattern.id}">Delete</button>
-            </div>
-        `;
-        
-        return entry;
-    }
+    // NOTE: Removed duplicate createPatternEntry method - now using the one from ui-components.js
+    // which properly displays combination information with blue boxes
     
     // === UTILITY FUNCTIONS ===
     

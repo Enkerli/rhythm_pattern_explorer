@@ -114,6 +114,15 @@ class AdvancedPatternCombiner {
             originalPatterns: patterns.map(p => ({
                 steps: p.steps,
                 stepCount: p.stepCount,
+                vertices: p.vertices,
+                offset: p.offset,
+                expansion: p.expansion,
+                isRegularPolygon: p.isRegularPolygon,
+                polygonType: p.polygonType,
+                beats: p.beats,
+                isEuclidean: p.isEuclidean,
+                formula: p.formula,
+                binary: p.binary || PatternConverter.toBinary(p.steps, p.stepCount),
                 description: this.getPatternDescription(p)
             })),
             lcmUsed: lcm,
@@ -223,9 +232,16 @@ class UnifiedPatternParser {
             };
         }
         
+        // Binary notation: strict validation for only 0s and 1s
         const binaryMatch = cleaned.match(/^b?([01]+)$/i);
         if (binaryMatch) {
             return PatternConverter.fromBinary(binaryMatch[1]);
+        }
+        
+        // Check for invalid binary patterns (contains digits other than 0,1)
+        const invalidBinaryMatch = cleaned.match(/^b?([0-9]+)$/i);
+        if (invalidBinaryMatch && /[2-9]/.test(invalidBinaryMatch[1])) {
+            throw new Error(`Invalid binary pattern: ${cleaned}. Binary patterns can only contain 0s and 1s`);
         }
         
         // Hexadecimal notation: 0x92:8 or 92:8 (with step count) or 0x92 or 92 (if looks like hex)
@@ -264,7 +280,24 @@ class UnifiedPatternParser {
         }
         
         if (pattern.isCombined) {
-            types.push(`🎯Combined`);
+            if (pattern.originalPatterns && pattern.originalPatterns.length > 0) {
+                const descriptions = pattern.originalPatterns.map(p => {
+                    if (p.isRegularPolygon) {
+                        return `P(${p.vertices},${p.offset || 0}${p.expansion && p.expansion !== 1 ? ',' + p.expansion : ''})`;
+                    } else if (p.isEuclidean) {
+                        return `E(${p.beats},${p.stepCount},${p.offset || 0})`;
+                    } else if (p.binary) {
+                        return `b${p.binary}`;
+                    } else if (p.stepCount) {
+                        return `${p.stepCount}steps`;
+                    } else {
+                        return 'pattern';
+                    }
+                });
+                types.push(`🎯COMBINED: ${descriptions.join(' + ')} (LCM=${pattern.stepCount})`);
+            } else {
+                types.push(`🎯COMBINED PATTERN`);
+            }
         }
         
         if (pattern.hasExplicitSteps) {

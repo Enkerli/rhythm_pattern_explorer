@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimal Combination Test</title>
+</head>
+<body>
+    <h1>Minimal Combination Test</h1>
+    <button onclick="runTest()">Test Combination Processing</button>
+    <div id="results"></div>
+
+    <!-- Load dependencies -->
+    <script src="math-core.js"></script>
+    <script src="pattern-generators.js"></script>
+    <script src="pattern-analysis.js"></script>
+    <script src="pattern-processing.js"></script>
+    <script src="pattern-exploration.js"></script>
+    <script src="pattern-database.js"></script>
+    <script src="ui-components.js"></script>
+
+    <script>
+        function runTest() {
+            console.log('=== MINIMAL COMBINATION TEST ===');
+            
+            // Step 1: Test the UnifiedPatternParser directly
+            const input = "P(3,1)+P(5,0)+P(2,5)";
+            console.log('Input:', input);
+            
+            const parsed = UnifiedPatternParser.parse(input);
+            console.log('Parsed result:', parsed);
+            console.log('Parsed type:', parsed.type);
+            console.log('Combined pattern isCombined:', parsed.combined.isCombined);
+            console.log('Combined pattern originalPatterns:', parsed.combined.originalPatterns);
+            
+            // Step 2: Test creating a pattern entry directly
+            const pattern = parsed.combined;
+            console.log('Creating UI entry for pattern:', pattern);
+            
+            // Add required fields that would normally be added by database
+            pattern.id = 'test-123';
+            pattern.name = 'Test Combined Pattern';
+            pattern.hex = '0x123';
+            pattern.binary = '101010';
+            pattern.decimal = 42;
+            pattern.favorite = false;
+            
+            const entry = createPatternEntry(pattern);
+            console.log('Created entry:', entry);
+            
+            // Display results
+            document.getElementById('results').innerHTML = `
+                <h2>Test Results:</h2>
+                <h3>1. Parser Output:</h3>
+                <pre>${JSON.stringify(parsed, null, 2)}</pre>
+                
+                <h3>2. Pattern Properties:</h3>
+                <ul>
+                    <li>isCombined: ${pattern.isCombined}</li>
+                    <li>originalPatterns: ${pattern.originalPatterns ? pattern.originalPatterns.length + ' items' : 'missing'}</li>
+                    <li>combinationType: ${pattern.combinationType}</li>
+                </ul>
+                
+                <h3>3. UI Entry HTML:</h3>
+                <div style="border: 1px solid #ccc; padding: 10px;">
+                    ${entry.outerHTML}
+                </div>
+                
+                <h3>4. Check for Combination Info:</h3>
+                <p>Contains combination info div: ${entry.innerHTML.includes('🎯 COMBINED') ? 'YES' : 'NO'}</p>
+            `;
+        }
+    </script>
+</body>
+</html>

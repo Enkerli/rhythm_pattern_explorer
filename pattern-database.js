@@ -195,15 +195,62 @@ class PatternDatabase {
         if (!query || query.trim() === '') return [...this.patterns];
         
         const lowerQuery = query.toLowerCase();
-        return this.patterns.filter(p => 
-            (p.name && p.name.toLowerCase().includes(lowerQuery)) ||
-            (p.binary && p.binary.includes(query)) ||
-            (p.hex && p.hex.toLowerCase().includes(lowerQuery)) ||
-            (p.decimal && p.decimal.toString().includes(query)) ||
-            (p.polygonType && p.polygonType.toLowerCase().includes(lowerQuery)) ||
-            (p.euclidean && p.euclidean.toLowerCase().includes(lowerQuery)) ||
-            (p.expression && p.expression.toLowerCase().includes(lowerQuery))
-        );
+        return this.patterns.filter(p => {
+            // Basic pattern properties
+            if ((p.name && p.name.toLowerCase().includes(lowerQuery)) ||
+                (p.binary && p.binary.includes(query)) ||
+                (p.hex && p.hex.toLowerCase().includes(lowerQuery)) ||
+                (p.decimal && p.decimal.toString().includes(query)) ||
+                (p.polygonType && p.polygonType.toLowerCase().includes(lowerQuery)) ||
+                (p.euclidean && p.euclidean.toLowerCase().includes(lowerQuery)) ||
+                (p.expression && p.expression.toLowerCase().includes(lowerQuery))) {
+                return true;
+            }
+            
+            // Search in combination data - check both possible structures
+            if (p.isCombined) {
+                // Check combined.originalPatterns structure
+                if (p.combined && p.combined.originalPatterns) {
+                    const foundInCombined = p.combined.originalPatterns.some(op => 
+                        (op.polygonType && op.polygonType.toLowerCase().includes(lowerQuery)) ||
+                        (op.formula && op.formula.toLowerCase().includes(lowerQuery)) ||
+                        (op.description && op.description.toLowerCase().includes(lowerQuery)) ||
+                        (op.binary && op.binary.includes(query)) ||
+                        // Also search in vertices for patterns like P(3,0)
+                        (op.vertices && op.vertices.toString().includes(query)) ||
+                        // Search for pattern names like "triangle", "square", etc.
+                        (lowerQuery === 'triangle' && op.vertices === 3) ||
+                        (lowerQuery === 'square' && op.vertices === 4) ||
+                        (lowerQuery === 'pentagon' && op.vertices === 5) ||
+                        (lowerQuery === 'hexagon' && op.vertices === 6) ||
+                        (lowerQuery === 'heptagon' && op.vertices === 7) ||
+                        (lowerQuery === 'octagon' && op.vertices === 8)
+                    );
+                    if (foundInCombined) return true;
+                }
+                
+                // Check direct originalPatterns structure
+                if (p.originalPatterns) {
+                    return p.originalPatterns.some(op => 
+                        (op.polygonType && op.polygonType.toLowerCase().includes(lowerQuery)) ||
+                        (op.formula && op.formula.toLowerCase().includes(lowerQuery)) ||
+                        (op.description && op.description.toLowerCase().includes(lowerQuery)) ||
+                        (op.binary && op.binary.includes(query)) ||
+                        // Also search in vertices for patterns like P(3,0)
+                        (op.vertices && op.vertices.toString().includes(query)) ||
+                        // Search for pattern names like "triangle", "square", etc.
+                        (lowerQuery === 'triangle' && op.vertices === 3) ||
+                        (lowerQuery === 'square' && op.vertices === 4) ||
+                        (lowerQuery === 'pentagon' && op.vertices === 5) ||
+                        (lowerQuery === 'hexagon' && op.vertices === 6) ||
+                        (lowerQuery === 'heptagon' && op.vertices === 7) ||
+                        (lowerQuery === 'octagon' && op.vertices === 8)
+                    );
+                }
+            }
+            
+            return false;
+        });
     }
     
     /**
@@ -218,7 +265,22 @@ class PatternDatabase {
             case 'perfect_balance':
                 return this.patterns.filter(p => p.perfectBalance && p.perfectBalance.isPerfectlyBalanced);
             case 'polygons':
-                return this.patterns.filter(p => p.polygon || p.isRegularPolygon);
+                return this.patterns.filter(p => {
+                    // Check top-level polygon properties
+                    if (p.polygon || p.isRegularPolygon) return true;
+                    
+                    // Check if it's a combined pattern containing polygons
+                    if (p.isCombined && p.combined && p.combined.originalPatterns) {
+                        return p.combined.originalPatterns.some(op => op.isRegularPolygon);
+                    }
+                    
+                    // Check alternative structure for combined patterns
+                    if (p.isCombined && p.originalPatterns) {
+                        return p.originalPatterns.some(op => op.isRegularPolygon);
+                    }
+                    
+                    return false;
+                });
             case 'euclidean':
                 return this.patterns.filter(p => p.euclidean || p.isEuclidean);
             case 'combined':
