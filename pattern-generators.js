@@ -121,3 +121,9 @@ class EuclideanGenerator {
         return pattern;
     }
 }
+
+// Export to global scope for browser compatibility
+if (typeof window !== 'undefined') {
+    window.RegularPolygonGenerator = RegularPolygonGenerator;
+    window.EuclideanGenerator = EuclideanGenerator;
+}

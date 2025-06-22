@@ -68,6 +68,85 @@ class PerfectBalanceAnalyzer {
     }
 }
 
+class CenterOfGravityCalculator {
+    static calculateCenterOfGravity(steps, stepCount = null) {
+        if (!Array.isArray(steps)) {
+            throw new Error('Steps must be an array');
+        }
+        
+        const actualStepCount = stepCount || steps.length;
+        const onsetPositions = [];
+        
+        // Find all onset positions
+        for (let i = 0; i < actualStepCount; i++) {
+            if (steps[i]) {
+                onsetPositions.push(i);
+            }
+        }
+        
+        if (onsetPositions.length === 0) {
+            return {
+                coordinates: { x: 0, y: 0 },
+                magnitude: 0,
+                normalizedMagnitude: 0,
+                onsetCount: 0,
+                onsetPositions: [],
+                isEmpty: true
+            };
+        }
+        
+        // Calculate center of gravity using complex representation
+        let realSum = 0;
+        let imagSum = 0;
+        
+        for (const position of onsetPositions) {
+            const angle = (2 * Math.PI * position) / actualStepCount;
+            realSum += Math.cos(angle);
+            imagSum += Math.sin(angle);
+        }
+        
+        // Average the coordinates
+        const avgX = realSum / onsetPositions.length;
+        const avgY = imagSum / onsetPositions.length;
+        
+        // Calculate magnitude
+        const magnitude = Math.sqrt(avgX * avgX + avgY * avgY);
+        const normalizedMagnitude = magnitude; // Already normalized by division by onset count
+        
+        return {
+            coordinates: { x: avgX, y: avgY },
+            magnitude,
+            normalizedMagnitude,
+            onsetCount: onsetPositions.length,
+            onsetPositions,
+            isEmpty: false,
+            // Additional helper properties
+            angle: Math.atan2(avgY, avgX),
+            isBalanced: normalizedMagnitude < 0.1,
+            balanceQuality: normalizedMagnitude < 0.05 ? 'excellent' :
+                           normalizedMagnitude < 0.15 ? 'good' :
+                           normalizedMagnitude < 0.4 ? 'fair' : 'poor'
+        };
+    }
+    
+    static calculateMultipleCoG(patterns) {
+        if (!Array.isArray(patterns)) {
+            throw new Error('Patterns must be an array');
+        }
+        
+        return patterns.map((pattern, index) => {
+            const steps = pattern.steps || pattern;
+            const stepCount = pattern.stepCount || steps.length;
+            
+            return {
+                index,
+                pattern: pattern,
+                centerOfGravity: this.calculateCenterOfGravity(steps, stepCount)
+            };
+        });
+    }
+}
+
 class PatternAnalyzer {
     static detectRepetition(steps, stepCount) {
         if (stepCount < 2) return null;
@@ -142,4 +221,11 @@ class PatternAnalyzer {
         
         return analysis;
     }
+}
+
+// Export to global scope for browser compatibility
+if (typeof window !== 'undefined') {
+    window.PerfectBalanceAnalyzer = PerfectBalanceAnalyzer;
+    window.CenterOfGravityCalculator = CenterOfGravityCalculator;
+    window.PatternAnalyzer = PatternAnalyzer;
 }

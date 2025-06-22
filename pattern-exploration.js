@@ -349,3 +349,9 @@ class SystematicExplorer {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 }
+
+// Export to global scope for browser compatibility
+if (typeof window !== 'undefined') {
+    window.EXPLORATION_CONFIG = EXPLORATION_CONFIG;
+    window.SystematicExplorer = SystematicExplorer;
+}
