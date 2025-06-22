@@ -31,11 +31,19 @@ A comprehensive web application for analyzing and exploring rhythmic patterns us
 - `E(5,8,0)` - 5 beats in 8 steps with no offset (Quintillo)
 - `E(3,8,2)` - 3 beats in 8 steps with offset 2 (Tresillo)
 
-### Binary/Hex/Decimal
+### Binary/Hex/Octal/Decimal
 - `b101010` - Binary pattern
 - `0x92` - Hexadecimal pattern
+- `0o452` - Octal pattern (useful for ternary rhythms)
 - `146` - Decimal pattern
 - `146:8` - Decimal with explicit step count
+- `0x92:8` - Hex with explicit step count
+- `0o452:9` - Octal with explicit step count
+
+### Pattern Rotation
+- `0x92@3` - Rotate Tresillo by 3 steps
+- `P(5,0)@2` - Rotate pentagon by 2 steps  
+- `b101010@-1` - Rotate binary pattern by -1 steps (counter-clockwise)
 
 ### Pattern Combinations
 - `P(3,1)+P(5,0)` - Addition (logical OR)
