@@ -1,0 +1,3423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Pattern Database with Perfect Balance Explorer</title>
+    <style>
+        /* === BASE STYLES === */
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #f8f9fa;
+            color: #333;
+            font-family: 'Courier New', monospace;
+            line-height: 1.4;
+        }
+
+        h1 {
+            margin: 0 0 20px 0;
+            font-size: 24px;
+            color: #2c3e50;
+            text-align: center;
+        }
+
+        /* === MAIN LAYOUT === */
+        .main-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 1200px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .section {
+            background: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-header {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #495057;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 8px;
+        }
+
+        /* === INPUT STYLES === */
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+
+        .input-label {
+            font-size: 12px;
+            font-weight: bold;
+            color: #666;
+        }
+
+        .input {
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            transition: border-color 0.2s ease;
+        }
+
+        .input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+
+        .input.error {
+            border-color: #dc3545;
+            background-color: #ffe6e6;
+        }
+
+        .input.readonly {
+            background-color: #f8f9fa;
+            color: #6c757d;
+        }
+
+        /* === BUTTONS === */
+        .btn {
+            padding: 8px 16px;
+            background: #ffffff;
+            border: 2px solid #ddd;
+            color: #333;
+            cursor: pointer;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 12px;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn:hover {
+            background: #f8f9fa;
+            border-color: #aaa;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn.primary { background: #007bff; color: white; border-color: #0056b3; }
+        .btn.primary:hover { background: #0056b3; }
+        .btn.success { background: #28a745; color: white; border-color: #1e7e34; }
+        .btn.success:hover { background: #1e7e34; }
+        .btn.danger { background: #dc3545; color: white; border-color: #c82333; }
+        .btn.danger:hover { background: #c82333; }
+        .btn.warning { background: #ffc107; color: #212529; border-color: #e0a800; }
+        .btn.warning:hover { background: #e0a800; }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        /* === ANALYSIS DISPLAY === */
+        .analysis-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+        }
+
+        .analysis-item {
+            margin: 10px 0;
+            padding: 12px;
+            background: #ffffff;
+            border-radius: 4px;
+            border-left: 4px solid #007bff;
+        }
+
+        .analysis-item.polygon {
+            border-left-color: #6f42c1;
+            background: #f8f5ff;
+        }
+
+        .analysis-item.euclidean {
+            border-left-color: #fd7e14;
+            background: #fff5f0;
+        }
+
+        .analysis-item.combined {
+            border-left-color: #e83e8c;
+            background: #fdf2f8;
+        }
+
+        .analysis-item.center-gravity {
+            border-left-color: #17a2b8;
+            background: #e8f4f8;
+        }
+
+        .analysis-item.repetition {
+            border-left-color: #ffc107;
+            background: #fff9e6;
+        }
+
+        .analysis-item.milne {
+            border-left-color: #28a745;
+            background: #e8f5e8;
+        }
+
+        .analysis-item.milne.wellformed {
+            border-left-color: #17a2b8;
+            background: #e3f2fd;
+        }
+
+        .analysis-item.milne.perfectly-balanced {
+            border-left-color: #6f42c1;
+            background: #f3e5f5;
+        }
+
+        .analysis-item.milne.both {
+            background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+            border-left-color: #7e57c2;
+        }
+
+        .analysis-item.perfect-balance {
+            border-left-color: #28a745;
+            background: #e8f5e8;
+        }
+
+        .analysis-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #495057;
+            font-size: 14px;
+        }
+
+        .analysis-content {
+            font-size: 12px;
+            color: #6c757d;
+            line-height: 1.5;
+        }
+
+        .mathematical-formula {
+            background: #f1f3f4;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-family: 'Times New Roman', serif;
+            font-style: italic;
+            margin: 8px 0;
+            border-left: 3px solid #007bff;
+        }
+
+        .cog-visualization {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 10px 0;
+        }
+
+        .cog-circle {
+            width: 80px;
+            height: 80px;
+            border: 2px solid #dee2e6;
+            border-radius: 50%;
+            position: relative;
+            background: radial-gradient(circle at center, #ffffff 0%, #f8f9fa 100%);
+        }
+
+        .cog-point {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #dc3545;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .onset-point {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: #28a745;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .clickable-unit {
+            display: inline-block;
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin: 0 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid #dee2e6;
+        }
+
+        .clickable-unit:hover {
+            background: #007bff;
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        /* === INFO BOXES === */
+        .info-box {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 4px;
+            padding: 12px;
+            margin: 15px 0;
+            font-size: 11px;
+            line-height: 1.5;
+        }
+
+        .theory-box {
+            background: #e8f4f8;
+            border: 1px solid #b8daff;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        /* === COMPACT OUTPUT === */
+        .compact-output {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .pattern-viz {
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            letter-spacing: 1px;
+            margin: 10px 0;
+            padding: 8px;
+            background: #f1f3f4;
+            border-radius: 4px;
+            word-break: break-all;
+        }
+
+        /* === PERFECT BALANCE EXPLORER === */
+        .exploration-controls {
+            background: #fff9e6;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #007bff;
+            transition: width 0.3s ease;
+        }
+
+        .balance-score {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-weight: bold;
+            font-size: 11px;
+        }
+
+        .balance-perfect {
+            background: #28a745;
+            color: white;
+        }
+
+        .balance-excellent {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .balance-good {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .balance-poor {
+            background: #dc3545;
+            color: white;
+        }
+
+        /* === DATABASE === */
+        .database-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .database-controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .search-filter {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .search-filter .input {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .pattern-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+        }
+
+        .pattern-entry {
+            padding: 12px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: background-color 0.2s ease;
+            cursor: pointer;
+        }
+
+        .pattern-entry:hover {
+            background: #f8f9fa;
+        }
+
+        .pattern-entry.favorite {
+            background: #fff9e6;
+        }
+
+        .pattern-entry.perfect-balance {
+            background: #e8f5e8;
+            border-left: 4px solid #28a745;
+        }
+
+        .pattern-star {
+            cursor: pointer;
+            color: #ddd;
+            font-size: 16px;
+            transition: color 0.2s ease;
+            user-select: none;
+        }
+
+        .pattern-star.active {
+            color: #ffd700;
+        }
+
+        .pattern-star:hover {
+            color: #ffed4e;
+        }
+
+        .pattern-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .pattern-name {
+            font-weight: bold;
+            font-size: 13px;
+            margin-bottom: 4px;
+            cursor: pointer;
+        }
+
+        .pattern-name.unnamed {
+            color: #999;
+            font-style: italic;
+        }
+
+        .pattern-representations {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            font-size: 11px;
+        }
+
+        .pattern-repr {
+            background: #f0f2f5;
+            padding: 2px 6px;
+            border-radius: 2px;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid #e9ecef;
+        }
+
+        .pattern-repr:hover {
+            background: #007bff;
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        .pattern-repr.highlight {
+            background: #28a745;
+            color: white;
+        }
+
+        .pattern-repr.polygon-type {
+            background: #6f42c1;
+            color: white;
+        }
+
+        .pattern-repr.euclidean-type {
+            background: #fd7e14;
+            color: white;
+        }
+
+        .pattern-repr.combined-type {
+            background: #e83e8c;
+            color: white;
+        }
+
+        .pattern-repr.cog-value {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .pattern-repr.milne-balanced {
+            background: #6f42c1;
+            color: white;
+        }
+
+        .pattern-repr.perfect-balance-badge {
+            background: #28a745;
+            color: white;
+            font-weight: bold;
+        }
+
+        .pattern-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        /* === STATS === */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+        }
+
+        .stat-item {
+            background: #f8f9fa;
+            padding: 12px 8px;
+            border-radius: 4px;
+            text-align: center;
+            border: 1px solid #e9ecef;
+        }
+
+        .stat-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #007bff;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* === MODAL === */
+        .modal {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            bottom: 20px;
+            background: white;
+            border: 2px solid #333;
+            padding: 20px;
+            z-index: 10000;
+            font-family: 'Courier New', monospace;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            border-radius: 6px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .modal textarea {
+            flex: 1;
+            font-family: inherit;
+            font-size: 11px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 4px;
+            resize: vertical;
+        }
+
+        /* === RESPONSIVE === */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .search-filter {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .database-controls {
+                flex-direction: column;
+            }
+        }
+
+        .clickable {
+            cursor: pointer;
+            color: #007bff;
+            text-decoration: underline;
+        }
+
+        .clickable:hover {
+            color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎼 Enhanced Pattern Database with Perfect Balance Explorer</h1>
+
+    <div class="main-container">
+        <!-- UNIVERSAL PATTERN INPUT -->
+        <div class="section">
+            <div class="section-header">🎵 Universal Pattern Input</div>
+            
+            <div class="input-group">
+                <label class="input-label">Pattern Input - Supports subtraction for perfect balance discovery!</label>
+                <input type="text" class="input" id="universalInput" placeholder="P(3,1)+P(5,0)+P(2,5), P(3,0)+P(5,1)-P(2,0), E(5,8,0)>>2, 0xAB88, etc." style="font-size: 16px; padding: 12px;">
+            </div>
+
+            <div class="btn-group">
+                <button class="btn primary" id="parseBtn">Parse & Analyze</button>
+                <button class="btn success" id="addUniversalBtn">Add to Database</button>
+                <button class="btn warning" id="copyHexUniversalBtn">Copy Hex</button>
+                <button class="btn" id="testBtn">Test Examples</button>
+            </div>
+
+            <div class="info-box">
+                <strong>Supported Formats:</strong><br>
+                • <strong>Polygons:</strong> P(vertices,offset) → P(3,1)+P(5,0) = Auto-expansion to LCM<br>
+                • <strong>Single Polygons:</strong> P(vertices,offset,expansion) → P(3,1,4) = Explicit expansion<br>
+                • <strong>Euclidean:</strong> E(beats,steps,offset) → E(5,8,0) = Quintillo<br>
+                • <strong>Subtraction:</strong> P(3,0)+P(5,1)-P(2,0) = Perfect balance via subtraction<br>
+                • <strong>Binary:</strong> b101010 or 101010<br>
+                • <strong>Hex:</strong> 0x92 → Tresillo<br>
+                • <strong>Decimal:</strong> 146<br>
+                • <strong>Rotation:</strong> pattern>>steps or pattern@steps → 0x92>>3, P(3,4,0)@2<br>
+                • <strong>Multi-combinations:</strong> P(3,1)+P(5,0)+P(2,5) → Proper LCM(3,5,2)=30
+            </div>
+
+            <!-- PERFECT BALANCE EXPLORER -->
+            <div class="exploration-controls">
+                <div class="section-header" style="margin: 0 0 15px 0; border: none; font-size: 16px;">🔍 Perfect Balance Explorer</div>
+                
+                <div class="theory-box" style="margin: 10px 0;">
+                    <strong>Milne's Perfect Balance Theory:</strong><br>
+                    A pattern is perfectly balanced when <em>∑(e^(i2πkⱼ/n)) = 0</em><br>
+                    Key insights: Coprime polygon sides, strategic offsets, and subtraction operations can achieve perfect balance.
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                    <div>
+                        <input type="number" class="input" id="minSides" value="3" min="2" max="12" placeholder="Min sides">
+                        <label style="font-size: 10px; color: #666;">Min sides</label>
+                    </div>
+                    <div>
+                        <input type="number" class="input" id="maxSides" value="7" min="2" max="12" placeholder="Max sides">
+                        <label style="font-size: 10px; color: #666;">Max sides</label>
+                    </div>
+                    <div>
+                        <input type="number" class="input" id="maxCombinations" value="3" min="2" max="5" placeholder="Max combos">
+                        <label style="font-size: 10px; color: #666;">Max patterns</label>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn primary" id="findPerfectBtn">Find Perfect Balance</button>
+                    <button class="btn warning" id="findNearBtn">Find Near Balance</button>
+                    <button class="btn success" id="generateReportBtn">Generate Report</button>
+                    <button class="btn danger" id="stopBtn" style="display: none;">Stop</button>
+                </div>
+
+                <div id="progressContainer" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div id="progressText" style="text-align: center; font-size: 11px; color: #666;">
+                        Searching...
+                    </div>
+                </div>
+            </div>
+
+            <!-- COMPACT OUTPUT -->
+            <div id="compactOutput" class="compact-output" style="display: none;">
+                <div style="font-weight: bold; margin-bottom: 8px; color: #495057;">Pattern Analysis:</div>
+                <div id="compactResult"></div>
+            </div>
+            
+            <!-- ANALYSIS DISPLAY -->
+            <div class="analysis-section" id="analysisDisplay">
+                <div class="analysis-title">Mathematical Pattern Analysis</div>
+                <div class="analysis-content">Parse a pattern using the universal input above to see comprehensive mathematical analysis</div>
+            </div>
+        </div>
+
+        <!-- DATABASE AND STATISTICS -->
+        <div class="section">
+            <div class="database-header">
+                <div class="section-header" style="margin: 0;">Pattern Database</div>
+                <div class="database-controls">
+                    <button class="btn" id="exportBtn">Export</button>
+                    <button class="btn" id="importBtn">Import</button>
+                    <button class="btn danger" id="clearDbBtn">Clear All</button>
+                </div>
+            </div>
+
+            <div class="search-filter">
+                <input type="text" class="input" id="searchInput" placeholder="Search patterns...">
+                <select class="input" id="filterSelect">
+                    <option value="all">All Patterns</option>
+                    <option value="favorites">Favorites Only</option>
+                    <option value="perfect_balance">Perfect Balance</option>
+                    <option value="polygons">Regular Polygons</option>
+                    <option value="euclidean">Euclidean Rhythms</option>
+                    <option value="combined">Combined Patterns</option>
+                    <option value="subtraction">With Subtraction</option>
+                    <option value="repetitive">Repetitive</option>
+                    <option value="wellformed">Well-formed</option>
+                    <option value="balanced">Perfectly Balanced (Milne)</option>
+                    <option value="geometric_centered">Geometrically Centered (CoG < 0.1)</option>
+                    <option value="coprime">Coprime Combinations</option>
+                </select>
+                <button class="btn" id="sortBtn">Sort by Date</button>
+            </div>
+
+            <div class="stats-grid" id="statsGrid" style="margin-bottom: 15px;">
+                <div class="stat-item">
+                    <span class="stat-value" id="totalPatterns">0</span>
+                    <span class="stat-label">Total Patterns</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="perfectBalanceCount">0</span>
+                    <span class="stat-label">Perfect Balance</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="favoriteCount">0</span>
+                    <span class="stat-label">Favorites</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="polygonCount">0</span>
+                    <span class="stat-label">Polygons</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="euclideanCount">0</span>
+                    <span class="stat-label">Euclidean</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="combinedCount">0</span>
+                    <span class="stat-label">Combined</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="wellformedCount">0</span>
+                    <span class="stat-label">Well-formed</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="avgCogValue">0.000</span>
+                    <span class="stat-label">Avg CoG</span>
+                </div>
+            </div>
+
+            <div class="pattern-list" id="patternList">
+                <!-- Patterns will be rendered here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // === MATHEMATICAL UTILITIES ===
+        class MathUtils {
+            static gcd(a, b) {
+                while (b !== 0) {
+                    [a, b] = [b, a % b];
+                }
+                return a;
+            }
+            
+            static lcm(a, b) {
+                return Math.abs(a * b) / this.gcd(a, b);
+            }
+            
+            static lcmArray(numbers) {
+                return numbers.reduce((lcm, num) => this.lcm(lcm, num), 1);
+            }
+            
+            static isPrime(n) {
+                if (n < 2) return false;
+                for (let i = 2; i <= Math.sqrt(n); i++) {
+                    if (n % i === 0) return false;
+                }
+                return true;
+            }
+            
+            static areCoprimes(numbers) {
+                for (let i = 0; i < numbers.length; i++) {
+                    for (let j = i + 1; j < numbers.length; j++) {
+                        if (this.gcd(numbers[i], numbers[j]) !== 1) {
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
+            
+            static getPrimeFactors(n) {
+                const factors = [];
+                let divisor = 2;
+                while (n > 1) {
+                    while (n % divisor === 0) {
+                        factors.push(divisor);
+                        n /= divisor;
+                    }
+                    divisor++;
+                }
+                return factors;
+            }
+        }
+
+        // === PATTERN COMBINER WITH SUBTRACTION SUPPORT ===
+        class AdvancedPatternCombiner {
+            static combineMultiplePatterns(patterns) {
+                if (patterns.length < 2) {
+                    throw new Error('Need at least 2 patterns to combine');
+                }
+                
+                // Calculate LCM of ALL pattern step counts at once
+                const stepCounts = patterns.map(p => p.stepCount);
+                const lcm = MathUtils.lcmArray(stepCounts);
+                
+                console.log(`Combining ${patterns.length} patterns with step counts [${stepCounts.join(', ')}] → LCM = ${lcm}`);
+                
+                // Extend all patterns to LCM length using appropriate methods
+                const extendedPatterns = patterns.map((pattern, index) => {
+                    console.log(`Extending pattern ${index + 1}: ${pattern.stepCount} → ${lcm} steps`);
+                    if (pattern.isRegularPolygon) {
+                        return this.extendPolygonToLCM(pattern, lcm);
+                    } else {
+                        return this.extendByRepetition(pattern.steps, pattern.stepCount, lcm);
+                    }
+                });
+                
+                // Combine all using logical OR
+                const combinedSteps = new Array(lcm).fill(false);
+                for (let i = 0; i < lcm; i++) {
+                    for (const extendedPattern of extendedPatterns) {
+                        combinedSteps[i] = combinedSteps[i] || extendedPattern[i];
+                    }
+                }
+                
+                return {
+                    steps: combinedSteps,
+                    stepCount: lcm,
+                    isCombined: true,
+                    originalPatterns: patterns.map(p => ({
+                        steps: p.steps,
+                        stepCount: p.stepCount,
+                        description: this.getPatternDescription(p)
+                    })),
+                    lcmUsed: lcm,
+                    combinationType: 'logical_or_multi'
+                };
+            }
+            
+            static parseExpression(expression) {
+                // Parse expressions like P(3,0)+P(5,1)-P(2,0)
+                const parts = expression.split(/([+-])/).filter(part => part.trim() !== '');
+                
+                const operations = [];
+                let currentOp = '+'; // Default to addition
+                
+                for (const part of parts) {
+                    const trimmed = part.trim();
+                    if (trimmed === '+' || trimmed === '-') {
+                        currentOp = trimmed;
+                    } else {
+                        // Parse polygon notation P(vertices,offset) or P(vertices,offset,expansion)
+                        const match2 = trimmed.match(/^P\((\d+),(\d+)\)$/i);
+                        const match3 = trimmed.match(/^P\((\d+),(\d+),(\d+)\)$/i);
+                        
+                        if (match2) {
+                            operations.push({
+                                operation: currentOp,
+                                polygon: {
+                                    vertices: parseInt(match2[1]),
+                                    offset: parseInt(match2[2])
+                                }
+                            });
+                        } else if (match3) {
+                            operations.push({
+                                operation: currentOp,
+                                polygon: {
+                                    vertices: parseInt(match3[1]),
+                                    offset: parseInt(match3[2]),
+                                    expansion: parseInt(match3[3])
+                                }
+                            });
+                        }
+                    }
+                }
+                
+                return operations;
+            }
+            
+            static combineWithOperations(operations) {
+                if (operations.length === 0) {
+                    throw new Error('No operations specified');
+                }
+                
+                // Generate all polygons first
+                const polygons = operations.map(op => {
+                    const { vertices, offset, expansion } = op.polygon;
+                    return {
+                        ...RegularPolygonGenerator.generate(vertices, offset, expansion),
+                        operation: op.operation
+                    };
+                });
+                
+                // Calculate LCM for all polygons
+                const stepCounts = polygons.map(p => p.stepCount);
+                const lcm = MathUtils.lcmArray(stepCounts);
+                
+                // Extend all polygons to LCM length
+                const extendedPolygons = polygons.map(polygon => ({
+                    ...polygon,
+                    extendedSteps: this.extendPolygonToLCM(polygon, lcm)
+                }));
+                
+                // Apply operations in sequence
+                const result = new Array(lcm).fill(false);
+                
+                for (const polygon of extendedPolygons) {
+                    if (polygon.operation === '+') {
+                        // Addition: logical OR
+                        for (let i = 0; i < lcm; i++) {
+                            result[i] = result[i] || polygon.extendedSteps[i];
+                        }
+                    } else if (polygon.operation === '-') {
+                        // Subtraction: logical AND NOT
+                        for (let i = 0; i < lcm; i++) {
+                            result[i] = result[i] && !polygon.extendedSteps[i];
+                        }
+                    }
+                }
+                
+                return {
+                    steps: result,
+                    stepCount: lcm,
+                    isCombined: true,
+                    operations: operations,
+                    polygons: polygons,
+                    lcmUsed: lcm,
+                    hasSubtraction: operations.some(op => op.operation === '-'),
+                    vertices: operations.map(op => op.polygon.vertices),
+                    offsets: operations.map(op => op.polygon.offset || 0)
+                };
+            }
+            
+            static extendPolygonToLCM(polygon, lcm) {
+                const extended = new Array(lcm).fill(false);
+                const vertices = polygon.vertices;
+                const offset = polygon.offset || 0;
+                
+                for (let v = 0; v < vertices; v++) {
+                    const exactPosition = (v * lcm) / vertices;
+                    const position = Math.round(exactPosition) % lcm;
+                    const finalPosition = (position + offset) % lcm;
+                    extended[finalPosition] = true;
+                }
+                
+                return extended;
+            }
+            
+            static extendByRepetition(steps, originalLength, targetLength) {
+                const extended = [];
+                const repetitions = targetLength / originalLength;
+                
+                for (let rep = 0; rep < repetitions; rep++) {
+                    extended.push(...steps);
+                }
+                
+                return extended;
+            }
+            
+            static getPatternDescription(pattern) {
+                if (pattern.isRegularPolygon) {
+                    return `${pattern.polygonType}(${pattern.vertices},${pattern.offset || 0})`;
+                } else if (pattern.isEuclidean) {
+                    return `Euclidean ${pattern.formula}`;
+                } else {
+                    return `Manual(${pattern.stepCount})`;
+                }
+            }
+        }
+
+        // === REGULAR POLYGON GENERATOR ===
+        class RegularPolygonGenerator {
+            static generate(vertices, offset = 0, expansion = null) {
+                if (vertices < 2 || vertices > 32) {
+                    throw new Error('Vertices must be between 2 and 32');
+                }
+                
+                // If no expansion specified, use minimal expansion (1)
+                if (expansion === null) {
+                    expansion = 1;
+                }
+                
+                if (expansion < 1 || expansion > 21) {
+                    throw new Error('Expansion factor must be between 1 and 21');
+                }
+                
+                const totalSteps = vertices * expansion;
+                if (totalSteps > 64) {
+                    throw new Error('Total steps cannot exceed 64');
+                }
+                
+                const pattern = new Array(totalSteps).fill(false);
+                
+                // Place vertices evenly around the circle
+                for (let v = 0; v < vertices; v++) {
+                    const exactPosition = (v * totalSteps) / vertices;
+                    const position = Math.round(exactPosition) % totalSteps;
+                    pattern[position] = true;
+                }
+                
+                // Apply offset by rotating the entire pattern
+                if (offset !== 0) {
+                    const offsetPattern = new Array(totalSteps).fill(false);
+                    for (let i = 0; i < totalSteps; i++) {
+                        const sourceIndex = ((i - offset) % totalSteps + totalSteps) % totalSteps;
+                        offsetPattern[i] = pattern[sourceIndex];
+                    }
+                    return {
+                        steps: offsetPattern,
+                        stepCount: totalSteps,
+                        vertices,
+                        expansion,
+                        offset,
+                        polygonType: this.getPolygonName(vertices),
+                        isRegularPolygon: true,
+                        formula: expansion === 1 ? `P(${vertices},${offset})` : `P(${vertices},${offset},${expansion})`
+                    };
+                }
+                
+                return {
+                    steps: pattern,
+                    stepCount: totalSteps,
+                    vertices,
+                    expansion,
+                    offset,
+                    polygonType: this.getPolygonName(vertices),
+                    isRegularPolygon: true,
+                    formula: expansion === 1 ? `P(${vertices},${offset})` : `P(${vertices},${offset},${expansion})`
+                };
+            }
+            
+            static getPolygonName(vertices) {
+                const names = {
+                    2: 'Bipoint', 3: 'Triangle', 4: 'Square', 5: 'Pentagon', 6: 'Hexagon',
+                    7: 'Heptagon', 8: 'Octagon', 9: 'Nonagon', 10: 'Decagon',
+                    11: 'Hendecagon', 12: 'Dodecagon', 13: 'Tridecagon', 14: 'Tetradecagon',
+                    15: 'Pentadecagon', 16: 'Hexadecagon', 17: 'Heptadecagon', 18: 'Octadecagon',
+                    19: 'Enneadecagon', 20: 'Icosagon'
+                };
+                return names[vertices] || `${vertices}-gon`;
+            }
+            
+            static detectPolygon(steps, stepCount) {
+                const onsets = [];
+                for (let i = 0; i < stepCount; i++) {
+                    if (steps[i]) {
+                        onsets.push(i);
+                    }
+                }
+                
+                if (onsets.length < 2) return null;
+                
+                const vertices = onsets.length;
+                
+                // Check if onsets are evenly distributed (geometric polygon pattern)
+                const expectedPositions = [];
+                for (let v = 0; v < vertices; v++) {
+                    expectedPositions.push(Math.round((v * stepCount) / vertices) % stepCount);
+                }
+                
+                // Try different offsets to match the pattern
+                for (let offset = 0; offset < stepCount; offset++) {
+                    const offsetPositions = expectedPositions.map(pos => (pos + offset) % stepCount);
+                    offsetPositions.sort((a, b) => a - b);
+                    const onsetsCopy = [...onsets].sort((a, b) => a - b);
+                    
+                    if (offsetPositions.every((pos, idx) => pos === onsetsCopy[idx])) {
+                        // Check if this forms a valid expansion factor
+                        const expansion = stepCount / vertices;
+                        if (expansion === Math.floor(expansion)) {
+                            return {
+                                vertices,
+                                expansion: expansion,
+                                offset,
+                                polygonType: this.getPolygonName(vertices),
+                                formula: expansion === 1 ? `P(${vertices},${offset})` : `P(${vertices},${offset},${expansion})`
+                            };
+                        }
+                    }
+                }
+                
+                return null;
+            }
+        }
+
+        // === EUCLIDEAN RHYTHM GENERATOR ===
+        class EuclideanGenerator {
+            static generate(beats, steps, offset = 0) {
+                if (beats > steps) beats = steps;
+                if (beats <= 0) return new Array(steps).fill(false);
+                
+                let pattern = [];
+                let counts = [];
+                let remainders = [];
+                
+                let divisor = steps - beats;
+                remainders[0] = beats;
+                let level = 0;
+                
+                do {
+                    counts[level] = Math.floor(divisor / remainders[level]);
+                    remainders[level + 1] = divisor % remainders[level];
+                    divisor = remainders[level];
+                    level++;
+                } while (remainders[level] > 1);
+                
+                counts[level] = divisor;
+                
+                function build(level) {
+                    if (level == -1) {
+                        pattern.push(false);
+                    } else if (level == -2) {
+                        pattern.push(true);
+                    } else {
+                        for (let i = 0; i < counts[level]; i++) {
+                            build(level - 1);
+                        }
+                        if (remainders[level] != 0) {
+                            build(level - 2);
+                        }
+                    }
+                }
+                
+                build(level);
+                
+                while (pattern.length < steps) {
+                    pattern.push(false);
+                }
+                
+                const firstBeatIndex = pattern.findIndex(beat => beat);
+                if (firstBeatIndex > 0) {
+                    pattern = pattern.slice(firstBeatIndex).concat(pattern.slice(0, firstBeatIndex));
+                }
+                
+                if (offset !== 0) {
+                    offset = ((offset % steps) + steps) % steps;
+                    pattern = pattern.slice(offset).concat(pattern.slice(0, offset));
+                }
+                
+                return pattern;
+            }
+            
+            static detectPattern(steps, beats, stepCount, offset) {
+                const testPattern = this.generate(beats, stepCount, offset);
+                const matches = testPattern.every((val, idx) => val === steps[idx]);
+                return matches ? `E(${beats},${stepCount},${offset})` : null;
+            }
+        }
+
+        // === ENHANCED PERFECT BALANCE ANALYZER ===
+        class PerfectBalanceAnalyzer {
+            static calculateBalance(steps, stepCount) {
+                const onsetPositions = [];
+                for (let i = 0; i < stepCount; i++) {
+                    if (steps[i]) {
+                        onsetPositions.push(i);
+                    }
+                }
+                
+                if (onsetPositions.length === 0) {
+                    return {
+                        magnitude: 0,
+                        normalizedMagnitude: 0,
+                        isPerfectlyBalanced: false,
+                        balanceScore: 'empty',
+                        complexSum: { real: 0, imag: 0 },
+                        onsetCount: 0,
+                        onsetPositions: [],
+                        geometricBalance: "No onsets"
+                    };
+                }
+                
+                let realSum = 0;
+                let imagSum = 0;
+                
+                for (const position of onsetPositions) {
+                    const angle = (2 * Math.PI * position) / stepCount;
+                    realSum += Math.cos(angle);
+                    imagSum += Math.sin(angle);
+                }
+                
+                const magnitude = Math.sqrt(realSum * realSum + imagSum * imagSum);
+                const normalizedMagnitude = magnitude / onsetPositions.length;
+                
+                // Determine balance quality
+                let balanceScore = 'poor';
+                let isPerfectlyBalanced = false;
+                
+                if (magnitude < 0.001) {
+                    balanceScore = 'perfect';
+                    isPerfectlyBalanced = true;
+                } else if (normalizedMagnitude < 0.05) {
+                    balanceScore = 'excellent';
+                } else if (normalizedMagnitude < 0.15) {
+                    balanceScore = 'good';
+                } else if (normalizedMagnitude < 0.4) {
+                    balanceScore = 'fair';
+                }
+                
+                const isGeometricallyBalanced = normalizedMagnitude < 0.1;
+                const geometricBalance = normalizedMagnitude < 0.1 ? "Geometrically Centered" :
+                                        normalizedMagnitude < 0.3 ? "Well Distributed" :
+                                        normalizedMagnitude < 0.7 ? "Moderately Distributed" :
+                                        "Heavily Clustered";
+                
+                const cogPosition = {
+                    x: (realSum / onsetPositions.length),
+                    y: (imagSum / onsetPositions.length)
+                };
+                
+                return {
+                    magnitude,
+                    normalizedMagnitude,
+                    isPerfectlyBalanced,
+                    balanceScore,
+                    complexSum: { real: realSum, imag: imagSum },
+                    onsetCount: onsetPositions.length,
+                    onsetPositions,
+                    isGeometricallyBalanced,
+                    geometricBalance,
+                    cogPosition
+                };
+            }
+            
+            static analyzeCoprimeProperties(vertices) {
+                if (!vertices || vertices.length === 0) {
+                    return {
+                        areCoprimes: false,
+                        primeFactors: [],
+                        uniquePrimes: [],
+                        allPrimes: false,
+                        primeCount: 0
+                    };
+                }
+                
+                const areCoprimes = MathUtils.areCoprimes(vertices);
+                const primeFactors = vertices.map(v => MathUtils.getPrimeFactors(v));
+                const uniquePrimes = [...new Set(primeFactors.flat())];
+                const allPrimes = vertices.every(v => MathUtils.isPrime(v));
+                
+                return {
+                    areCoprimes,
+                    primeFactors,
+                    uniquePrimes,
+                    allPrimes,
+                    primeCount: uniquePrimes.length
+                };
+            }
+        }
+
+        // === SYSTEMATIC EXPLORER ===
+        class SystematicExplorer {
+            constructor() {
+                this.results = [];
+                this.isRunning = false;
+                this.shouldStop = false;
+                this.totalCombinations = 0;
+                this.currentCombination = 0;
+            }
+            
+            async exploreAllCombinations(minSides, maxSides, maxCombinations, targetBalance = 'perfect') {
+                this.results = [];
+                this.isRunning = true;
+                this.shouldStop = false;
+                this.currentCombination = 0;
+                
+                // Calculate total combinations
+                this.totalCombinations = this.calculateTotalCombinations(minSides, maxSides, maxCombinations);
+                
+                console.log(`Starting systematic exploration: ${this.totalCombinations} combinations to test`);
+                
+                // Generate all possible combinations
+                const combinations = this.generateAllCombinations(minSides, maxSides, maxCombinations);
+                
+                for (const combination of combinations) {
+                    if (this.shouldStop) break;
+                    
+                    this.currentCombination++;
+                    this.updateProgress();
+                    
+                    // Test multiple offset combinations for each polygon combination
+                    await this.testCombinationWithOffsets(combination, targetBalance);
+                    
+                    // Allow UI to update
+                    if (this.currentCombination % 10 === 0) {
+                        await this.sleep(1);
+                    }
+                }
+                
+                this.isRunning = false;
+                this.updateProgress();
+                
+                return this.results;
+            }
+            
+            generateAllCombinations(minSides, maxSides, maxCombinations) {
+                const combinations = [];
+                const sides = [];
+                
+                for (let s = minSides; s <= maxSides; s++) {
+                    sides.push(s);
+                }
+                
+                // Generate combinations of 2 to maxCombinations polygons
+                for (let combCount = 2; combCount <= maxCombinations; combCount++) {
+                    const combs = this.generateCombinations(sides, combCount);
+                    combinations.push(...combs);
+                }
+                
+                return combinations;
+            }
+            
+            generateCombinations(arr, size) {
+                if (size === 1) return arr.map(item => [item]);
+                if (size > arr.length) return [];
+                
+                const result = [];
+                for (let i = 0; i <= arr.length - size; i++) {
+                    const head = arr[i];
+                    const tail = this.generateCombinations(arr.slice(i + 1), size - 1);
+                    for (const tailComb of tail) {
+                        result.push([head, ...tailComb]);
+                    }
+                }
+                return result;
+            }
+            
+            calculateTotalCombinations(minSides, maxSides, maxCombinations) {
+                const sides = maxSides - minSides + 1;
+                let total = 0;
+                
+                for (let combCount = 2; combCount <= maxCombinations; combCount++) {
+                    const combinations = this.nCr(sides, combCount);
+                    // Each combination will be tested with multiple offsets
+                    const offsetTests = Math.pow(Math.min(8, Math.max(minSides, 3)), combCount); // Limit offset tests
+                    total += combinations * offsetTests;
+                }
+                
+                return total;
+            }
+            
+            nCr(n, r) {
+                if (r > n) return 0;
+                if (r === 0 || r === n) return 1;
+                
+                let result = 1;
+                for (let i = 0; i < r; i++) {
+                    result *= (n - i);
+                    result /= (i + 1);
+                }
+                return Math.floor(result);
+            }
+            
+            async testCombinationWithOffsets(vertices, targetBalance) {
+                const maxOffset = Math.min(8, Math.max(...vertices)); // Reasonable offset range
+                
+                // Test addition-only patterns first
+                const additionResults = await this.testOffsetsForCombination(vertices, [], maxOffset, targetBalance);
+                
+                // Test patterns with subtraction (if we have enough polygons)
+                if (vertices.length >= 3) {
+                    const subtractionResults = await this.testOffsetsWithSubtraction(vertices, maxOffset, targetBalance);
+                    this.results.push(...subtractionResults);
+                }
+                
+                this.results.push(...additionResults);
+            }
+            
+            async testOffsetsForCombination(vertices, subtractVertices, maxOffset, targetBalance) {
+                const results = [];
+                const offsetCombinations = this.generateOffsetCombinations(vertices.length, maxOffset);
+                
+                for (const offsets of offsetCombinations.slice(0, 20)) { // Limit to prevent timeout
+                    try {
+                        // Create expression
+                        let expression = '';
+                        for (let i = 0; i < vertices.length; i++) {
+                            if (i > 0) expression += '+';
+                            expression += `P(${vertices[i]},${offsets[i]})`;
+                        }
+                        
+                        for (const subVertex of subtractVertices) {
+                            expression += `-P(${subVertex},0)`; // Simple subtraction
+                        }
+                        
+                        const operations = AdvancedPatternCombiner.parseExpression(expression);
+                        const combined = AdvancedPatternCombiner.combineWithOperations(operations);
+                        const balance = PerfectBalanceAnalyzer.calculateBalance(combined.steps, combined.stepCount);
+                        const coprime = PerfectBalanceAnalyzer.analyzeCoprimeProperties(vertices);
+                        
+                        const shouldInclude = targetBalance === 'perfect' ? balance.isPerfectlyBalanced :
+                                            targetBalance === 'near' ? (balance.balanceScore === 'excellent' || balance.balanceScore === 'good') :
+                                            true;
+                        
+                        if (shouldInclude && balance.onsetCount > 0) {
+                            results.push({
+                                expression,
+                                vertices,
+                                offsets,
+                                subtractVertices,
+                                combined,
+                                balance,
+                                coprime,
+                                isInteresting: balance.isPerfectlyBalanced || (balance.balanceScore === 'excellent' && coprime.areCoprimes)
+                            });
+                        }
+                    } catch (error) {
+                        // Skip invalid combinations
+                    }
+                }
+                
+                return results;
+            }
+            
+            async testOffsetsWithSubtraction(vertices, maxOffset, targetBalance) {
+                const results = [];
+                
+                // Try subtracting the smallest polygon
+                const smallestVertex = Math.min(...vertices);
+                const remainingVertices = vertices.filter(v => v !== smallestVertex);
+                
+                if (remainingVertices.length >= 2) {
+                    const subtractionResults = await this.testOffsetsForCombination(
+                        remainingVertices, 
+                        [smallestVertex], 
+                        maxOffset, 
+                        targetBalance
+                    );
+                    results.push(...subtractionResults);
+                }
+                
+                return results;
+            }
+            
+            generateOffsetCombinations(polygonCount, maxOffset) {
+                const combinations = [];
+                const maxCombinations = 50; // Limit combinations
+                
+                // Generate some strategic offset combinations
+                for (let i = 0; i < maxCombinations && combinations.length < maxCombinations; i++) {
+                    const offsets = [];
+                    for (let j = 0; j < polygonCount; j++) {
+                        offsets.push(Math.floor(Math.random() * maxOffset));
+                    }
+                    combinations.push(offsets);
+                }
+                
+                // Always include zero offsets
+                combinations.unshift(new Array(polygonCount).fill(0));
+                
+                return combinations;
+            }
+            
+            updateProgress() {
+                const progressFill = document.getElementById('progressFill');
+                const progressText = document.getElementById('progressText');
+                
+                if (this.totalCombinations > 0) {
+                    const percentage = (this.currentCombination / this.totalCombinations) * 100;
+                    progressFill.style.width = `${percentage}%`;
+                    progressText.textContent = `${this.currentCombination} / ${this.totalCombinations} combinations tested`;
+                }
+                
+                // Update the main stats display
+                app && app.updateExplorationStats && app.updateExplorationStats(this.results);
+            }
+            
+            stop() {
+                this.shouldStop = true;
+                this.isRunning = false;
+            }
+            
+            sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+        }
+
+        // === CENTER OF GRAVITY CALCULATOR ===
+        class CenterOfGravityCalculator {
+            static calculateCircularStatistics(steps, stepCount) {
+                const onsetPositions = [];
+                for (let i = 0; i < stepCount; i++) {
+                    if (steps[i]) {
+                        onsetPositions.push(i);
+                    }
+                }
+                
+                if (onsetPositions.length === 0) {
+                    return {
+                        magnitude: 0,
+                        normalizedMagnitude: 0,
+                        onsetCount: 0,
+                        geometricBalance: "No onsets",
+                        isPerfectlyBalanced: false,
+                        complexSum: { real: 0, imag: 0 },
+                        explanation: "No onsets detected",
+                        onsetPositions: []
+                    };
+                }
+                
+                let realSum = 0;
+                let imagSum = 0;
+                
+                for (const position of onsetPositions) {
+                    const angle = (2 * Math.PI * position) / stepCount;
+                    const real = Math.cos(angle);
+                    const imag = Math.sin(angle);
+                    realSum += real;
+                    imagSum += imag;
+                }
+                
+                const magnitude = Math.sqrt(realSum * realSum + imagSum * imagSum);
+                const normalizedMagnitude = magnitude / onsetPositions.length;
+                
+                const isGeometricallyBalanced = normalizedMagnitude < 0.1;
+                const geometricBalance = normalizedMagnitude < 0.1 ? "Geometrically Centered" :
+                                        normalizedMagnitude < 0.3 ? "Well Distributed" :
+                                        normalizedMagnitude < 0.7 ? "Moderately Distributed" :
+                                        "Heavily Clustered";
+                
+                const isPerfectlyBalanced = magnitude < 0.001;
+                
+                const cogPosition = {
+                    x: (realSum / onsetPositions.length),
+                    y: (imagSum / onsetPositions.length)
+                };
+                
+                return {
+                    magnitude,
+                    normalizedMagnitude,
+                    onsetPositions,
+                    onsetCount: onsetPositions.length,
+                    isGeometricallyBalanced,
+                    geometricBalance,
+                    cogPosition,
+                    isPerfectlyBalanced,
+                    complexSum: { real: realSum, imag: imagSum },
+                    explanation: isPerfectlyBalanced 
+                        ? "Complex exponential sum ≈ 0 (Milne's perfectly balanced)"
+                        : `Complex exponential sum magnitude = ${magnitude.toFixed(3)} (not perfectly balanced)`
+                };
+            }
+        }
+
+        // === PATTERN ANALYSIS CLASSES ===
+        class PatternAnalyzer {
+            static findRepetition(steps, stepCount) {
+                if (stepCount < 2) return null;
+                
+                for (let unitLength = 1; unitLength <= Math.floor(stepCount / 2); unitLength++) {
+                    if (stepCount % unitLength === 0) {
+                        const repetitions = stepCount / unitLength;
+                        const unit = steps.slice(0, unitLength);
+                        
+                        let isRepeating = true;
+                        for (let rep = 1; rep < repetitions; rep++) {
+                            const start = rep * unitLength;
+                            for (let i = 0; i < unitLength; i++) {
+                                if (steps[start + i] !== unit[i]) {
+                                    isRepeating = false;
+                                    break;
+                                }
+                            }
+                            if (!isRepeating) break;
+                        }
+                        
+                        if (isRepeating) {
+                            const unitBinary = unit.map(s => s ? '1' : '0').join('');
+                            return {
+                                unitLength,
+                                repetitions,
+                                unit,
+                                unitBinary,
+                                unitDecimal: parseInt(unitBinary, 2) || 0,
+                                unitHex: '0x' + (parseInt(unitBinary, 2) || 0).toString(16).toUpperCase(),
+                                compressionRatio: stepCount / unitLength
+                            };
+                        }
+                    }
+                }
+                return null;
+            }
+            
+            static analyzeMilneCriteria(steps, stepCount) {
+                if (stepCount < 2) return { wellformed: false, perfectlyBalanced: false };
+                
+                const onsets = [];
+                for (let i = 0; i < stepCount; i++) {
+                    if (steps[i]) {
+                        onsets.push(i);
+                    }
+                }
+                
+                if (onsets.length < 2) {
+                    return { wellformed: false, perfectlyBalanced: false, analysis: "Insufficient onsets" };
+                }
+                
+                const intervals = [];
+                for (let i = 0; i < onsets.length; i++) {
+                    const nextIndex = (i + 1) % onsets.length;
+                    const interval = nextIndex === 0 
+                        ? (stepCount - onsets[i] + onsets[nextIndex]) % stepCount
+                        : onsets[nextIndex] - onsets[i];
+                    intervals.push(interval);
+                }
+                
+                const uniqueIntervals = [...new Set(intervals)].sort((a, b) => a - b);
+                const wellformed = uniqueIntervals.length <= 2 && 
+                    (uniqueIntervals.length === 1 || uniqueIntervals[1] - uniqueIntervals[0] === 1);
+                
+                let perfectlyBalanced = false;
+                let balanceAnalysis = "";
+                
+                if (wellformed && uniqueIntervals.length === 2) {
+                    const [small, large] = uniqueIntervals;
+                    const smallCount = intervals.filter(i => i === small).length;
+                    const largeCount = intervals.filter(i => i === large).length;
+                    
+                    perfectlyBalanced = true; // Simplified for this implementation
+                    balanceAnalysis = `${smallCount}×${small} + ${largeCount}×${large}`;
+                } else if (wellformed && uniqueIntervals.length === 1) {
+                    perfectlyBalanced = true;
+                    balanceAnalysis = `${intervals.length}×${uniqueIntervals[0]} (regular)`;
+                }
+                
+                return {
+                    wellformed,
+                    perfectlyBalanced,
+                    intervals,
+                    uniqueIntervals,
+                    onsets,
+                    analysis: balanceAnalysis || `${uniqueIntervals.length} interval types: ${uniqueIntervals.join(', ')}`
+                };
+            }
+        }
+
+        // === UNIFIED PATTERN PARSER ===
+        class UnifiedPatternParser {
+            static parse(input) {
+                const cleaned = input.trim();
+                
+                // Handle combination syntax (pattern1 + pattern2 + pattern3 + ...)
+                if (cleaned.includes('+') || cleaned.includes('-')) {
+                    // Check if this is a subtraction-based combination
+                    if (cleaned.includes('-')) {
+                        // Parse as advanced expression with subtraction
+                        const operations = AdvancedPatternCombiner.parseExpression(cleaned);
+                        const combined = AdvancedPatternCombiner.combineWithOperations(operations);
+                        
+                        return {
+                            type: 'advanced_combination',
+                            operations: operations,
+                            combined: combined,
+                            expression: cleaned
+                        };
+                    } else {
+                        // Parse as regular combination
+                        const parts = cleaned.split('+').map(p => p.trim());
+                        if (parts.length < 2) {
+                            throw new Error('Combination syntax must be: pattern1 + pattern2 [+ pattern3 ...]');
+                        }
+                        
+                        // Parse all patterns
+                        const patterns = parts.map(part => this.parseSingle(part));
+                        
+                        // Combine all at once using proper LCM calculation
+                        const combined = AdvancedPatternCombiner.combineMultiplePatterns(patterns);
+                        
+                        return {
+                            type: 'combination',
+                            patterns: patterns,
+                            combined: combined,
+                            multiPattern: true
+                        };
+                    }
+                }
+                
+                return {
+                    type: 'single',
+                    pattern: this.parseSingle(cleaned)
+                };
+            }
+            
+            static parseSingle(input) {
+                const cleaned = input.trim();
+                
+                // Handle offset/rotation syntax: pattern>>offset or pattern@offset
+                const offsetMatch = cleaned.match(/^(.+?)(?:>>|@)(\d+)$/);
+                if (offsetMatch) {
+                    const basePattern = this.parsePattern(offsetMatch[1].trim());
+                    const offset = parseInt(offsetMatch[2]);
+                    return this.applyOffset(basePattern, offset);
+                }
+                
+                return this.parsePattern(cleaned);
+            }
+            
+            static parsePattern(input) {
+                const cleaned = input.trim();
+                
+                // Polygon notation: P(vertices,offset) or P(vertices,offset,expansion)
+                const polygonMatch2 = cleaned.match(/^P\((\d+),(\d+)\)$/i);
+                if (polygonMatch2) {
+                    const vertices = parseInt(polygonMatch2[1]);
+                    const offset = parseInt(polygonMatch2[2]);
+                    return RegularPolygonGenerator.generate(vertices, offset);
+                }
+                
+                const polygonMatch3 = cleaned.match(/^P\((\d+),(\d+),(\d+)\)$/i);
+                if (polygonMatch3) {
+                    const vertices = parseInt(polygonMatch3[1]);
+                    const offset = parseInt(polygonMatch3[2]);
+                    const expansion = parseInt(polygonMatch3[3]);
+                    return RegularPolygonGenerator.generate(vertices, offset, expansion);
+                }
+                
+                // Euclidean notation: E(beats,steps,offset)
+                const euclideanMatch = cleaned.match(/^E\((\d+),(\d+),(\d+)\)$/i);
+                if (euclideanMatch) {
+                    const beats = parseInt(euclideanMatch[1]);
+                    const steps = parseInt(euclideanMatch[2]);
+                    const offset = parseInt(euclideanMatch[3]);
+                    const euclideanSteps = EuclideanGenerator.generate(beats, steps, offset);
+                    return {
+                        steps: euclideanSteps,
+                        stepCount: steps,
+                        beats,
+                        offset,
+                        isEuclidean: true,
+                        formula: `E(${beats},${steps},${offset})`
+                    };
+                }
+                
+                // Binary notation: b101010 or 101010
+                const binaryMatch = cleaned.match(/^b?([01]+)$/i);
+                if (binaryMatch) {
+                    return PatternConverter.fromBinary(binaryMatch[1]);
+                }
+                
+                // Hexadecimal notation: 0x92 or 92 (if looks like hex)
+                const hexMatch = cleaned.match(/^(0x)?([0-9a-f]+)$/i);
+                if (hexMatch && (hexMatch[1] || /[a-f]/i.test(hexMatch[2]))) {
+                    const pattern = PatternConverter.fromHex(hexMatch[0]);
+                    if (pattern) return pattern;
+                }
+                
+                // Decimal notation: pure numbers
+                const decimalMatch = cleaned.match(/^\d+$/);
+                if (decimalMatch) {
+                    const decimal = parseInt(cleaned);
+                    return PatternConverter.fromDecimal(decimal);
+                }
+                
+                throw new Error(`Unrecognized pattern format: ${input}\n\nSupported formats:\n- Polygon: P(vertices,offset) or P(vertices,offset,expansion)\n- Euclidean: E(beats,steps,offset)\n- Binary: b101010 or 101010\n- Hex: 0x92\n- Decimal: 146\n- Offset: pattern>>steps or pattern@steps\n- Multi-combination: pattern1 + pattern2 + pattern3\n- Subtraction: P(3,0)+P(5,1)-P(2,0)`);
+            }
+            
+            static applyOffset(pattern, offset) {
+                const { steps, stepCount } = pattern;
+                
+                // Normalize offset to be within range
+                offset = ((offset % stepCount) + stepCount) % stepCount;
+                
+                if (offset === 0) {
+                    return pattern; // No change needed
+                }
+                
+                // Rotate the pattern
+                const rotatedSteps = new Array(stepCount);
+                for (let i = 0; i < stepCount; i++) {
+                    rotatedSteps[i] = steps[(i - offset + stepCount) % stepCount];
+                }
+                
+                return {
+                    ...pattern,
+                    steps: rotatedSteps,
+                    offset: (pattern.offset || 0) + offset,
+                    isRotated: true,
+                    originalOffset: pattern.offset || 0,
+                    appliedRotation: offset
+                };
+            }
+            
+            static formatCompact(pattern) {
+                const binary = PatternConverter.toBinary(pattern.steps, pattern.stepCount);
+                const decimal = PatternConverter.toDecimal(binary);
+                const hex = PatternConverter.toHex(decimal);
+                const beats = pattern.steps.filter(s => s).length;
+                const density = ((beats / pattern.stepCount) * 100).toFixed(1);
+                
+                let result = `b${binary}, ${hex}, ${decimal} (${pattern.stepCount} steps, ${beats} beats, ${density}% density)`;
+                
+                // Add pattern type information
+                const types = [];
+                
+                if (pattern.isRegularPolygon && pattern.polygonType) {
+                    types.push(`🔺${pattern.formula}`);
+                } else {
+                    // Try to detect polygon
+                    const polygonDetection = RegularPolygonGenerator.detectPolygon(pattern.steps, pattern.stepCount);
+                    if (polygonDetection) {
+                        types.push(`🔺${polygonDetection.formula}`);
+                    }
+                }
+                
+                if (pattern.isEuclidean && pattern.formula) {
+                    types.push(`🌀${pattern.formula}`);
+                } else {
+                    // Try to detect Euclidean
+                    const euclideanDetection = this.detectEuclideanPattern(pattern.steps, pattern.stepCount);
+                    if (euclideanDetection) {
+                        types.push(`🌀${euclideanDetection.formula}`);
+                    }
+                }
+                
+                if (pattern.isCombined) {
+                    types.push(`🎯Combined`);
+                }
+                
+                if (pattern.hasSubtraction) {
+                    types.push(`➖Subtraction`);
+                }
+                
+                if (pattern.isRotated) {
+                    types.push(`🔄Rotated(+${pattern.appliedRotation})`);
+                }
+                
+                // Add mathematical properties
+                const cogAnalysis = CenterOfGravityCalculator.calculateCircularStatistics(pattern.steps, pattern.stepCount);
+                if (cogAnalysis.isPerfectlyBalanced) {
+                    types.push(`✨PerfectBalance`);
+                } else if (cogAnalysis.normalizedMagnitude < 0.1) {
+                    types.push(`📐Centered(${cogAnalysis.normalizedMagnitude.toFixed(3)})`);
+                }
+                
+                const milne = PatternAnalyzer.analyzeMilneCriteria(pattern.steps, pattern.stepCount);
+                if (milne.wellformed && milne.perfectlyBalanced) {
+                    types.push(`🎼WF+PB`);
+                } else if (milne.wellformed) {
+                    types.push(`⚖️WF`);
+                }
+                
+                const repetition = PatternAnalyzer.findRepetition(pattern.steps, pattern.stepCount);
+                if (repetition) {
+                    types.push(`🔄${repetition.repetitions}×(${repetition.unitBinary})`);
+                }
+                
+                if (types.length > 0) {
+                    result += ` [${types.join(', ')}]`;
+                }
+                
+                return result;
+            }
+            
+            static detectEuclideanPattern(steps, stepCount) {
+                const beatCount = steps.filter(s => s).length;
+                
+                // Try different offsets to find Euclidean match
+                for (let offset = 0; offset < stepCount; offset++) {
+                    const euclideanPattern = EuclideanGenerator.generate(beatCount, stepCount, offset);
+                    if (euclideanPattern.every((val, idx) => val === steps[idx])) {
+                        return {
+                            beats: beatCount,
+                            steps: stepCount,
+                            offset,
+                            formula: `E(${beatCount},${stepCount},${offset})`
+                        };
+                    }
+                }
+                
+                return null;
+            }
+        }
+
+        // === PATTERN CONVERSION UTILITIES ===
+        class PatternConverter {
+            static toBinary(steps, stepCount) {
+                return Array(stepCount).fill(0)
+                    .map((_, i) => steps[i] ? '1' : '0')
+                    .join('');
+            }
+            
+            static fromBinary(binaryString) {
+                return {
+                    steps: binaryString.split('').map(bit => bit === '1'),
+                    stepCount: binaryString.length
+                };
+            }
+            
+            static toDecimal(binaryString) {
+                return parseInt(binaryString, 2) || 0;
+            }
+            
+            static toHex(decimal) {
+                return '0x' + decimal.toString(16).toUpperCase();
+            }
+            
+            static fromDecimal(decimal, minSteps = 1) {
+                if (decimal === 0) return { steps: [false], stepCount: 1 };
+                
+                const stepCount = Math.max(minSteps, Math.floor(Math.log2(decimal)) + 1);
+                const binaryString = decimal.toString(2).padStart(stepCount, '0');
+                return this.fromBinary(binaryString);
+            }
+            
+            static fromHex(hexString) {
+                const cleaned = hexString.replace(/^0x/i, '').replace(/[^0-9A-F]/gi, '');
+                if (!cleaned) return null;
+                
+                const decimal = parseInt(cleaned, 16);
+                if (isNaN(decimal)) return null;
+                
+                return this.fromDecimal(decimal);
+            }
+        }
+
+        // === DATABASE MANAGER ===
+        class PatternDatabase {
+            constructor() {
+                this.patterns = [];
+                this.useLocalStorage = this.testLocalStorage();
+            }
+            
+            testLocalStorage() {
+                try {
+                    const test = 'localStorage-test';
+                    localStorage.setItem(test, test);
+                    localStorage.removeItem(test);
+                    return true;
+                } catch (e) {
+                    console.warn('localStorage not available, using in-memory storage only');
+                    return false;
+                }
+            }
+            
+            add(pattern) {
+                const exists = this.patterns.some(p => 
+                    p.binary === pattern.binary && p.stepCount === pattern.stepCount
+                );
+                
+                if (!exists) {
+                    this.patterns.unshift(pattern);
+                    this.save();
+                    return true;
+                }
+                return false;
+            }
+            
+            remove(id) {
+                this.patterns = this.patterns.filter(p => p.id !== id);
+                this.save();
+            }
+            
+            update(id, updates) {
+                const pattern = this.patterns.find(p => p.id === id);
+                if (pattern) {
+                    Object.assign(pattern, updates);
+                    this.save();
+                }
+            }
+            
+            load() {
+                if (!this.useLocalStorage) return;
+                
+                try {
+                    const saved = localStorage.getItem('enhancedPerfectBalancePatternDatabase');
+                    if (saved) {
+                        this.patterns = JSON.parse(saved);
+                    }
+                } catch (e) {
+                    console.warn('Failed to load pattern database:', e);
+                    this.patterns = [];
+                }
+            }
+            
+            save() {
+                if (!this.useLocalStorage) return;
+                
+                try {
+                    localStorage.setItem('enhancedPerfectBalancePatternDatabase', JSON.stringify(this.patterns));
+                } catch (e) {
+                    console.warn('Failed to save pattern database:', e);
+                }
+            }
+            
+            export() {
+                return JSON.stringify(this.patterns, null, 2);
+            }
+            
+            import(jsonData) {
+                try {
+                    const imported = JSON.parse(jsonData);
+                    if (Array.isArray(imported)) {
+                        this.patterns = [...this.patterns, ...imported];
+                        this.save();
+                        return true;
+                    }
+                } catch (e) {
+                    console.error('Import failed:', e);
+                }
+                return false;
+            }
+            
+            search(query) {
+                if (!query) return this.patterns;
+                
+                const lowerQuery = query.toLowerCase();
+                return this.patterns.filter(p => 
+                    (p.name && p.name.toLowerCase().includes(lowerQuery)) ||
+                    p.binary.includes(query) ||
+                    p.hex.toLowerCase().includes(lowerQuery) ||
+                    p.decimal.toString().includes(query) ||
+                    (p.polygonType && p.polygonType.toLowerCase().includes(lowerQuery)) ||
+                    (p.euclidean && p.euclidean.toLowerCase().includes(lowerQuery)) ||
+                    (p.expression && p.expression.toLowerCase().includes(lowerQuery))
+                );
+            }
+            
+            filter(type) {
+                switch (type) {
+                    case 'favorites':
+                        return this.patterns.filter(p => p.favorite);
+                    case 'perfect_balance':
+                        return this.patterns.filter(p => p.perfectBalance && p.perfectBalance.isPerfectlyBalanced);
+                    case 'polygons':
+                        return this.patterns.filter(p => p.polygon);
+                    case 'euclidean':
+                        return this.patterns.filter(p => p.euclidean);
+                    case 'combined':
+                        return this.patterns.filter(p => p.combined);
+                    case 'subtraction':
+                        return this.patterns.filter(p => p.hasSubtraction);
+                    case 'repetitive':
+                        return this.patterns.filter(p => p.repetition);
+                    case 'wellformed':
+                        return this.patterns.filter(p => p.milne && p.milne.wellformed);
+                    case 'balanced':
+                        return this.patterns.filter(p => p.milne && p.milne.perfectlyBalanced);
+                    case 'geometric_centered':
+                        return this.patterns.filter(p => p.cogAnalysis && p.cogAnalysis.normalizedMagnitude < 0.1);
+                    case 'coprime':
+                        return this.patterns.filter(p => p.coprime && p.coprime.areCoprimes);
+                    default:
+                        return this.patterns;
+                }
+            }
+        }
+
+        // === MAIN APPLICATION CLASS ===
+        class EnhancedPatternApp {
+            constructor() {
+                this.database = new PatternDatabase();
+                this.explorer = new SystematicExplorer();
+                this.currentPattern = null;
+                this.sortByDate = true;
+                this.explorationResults = [];
+                
+                this.setupEventListeners();
+                this.initialize();
+            }
+            
+            initialize() {
+                this.database.load();
+                this.renderDatabase();
+                this.updateStats();
+                
+                // Show initial help
+                this.updateAnalysisDisplay(null);
+                
+                // Generate a sample pattern
+                this.parseUniversalInput('P(3,1)+P(5,0)+P(2,5)', false);
+            }
+            
+            // === UNIVERSAL PATTERN PROCESSING ===
+            parseUniversalInput(input, interactive = true) {
+                try {
+                    const parsed = UnifiedPatternParser.parse(input || document.getElementById('universalInput').value);
+                    
+                    if (parsed.type === 'advanced_combination') {
+                        // Handle advanced combination with subtraction
+                        this.currentPattern = parsed.combined;
+                        this.currentPattern.expression = parsed.expression;
+                    } else if (parsed.type === 'combination') {
+                        // Handle regular combination
+                        this.currentPattern = parsed.combined;
+                    } else {
+                        // Handle single pattern
+                        this.currentPattern = parsed.pattern;
+                    }
+                    
+                    if (interactive) {
+                        this.clearErrors();
+                        this.showCompactOutput(parsed);
+                        this.updateAnalysisDisplay(this.currentPattern);
+                    }
+                    
+                    return true;
+                } catch (error) {
+                    if (interactive) {
+                        alert(error.message);
+                        this.showError();
+                    }
+                    console.error('Parse error:', error);
+                    return false;
+                }
+            }
+            
+            showCompactOutput(parsed) {
+                const output = document.getElementById('compactOutput');
+                const result = document.getElementById('compactResult');
+                
+                if (parsed.type === 'advanced_combination') {
+                    const combinedCompact = UnifiedPatternParser.formatCompact(parsed.combined);
+                    result.innerHTML = `
+                        <div><strong>Advanced Expression:</strong> ${parsed.expression}</div>
+                        <div style="margin-top: 8px;"><strong>Result:</strong> ${combinedCompact}</div>
+                    `;
+                } else if (parsed.type === 'combination') {
+                    if (parsed.multiPattern) {
+                        // Multi-pattern combination
+                        let html = '';
+                        parsed.patterns.forEach((pattern, index) => {
+                            const patternCompact = UnifiedPatternParser.formatCompact(pattern);
+                            html += `<div style="margin-bottom: 8px;"><strong>Pattern ${index + 1}:</strong> ${patternCompact}</div>`;
+                        });
+                        
+                        const combinedCompact = UnifiedPatternParser.formatCompact(parsed.combined);
+                        html += `<div style="margin-bottom: 8px; padding-top: 8px; border-top: 1px solid #dee2e6;"><strong>Combined (${parsed.patterns.length} patterns):</strong> ${combinedCompact}</div>`;
+                        
+                        result.innerHTML = html;
+                    } else {
+                        // Two-pattern combination
+                        const pattern1Compact = UnifiedPatternParser.formatCompact(parsed.patterns[0]);
+                        const pattern2Compact = UnifiedPatternParser.formatCompact(parsed.patterns[1]);
+                        const combinedCompact = UnifiedPatternParser.formatCompact(parsed.combined);
+                        
+                        result.innerHTML = `
+                            <div style="margin-bottom: 8px;"><strong>Pattern 1:</strong> ${pattern1Compact}</div>
+                            <div style="margin-bottom: 8px;"><strong>Pattern 2:</strong> ${pattern2Compact}</div>
+                            <div style="margin-bottom: 8px; padding-top: 8px; border-top: 1px solid #dee2e6;"><strong>Combined:</strong> ${combinedCompact}</div>
+                        `;
+                    }
+                } else {
+                    const patternCompact = UnifiedPatternParser.formatCompact(parsed.pattern);
+                    result.innerHTML = `<div>${patternCompact}</div>`;
+                }
+                
+                output.style.display = 'block';
+            }
+            
+            clearErrors() {
+                document.querySelectorAll('.input.error').forEach(input => {
+                    input.classList.remove('error');
+                });
+            }
+            
+            showError() {
+                document.getElementById('universalInput').classList.add('error');
+                document.getElementById('compactOutput').style.display = 'none';
+            }
+            
+            copyCurrentHex() {
+                if (!this.currentPattern) {
+                    alert('No pattern to copy. Please parse a pattern first.');
+                    return;
+                }
+                
+                const binary = PatternConverter.toBinary(this.currentPattern.steps, this.currentPattern.stepCount);
+                const decimal = PatternConverter.toDecimal(binary);
+                const hex = PatternConverter.toHex(decimal);
+                
+                this.copyToClipboard(hex);
+            }
+            
+            // === PERFECT BALANCE EXPLORER ===
+            async startSystematicExploration(targetBalance) {
+                const minSides = parseInt(document.getElementById('minSides').value) || 3;
+                const maxSides = parseInt(document.getElementById('maxSides').value) || 7;
+                const maxCombinations = parseInt(document.getElementById('maxCombinations').value) || 3;
+                
+                if (minSides > maxSides) {
+                    alert('Min sides must be ≤ max sides');
+                    return;
+                }
+                
+                // Show progress
+                document.getElementById('progressContainer').style.display = 'block';
+                document.getElementById('findPerfectBtn').disabled = true;
+                document.getElementById('findNearBtn').disabled = true;
+                document.getElementById('stopBtn').style.display = 'inline-block';
+                
+                try {
+                    console.log(`Starting ${targetBalance} balance exploration...`);
+                    const results = await this.explorer.exploreAllCombinations(minSides, maxSides, maxCombinations, targetBalance);
+                    
+                    // Sort results by balance quality
+                    results.sort((a, b) => {
+                        if (a.balance.isPerfectlyBalanced && !b.balance.isPerfectlyBalanced) return -1;
+                        if (!a.balance.isPerfectlyBalanced && b.balance.isPerfectlyBalanced) return 1;
+                        return a.balance.normalizedMagnitude - b.balance.normalizedMagnitude;
+                    });
+                    
+                    this.explorationResults = results;
+                    
+                    // Add all perfect balance results to database
+                    let addedCount = 0;
+                    for (const result of results.filter(r => r.balance.isPerfectlyBalanced)) {
+                        if (this.addExplorationResultToDatabase(result)) {
+                            addedCount++;
+                        }
+                    }
+                    
+                    console.log(`Exploration complete: ${results.length} results found, ${addedCount} perfect balance patterns added to database`);
+                    
+                    if (addedCount > 0) {
+                        this.renderDatabase();
+                        this.updateStats();
+                        alert(`Found ${results.filter(r => r.balance.isPerfectlyBalanced).length} perfect balance patterns! ${addedCount} new patterns added to database.`);
+                    } else {
+                        alert(`Exploration complete: ${results.length} results found. ${results.filter(r => r.balance.isPerfectlyBalanced).length} perfect balance patterns (may already be in database).`);
+                    }
+                    
+                } catch (error) {
+                    console.error('Exploration error:', error);
+                } finally {
+                    this.stopExploration();
+                }
+            }
+            
+            stopExploration() {
+                this.explorer.stop();
+                document.getElementById('progressContainer').style.display = 'none';
+                document.getElementById('findPerfectBtn').disabled = false;
+                document.getElementById('findNearBtn').disabled = false;
+                document.getElementById('stopBtn').style.display = 'none';
+            }
+            
+            updateExplorationStats(results) {
+                const perfectCount = results.filter(r => r.balance.isPerfectlyBalanced).length;
+                const nearCount = results.filter(r => r.balance.balanceScore === 'excellent' || r.balance.balanceScore === 'good').length;
+                const avgBalance = results.length > 0 ? 
+                    (results.reduce((sum, r) => sum + r.balance.normalizedMagnitude, 0) / results.length).toFixed(3) : '0.000';
+                
+                // Update temporary stats display in progress text
+                const progressText = document.getElementById('progressText');
+                if (progressText && results.length > 0) {
+                    progressText.innerHTML += `<br>Found: ${perfectCount} perfect, ${nearCount} near-perfect`;
+                }
+            }
+            
+            addExplorationResultToDatabase(result) {
+                const { steps, stepCount } = result.combined;
+                const binaryString = PatternConverter.toBinary(steps, stepCount);
+                const decimal = PatternConverter.toDecimal(binaryString);
+                
+                // Create pattern name based on expression
+                const defaultName = `Perfect Balance: ${result.expression}`;
+                
+                const pattern = {
+                    id: Date.now().toString(36) + Math.random().toString(36).substr(2),
+                    name: defaultName,
+                    favorite: false,
+                    stepCount,
+                    binary: binaryString,
+                    hex: PatternConverter.toHex(decimal),
+                    decimal,
+                    expression: result.expression,
+                    // Perfect balance information
+                    perfectBalance: {
+                        isPerfectlyBalanced: result.balance.isPerfectlyBalanced,
+                        magnitude: result.balance.magnitude,
+                        normalizedMagnitude: result.balance.normalizedMagnitude,
+                        complexSum: result.balance.complexSum,
+                        balanceScore: result.balance.balanceScore
+                    },
+                    // Pattern type information
+                    polygon: null, // Will be detected if needed
+                    euclidean: null,
+                    combined: {
+                        expression: result.expression,
+                        vertices: result.vertices,
+                        offsets: result.offsets,
+                        hasSubtraction: result.combined.hasSubtraction,
+                        lcmUsed: result.combined.stepCount
+                    },
+                    hasSubtraction: result.combined.hasSubtraction,
+                    // Coprime analysis
+                    coprime: result.coprime,
+                    // Geometric Center of Gravity analysis
+                    cogAnalysis: {
+                        magnitude: result.balance.magnitude,
+                        normalizedMagnitude: result.balance.normalizedMagnitude,
+                        geometricBalance: result.balance.geometricBalance || 'Unknown',
+                        isGeometricallyBalanced: result.balance.normalizedMagnitude < 0.1,
+                        cogPosition: result.balance.cogPosition || { x: 0, y: 0 }
+                    },
+                    timestamp: Date.now(),
+                    isFromExploration: true
+                };
+                
+                return this.database.add(pattern);
+            }
+            
+            generatePerfectBalanceReport() {
+                const perfectBalancePatterns = this.database.patterns.filter(p => 
+                    p.perfectBalance && p.perfectBalance.isPerfectlyBalanced
+                );
+                
+                if (perfectBalancePatterns.length === 0) {
+                    alert('No perfect balance patterns found in database. Run exploration first.');
+                    return;
+                }
+                
+                let report = `# Perfect Balance Pattern Analysis Report\n\n`;
+                report += `Generated: ${new Date().toLocaleString()}\n`;
+                report += `Perfect balance patterns in database: ${perfectBalancePatterns.length}\n\n`;
+                
+                report += `## Perfect Balance Patterns\n\n`;
+                perfectBalancePatterns.forEach((pattern, index) => {
+                    report += `### ${index + 1}. ${pattern.expression || pattern.name}\n`;
+                    report += `- Pattern: ${pattern.hex} (${pattern.stepCount} steps, ${pattern.perfectBalance.magnitude.toFixed(8)} balance magnitude)\n`;
+                    
+                    if (pattern.combined && pattern.combined.vertices) {
+                        report += `- Vertices: [${pattern.combined.vertices.join(', ')}]`;
+                        if (pattern.coprime) {
+                            report += ` - ${pattern.coprime.areCoprimes ? 'Coprimes' : 'Not coprimes'}\n`;
+                        } else {
+                            report += '\n';
+                        }
+                    }
+                    
+                    if (pattern.perfectBalance.complexSum) {
+                        const cs = pattern.perfectBalance.complexSum;
+                        report += `- Complex sum: (${cs.real.toFixed(6)}, ${cs.imag.toFixed(6)}i)\n`;
+                    }
+                    
+                    if (pattern.hasSubtraction) {
+                        report += `- Uses subtraction operation\n`;
+                    }
+                    
+                    report += `\n`;
+                });
+                
+                // Show report in modal
+                this.showReportModal(report);
+            }
+            
+            // === ANALYSIS DISPLAY ===
+            updateAnalysisDisplay(pattern) {
+                if (!pattern) {
+                    document.getElementById('analysisDisplay').innerHTML = `
+                        <div class="analysis-title">Mathematical Pattern Analysis</div>
+                        <div class="analysis-content">
+                            Parse a pattern using the universal input above to see comprehensive mathematical analysis.<br><br>
+                            <strong>Try these examples:</strong><br>
+                            • P(3,1)+P(5,0)+P(2,5) - Fixed triple combination<br>
+                            • P(3,0)+P(5,1)-P(2,0) - Perfect balance via subtraction<br>
+                            • P(3,1,4) - Triangle×4<br>
+                            • E(5,8,0) - Quintillo<br>
+                            • 0x92 - Tresillo<br>
+                            • 0x92>>3 - Tresillo rotated 3 steps<br>
+                            • b101010 - Binary pattern<br>
+                            • 146 - Decimal pattern
+                        </div>
+                    `;
+                    return;
+                }
+                
+                this.analyzeCurrentPattern();
+            }
+            
+            analyzeCurrentPattern() {
+                if (!this.currentPattern) {
+                    this.updateAnalysisDisplay(null);
+                    return;
+                }
+                
+                const { steps, stepCount } = this.currentPattern;
+                const cogAnalysis = CenterOfGravityCalculator.calculateCircularStatistics(steps, stepCount);
+                const repetition = PatternAnalyzer.findRepetition(steps, stepCount);
+                const milne = PatternAnalyzer.analyzeMilneCriteria(steps, stepCount);
+                const perfectBalance = PerfectBalanceAnalyzer.calculateBalance(steps, stepCount);
+                
+                // Detect pattern types
+                const polygonDetection = RegularPolygonGenerator.detectPolygon(steps, stepCount);
+                const euclideanDetection = UnifiedPatternParser.detectEuclideanPattern(steps, stepCount);
+                
+                let analysisHTML = '<div class="analysis-title">Mathematical Pattern Analysis</div>';
+                
+                // Basic info with integrated Milne information
+                const beatCount = steps.filter(s => s).length;
+                const density = ((beatCount / stepCount) * 100).toFixed(1);
+                
+                let basicInfo = `
+                    ${stepCount} steps, ${beatCount} beats (${density}% density)<br>
+                    Pattern: ${steps.map(s => s ? '●' : '∅').join('')}
+                `;
+                
+                // Add onset positions and intervals if available
+                if (milne.onsets && milne.onsets.length > 0) {
+                    basicInfo += `<br>Onsets: [${milne.onsets.join(', ')}]`;
+                    if (milne.intervals && milne.intervals.length > 0) {
+                        basicInfo += `<br>Intervals: [${milne.intervals.join(', ')}]`;
+                        if (milne.analysis) {
+                            basicInfo += ` → ${milne.analysis}`;
+                        }
+                    }
+                    
+                    // Add well-formed/balanced status
+                    if (milne.wellformed || milne.perfectlyBalanced) {
+                        const statusParts = [];
+                        if (milne.wellformed) statusParts.push('⚖️ Well-formed');
+                        if (milne.perfectlyBalanced) statusParts.push('🎯 Perfectly balanced');
+                        if (statusParts.length > 0) {
+                            basicInfo += `<br><strong>${statusParts.join(' & ')}</strong>`;
+                        }
+                    }
+                }
+                
+                analysisHTML += `
+                    <div class="analysis-item">
+                        <div class="analysis-title">Basic Properties</div>
+                        <div class="analysis-content">
+                            ${basicInfo}
+                        </div>
+                    </div>
+                `;
+                
+                // Perfect Balance Analysis (NEW FEATURE)
+                if (perfectBalance.onsetCount > 0) {
+                    const balanceClass = perfectBalance.isPerfectlyBalanced ? 'perfect-balance' : 'center-gravity';
+                    analysisHTML += `
+                        <div class="analysis-item ${balanceClass}">
+                            <div class="analysis-title">🎼 Perfect Balance Analysis (Milne)</div>
+                            <div class="analysis-content">
+                                <div class="mathematical-formula">
+                                    |∑(e^(i2πkⱼ/n))| / onsets = ${perfectBalance.normalizedMagnitude.toFixed(6)}
+                                    <br>Complex sum: (${perfectBalance.complexSum.real.toFixed(3)}, ${perfectBalance.complexSum.imag.toFixed(3)}i)
+                                </div>
+                                <strong>Balance Quality:</strong> 
+                                <span class="balance-score balance-${perfectBalance.balanceScore}">${perfectBalance.balanceScore.toUpperCase()}</span><br>
+                                <strong>Status:</strong> ${perfectBalance.isPerfectlyBalanced ? 
+                                    '✨ PERFECTLY BALANCED - Center of gravity at origin!' : 
+                                    `Not perfectly balanced (magnitude: ${perfectBalance.magnitude.toFixed(6)})`}<br>
+                                <strong>Geometric Balance:</strong> ${perfectBalance.geometricBalance || cogAnalysis.geometricBalance}
+                                
+                                ${perfectBalance.isPerfectlyBalanced ? 
+                                    '<div style="background: #e8f5e8; padding: 8px; border-radius: 4px; margin-top: 8px;"><strong>🎼 Milne Perfect Balance Achieved!</strong> This pattern satisfies the mathematical definition where the complex exponential sum equals zero, placing the center of gravity exactly at the origin.</div>' : 
+                                    ''
+                                }
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Advanced combination analysis
+                if (this.currentPattern.isCombined || this.currentPattern.hasSubtraction) {
+                    const lcmUsed = this.currentPattern.lcmUsed || this.currentPattern.stepCount;
+                    
+                    analysisHTML += `
+                        <div class="analysis-item combined">
+                            <div class="analysis-title">${this.currentPattern.hasSubtraction ? '➖ Advanced Combination with Subtraction' : '🎯 Pattern Combination'}</div>
+                            <div class="analysis-content">
+                                <div class="mathematical-formula">
+                                    ${this.currentPattern.expression ? 
+                                        `Expression: ${this.currentPattern.expression}` :
+                                        `LCM Combination: ${this.currentPattern.originalPatterns ? 
+                                            'LCM(' + this.currentPattern.originalPatterns.map(p => p.stepCount).join(',') + ') = ' + lcmUsed :
+                                            'Combined pattern'}`
+                                    }
+                                </div>
+                                ${this.currentPattern.expression ? 
+                                    `<strong>Expression:</strong> ${this.currentPattern.expression}<br>` : ''}
+                                ${this.currentPattern.hasSubtraction ? 
+                                    '<strong>Uses Subtraction:</strong> Logical AND NOT operation for perfect balance<br>' : ''}
+                                <strong>Result:</strong> ${stepCount} steps with logical operations<br>
+                                ${this.currentPattern.vertices ? 
+                                    `<strong>Polygon vertices:</strong> [${this.currentPattern.vertices.join(', ')}]<br>` : ''}
+                                ${this.currentPattern.offsets ? 
+                                    `<strong>Offsets:</strong> [${this.currentPattern.offsets.join(', ')}]<br>` : ''}
+                                <small>This pattern represents ${this.currentPattern.hasSubtraction ? 'the subtraction-based combination' : 'the union'} of source patterns${this.currentPattern.hasSubtraction ? ', strategically designed for perfect balance' : ''}</small>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Rotation analysis
+                if (this.currentPattern.isRotated) {
+                    analysisHTML += `
+                        <div class="analysis-item">
+                            <div class="analysis-title">🔄 Pattern Rotation Applied</div>
+                            <div class="analysis-content">
+                                <strong>Rotated by ${this.currentPattern.appliedRotation} steps</strong><br>
+                                Original offset: ${this.currentPattern.originalOffset}<br>
+                                Total offset: ${this.currentPattern.offset}<br>
+                                <small>Pattern has been rotated clockwise by ${this.currentPattern.appliedRotation} step${this.currentPattern.appliedRotation !== 1 ? 's' : ''}</small>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Polygon detection
+                if (polygonDetection) {
+                    analysisHTML += `
+                        <div class="analysis-item polygon">
+                            <div class="analysis-title">🔺 Regular Polygon Detected</div>
+                            <div class="analysis-content">
+                                <div class="mathematical-formula">
+                                    ${polygonDetection.formula}: ${polygonDetection.polygonType}
+                                </div>
+                                <strong>${polygonDetection.polygonType}</strong> with ${polygonDetection.vertices} vertices<br>
+                                Expansion factor: ×${polygonDetection.expansion}<br>
+                                Rotational offset: ${polygonDetection.offset} steps<br>
+                                <small>This pattern maintains perfect ${polygonDetection.vertices}-fold rotational symmetry around the circle</small>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Euclidean detection
+                if (euclideanDetection) {
+                    analysisHTML += `
+                        <div class="analysis-item euclidean">
+                            <div class="analysis-title">🌀 Euclidean Rhythm Detected</div>
+                            <div class="analysis-content">
+                                <div class="mathematical-formula">
+                                    ${euclideanDetection.formula}: Bjorklund's Algorithm
+                                </div>
+                                <strong>Euclidean Rhythm</strong> distributing ${euclideanDetection.beats} beats across ${stepCount} steps<br>
+                                Offset: ${euclideanDetection.offset} steps<br>
+                                <small>This pattern distributes beats as evenly as possible using Bjorklund's algorithm</small>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Center of Gravity Analysis
+                if (cogAnalysis.onsetCount > 0) {
+                    analysisHTML += `
+                        <div class="analysis-item center-gravity">
+                            <div class="analysis-title">📐 Center of Gravity Analysis</div>
+                            <div class="analysis-content">
+                                <div class="mathematical-formula">
+                                    CoG = |Σ(e^(i2πk_j/n))| / onsets = ${cogAnalysis.normalizedMagnitude.toFixed(3)}
+                                </div>
+                                <div class="cog-visualization">
+                                    <div class="cog-circle">
+                                        ${this.renderCogVisualization(cogAnalysis, stepCount)}
+                                    </div>
+                                    <div>
+                                        <strong>${cogAnalysis.geometricBalance}</strong><br>
+                                        <small>Milne mathematical balance: ${cogAnalysis.isPerfectlyBalanced ? '✓' : '✗'}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Repetition analysis
+                if (repetition) {
+                    analysisHTML += `
+                        <div class="analysis-item repetition">
+                            <div class="analysis-title">🔄 Pattern Repetition Detected</div>
+                            <div class="analysis-content">
+                                This pattern repeats <strong>${repetition.repetitions}×</strong> the unit: 
+                                <span class="clickable-unit" data-binary="${repetition.unitBinary}">${repetition.unitBinary}</span>
+                                <span class="clickable-unit" data-binary="${repetition.unitBinary}">${repetition.unitHex}</span>
+                                <span class="clickable-unit" data-binary="${repetition.unitBinary}">${repetition.unitDecimal}</span><br>
+                                Compression ratio: ${repetition.compressionRatio}:1 (${repetition.unitLength} → ${stepCount} steps)
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                document.getElementById('analysisDisplay').innerHTML = analysisHTML;
+                
+                // Add click handlers for repetition units
+                document.querySelectorAll('.clickable-unit').forEach(element => {
+                    element.addEventListener('click', () => {
+                        const binary = element.dataset.binary;
+                        document.getElementById('universalInput').value = `b${binary}`;
+                        this.parseUniversalInput();
+                    });
+                });
+            }
+            
+            renderCogVisualization(cogAnalysis, stepCount) {
+                if (cogAnalysis.onsetCount === 0) return '';
+                
+                let html = '';
+                
+                // Render onset points around the circle
+                for (const position of cogAnalysis.onsetPositions) {
+                    const angle = (2 * Math.PI * position / stepCount) - (Math.PI / 2);
+                    const x = 40 + 30 * Math.cos(angle);
+                    const y = 40 + 30 * Math.sin(angle);
+                    html += `<div class="onset-point" style="left: ${x}px; top: ${y}px;"></div>`;
+                }
+                
+                // Render center of gravity point
+                const cogX = 40 + 25 * cogAnalysis.cogPosition.x;
+                const cogY = 40 + 25 * cogAnalysis.cogPosition.y;
+                html += `<div class="cog-point" style="left: ${cogX}px; top: ${cogY}px;" title="Center of Gravity"></div>`;
+                
+                return html;
+            }
+            
+            runTests() {
+                const tests = [
+                    'P(3,1)+P(5,0)+P(2,5)',
+                    'P(3,0)+P(5,1)-P(2,0)',
+                    'P(3,1,4)',
+                    'P(4,0)+P(6,2)',
+                    'E(5,8,0)>>2',
+                    '0x92@3',
+                    'b101010',
+                    '146'
+                ];
+                
+                let results = '<strong>Test Results:</strong><br><br>';
+                
+                tests.forEach(test => {
+                    try {
+                        const parsed = UnifiedPatternParser.parse(test);
+                        if (parsed.type === 'advanced_combination') {
+                            results += `<strong>${test}</strong> → ${parsed.combined.stepCount} steps with subtraction ✓<br>`;
+                        } else if (parsed.type === 'combination') {
+                            results += `<strong>${test}</strong> → LCM(${parsed.patterns.map(p => p.stepCount).join(',')}) = ${parsed.combined.stepCount} steps ✓<br>`;
+                        } else {
+                            results += `<strong>${test}</strong> → ${parsed.pattern.stepCount} steps ✓<br>`;
+                        }
+                    } catch (error) {
+                        results += `<strong>${test}</strong> → ERROR: ${error.message} ✗<br>`;
+                    }
+                });
+                
+                document.getElementById('compactResult').innerHTML = results;
+                document.getElementById('compactOutput').style.display = 'block';
+            }
+            
+            // === DATABASE OPERATIONS ===
+            addCurrentToDatabase() {
+                if (!this.currentPattern) {
+                    alert('No pattern to add. Please parse a pattern first.');
+                    return;
+                }
+                
+                const { steps, stepCount } = this.currentPattern;
+                const binaryString = PatternConverter.toBinary(steps, stepCount);
+                const decimal = PatternConverter.toDecimal(binaryString);
+                
+                // Calculate all analyses
+                const cogAnalysis = CenterOfGravityCalculator.calculateCircularStatistics(steps, stepCount);
+                const repetition = PatternAnalyzer.findRepetition(steps, stepCount);
+                const milne = PatternAnalyzer.analyzeMilneCriteria(steps, stepCount);
+                const perfectBalance = PerfectBalanceAnalyzer.calculateBalance(steps, stepCount);
+                const polygonDetection = RegularPolygonGenerator.detectPolygon(steps, stepCount);
+                const euclideanDetection = UnifiedPatternParser.detectEuclideanPattern(steps, stepCount);
+                
+                // Analyze coprime properties if pattern has vertices
+                let coprimeAnalysis = null;
+                if (this.currentPattern.vertices && this.currentPattern.vertices.length > 0) {
+                    coprimeAnalysis = PerfectBalanceAnalyzer.analyzeCoprimeProperties(this.currentPattern.vertices);
+                }
+                
+                // Create pattern name based on type
+                let defaultName = '';
+                if (this.currentPattern.expression) {
+                    defaultName = `Expression: ${this.currentPattern.expression}`;
+                } else if (this.currentPattern.isCombined) {
+                    defaultName = `Combined (${this.currentPattern.originalPatterns ? this.currentPattern.originalPatterns.length : 'multi'} patterns)`;
+                } else if (this.currentPattern.isRegularPolygon) {
+                    defaultName = `${this.currentPattern.polygonType} (${this.currentPattern.vertices},${this.currentPattern.expansion},${this.currentPattern.offset})`;
+                } else if (this.currentPattern.isEuclidean) {
+                    defaultName = `Euclidean (${this.currentPattern.beats},${stepCount},${this.currentPattern.offset})`;
+                } else if (polygonDetection) {
+                    defaultName = `${polygonDetection.polygonType} (${polygonDetection.vertices},${polygonDetection.expansion},${polygonDetection.offset})`;
+                } else if (euclideanDetection) {
+                    defaultName = `Euclidean (${euclideanDetection.beats},${stepCount},${euclideanDetection.offset})`;
+                }
+                
+                if (perfectBalance.isPerfectlyBalanced) {
+                    defaultName = `Perfect Balance: ${defaultName || 'Custom Pattern'}`;
+                }
+                
+                const pattern = {
+                    id: Date.now().toString(36) + Math.random().toString(36).substr(2),
+                    name: defaultName,
+                    favorite: false,
+                    stepCount,
+                    binary: binaryString,
+                    hex: PatternConverter.toHex(decimal),
+                    decimal,
+                    expression: this.currentPattern.expression || null,
+                    // Perfect Balance Analysis
+                    perfectBalance: {
+                        isPerfectlyBalanced: perfectBalance.isPerfectlyBalanced,
+                        magnitude: perfectBalance.magnitude,
+                        normalizedMagnitude: perfectBalance.normalizedMagnitude,
+                        balanceScore: perfectBalance.balanceScore,
+                        complexSum: perfectBalance.complexSum,
+                        geometricBalance: perfectBalance.geometricBalance
+                    },
+                    // Pattern type information
+                    polygon: polygonDetection ? {
+                        vertices: polygonDetection.vertices,
+                        expansion: polygonDetection.expansion,
+                        offset: polygonDetection.offset,
+                        polygonType: polygonDetection.polygonType,
+                        formula: polygonDetection.formula
+                    } : null,
+                    euclidean: euclideanDetection ? euclideanDetection.formula : null,
+                    combined: this.currentPattern.isCombined ? {
+                        originalPatterns: this.currentPattern.originalPatterns,
+                        lcmUsed: this.currentPattern.stepCount,
+                        combinationType: this.currentPattern.combinationType || 'logical_or',
+                        hasSubtraction: this.currentPattern.hasSubtraction || false,
+                        vertices: this.currentPattern.vertices || null,
+                        offsets: this.currentPattern.offsets || null
+                    } : null,
+                    hasSubtraction: this.currentPattern.hasSubtraction || false,
+                    // Coprime analysis
+                    coprime: coprimeAnalysis,
+                    // Geometric Center of Gravity analysis
+                    cogAnalysis: {
+                        magnitude: cogAnalysis.magnitude,
+                        normalizedMagnitude: cogAnalysis.normalizedMagnitude,
+                        geometricBalance: cogAnalysis.geometricBalance,
+                        isGeometricallyBalanced: cogAnalysis.isGeometricallyBalanced,
+                        cogPosition: cogAnalysis.cogPosition
+                    },
+                    repetition: repetition ? {
+                        unitBinary: repetition.unitBinary,
+                        unitHex: repetition.unitHex,
+                        unitDecimal: repetition.unitDecimal,
+                        repetitions: repetition.repetitions,
+                        compressionRatio: repetition.compressionRatio
+                    } : null,
+                    milne: milne.wellformed || milne.perfectlyBalanced ? {
+                        wellformed: milne.wellformed,
+                        perfectlyBalanced: milne.perfectlyBalanced,
+                        intervals: milne.intervals,
+                        onsets: milne.onsets,
+                        analysis: milne.analysis
+                    } : null,
+                    timestamp: Date.now()
+                };
+                
+                if (this.database.add(pattern)) {
+                    this.renderDatabase();
+                    this.updateStats();
+                    alert(`Pattern added to database!`);
+                } else {
+                    alert('Pattern already exists in database.');
+                }
+            }
+            
+            // === DATABASE RENDERING ===
+            renderDatabase() {
+                const container = document.getElementById('patternList');
+                const searchQuery = document.getElementById('searchInput').value;
+                const filterType = document.getElementById('filterSelect').value;
+                
+                let patterns = this.database.patterns;
+                
+                if (searchQuery) {
+                    patterns = this.database.search(searchQuery);
+                }
+                
+                patterns = this.database.filter(filterType).filter(p => 
+                    !searchQuery || this.database.search(searchQuery).includes(p)
+                );
+                
+                if (this.sortByDate) {
+                    patterns.sort((a, b) => b.timestamp - a.timestamp);
+                } else {
+                    patterns.sort((a, b) => a.stepCount - b.stepCount || a.decimal - b.decimal);
+                }
+                
+                container.innerHTML = '';
+                
+                patterns.forEach(pattern => {
+                    const entry = this.createPatternEntry(pattern);
+                    container.appendChild(entry);
+                });
+                
+                if (patterns.length === 0) {
+                    container.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">No patterns found</div>';
+                }
+            }
+            
+            createPatternEntry(pattern) {
+                const entry = document.createElement('div');
+                let entryClass = 'pattern-entry';
+                if (pattern.favorite) entryClass += ' favorite';
+                if (pattern.perfectBalance && pattern.perfectBalance.isPerfectlyBalanced) entryClass += ' perfect-balance';
+                
+                entry.className = entryClass;
+                
+                let representations = [
+                    { text: pattern.binary, title: 'Binary' },
+                    { text: pattern.hex, title: 'Hexadecimal', highlight: true },
+                    { text: pattern.decimal, title: 'Decimal' },
+                    { text: `${pattern.stepCount} steps`, title: 'Step count' }
+                ];
+                
+                // Add perfect balance indicator
+                if (pattern.perfectBalance && pattern.perfectBalance.isPerfectlyBalanced) {
+                    representations.push({ 
+                        text: `✨ Perfect Balance`, 
+                        title: `Perfect Balance: magnitude ${pattern.perfectBalance.magnitude.toFixed(6)}`,
+                        special: 'perfect-balance-badge'
+                    });
+                }
+                
+                // Add pattern type information
+                if (pattern.polygon) {
+                    representations.push({ 
+                        text: `🔺 ${pattern.polygon.polygonType}`, 
+                        title: `Regular Polygon: ${pattern.polygon.formula}`,
+                        special: 'polygon-type'
+                    });
+                }
+                
+                if (pattern.euclidean) {
+                    representations.push({ 
+                        text: `🌀 ${pattern.euclidean}`, 
+                        title: `Euclidean Rhythm: ${pattern.euclidean}`,
+                        special: 'euclidean-type'
+                    });
+                }
+                
+                if (pattern.combined) {
+                    representations.push({ 
+                        text: `🎯 Combined`, 
+                        title: `Combined Pattern${pattern.hasSubtraction ? ' with subtraction' : ''}`,
+                        special: 'combined-type'
+                    });
+                }
+                
+                if (pattern.hasSubtraction) {
+                    representations.push({ 
+                        text: `➖ Subtraction`, 
+                        title: `Uses subtraction operation`,
+                        special: 'combined-type'
+                    });
+                }
+                
+                if (pattern.cogAnalysis) {
+                    const cogValue = pattern.cogAnalysis.normalizedMagnitude.toFixed(3);
+                    representations.push({ 
+                        text: `CoG: ${cogValue}`, 
+                        title: `Center of Gravity: ${pattern.cogAnalysis.geometricBalance}`,
+                        special: 'cog-value'
+                    });
+                }
+                
+                if (pattern.milne) {
+                    const milneText = pattern.milne.wellformed && pattern.milne.perfectlyBalanced ? '✨WF+PB' :
+                                    pattern.milne.wellformed ? '⚖️WF' : '🎯PB';
+                    representations.push({ 
+                        text: milneText, 
+                        title: pattern.milne.wellformed && pattern.milne.perfectlyBalanced ? 'Well-formed & Perfectly Balanced' :
+                               pattern.milne.wellformed ? 'Well-formed' : 'Perfectly Balanced'
+                    });
+                }
+                
+                if (pattern.coprime && pattern.coprime.areCoprimes) {
+                    representations.push({ 
+                        text: `🔢 Coprime`,
+                        title: `Coprime polygon vertices: ${pattern.coprime.primeCount} unique primes`
+                    });
+                }
+                
+                if (pattern.repetition) {
+                    representations.push({ 
+                        text: `🔄 ${pattern.repetition.repetitions}×`,
+                        title: 'Repetitive pattern'
+                    });
+                }
+                
+                const reprHTML = representations.map(repr => 
+                    `<span class="pattern-repr ${repr.highlight ? 'highlight' : ''} ${repr.special || ''}" 
+                           data-value="${repr.text}" 
+                           title="${repr.title}">${repr.text}</span>`
+                ).join('');
+                
+                entry.innerHTML = `
+                    <span class="pattern-star ${pattern.favorite ? 'active' : ''}" data-id="${pattern.id}">★</span>
+                    <div class="pattern-info">
+                        <div class="pattern-name ${pattern.name ? '' : 'unnamed'}" data-id="${pattern.id}">
+                            ${pattern.name || 'Click to name'}
+                        </div>
+                        <div class="pattern-representations">
+                            ${reprHTML}
+                        </div>
+                    </div>
+                    <div class="pattern-actions">
+                        <button class="btn" data-action="load" data-id="${pattern.id}">Load</button>
+                        <button class="btn danger" data-action="delete" data-id="${pattern.id}">Delete</button>
+                    </div>
+                `;
+                
+                return entry;
+            }
+            
+            // === UTILITY FUNCTIONS ===
+            copyToClipboard(text) {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        this.showCopyFeedback();
+                    }).catch(() => {
+                        this.fallbackCopy(text);
+                    });
+                } else {
+                    this.fallbackCopy(text);
+                }
+            }
+            
+            showCopyFeedback() {
+                const btn = document.getElementById('copyHexUniversalBtn');
+                const originalText = btn.textContent;
+                btn.textContent = 'Copied!';
+                btn.classList.add('success');
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.classList.remove('success');
+                }, 2000);
+            }
+            
+            fallbackCopy(text) {
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    this.showCopyFeedback();
+                } catch (err) {
+                    console.warn('Copy failed');
+                }
+                document.body.removeChild(textArea);
+            }
+            
+            updateStats() {
+                const cogValues = this.database.patterns
+                    .filter(p => p.cogAnalysis)
+                    .map(p => p.cogAnalysis.normalizedMagnitude);
+                
+                const avgCog = cogValues.length > 0 
+                    ? (cogValues.reduce((sum, val) => sum + val, 0) / cogValues.length).toFixed(3)
+                    : '0.000';
+                
+                const stats = {
+                    total: this.database.patterns.length,
+                    perfectBalance: this.database.patterns.filter(p => p.perfectBalance && p.perfectBalance.isPerfectlyBalanced).length,
+                    favorites: this.database.patterns.filter(p => p.favorite).length,
+                    polygons: this.database.patterns.filter(p => p.polygon).length,
+                    euclidean: this.database.patterns.filter(p => p.euclidean).length,
+                    combined: this.database.patterns.filter(p => p.combined).length,
+                    wellformed: this.database.patterns.filter(p => p.milne && p.milne.wellformed).length,
+                    avgCog
+                };
+                
+                document.getElementById('totalPatterns').textContent = stats.total;
+                document.getElementById('perfectBalanceCount').textContent = stats.perfectBalance;
+                document.getElementById('favoriteCount').textContent = stats.favorites;
+                document.getElementById('polygonCount').textContent = stats.polygons;
+                document.getElementById('euclideanCount').textContent = stats.euclidean;
+                document.getElementById('combinedCount').textContent = stats.combined;
+                document.getElementById('wellformedCount').textContent = stats.wellformed;
+                document.getElementById('avgCogValue').textContent = stats.avgCog;
+            }
+            
+            showReportModal(report) {
+                const modal = document.createElement('div');
+                modal.className = 'modal';
+                
+                modal.innerHTML = `
+                    <div class="modal-header">
+                        <h3>Perfect Balance Analysis Report</h3>
+                        <button class="btn danger" id="closeReportBtn">Close</button>
+                    </div>
+                    <p>Copy the report below:</p>
+                    <div style="margin-bottom: 15px;">
+                        <button class="btn primary" id="copyReportBtn">Copy Report</button>
+                    </div>
+                    <textarea readonly>${report}</textarea>
+                `;
+                
+                document.body.appendChild(modal);
+                
+                modal.querySelector('#copyReportBtn').addEventListener('click', () => {
+                    const textarea = modal.querySelector('textarea');
+                    textarea.select();
+                    this.copyToClipboard(report);
+                });
+                
+                modal.querySelector('#closeReportBtn').addEventListener('click', () => {
+                    document.body.removeChild(modal);
+                });
+            }
+            
+            // === EVENT HANDLERS ===
+            setupEventListeners() {
+                // Universal input
+                const universalInput = document.getElementById('universalInput');
+                
+                universalInput.addEventListener('input', () => {
+                    universalInput.classList.remove('error');
+                });
+                
+                universalInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        this.parseUniversalInput();
+                    }
+                });
+                
+                document.getElementById('parseBtn').addEventListener('click', () => {
+                    this.parseUniversalInput();
+                });
+                
+                document.getElementById('addUniversalBtn').addEventListener('click', () => {
+                    this.addCurrentToDatabase();
+                });
+                
+                document.getElementById('copyHexUniversalBtn').addEventListener('click', () => {
+                    this.copyCurrentHex();
+                });
+                
+                document.getElementById('testBtn').addEventListener('click', () => {
+                    this.runTests();
+                });
+                
+                // Perfect Balance Explorer
+                document.getElementById('findPerfectBtn').addEventListener('click', () => {
+                    this.startSystematicExploration('perfect');
+                });
+                
+                document.getElementById('findNearBtn').addEventListener('click', () => {
+                    this.startSystematicExploration('near');
+                });
+                
+                document.getElementById('generateReportBtn').addEventListener('click', () => {
+                    this.generatePerfectBalanceReport();
+                });
+                
+                document.getElementById('stopBtn').addEventListener('click', () => {
+                    this.stopExploration();
+                });
+                
+                // Database controls
+                document.getElementById('searchInput').addEventListener('input', () => {
+                    this.renderDatabase();
+                });
+                
+                document.getElementById('filterSelect').addEventListener('change', () => {
+                    this.renderDatabase();
+                });
+                
+                document.getElementById('sortBtn').addEventListener('click', () => {
+                    this.sortByDate = !this.sortByDate;
+                    document.getElementById('sortBtn').textContent = 
+                        this.sortByDate ? 'Sort by Date' : 'Sort by Steps';
+                    this.renderDatabase();
+                });
+                
+                document.getElementById('exportBtn').addEventListener('click', () => {
+                    this.exportDatabase();
+                });
+                
+                document.getElementById('importBtn').addEventListener('click', () => {
+                    this.importDatabase();
+                });
+                
+                document.getElementById('clearDbBtn').addEventListener('click', () => {
+                    if (confirm('Clear all patterns from database?')) {
+                        this.database.patterns = [];
+                        this.database.save();
+                        this.renderDatabase();
+                        this.updateStats();
+                    }
+                });
+                
+                // Pattern list interactions
+                document.getElementById('patternList').addEventListener('click', (e) => {
+                    const id = e.target.dataset.id;
+                    const action = e.target.dataset.action;
+                    
+                    if (e.target.classList.contains('pattern-star')) {
+                        this.toggleFavorite(id);
+                    } else if (e.target.classList.contains('pattern-name')) {
+                        this.editPatternName(e.target, id);
+                    } else if (e.target.classList.contains('pattern-repr')) {
+                        const value = e.target.dataset.value;
+                        this.copyToClipboard(value);
+                        
+                        // Visual feedback
+                        const original = e.target.style.background;
+                        e.target.style.background = '#28a745';
+                        e.target.style.color = 'white';
+                        setTimeout(() => {
+                            e.target.style.background = original;
+                            e.target.style.color = '';
+                        }, 200);
+                    } else if (action === 'load') {
+                        this.loadPattern(id);
+                    } else if (action === 'delete') {
+                        this.database.remove(id);
+                        this.renderDatabase();
+                        this.updateStats();
+                    }
+                });
+            }
+            
+            toggleFavorite(id) {
+                const pattern = this.database.patterns.find(p => p.id === id);
+                if (pattern) {
+                    pattern.favorite = !pattern.favorite;
+                    this.database.save();
+                    this.renderDatabase();
+                    this.updateStats();
+                }
+            }
+            
+            editPatternName(element, id) {
+                const pattern = this.database.patterns.find(p => p.id === id);
+                if (!pattern) return;
+                
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'input';
+                input.style.width = '200px';
+                input.style.fontSize = '12px';
+                input.value = pattern.name;
+                input.placeholder = 'Enter pattern name';
+                
+                element.replaceWith(input);
+                input.focus();
+                input.select();
+                
+                const saveEdit = () => {
+                    pattern.name = input.value.trim();
+                    this.database.save();
+                    this.renderDatabase();
+                };
+                
+                input.addEventListener('blur', saveEdit);
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        saveEdit();
+                    } else if (e.key === 'Escape') {
+                        this.renderDatabase();
+                    }
+                });
+            }
+            
+            loadPattern(id) {
+                const pattern = this.database.patterns.find(p => p.id === id);
+                if (!pattern) return;
+                
+                const patternData = PatternConverter.fromBinary(pattern.binary);
+                
+                // Restore pattern properties from database
+                if (pattern.expression) {
+                    patternData.expression = pattern.expression;
+                    patternData.hasSubtraction = pattern.hasSubtraction;
+                }
+                
+                if (pattern.polygon) {
+                    patternData.isRegularPolygon = true;
+                    patternData.vertices = pattern.polygon.vertices;
+                    patternData.expansion = pattern.polygon.expansion;
+                    patternData.offset = pattern.polygon.offset;
+                    patternData.polygonType = pattern.polygon.polygonType;
+                    patternData.formula = pattern.polygon.formula;
+                }
+                
+                if (pattern.euclidean) {
+                    patternData.isEuclidean = true;
+                    const match = pattern.euclidean.match(/E\((\d+),(\d+),(-?\d+)\)/);
+                    if (match) {
+                        patternData.beats = parseInt(match[1]);
+                        patternData.offset = parseInt(match[3]);
+                        patternData.formula = pattern.euclidean;
+                    }
+                }
+                
+                if (pattern.combined) {
+                    patternData.isCombined = true;
+                    patternData.originalPatterns = pattern.combined.originalPatterns;
+                    patternData.combinationType = pattern.combined.combinationType;
+                    patternData.hasSubtraction = pattern.combined.hasSubtraction;
+                    patternData.vertices = pattern.combined.vertices;
+                    patternData.offsets = pattern.combined.offsets;
+                }
+                
+                this.currentPattern = patternData;
+                this.updateAnalysisDisplay(patternData);
+                
+                // Update universal input field with appropriate notation
+                let inputValue = '';
+                if (pattern.expression) {
+                    inputValue = pattern.expression;
+                } else if (pattern.polygon) {
+                    inputValue = pattern.polygon.formula;
+                } else if (pattern.euclidean) {
+                    inputValue = pattern.euclidean;
+                } else if (pattern.combined && pattern.combined.expression) {
+                    inputValue = pattern.combined.expression;
+                } else {
+                    inputValue = pattern.hex;
+                }
+                
+                document.getElementById('universalInput').value = inputValue;
+                
+                // Show compact output
+                const compactResult = UnifiedPatternParser.formatCompact(patternData);
+                document.getElementById('compactResult').innerHTML = `<div>${compactResult}</div>`;
+                document.getElementById('compactOutput').style.display = 'block';
+            }
+            
+            // === EXPORT/IMPORT ===
+            exportDatabase() {
+                const data = this.database.export();
+                
+                if (window.location.protocol === 'blob:' || window.self !== window.top) {
+                    this.showExportModal(data);
+                    return;
+                }
+                
+                try {
+                    const blob = new Blob([data], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `enhanced-perfect-balance-database-${new Date().toISOString().split('T')[0]}.json`;
+                    
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    
+                    setTimeout(() => URL.revokeObjectURL(url), 100);
+                } catch (error) {
+                    this.showExportModal(data);
+                }
+            }
+            
+            showExportModal(data) {
+                const modal = document.createElement('div');
+                modal.className = 'modal';
+                
+                modal.innerHTML = `
+                    <div class="modal-header">
+                        <h3>Export Enhanced Pattern Database</h3>
+                        <button class="btn danger" id="closeModalBtn">Close</button>
+                    </div>
+                    <p>Copy the JSON data below:</p>
+                    <div style="margin-bottom: 15px;">
+                        <button class="btn primary" id="copyAllBtn">Copy All</button>
+                    </div>
+                    <textarea readonly>${data}</textarea>
+                `;
+                
+                document.body.appendChild(modal);
+                
+                modal.querySelector('#copyAllBtn').addEventListener('click', () => {
+                    const textarea = modal.querySelector('textarea');
+                    textarea.select();
+                    this.copyToClipboard(data);
+                });
+                
+                modal.querySelector('#closeModalBtn').addEventListener('click', () => {
+                    document.body.removeChild(modal);
+                });
+            }
+            
+            importDatabase() {
+                if (window.location.protocol === 'blob:' || window.self !== window.top) {
+                    this.showImportModal();
+                    return;
+                }
+                
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.json';
+                
+                input.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    
+                    const reader = new FileReader();
+                    reader.onload = (evt) => {
+                        if (this.database.import(evt.target.result)) {
+                            this.renderDatabase();
+                            this.updateStats();
+                            alert('Enhanced pattern database imported successfully!');
+                        } else {
+                            alert('Failed to import database: Invalid file format');
+                        }
+                    };
+                    reader.readAsText(file);
+                });
+                
+                input.click();
+            }
+            
+            showImportModal() {
+                const modal = document.createElement('div');
+                modal.className = 'modal';
+                
+                modal.innerHTML = `
+                    <div class="modal-header">
+                        <h3>Import Enhanced Pattern Database</h3>
+                        <button class="btn danger" id="closeImportBtn">Cancel</button>
+                    </div>
+                    <p>Paste JSON data below:</p>
+                    <div style="margin-bottom: 15px;">
+                        <button class="btn primary" id="importDataBtn">Import Data</button>
+                    </div>
+                    <textarea placeholder="Paste your JSON pattern database here..."></textarea>
+                `;
+                
+                document.body.appendChild(modal);
+                
+                modal.querySelector('#importDataBtn').addEventListener('click', () => {
+                    const textarea = modal.querySelector('textarea');
+                    const jsonData = textarea.value.trim();
+                    
+                    if (jsonData) {
+                        if (this.database.import(jsonData)) {
+                            this.renderDatabase();
+                            this.updateStats();
+                            alert('Enhanced pattern database imported successfully!');
+                        } else {
+                            alert('Failed to import database: Invalid JSON format');
+                        }
+                    }
+                    
+                    document.body.removeChild(modal);
+                });
+                
+                modal.querySelector('#closeImportBtn').addEventListener('click', () => {
+                    document.body.removeChild(modal);
+                });
+                
+                modal.querySelector('textarea').focus();
+            }
+        }
+
+        // === APPLICATION INITIALIZATION ===
+        
+        // Global error handling
+        window.addEventListener('error', function(e) {
+            console.error('Enhanced pattern app error:', e.message);
+        });
+
+        window.addEventListener('unhandledrejection', function(e) {
+            console.error('Unhandled promise rejection:', e.reason);
+        });
+
+        // Initialize application when DOM is ready
+        let app;
+
+        function initializeApp() {
+            try {
+                app = new EnhancedPatternApp();
+                console.log('Enhanced Pattern Database with Perfect Balance Explorer initialized successfully');
+                console.log('Features available:');
+                console.log('- Fixed LCM calculation for proper pattern combinations');
+                console.log('- Advanced subtraction operations for perfect balance discovery');
+                console.log('- Systematic perfect balance exploration');
+                console.log('- Dual polygon notation: P(v,o) for combinations, P(v,o,e) for single');
+                console.log('- All pattern formats: Polygon, Euclidean, Binary, Hex, Decimal, Rotation');
+                console.log('- Mathematical analysis: CoG, Milne criteria, perfect balance detection');
+                console.log('- Enhanced pattern database with perfect balance tracking');
+            } catch (error) {
+                console.error('Failed to initialize enhanced pattern app:', error);
+            }
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeApp);
+        } else {
+            initializeApp();
+        }
+    </script>
+</body>
+</html>
