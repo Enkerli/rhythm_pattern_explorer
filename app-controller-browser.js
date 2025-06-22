@@ -298,6 +298,32 @@ class EnhancedPatternApp {
         content += `<strong>Density:</strong> ${((pattern.steps.filter(step => step).length / pattern.stepCount) * 100).toFixed(1)}%`;
         content += '</div></div>';
         
+        // Structure analysis
+        const structureAnalysis = PatternAnalyzer.analyzeStructure(pattern.steps, pattern.stepCount);
+        content += '<div class="analysis-item structure">';
+        content += '<div class="analysis-title">📐 Structure Analysis</div>';
+        content += '<div class="analysis-content">';
+        content += `<strong>Step Count:</strong> ${structureAnalysis.stepCount}<br>`;
+        content += `<strong>Onset Count:</strong> ${structureAnalysis.onsetCount}<br>`;
+        content += `<strong>Density:</strong> ${structureAnalysis.density.toFixed(1)}%<br>`;
+        content += `<strong>Maximum Silence Gap:</strong> ${structureAnalysis.maxSilenceGap} steps<br>`;
+        content += `<strong>Average Onset Interval:</strong> ${structureAnalysis.avgOnsetInterval.toFixed(2)} steps`;
+        content += '</div></div>';
+        
+        // Repetition analysis
+        const repetitionAnalysis = PatternAnalyzer.detectRepetition(pattern.steps, pattern.stepCount);
+        if (repetitionAnalysis) {
+            content += '<div class="analysis-item repetition">';
+            content += '<div class="analysis-title">🔄 Repetition Analysis</div>';
+            content += '<div class="analysis-content">';
+            content += `<strong>Repetitive Pattern Detected!</strong><br>`;
+            content += `<strong>Unit Length:</strong> ${repetitionAnalysis.unitLength} (pattern "${repetitionAnalysis.unitBinary}" repeats ${repetitionAnalysis.repetitions} times)<br>`;
+            content += `<strong>Compression Ratio:</strong> ${repetitionAnalysis.compressionRatio}:1<br>`;
+            content += `<strong>Unit Pattern:</strong> ${repetitionAnalysis.unitBinary} (${repetitionAnalysis.unitHex}, ${repetitionAnalysis.unitDecimal})<br>`;
+            content += `<strong>Regularity Score:</strong> High (perfect repetition)`;
+            content += '</div></div>';
+        }
+        
         // Perfect balance analysis
         const balanceAnalysis = PerfectBalanceAnalyzer.calculateBalance(pattern.steps, pattern.stepCount);
         content += '<div class="analysis-item perfect-balance">';
@@ -377,9 +403,15 @@ class EnhancedPatternApp {
         }
         
         try {
-            const patternId = this.database.add(this.currentPattern);
+            // Calculate perfect balance analysis for database storage
+            const perfectBalance = PerfectBalanceAnalyzer.calculateBalance(this.currentPattern.steps, this.currentPattern.stepCount);
+            
+            // Create database pattern with analysis
+            const databasePattern = createDatabasePattern(this.currentPattern, { perfectBalance });
+            
+            const patternId = this.database.add(databasePattern);
             console.log(`✅ Pattern added to database with ID: ${patternId}`);
-            alert(AppConfig.MESSAGES.ALERTS.PATTERN_ADDED);
+            alert(`✅ Pattern added to database with ID: ${patternId}`);
             
             // Update UI
             this.updatePatternList();
@@ -453,9 +485,15 @@ class EnhancedPatternApp {
             console.log(`✅ Exploration complete: ${results.length} perfect balance patterns found`);
             
             // Add results to database
+            let addedCount = 0;
             results.forEach(result => {
                 try {
-                    this.database.add(result.pattern);
+                    // Create database pattern with perfect balance analysis
+                    const databasePattern = createDatabasePattern(result.pattern, { perfectBalance: result.balance });
+                    const patternId = this.database.add(databasePattern);
+                    if (patternId) {
+                        addedCount++;
+                    }
                 } catch (error) {
                     // Pattern might already exist, that's okay
                 }
@@ -465,7 +503,7 @@ class EnhancedPatternApp {
             this.updateDatabaseStats();
             this.hideExplorationProgress();
             
-            alert(`${AppConfig.MESSAGES.ALERTS.EXPLORATION_COMPLETE}: ${results.length} ${AppConfig.MESSAGES.ALERTS.PERFECT_PATTERNS_FOUND}`);
+            alert(`✅ Exploration complete: ${results.length} perfect balance patterns found, ${addedCount} new patterns added to database`);
             
         } catch (error) {
             console.error('❌ Exploration failed:', error);
@@ -503,9 +541,15 @@ class EnhancedPatternApp {
             console.log(`✅ Exploration complete: ${results.length} near-perfect balance patterns found`);
             
             // Add results to database
+            let addedCount = 0;
             results.forEach(result => {
                 try {
-                    this.database.add(result.pattern);
+                    // Create database pattern with perfect balance analysis
+                    const databasePattern = createDatabasePattern(result.pattern, { perfectBalance: result.balance });
+                    const patternId = this.database.add(databasePattern);
+                    if (patternId) {
+                        addedCount++;
+                    }
                 } catch (error) {
                     // Pattern might already exist, that's okay
                 }
@@ -515,7 +559,7 @@ class EnhancedPatternApp {
             this.updateDatabaseStats();
             this.hideExplorationProgress();
             
-            alert(`${AppConfig.MESSAGES.ALERTS.EXPLORATION_COMPLETE}: ${results.length} ${AppConfig.MESSAGES.ALERTS.NEAR_PERFECT_PATTERNS_FOUND || 'near-perfect patterns found'}`);
+            alert(`✅ Exploration complete: ${results.length} near-perfect balance patterns found, ${addedCount} new patterns added to database`);
             
         } catch (error) {
             console.error('❌ Exploration failed:', error);
@@ -530,7 +574,7 @@ class EnhancedPatternApp {
      * Generate perfect balance report
      */
     generatePerfectBalanceReport() {
-        const perfectBalancePatterns = this.database.getPatterns().filter(pattern => {
+        const perfectBalancePatterns = this.database.patterns.filter(pattern => {
             const analysis = PerfectBalanceAnalyzer.calculateBalance(pattern.steps, pattern.stepCount);
             return analysis.isPerfectlyBalanced;
         });
@@ -542,7 +586,32 @@ class EnhancedPatternApp {
         
         // Generate and display report
         console.log(`📊 Generating report for ${perfectBalancePatterns.length} perfect balance patterns`);
-        // Implementation would generate detailed report...
+        
+        const stats = this.database.getStatistics();
+        
+        const report = `
+=== PERFECT BALANCE ANALYSIS REPORT ===
+Generated: ${new Date().toLocaleString()}
+
+DATABASE STATISTICS:
+• Total Patterns: ${stats.totalPatterns}
+• Perfect Balance Patterns: ${perfectBalancePatterns.length}
+• Favorites: ${stats.favorites}
+• Polygon Patterns: ${stats.polygons}
+• Euclidean Patterns: ${stats.euclidean}
+• Combined Patterns: ${stats.combined}
+
+PERFECT BALANCE PATTERNS FOUND:
+${perfectBalancePatterns.map((pattern, index) => {
+    const compact = UnifiedPatternParser.formatCompact(pattern);
+    return `${index + 1}. ${pattern.name || 'Unnamed'}\n   ${compact}`;
+}).join('\n\n')}
+
+=== END REPORT ===
+`;
+
+        // Show report in modal
+        UIComponents.showReportModal(report);
     }
     
     /**
@@ -736,6 +805,43 @@ class EnhancedPatternApp {
                         ${analysis.isPerfectlyBalanced ? '<span class="pattern-repr perfect-balance-badge">✨ Perfect Balance</span>' : ''}
                         ${pattern.isRegularPolygon ? `<span class="pattern-repr polygon-type">🔺 ${pattern.polygonType}</span>` : ''}
                         ${pattern.isEuclidean ? `<span class="pattern-repr euclidean-type">🌀 ${pattern.formula}</span>` : ''}
+                        ${(() => {
+                            // Get original patterns from either structure
+                            const originalPatterns = pattern.isCombined ? 
+                                (pattern.combined?.originalPatterns || pattern.originalPatterns) : null;
+                            
+                            if (!originalPatterns) return '';
+                            
+                            return originalPatterns.map(p => {
+                                if (p.isRegularPolygon) {
+                                    return `<span class="pattern-repr polygon-type">🔺 ${p.polygonType}</span>`;
+                                } else if (p.isEuclidean) {
+                                    return `<span class="pattern-repr euclidean-type">🌀 ${p.formula}</span>`;
+                                }
+                                return '';
+                            }).join('');
+                        })()}
+                        ${(() => {
+                            // Get original patterns from either structure
+                            const originalPatterns = pattern.isCombined ? 
+                                (pattern.combined?.originalPatterns || pattern.originalPatterns) : null;
+                            
+                            if (!originalPatterns) return '';
+                            
+                            const combinationText = originalPatterns.map(p => {
+                                if (p.isRegularPolygon) {
+                                    return `P(${p.vertices},${p.offset || 0}${p.expansion && p.expansion !== 1 ? ',' + p.expansion : ''})`;
+                                } else if (p.isEuclidean) {
+                                    return `E(${p.beats},${p.stepCount},${p.offset || 0})`;
+                                } else if (p.binary) {
+                                    return `b${p.binary}`;
+                                } else {
+                                    return `${p.stepCount}steps`;
+                                }
+                            }).join(' + ');
+                            
+                            return `<span class="pattern-repr combined-type" style="background: #e3f2fd; color: #1976d2; font-weight: bold; border-left: 3px solid #2196f3; padding: 2px 6px;">🎯 COMBINED: ${combinationText}</span>`;
+                        })()}
                     </div>
                 </div>
                 <div class="pattern-actions">

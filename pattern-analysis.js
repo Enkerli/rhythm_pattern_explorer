@@ -100,7 +100,8 @@ class CenterOfGravityCalculator {
         let imagSum = 0;
         
         for (const position of onsetPositions) {
-            const angle = (2 * Math.PI * position) / actualStepCount;
+            // Use same angle convention as visualization (position 0 at top)
+            const angle = (position / actualStepCount) * 2 * Math.PI - Math.PI / 2;
             realSum += Math.cos(angle);
             imagSum += Math.sin(angle);
         }

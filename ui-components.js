@@ -631,6 +631,31 @@ function createPatternEntry(pattern) {
     const favoriteClass = pattern.favorite ? 'favorite-active' : '';
     const balanceColor = pattern.perfectBalance ? getBalanceColor(pattern.perfectBalance.balanceScore) : '#666';
     
+    // Generate combination description if it's a combined pattern
+    let combinationInfo = '';
+    const originalPatterns = pattern.originalPatterns || (pattern.combined && pattern.combined.originalPatterns);
+    
+    if (pattern.isCombined && originalPatterns) {
+        const descriptions = originalPatterns.map(p => {
+            if (p.isRegularPolygon) {
+                return `P(${p.vertices},${p.offset || 0}${p.expansion && p.expansion !== 1 ? ',' + p.expansion : ''})`;
+            } else if (p.isEuclidean) {
+                return `E(${p.beats},${p.stepCount},${p.offset || 0})`;
+            } else if (p.binary) {
+                return `b${p.binary}`;
+            } else if (p.stepCount) {
+                return `${p.stepCount}steps`;
+            } else {
+                return 'pattern';
+            }
+        });
+        combinationInfo = `
+            <div class="combination-info" style="background: #e3f2fd; color: #1976d2; padding: 5px 10px; border-radius: 3px; margin: 5px 0; font-weight: bold; border-left: 4px solid #2196f3;">
+                🎯 COMBINED: ${descriptions.join(' + ')}
+            </div>
+        `;
+    }
+    
     entry.innerHTML = `
         <div class="pattern-header">
             <span class="pattern-name" onclick="editPatternName(this, '${pattern.id}')">${pattern.name || 'Unnamed Pattern'}</span>
@@ -646,6 +671,7 @@ function createPatternEntry(pattern) {
                 </button>
             </div>
         </div>
+        ${combinationInfo}
         <div class="pattern-details">
             <div class="pattern-info">
                 <span class="step-count">${pattern.stepCount} steps</span>
