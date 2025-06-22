@@ -220,7 +220,7 @@ class EnhancedPatternApp {
         
         const inputValue = input.value.trim();
         if (!inputValue) {
-            alert('Please enter a pattern to parse');
+            showNotification('Please enter a pattern to parse', 'warning');
             return;
         }
         
@@ -241,13 +241,13 @@ class EnhancedPatternApp {
                 this.showCompactOutput(this.currentPattern);
                 console.log('✅ Combined pattern parsed successfully');
             } else {
-                alert('Failed to parse pattern: Unknown result type');
+                showNotification('Failed to parse pattern: Unknown result type', 'error');
                 console.error('❌ Pattern parsing failed: Unknown result type');
             }
             
         } catch (error) {
             console.error('❌ Pattern parsing error:', error);
-            alert('Error parsing pattern: ' + error.message);
+            showNotification('Error parsing pattern\n' + error.message, 'error');
         }
     }
     
@@ -415,7 +415,7 @@ class EnhancedPatternApp {
      */
     addCurrentPatternToDatabase() {
         if (!this.currentPattern) {
-            alert(AppConfig.MESSAGES.ERRORS.NO_PATTERN_ADD);
+            showNotification('No pattern selected to add to database', 'warning');
             return;
         }
         
@@ -428,7 +428,7 @@ class EnhancedPatternApp {
             
             const patternId = this.database.add(databasePattern);
             console.log(`✅ Pattern added to database with ID: ${patternId}`);
-            alert(`✅ Pattern added to database with ID: ${patternId}`);
+            showNotification(`Pattern added to database\nID: ${patternId}`, 'success');
             
             // Update UI
             this.updatePatternList();
@@ -436,7 +436,7 @@ class EnhancedPatternApp {
             
         } catch (error) {
             console.error('❌ Failed to add pattern:', error);
-            alert('Failed to add pattern: ' + error.message);
+            showNotification('Failed to add pattern\n' + error.message, 'error');
         }
     }
     
@@ -445,7 +445,7 @@ class EnhancedPatternApp {
      */
     copyCurrentPatternHex() {
         if (!this.currentPattern) {
-            alert(AppConfig.MESSAGES.ERRORS.NO_PATTERN);
+            showNotification('No pattern selected to copy', 'warning');
             return;
         }
         
@@ -484,7 +484,7 @@ class EnhancedPatternApp {
         const maxCombinations = parseInt(document.getElementById('maxCombinations')?.value || '3');
         
         if (minSides > maxSides) {
-            alert(AppConfig.MESSAGES.ALERTS.MIN_MAX_SIDES);
+            showNotification('Minimum sides cannot be greater than maximum sides', 'warning');
             return;
         }
         
@@ -531,11 +531,11 @@ class EnhancedPatternApp {
                 message += `, ${duplicateCount} duplicates skipped`;
             }
             
-            alert(message);
+            showNotification(message, 'success', 8000);
             
         } catch (error) {
             console.error('❌ Exploration failed:', error);
-            alert('Exploration failed: ' + error.message);
+            showNotification('Exploration failed\n' + error.message, 'error');
         } finally {
             this.isExploring = false;
             this.hideExplorationProgress();
@@ -551,7 +551,7 @@ class EnhancedPatternApp {
         const maxCombinations = parseInt(document.getElementById('maxCombinations')?.value || '3');
         
         if (minSides > maxSides) {
-            alert(AppConfig.MESSAGES.ALERTS.MIN_MAX_SIDES);
+            showNotification('Minimum sides cannot be greater than maximum sides', 'warning');
             return;
         }
         
@@ -598,11 +598,11 @@ class EnhancedPatternApp {
                 message += `, ${duplicateCount} duplicates skipped`;
             }
             
-            alert(message);
+            showNotification(message, 'success', 8000);
             
         } catch (error) {
             console.error('❌ Exploration failed:', error);
-            alert('Exploration failed: ' + error.message);
+            showNotification('Exploration failed\n' + error.message, 'error');
         } finally {
             this.isExploring = false;
             this.hideExplorationProgress();
@@ -619,7 +619,7 @@ class EnhancedPatternApp {
         });
         
         if (perfectBalancePatterns.length === 0) {
-            alert(AppConfig.MESSAGES.ALERTS.NO_PERFECT_BALANCE);
+            showNotification('No perfect balance patterns found in database', 'info');
             return;
         }
         
@@ -649,8 +649,17 @@ ${perfectBalancePatterns.map((pattern, index) => {
 === END REPORT ===
 `;
 
-        // Show report in modal
-        UIComponents.showReportModal(report);
+        // Download report as text file
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+        const filename = `perfect-balance-report-${timestamp}.txt`;
+        
+        const success = downloadFile(report, filename, 'text/plain');
+        if (success) {
+            showNotification(`Report generated and downloaded\nFile: ${filename}`, 'success');
+            console.log('📄 Report generated and downloaded:', filename);
+        } else {
+            showNotification('Failed to download report', 'error');
+        }
     }
     
     /**
@@ -683,45 +692,46 @@ ${perfectBalancePatterns.map((pattern, index) => {
             console.log('📤 Database exported successfully');
         } catch (error) {
             console.error('❌ Export failed:', error);
-            alert('Export failed: ' + error.message);
+            showNotification('Export failed\n' + error.message, 'error');
         }
     }
     
     /**
      * Import database
      */
-    importDatabase() {
-        UIComponents.showModal('Import Database', `
-            <div class="input-group">
-                <label class="input-label">Paste JSON data:</label>
-                <textarea class="input" id="importData" placeholder="${AppConfig.UI.PLACEHOLDERS.IMPORT_DATA}" rows="10"></textarea>
-            </div>
-            <div class="btn-group">
-                <button class="btn primary" onclick="app.processImport()">Import</button>
-                <button class="btn secondary" onclick="UIComponents.hideModal()">Cancel</button>
-            </div>
-        `);
-    }
-    
-    /**
-     * Process database import
-     */
-    processImport() {
-        const importData = document.getElementById('importData')?.value;
-        if (!importData) return;
-        
+    async importDatabase() {
         try {
-            this.database.import(importData);
-            this.updatePatternList();
-            this.updateDatabaseStats();
-            UIComponents.hideModal();
-            alert(AppConfig.MESSAGES.SUCCESS.DATABASE_IMPORTED);
-            console.log('📥 Database imported successfully');
+            const files = await selectFile('.json');
+            if (files.length === 0) return;
+            
+            const file = files[0];
+            const reader = new FileReader();
+            
+            reader.onload = (e) => {
+                try {
+                    const importData = e.target.result;
+                    this.database.import(importData);
+                    this.updatePatternList();
+                    this.updateDatabaseStats();
+                    showNotification(`Database imported successfully\nLoaded from: ${file.name}`, 'success');
+                    console.log('📥 Database imported successfully from file:', file.name);
+                } catch (error) {
+                    console.error('❌ Import failed:', error);
+                    showNotification(`Import failed\n${error.message}`, 'error');
+                }
+            };
+            
+            reader.onerror = () => {
+                showNotification('Failed to read file', 'error');
+            };
+            
+            reader.readAsText(file);
         } catch (error) {
-            console.error('❌ Import failed:', error);
-            alert(AppConfig.MESSAGES.ERRORS.IMPORT_FAILED + ': ' + error.message);
+            console.error('❌ File selection failed:', error);
+            showNotification('File selection failed', 'error');
         }
     }
+    
     
     /**
      * Clear database
@@ -768,23 +778,23 @@ ${perfectBalancePatterns.map((pattern, index) => {
         try {
             const searchTerm = document.getElementById('searchInput')?.value || '';
             const filterType = document.getElementById('filterSelect')?.value || 'all';
+            const minStepCountInput = document.getElementById('minStepCount')?.value;
+            const maxStepCountInput = document.getElementById('maxStepCount')?.value;
             
-            let patterns = this.database.patterns || [];
+            // Parse step count range values
+            const minSteps = minStepCountInput && minStepCountInput.trim() ? parseInt(minStepCountInput) : null;
+            const maxSteps = maxStepCountInput && maxStepCountInput.trim() ? parseInt(maxStepCountInput) : null;
             
-            // Apply search filter if there's a search term
-            if (searchTerm) {
-                patterns = this.database.search(searchTerm);
-            }
+            // Use combined filtering approach
+            const filters = {
+                type: filterType,
+                search: searchTerm,
+                minSteps: minSteps,
+                maxSteps: maxSteps
+            };
             
-            // Apply type filter if specified
-            if (filterType && filterType !== 'all') {
-                patterns = this.database.filter(filterType);
-                // If we have both search and filter, we need to apply both
-                if (searchTerm) {
-                    const searchResults = this.database.search(searchTerm);
-                    patterns = patterns.filter(p => searchResults.some(sr => sr.id === p.id));
-                }
-            }
+            const patterns = this.database.filterCombined(filters);
+            
             const sortedPatterns = this.sortByDate ? 
                 patterns.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)) :
                 patterns.sort((a, b) => a.stepCount - b.stepCount);
@@ -805,26 +815,25 @@ ${perfectBalancePatterns.map((pattern, index) => {
     getPatternRepresentations(pattern) {
         const representations = [];
         
-        // Binary representation
+        // Binary representation with explicit step count
         const binary = PatternConverter.toBinary(pattern.steps, pattern.stepCount);
-        representations.push(`b${binary}`);
+        representations.push(`b${binary}:${pattern.stepCount}`);
         
-        // Decimal representation
+        // Decimal representation with explicit step count
         const decimal = PatternConverter.toDecimal(binary);
-        representations.push(`${decimal}`);
+        representations.push(`${decimal}:${pattern.stepCount}`);
         
-        // Hex representation
+        // Hex representation with explicit step count
         const hex = PatternConverter.toHex(decimal);
-        representations.push(`${hex}`);
+        representations.push(`${hex}:${pattern.stepCount}`);
         
-        // Octal representation
+        // Octal representation with explicit step count
         const octal = PatternConverter.toOctal(decimal);
-        representations.push(`${octal}`);
+        representations.push(`${octal}:${pattern.stepCount}`);
         
-        // Enhanced notation if available
-        if (pattern.stepCount) {
-            representations.push(`${decimal}:${pattern.stepCount}`);
-        }
+        // Onset array representation with explicit step count
+        const onsetArray = PatternConverter.toEnhancedOnsetArray(pattern.steps, pattern.stepCount);
+        representations.push(onsetArray);
         
         return representations;
     }

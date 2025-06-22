@@ -306,6 +306,74 @@ class PatternDatabase {
     }
     
     /**
+     * Filter patterns by step count range
+     * @param {number|null} minSteps - Minimum step count (null for no minimum)
+     * @param {number|null} maxSteps - Maximum step count (null for no maximum)
+     * @returns {Array} Filtered patterns
+     */
+    filterByStepCount(minSteps = null, maxSteps = null) {
+        return this.patterns.filter(pattern => {
+            const stepCount = pattern.stepCount;
+            
+            // Check minimum step count
+            if (minSteps !== null && stepCount < minSteps) {
+                return false;
+            }
+            
+            // Check maximum step count
+            if (maxSteps !== null && stepCount > maxSteps) {
+                return false;
+            }
+            
+            return true;
+        });
+    }
+    
+    /**
+     * Combined filter function that can apply multiple filters
+     * @param {Object} filters - Filter criteria
+     * @param {string} filters.type - Filter type (same as filter method)
+     * @param {string} filters.search - Search term
+     * @param {number|null} filters.minSteps - Minimum step count
+     * @param {number|null} filters.maxSteps - Maximum step count
+     * @returns {Array} Filtered patterns
+     */
+    filterCombined(filters = {}) {
+        let result = [...this.patterns];
+        
+        // Apply category filter
+        if (filters.type && filters.type !== 'all') {
+            const categoryFiltered = this.filter(filters.type);
+            result = result.filter(p => categoryFiltered.some(cp => cp.id === p.id));
+        }
+        
+        // Apply search filter
+        if (filters.search && filters.search.trim()) {
+            const searchFiltered = this.search(filters.search.trim());
+            result = result.filter(p => searchFiltered.some(sp => sp.id === p.id));
+        }
+        
+        // Apply step count range filter
+        if (filters.minSteps !== null || filters.maxSteps !== null) {
+            result = result.filter(pattern => {
+                const stepCount = pattern.stepCount;
+                
+                if (filters.minSteps !== null && stepCount < filters.minSteps) {
+                    return false;
+                }
+                
+                if (filters.maxSteps !== null && stepCount > filters.maxSteps) {
+                    return false;
+                }
+                
+                return true;
+            });
+        }
+        
+        return result;
+    }
+    
+    /**
      * Get database statistics
      * @returns {Object} Statistics about the database
      */

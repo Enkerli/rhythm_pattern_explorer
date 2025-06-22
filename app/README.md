@@ -4,7 +4,8 @@ A comprehensive web application for analyzing and exploring rhythmic patterns us
 
 ## Features
 
-- **Universal Pattern Input**: Support for multiple pattern formats (polygons, Euclidean rhythms, binary, hex, decimal)
+- **Universal Pattern Input**: Support for multiple pattern formats (polygons, Euclidean rhythms, binary, hex, octal, decimal)
+- **Pattern Rotation**: Rotate any pattern using `@` notation (e.g., `0x92@3`)
 - **Pattern Combinations**: Combine multiple patterns using logical operations with automatic LCM calculation
 - **Perfect Balance Analysis**: Milne's perfect balance theory implementation with geometric visualization
 - **Center of Gravity**: Mathematical analysis of pattern balance using complex number representation
@@ -12,6 +13,7 @@ A comprehensive web application for analyzing and exploring rhythmic patterns us
 - **Systematic Exploration**: Automated discovery of perfect balance patterns through systematic exploration
 - **Repetition Analysis**: Detect repeating patterns and calculate compression ratios
 - **Structure Analysis**: Calculate density, silence gaps, and onset intervals
+- **Non-intrusive Notifications**: Smart notification system that doesn't interrupt workflow
 
 ## Quick Start
 
@@ -39,6 +41,11 @@ A comprehensive web application for analyzing and exploring rhythmic patterns us
 - `146:8` - Decimal with explicit step count
 - `0x92:8` - Hex with explicit step count
 - `0o452:9` - Octal with explicit step count
+
+### Onset Arrays
+- `[0,3,6]` - Onset positions (auto-determined step count)
+- `[0,3,6]:8` - Onset positions with explicit step count
+- `[0,2,4,6,7]` - Multiple onset positions
 
 ### Pattern Rotation
 - `0x92@3` - Rotate Tresillo by 3 steps

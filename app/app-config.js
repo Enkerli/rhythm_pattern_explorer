@@ -201,7 +201,7 @@ const AppConfig = {
          * Placeholder Text
          */
         PLACEHOLDERS: {
-            UNIVERSAL_INPUT: 'P(3,1)+P(5,0)+P(2,5), P(3,0)+P(5,1)-P(2,0), E(5,8,0), 0x92@3, 0o452, etc.',
+            UNIVERSAL_INPUT: 'P(3,1)+P(5,0)+P(2,5), P(3,0)+P(5,1)-P(2,0), E(5,8,0), 0x92@3, 0o452, [0,3,6]:8, etc.',
             SEARCH_INPUT: 'Search patterns...',
             PATTERN_NAME: 'Enter pattern name',
             IMPORT_DATA: 'Paste your JSON pattern database here...',
@@ -222,6 +222,7 @@ const AppConfig = {
                 OCTAL: '0o452 - Octal pattern for ternary rhythms',
                 BINARY: 'b101010 - Binary pattern',
                 DECIMAL: '146 - Decimal pattern',
+                ONSET_ARRAY: '[0,3,6]:8 - Onset positions with step count',
                 ROTATION: '0x92@3 - Tresillo rotated 3 steps'
             },
             
@@ -564,7 +565,7 @@ const AppConfig = {
          */
         INPUT: {
             MAX_INPUT_LENGTH: 1000,
-            ALLOWED_CHARACTERS: /^[0-9a-fA-F+\-*().,\s:@PEbxo]+$/,
+            ALLOWED_CHARACTERS: /^[0-9a-fA-F+\-*().,\s:@PEbxo\[\]]+$/,
             PATTERN_FORMATS: [
                 'polygon',      // P(v,o) or P(v,o,e)
                 'euclidean',    // E(b,s,o)
@@ -572,6 +573,7 @@ const AppConfig = {
                 'hexadecimal',  // 0xAB or 0xAB:8
                 'octal',        // 0o452 or 0o452:9
                 'decimal',      // 123 or 123:8
+                'onset_array',  // [0,3,6] or [0,3,6]:8
                 'rotation',     // pattern@steps
                 'combination'   // pattern+pattern
             ]
