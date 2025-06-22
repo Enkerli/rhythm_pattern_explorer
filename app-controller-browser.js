@@ -445,9 +445,8 @@ class EnhancedPatternApp {
             
             console.log(`🔍 Starting perfect balance exploration: sides(${minSides}-${maxSides}), combinations(${maxCombinations})`);
             
-            const results = await this.explorer.findPerfectBalancePatterns(
-                minSides, maxSides, maxCombinations,
-                (progress) => this.updateExplorationProgress(progress)
+            const results = await this.explorer.exploreAllCombinations(
+                minSides, maxSides, maxCombinations, 'perfect'
             );
             
             this.explorationResults = results;
@@ -481,8 +480,50 @@ class EnhancedPatternApp {
      * Start near perfect balance exploration
      */
     async startNearPerfectExploration() {
-        // Similar to perfect balance but with relaxed thresholds
-        await this.startPerfectBalanceExploration();
+        const minSides = parseInt(document.getElementById('minSides')?.value || '3');
+        const maxSides = parseInt(document.getElementById('maxSides')?.value || '7');
+        const maxCombinations = parseInt(document.getElementById('maxCombinations')?.value || '3');
+        
+        if (minSides > maxSides) {
+            alert(AppConfig.MESSAGES.ALERTS.MIN_MAX_SIDES);
+            return;
+        }
+        
+        try {
+            this.isExploring = true;
+            this.showExplorationProgress();
+            
+            console.log(`🔍 Starting near-perfect balance exploration: sides(${minSides}-${maxSides}), combinations(${maxCombinations})`);
+            
+            const results = await this.explorer.exploreAllCombinations(
+                minSides, maxSides, maxCombinations, 'near'
+            );
+            
+            this.explorationResults = results;
+            console.log(`✅ Exploration complete: ${results.length} near-perfect balance patterns found`);
+            
+            // Add results to database
+            results.forEach(result => {
+                try {
+                    this.database.add(result.pattern);
+                } catch (error) {
+                    // Pattern might already exist, that's okay
+                }
+            });
+            
+            this.updatePatternList();
+            this.updateDatabaseStats();
+            this.hideExplorationProgress();
+            
+            alert(`${AppConfig.MESSAGES.ALERTS.EXPLORATION_COMPLETE}: ${results.length} ${AppConfig.MESSAGES.ALERTS.NEAR_PERFECT_PATTERNS_FOUND || 'near-perfect patterns found'}`);
+            
+        } catch (error) {
+            console.error('❌ Exploration failed:', error);
+            alert('Exploration failed: ' + error.message);
+        } finally {
+            this.isExploring = false;
+            this.hideExplorationProgress();
+        }
     }
     
     /**
