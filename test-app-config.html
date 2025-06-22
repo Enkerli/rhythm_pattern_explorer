@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Configuration Module Tests</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        
+        .test-suite {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .test-result {
+            padding: 8px 12px;
+            margin: 4px 0;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .test-result.pass {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+        
+        .test-result.fail {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .test-showcase {
+            font-family: monospace;
+            background: #f8f9fa;
+            padding: 8px;
+            margin: 8px 0;
+            border-radius: 3px;
+            border-left: 3px solid #007bff;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+        
+        .stats {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .run-button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        
+        .run-button:hover {
+            background: #218838;
+        }
+        
+        .module-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            border-left: 4px solid #2196f3;
+        }
+        
+        .error-details {
+            background: #fff3cd;
+            padding: 8px;
+            margin: 8px 0;
+            border-radius: 3px;
+            font-size: 12px;
+            border-left: 3px solid #ffc107;
+        }
+
+        .config-preview {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 12px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>⚙️ App Configuration Module Test Suite</h1>
+    
+    <div class="module-info">
+        <h3>📋 Module: app-config.js</h3>
+        <strong>Purpose:</strong> Centralized configuration management<br>
+        <strong>Dependencies:</strong> None<br>
+        <strong>Features:</strong> Default parameters, UI text/labels, mathematical constants, feature flags<br>
+        <strong>Status:</strong> <span id="moduleStatus">Loading...</span>
+    </div>
+
+    <div class="stats">
+        <h2>🎯 Test Progress</h2>
+        <div id="testStats">Ready to run tests...</div>
+    </div>
+
+    <div style="text-align: center; margin: 20px 0;">
+        <button class="run-button" onclick="runAllTests()">🚀 Run All Tests</button>
+        <button class="run-button" onclick="runStructureTests()">🏗️ Structure Tests</button>
+        <button class="run-button" onclick="runContentTests()">📝 Content Tests</button>
+        <button class="run-button" onclick="runValidationTests()">✅ Validation Tests</button>
+    </div>
+
+    <div id="testResults"></div>
+
+    <!-- Load the app-config module -->
+    <script src="app-config.js"></script>
+
+    <script>
+        // === TEST RUNNER ===
+        class AppConfigTestRunner {
+            constructor() {
+                this.results = [];
+                this.currentSuite = '';
+            }
+            
+            suite(name) {
+                this.currentSuite = name;
+                console.log(`\n📋 Testing: ${name}`);
+            }
+            
+            test(description, testFn) {
+                try {
+                    const startTime = performance.now();
+                    const result = testFn();
+                    const endTime = performance.now();
+                    
+                    this.results.push({
+                        suite: this.currentSuite,
+                        description,
+                        passed: true,
+                        time: endTime - startTime,
+                        result
+                    });
+                    console.log(`✅ ${description}`);
+                } catch (error) {
+                    this.results.push({
+                        suite: this.currentSuite,
+                        description,
+                        passed: false,
+                        error: error.message,
+                        time: 0
+                    });
+                    console.error(`❌ ${description}:`, error.message);
+                }
+            }
+            
+            assert(condition, message) {
+                if (!condition) {
+                    throw new Error(message || 'Assertion failed');
+                }
+            }
+            
+            assertEqual(actual, expected, message) {
+                if (actual !== expected) {
+                    throw new Error(message || `Expected ${expected}, got ${actual}`);
+                }
+            }
+            
+            assertType(value, expectedType, message) {
+                const actualType = typeof value;
+                if (actualType !== expectedType) {
+                    throw new Error(message || `Expected type ${expectedType}, got ${actualType}`);
+                }
+            }
+            
+            assertExists(value, message) {
+                if (value === undefined || value === null) {
+                    throw new Error(message || 'Value should exist');
+                }
+            }
+            
+            displayResults() {
+                const container = document.getElementById('testResults');
+                container.innerHTML = '';
+                
+                const suites = [...new Set(this.results.map(r => r.suite))];
+                
+                suites.forEach(suite => {
+                    const suiteDiv = document.createElement('div');
+                    suiteDiv.className = 'test-suite';
+                    
+                    const suiteResults = this.results.filter(r => r.suite === suite);
+                    const passed = suiteResults.filter(r => r.passed).length;
+                    const total = suiteResults.length;
+                    
+                    suiteDiv.innerHTML = `
+                        <h3>📋 ${suite} (${passed}/${total})</h3>
+                        ${suiteResults.map(result => `
+                            <div class="test-result ${result.passed ? 'pass' : 'fail'}">
+                                <strong>${result.passed ? '✅' : '❌'} ${result.description}</strong>
+                                ${result.passed ? 
+                                    `<div class="test-showcase">
+                                        ${result.result || 'Passed'} 
+                                        <span style="color: #666; float: right;">(${result.time.toFixed(2)}ms)</span>
+                                    </div>` : 
+                                    `<div class="error-details">${result.error}</div>`
+                                }
+                            </div>
+                        `).join('')}
+                    `;
+                    
+                    container.appendChild(suiteDiv);
+                });
+                
+                this.updateStats();
+            }
+            
+            updateStats() {
+                const passed = this.results.filter(r => r.passed).length;
+                const total = this.results.length;
+                const percentage = total > 0 ? ((passed / total) * 100).toFixed(1) : 0;
+                
+                document.getElementById('testStats').innerHTML = `
+                    <strong>${passed}/${total} tests passed (${percentage}%)</strong><br>
+                    <small>App Configuration Module Verification Complete</small>
+                `;
+                
+                if (total > 0) {
+                    document.getElementById('moduleStatus').innerHTML = 
+                        passed === total ? 
+                        '<span style="color: #28a745;">✅ All Tests Passed</span>' : 
+                        `<span style="color: #dc3545;">❌ ${total - passed} Tests Failed</span>`;
+                }
+            }
+        }
+
+        const testRunner = new AppConfigTestRunner();
+
+        // Structure Tests
+        window.runStructureTests = function() {
+            testRunner.suite('Configuration Structure');
+            
+            testRunner.test('AppConfig object exists', () => {
+                testRunner.assertExists(window.AppConfig, 'AppConfig should be globally available');
+                testRunner.assertType(window.AppConfig, 'object', 'AppConfig should be an object');
+                return 'AppConfig object loaded successfully';
+            });
+            
+            testRunner.test('Main configuration sections exist', () => {
+                const config = window.AppConfig;
+                const requiredSections = [
+                    'UI', 'MATH', 'PATTERNS', 'DATABASE', 'EXPLORATION', 
+                    'MESSAGES', 'DEFAULTS', 'PERFORMANCE', 'VALIDATION'
+                ];
+                
+                requiredSections.forEach(section => {
+                    testRunner.assertExists(config[section], `${section} section should exist`);
+                    testRunner.assertType(config[section], 'object', `${section} should be an object`);
+                });
+                
+                return `All ${requiredSections.length} main sections present`;
+            });
+            
+            testRunner.test('UI configuration structure', () => {
+                const ui = window.AppConfig.UI;
+                testRunner.assertExists(ui.CLASSES, 'UI.CLASSES should exist');
+                testRunner.assertExists(ui.COLORS, 'UI.COLORS should exist');
+                testRunner.assertExists(ui.TEXT, 'UI.TEXT should exist');
+                testRunner.assertExists(ui.PLACEHOLDERS, 'UI.PLACEHOLDERS should exist');
+                return 'UI configuration structure valid';
+            });
+            
+            testRunner.test('Mathematical constants structure', () => {
+                const math = window.AppConfig.MATH;
+                testRunner.assertExists(math.THRESHOLDS, 'MATH.THRESHOLDS should exist');
+                testRunner.assertExists(math.LIMITS, 'MATH.LIMITS should exist');
+                testRunner.assertExists(math.CONSTANTS, 'MATH.CONSTANTS should exist');
+                return 'Mathematical constants structure valid';
+            });
+            
+            testRunner.displayResults();
+        };
+
+        // Content Tests
+        window.runContentTests = function() {
+            testRunner.suite('Configuration Content');
+            
+            testRunner.test('Balance analysis thresholds', () => {
+                const thresholds = window.AppConfig.MATH.THRESHOLDS.BALANCE;
+                testRunner.assertExists(thresholds.PERFECT, 'Perfect balance threshold should exist');
+                testRunner.assertExists(thresholds.EXCELLENT, 'Excellent balance threshold should exist');
+                testRunner.assertExists(thresholds.GOOD, 'Good balance threshold should exist');
+                testRunner.assertExists(thresholds.FAIR, 'Fair balance threshold should exist');
+                
+                // Validate threshold values are reasonable
+                testRunner.assert(thresholds.PERFECT < thresholds.EXCELLENT, 'Perfect < Excellent');
+                testRunner.assert(thresholds.EXCELLENT < thresholds.GOOD, 'Excellent < Good');
+                testRunner.assert(thresholds.GOOD < thresholds.FAIR, 'Good < Fair');
+                
+                return `Balance thresholds: Perfect(${thresholds.PERFECT}), Excellent(${thresholds.EXCELLENT}), Good(${thresholds.GOOD}), Fair(${thresholds.FAIR})`;
+            });
+            
+            testRunner.test('Pattern generation limits', () => {
+                const limits = window.AppConfig.MATH.LIMITS.PATTERNS;
+                testRunner.assertExists(limits.MIN_VERTICES, 'Min vertices should exist');
+                testRunner.assertExists(limits.MAX_VERTICES, 'Max vertices should exist');
+                testRunner.assertExists(limits.MAX_STEPS, 'Max steps should exist');
+                testRunner.assertExists(limits.MAX_EXPANSION, 'Max expansion should exist');
+                
+                // Validate limits are reasonable
+                testRunner.assert(limits.MIN_VERTICES >= 2, 'Min vertices should be at least 2');
+                testRunner.assert(limits.MAX_VERTICES > limits.MIN_VERTICES, 'Max vertices > Min vertices');
+                testRunner.assert(limits.MAX_STEPS > 0, 'Max steps should be positive');
+                
+                return `Pattern limits: Vertices(${limits.MIN_VERTICES}-${limits.MAX_VERTICES}), Steps(${limits.MAX_STEPS}), Expansion(${limits.MAX_EXPANSION})`;
+            });
+            
+            testRunner.test('UI text and labels', () => {
+                const text = window.AppConfig.UI.TEXT;
+                testRunner.assertExists(text.ANALYSIS_TITLES, 'Analysis titles should exist');
+                testRunner.assertExists(text.BUTTON_LABELS, 'Button labels should exist');
+                testRunner.assertExists(text.SECTION_HEADERS, 'Section headers should exist');
+                
+                // Check specific important labels
+                testRunner.assertExists(text.ANALYSIS_TITLES.BASIC_PROPERTIES, 'Basic properties title should exist');
+                testRunner.assertExists(text.ANALYSIS_TITLES.PERFECT_BALANCE, 'Perfect balance title should exist');
+                testRunner.assertType(text.ANALYSIS_TITLES.BASIC_PROPERTIES, 'string', 'Title should be string');
+                
+                return `UI text sections loaded: ${Object.keys(text).length} categories`;
+            });
+            
+            testRunner.test('Error and alert messages', () => {
+                const messages = window.AppConfig.MESSAGES;
+                testRunner.assertExists(messages.ERRORS, 'Error messages should exist');
+                testRunner.assertExists(messages.ALERTS, 'Alert messages should exist');
+                testRunner.assertExists(messages.SUCCESS, 'Success messages should exist');
+                
+                // Check specific important messages
+                testRunner.assertExists(messages.ERRORS.NO_PATTERN, 'No pattern error should exist');
+                testRunner.assertExists(messages.ALERTS.MIN_MAX_SIDES, 'Min/max sides alert should exist');
+                testRunner.assertType(messages.ERRORS.NO_PATTERN, 'string', 'Error message should be string');
+                
+                return `Message categories: ${Object.keys(messages).length} types`;
+            });
+            
+            testRunner.test('Color scheme configuration', () => {
+                const colors = window.AppConfig.UI.COLORS;
+                testRunner.assertExists(colors.BALANCE_SCORES, 'Balance score colors should exist');
+                testRunner.assertExists(colors.UI_STATES, 'UI state colors should exist');
+                
+                // Check balance score colors
+                const balanceColors = colors.BALANCE_SCORES;
+                testRunner.assertExists(balanceColors.PERFECT, 'Perfect balance color should exist');
+                testRunner.assertExists(balanceColors.EXCELLENT, 'Excellent balance color should exist');
+                testRunner.assertExists(balanceColors.GOOD, 'Good balance color should exist');
+                testRunner.assertExists(balanceColors.FAIR, 'Fair balance color should exist');
+                testRunner.assertExists(balanceColors.POOR, 'Poor balance color should exist');
+                
+                return `Color schemes: ${Object.keys(colors).length} categories`;
+            });
+            
+            testRunner.displayResults();
+        };
+
+        // Validation Tests
+        window.runValidationTests = function() {
+            testRunner.suite('Configuration Validation');
+            
+            testRunner.test('Default values are reasonable', () => {
+                const defaults = window.AppConfig.DEFAULTS;
+                testRunner.assertExists(defaults.EXPLORATION, 'Exploration defaults should exist');
+                testRunner.assertExists(defaults.PATTERN_INPUT, 'Pattern input defaults should exist');
+                
+                // Validate exploration defaults
+                const exploration = defaults.EXPLORATION;
+                testRunner.assert(exploration.MIN_SIDES >= 3, 'Default min sides should be at least 3');
+                testRunner.assert(exploration.MAX_SIDES > exploration.MIN_SIDES, 'Default max sides > min sides');
+                testRunner.assert(exploration.MAX_COMBINATIONS > 0, 'Default max combinations should be positive');
+                
+                return `Defaults validated: Min(${exploration.MIN_SIDES}), Max(${exploration.MAX_SIDES}), Combinations(${exploration.MAX_COMBINATIONS})`;
+            });
+            
+            testRunner.test('Performance thresholds', () => {
+                const performance = window.AppConfig.PERFORMANCE;
+                testRunner.assertExists(performance.TIMEOUTS, 'Performance timeouts should exist');
+                testRunner.assertExists(performance.LIMITS, 'Performance limits should exist');
+                
+                // Validate timeout values
+                const timeouts = performance.TIMEOUTS;
+                Object.values(timeouts).forEach(timeout => {
+                    testRunner.assert(typeof timeout === 'number', 'Timeout should be number');
+                    testRunner.assert(timeout > 0, 'Timeout should be positive');
+                });
+                
+                return `Performance thresholds: ${Object.keys(timeouts).length} timeout values`;
+            });
+            
+            testRunner.test('Database configuration', () => {
+                const database = window.AppConfig.DATABASE;
+                testRunner.assertExists(database.STORAGE_KEY, 'Storage key should exist');
+                testRunner.assertExists(database.LIMITS, 'Database limits should exist');
+                testRunner.assertType(database.STORAGE_KEY, 'string', 'Storage key should be string');
+                
+                return `Database config: Key(${database.STORAGE_KEY}), Limits defined`;
+            });
+            
+            testRunner.test('Validation rules', () => {
+                const validation = window.AppConfig.VALIDATION;
+                testRunner.assertExists(validation.PATTERNS, 'Pattern validation should exist');
+                testRunner.assertExists(validation.INPUT, 'Input validation should exist');
+                
+                // Check pattern validation rules
+                const patterns = validation.PATTERNS;
+                testRunner.assertExists(patterns.MIN_STEPS, 'Min steps validation should exist');
+                testRunner.assertExists(patterns.MAX_STEPS, 'Max steps validation should exist');
+                testRunner.assert(patterns.MIN_STEPS > 0, 'Min steps should be positive');
+                testRunner.assert(patterns.MAX_STEPS > patterns.MIN_STEPS, 'Max steps > min steps');
+                
+                return `Validation rules: Pattern steps(${patterns.MIN_STEPS}-${patterns.MAX_STEPS})`;
+            });
+            
+            testRunner.test('Feature flags configuration', () => {
+                const config = window.AppConfig;
+                // Check for feature flags section (if it exists)
+                if (config.FEATURES) {
+                    testRunner.assertType(config.FEATURES, 'object', 'Features should be object');
+                    Object.values(config.FEATURES).forEach(flag => {
+                        testRunner.assertType(flag, 'boolean', 'Feature flag should be boolean');
+                    });
+                    return `Feature flags: ${Object.keys(config.FEATURES).length} flags configured`;
+                } else {
+                    return 'Feature flags section not present (optional)';
+                }
+            });
+            
+            testRunner.displayResults();
+        };
+
+        // Main test runner
+        window.runAllTests = function() {
+            console.log('🚀 Starting App Configuration Tests...');
+            
+            // Clear previous results
+            testRunner.results = [];
+            document.getElementById('testResults').innerHTML = '';
+            
+            // Run test suites in sequence
+            runStructureTests();
+            
+            setTimeout(() => {
+                runContentTests();
+                
+                setTimeout(() => {
+                    runValidationTests();
+                    
+                    setTimeout(() => {
+                        // Final summary
+                        const passed = testRunner.results.filter(r => r.passed).length;
+                        const total = testRunner.results.length;
+                        
+                        if (passed === total) {
+                            console.log('\n🎉 All app configuration tests passed!');
+                            console.log('✅ Configuration structure validated');
+                            console.log('✅ Content and values verified');
+                            console.log('✅ Validation rules confirmed');
+                        } else {
+                            console.log(`\n⚠️ ${total - passed} test(s) failed:`);
+                            testRunner.results.filter(r => !r.passed).forEach(result => {
+                                console.log(`   ${result.suite}: ${result.description} - ${result.error}`);
+                            });
+                        }
+                    }, 500);
+                }, 500);
+            }, 500);
+        };
+
+        // Show configuration preview
+        function showConfigPreview() {
+            if (window.AppConfig) {
+                const preview = document.createElement('div');
+                preview.className = 'config-preview';
+                preview.innerHTML = `
+                    <strong>Configuration Preview:</strong><br>
+                    Sections: ${Object.keys(window.AppConfig).join(', ')}<br>
+                    UI Classes: ${Object.keys(window.AppConfig.UI?.CLASSES || {}).length} defined<br>
+                    Balance Thresholds: ${Object.keys(window.AppConfig.MATH?.THRESHOLDS?.BALANCE || {}).length} levels<br>
+                    Error Messages: ${Object.keys(window.AppConfig.MESSAGES?.ERRORS || {}).length} messages<br>
+                    Default Values: ${Object.keys(window.AppConfig.DEFAULTS || {}).length} categories
+                `;
+                
+                const moduleInfo = document.querySelector('.module-info');
+                moduleInfo.appendChild(preview);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('⚙️ App Configuration Test Suite Ready');
+            
+            // Check if AppConfig is available
+            if (typeof window.AppConfig !== 'undefined') {
+                console.log('✅ AppConfig loaded successfully');
+                document.getElementById('moduleStatus').innerHTML = '<span style="color: #28a745;">✅ Loaded</span>';
+                showConfigPreview();
+            } else {
+                console.log('❌ AppConfig not found');
+                document.getElementById('moduleStatus').innerHTML = '<span style="color: #dc3545;">❌ Not Found</span>';
+            }
+        });
+    </script>
+</body>
+</html>
