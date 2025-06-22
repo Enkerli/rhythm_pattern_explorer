@@ -1,0 +1,787 @@
+/**
+ * App Controller Module (app-controller-browser.js)
+ * Browser-compatible version - Main application orchestrator for the Rhythm Pattern Explorer
+ * 
+ * Features:
+ * - EnhancedPatternApp class - Central application controller
+ * - Event handling setup and management
+ * - Workflow coordination between all modules
+ * - UI state management and updates
+ * - Application initialization and error handling
+ * 
+ * Dependencies: ALL other modules (loaded as global classes via script tags)
+ * - MathUtils (from math-core.js)
+ * - RegularPolygonGenerator, EuclideanGenerator (from pattern-generators.js)
+ * - PerfectBalanceAnalyzer, PatternAnalyzer, CenterOfGravityCalculator (from pattern-analysis.js)
+ * - AdvancedPatternCombiner, UnifiedPatternParser, PatternConverter (from pattern-processing.js)
+ * - SystematicExplorer (from pattern-exploration.js)
+ * - PatternDatabase (from pattern-database.js)
+ * - UIComponents (from ui-components.js)
+ * - AppConfig (from app-config.js)
+ */
+
+/**
+ * Enhanced Pattern Application Controller
+ * Main orchestrator class that coordinates all modules and manages application state
+ */
+class EnhancedPatternApp {
+    constructor() {
+        console.log('🎼 Initializing Enhanced Pattern Application...');
+        
+        // Verify dependencies are available
+        this.verifyDependencies();
+        
+        // Initialize core components
+        this.database = new PatternDatabase();
+        this.explorer = new SystematicExplorer();
+        
+        // Application state
+        this.currentPattern = null;
+        this.sortByDate = true;
+        this.explorationResults = [];
+        this.isExploring = false;
+        
+        // Initialize the application
+        this.setupEventListeners();
+        this.initialize();
+        
+        console.log('✅ Enhanced Pattern Application initialized successfully');
+    }
+    
+    /**
+     * Verify all required dependencies are available
+     */
+    verifyDependencies() {
+        const requiredClasses = [
+            'MathUtils', 'RegularPolygonGenerator', 'EuclideanGenerator',
+            'PerfectBalanceAnalyzer', 'PatternAnalyzer', 'CenterOfGravityCalculator',
+            'AdvancedPatternCombiner', 'UnifiedPatternParser', 'PatternConverter',
+            'SystematicExplorer', 'PatternDatabase', 'UIComponents', 'AppConfig'
+        ];
+        
+        const missingClasses = requiredClasses.filter(className => 
+            typeof window[className] === 'undefined'
+        );
+        
+        if (missingClasses.length > 0) {
+            throw new Error(`Missing required dependencies: ${missingClasses.join(', ')}`);
+        }
+        
+        console.log('✅ All dependencies verified');
+    }
+    
+    /**
+     * Initialize the application
+     */
+    initialize() {
+        // Load existing patterns from database
+        this.updatePatternList();
+        this.updateDatabaseStats();
+        
+        // Set default values
+        this.resetExplorationControls();
+        
+        // Update UI state
+        this.updateSortButton();
+        
+        console.log('🎯 Application initialization complete');
+    }
+    
+    /**
+     * Setup all event listeners for the application
+     */
+    setupEventListeners() {
+        console.log('🔧 Setting up event listeners...');
+        
+        // Universal input controls
+        this.setupUniversalInputEvents();
+        
+        // Perfect balance explorer events
+        this.setupExplorationEvents();
+        
+        // Database events
+        this.setupDatabaseEvents();
+        
+        // Search and filter events
+        this.setupSearchEvents();
+        
+        console.log('✅ Event listeners configured');
+    }
+    
+    /**
+     * Setup universal pattern input event listeners
+     */
+    setupUniversalInputEvents() {
+        const parseBtn = document.getElementById('parseBtn');
+        const addBtn = document.getElementById('addUniversalBtn');
+        const copyBtn = document.getElementById('copyHexUniversalBtn');
+        const testBtn = document.getElementById('testBtn');
+        const universalInput = document.getElementById('universalInput');
+        
+        if (parseBtn) {
+            parseBtn.addEventListener('click', () => this.parseUniversalInput());
+        }
+        
+        if (addBtn) {
+            addBtn.addEventListener('click', () => this.addCurrentPatternToDatabase());
+        }
+        
+        if (copyBtn) {
+            copyBtn.addEventListener('click', () => this.copyCurrentPatternHex());
+        }
+        
+        if (testBtn) {
+            testBtn.addEventListener('click', () => this.runTestExamples());
+        }
+        
+        if (universalInput) {
+            universalInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    this.parseUniversalInput();
+                }
+            });
+        }
+    }
+    
+    /**
+     * Setup perfect balance exploration event listeners
+     */
+    setupExplorationEvents() {
+        const findPerfectBtn = document.getElementById('findPerfectBtn');
+        const findNearBtn = document.getElementById('findNearBtn');
+        const generateReportBtn = document.getElementById('generateReportBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        
+        if (findPerfectBtn) {
+            findPerfectBtn.addEventListener('click', () => this.startPerfectBalanceExploration());
+        }
+        
+        if (findNearBtn) {
+            findNearBtn.addEventListener('click', () => this.startNearPerfectExploration());
+        }
+        
+        if (generateReportBtn) {
+            generateReportBtn.addEventListener('click', () => this.generatePerfectBalanceReport());
+        }
+        
+        if (stopBtn) {
+            stopBtn.addEventListener('click', () => this.stopExploration());
+        }
+    }
+    
+    /**
+     * Setup database management event listeners
+     */
+    setupDatabaseEvents() {
+        const exportBtn = document.getElementById('exportBtn');
+        const importBtn = document.getElementById('importBtn');
+        const clearBtn = document.getElementById('clearDbBtn');
+        
+        if (exportBtn) {
+            exportBtn.addEventListener('click', () => this.exportDatabase());
+        }
+        
+        if (importBtn) {
+            importBtn.addEventListener('click', () => this.importDatabase());
+        }
+        
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => this.clearDatabase());
+        }
+    }
+    
+    /**
+     * Setup search and filter event listeners
+     */
+    setupSearchEvents() {
+        const searchInput = document.getElementById('searchInput');
+        const filterSelect = document.getElementById('filterSelect');
+        const sortBtn = document.getElementById('sortBtn');
+        
+        if (searchInput) {
+            searchInput.addEventListener('input', () => this.handleSearch());
+        }
+        
+        if (filterSelect) {
+            filterSelect.addEventListener('change', () => this.handleFilter());
+        }
+        
+        if (sortBtn) {
+            sortBtn.addEventListener('click', () => this.toggleSort());
+        }
+    }
+    
+    /**
+     * Parse universal pattern input
+     */
+    parseUniversalInput() {
+        const input = document.getElementById('universalInput');
+        if (!input) return;
+        
+        const inputValue = input.value.trim();
+        if (!inputValue) {
+            alert('Please enter a pattern to parse');
+            return;
+        }
+        
+        try {
+            console.log(`🎵 Parsing pattern: ${inputValue}`);
+            
+            // Use UnifiedPatternParser to parse the input
+            const result = UnifiedPatternParser.parseUniversalInput(inputValue);
+            
+            if (result.success) {
+                this.currentPattern = result.pattern;
+                this.displayPatternAnalysis(this.currentPattern);
+                this.showCompactOutput(this.currentPattern);
+                console.log('✅ Pattern parsed successfully');
+            } else {
+                alert('Failed to parse pattern: ' + result.error);
+                console.error('❌ Pattern parsing failed:', result.error);
+            }
+            
+        } catch (error) {
+            console.error('❌ Pattern parsing error:', error);
+            alert('Error parsing pattern: ' + error.message);
+        }
+    }
+    
+    /**
+     * Display comprehensive pattern analysis
+     */
+    displayPatternAnalysis(pattern) {
+        const analysisDisplay = document.getElementById('analysisDisplay');
+        if (!analysisDisplay) return;
+        
+        try {
+            // Generate comprehensive analysis
+            const analysis = this.generateComprehensiveAnalysis(pattern);
+            
+            // Update analysis display
+            analysisDisplay.innerHTML = `
+                <div class="analysis-title">${analysis.title}</div>
+                <div class="analysis-content">${analysis.content}</div>
+            `;
+            
+        } catch (error) {
+            console.error('❌ Analysis display error:', error);
+            analysisDisplay.innerHTML = `
+                <div class="analysis-title">Analysis Error</div>
+                <div class="analysis-content">Failed to generate analysis: ${error.message}</div>
+            `;
+        }
+    }
+    
+    /**
+     * Generate comprehensive mathematical analysis
+     */
+    generateComprehensiveAnalysis(pattern) {
+        let content = '<div class="analysis-section">';
+        
+        // Basic properties
+        content += '<div class="analysis-item">';
+        content += '<div class="analysis-title">📊 Basic Properties</div>';
+        content += '<div class="analysis-content">';
+        content += `<strong>Pattern:</strong> ${PatternConverter.toBinary(pattern.steps)}<br>`;
+        content += `<strong>Hex:</strong> ${PatternConverter.toHex(pattern.steps)}<br>`;
+        content += `<strong>Decimal:</strong> ${PatternConverter.toDecimal(pattern.steps)}<br>`;
+        content += `<strong>Steps:</strong> ${pattern.stepCount}<br>`;
+        content += `<strong>Beats:</strong> ${pattern.steps.filter(step => step).length}<br>`;
+        content += `<strong>Density:</strong> ${((pattern.steps.filter(step => step).length / pattern.stepCount) * 100).toFixed(1)}%`;
+        content += '</div></div>';
+        
+        // Perfect balance analysis
+        const balanceAnalysis = PerfectBalanceAnalyzer.analyzePattern(pattern.steps);
+        content += '<div class="analysis-item perfect-balance">';
+        content += '<div class="analysis-title">🎼 Perfect Balance Analysis (Milne)</div>';
+        content += '<div class="analysis-content">';
+        content += `<div class="mathematical-formula">|∑(e^(i2πkⱼ/n))| / onsets = ${balanceAnalysis.normalizedMagnitude.toFixed(6)}</div>`;
+        content += `<strong>Balance Quality:</strong> `;
+        content += `<span class="balance-score balance-${balanceAnalysis.quality.toLowerCase()}">${balanceAnalysis.quality}</span><br>`;
+        content += `<strong>Status:</strong> ${balanceAnalysis.isPerfectlyBalanced ? '✨ PERFECTLY BALANCED - Center of gravity at origin!' : 'Not perfectly balanced'}`;
+        content += '</div></div>';
+        
+        // Pattern type detection
+        if (pattern.isRegularPolygon) {
+            content += '<div class="analysis-item polygon">';
+            content += '<div class="analysis-title">🔺 Regular Polygon Detected</div>';
+            content += '<div class="analysis-content">';
+            content += `<div class="mathematical-formula">P(${pattern.vertices},${pattern.offset || 0}): ${pattern.polygonType}</div>`;
+            content += `<strong>${pattern.polygonType}</strong> with ${pattern.vertices} vertices<br>`;
+            if (pattern.expansion && pattern.expansion > 1) {
+                content += `Expansion factor: ×${pattern.expansion}<br>`;
+            }
+            if (pattern.offset) {
+                content += `Rotational offset: ${pattern.offset} steps`;
+            }
+            content += '</div></div>';
+        }
+        
+        if (pattern.isEuclidean) {
+            content += '<div class="analysis-item euclidean">';
+            content += '<div class="analysis-title">🌀 Euclidean Rhythm Detected</div>';
+            content += '<div class="analysis-content">';
+            content += `<div class="mathematical-formula">${pattern.formula}: Bjorklund's Algorithm</div>`;
+            content += `<strong>Euclidean Rhythm</strong> distributing ${pattern.beats} beats across ${pattern.steps} steps<br>`;
+            if (pattern.offset) {
+                content += `Offset: ${pattern.offset} steps`;
+            }
+            content += '</div></div>';
+        }
+        
+        // Center of gravity analysis
+        const cogAnalysis = CenterOfGravityCalculator.calculateCenterOfGravity(pattern.steps);
+        content += '<div class="analysis-item center-gravity">';
+        content += '<div class="analysis-title">📐 Center of Gravity Analysis</div>';
+        content += '<div class="analysis-content">';
+        content += UIComponents.createCogVisualization(cogAnalysis);
+        content += '</div></div>';
+        
+        content += '</div>';
+        
+        return {
+            title: 'Mathematical Pattern Analysis',
+            content: content
+        };
+    }
+    
+    /**
+     * Show compact pattern output
+     */
+    showCompactOutput(pattern) {
+        const compactOutput = document.getElementById('compactOutput');
+        const compactResult = document.getElementById('compactResult');
+        
+        if (!compactOutput || !compactResult) return;
+        
+        const compact = PatternConverter.toCompactOutput(pattern);
+        compactResult.innerHTML = compact;
+        compactOutput.style.display = 'block';
+    }
+    
+    /**
+     * Add current pattern to database
+     */
+    addCurrentPatternToDatabase() {
+        if (!this.currentPattern) {
+            alert(AppConfig.MESSAGES.ERRORS.NO_PATTERN_ADD);
+            return;
+        }
+        
+        try {
+            const patternId = this.database.addPattern(this.currentPattern);
+            console.log(`✅ Pattern added to database with ID: ${patternId}`);
+            alert(AppConfig.MESSAGES.ALERTS.PATTERN_ADDED);
+            
+            // Update UI
+            this.updatePatternList();
+            this.updateDatabaseStats();
+            
+        } catch (error) {
+            console.error('❌ Failed to add pattern:', error);
+            alert('Failed to add pattern: ' + error.message);
+        }
+    }
+    
+    /**
+     * Copy current pattern hex to clipboard
+     */
+    copyCurrentPatternHex() {
+        if (!this.currentPattern) {
+            alert(AppConfig.MESSAGES.ERRORS.NO_PATTERN);
+            return;
+        }
+        
+        const hex = PatternConverter.toHex(this.currentPattern.steps);
+        UIComponents.copyToClipboard(hex);
+    }
+    
+    /**
+     * Run test examples
+     */
+    runTestExamples() {
+        const examples = [
+            'P(3,1)+P(5,0)+P(2,5)',
+            'P(3,0)+P(5,1)-P(2,0)',
+            'E(5,8,0)',
+            '0x92',
+            'b101010'
+        ];
+        
+        const randomExample = examples[Math.floor(Math.random() * examples.length)];
+        const input = document.getElementById('universalInput');
+        if (input) {
+            input.value = randomExample;
+            this.parseUniversalInput();
+        }
+    }
+    
+    /**
+     * Start perfect balance exploration
+     */
+    async startPerfectBalanceExploration() {
+        const minSides = parseInt(document.getElementById('minSides')?.value || '3');
+        const maxSides = parseInt(document.getElementById('maxSides')?.value || '7');
+        const maxCombinations = parseInt(document.getElementById('maxCombinations')?.value || '3');
+        
+        if (minSides > maxSides) {
+            alert(AppConfig.MESSAGES.ALERTS.MIN_MAX_SIDES);
+            return;
+        }
+        
+        try {
+            this.isExploring = true;
+            this.showExplorationProgress();
+            
+            console.log(`🔍 Starting perfect balance exploration: sides(${minSides}-${maxSides}), combinations(${maxCombinations})`);
+            
+            const results = await this.explorer.findPerfectBalancePatterns(
+                minSides, maxSides, maxCombinations,
+                (progress) => this.updateExplorationProgress(progress)
+            );
+            
+            this.explorationResults = results;
+            console.log(`✅ Exploration complete: ${results.length} perfect balance patterns found`);
+            
+            // Add results to database
+            results.forEach(result => {
+                try {
+                    this.database.addPattern(result.pattern);
+                } catch (error) {
+                    // Pattern might already exist, that's okay
+                }
+            });
+            
+            this.updatePatternList();
+            this.updateDatabaseStats();
+            this.hideExplorationProgress();
+            
+            alert(`${AppConfig.MESSAGES.ALERTS.EXPLORATION_COMPLETE}: ${results.length} ${AppConfig.MESSAGES.ALERTS.PERFECT_PATTERNS_FOUND}`);
+            
+        } catch (error) {
+            console.error('❌ Exploration failed:', error);
+            alert('Exploration failed: ' + error.message);
+        } finally {
+            this.isExploring = false;
+            this.hideExplorationProgress();
+        }
+    }
+    
+    /**
+     * Start near perfect balance exploration
+     */
+    async startNearPerfectExploration() {
+        // Similar to perfect balance but with relaxed thresholds
+        await this.startPerfectBalanceExploration();
+    }
+    
+    /**
+     * Generate perfect balance report
+     */
+    generatePerfectBalanceReport() {
+        const perfectBalancePatterns = this.database.getPatterns().filter(pattern => {
+            const analysis = PerfectBalanceAnalyzer.analyzePattern(pattern.steps);
+            return analysis.isPerfectlyBalanced;
+        });
+        
+        if (perfectBalancePatterns.length === 0) {
+            alert(AppConfig.MESSAGES.ALERTS.NO_PERFECT_BALANCE);
+            return;
+        }
+        
+        // Generate and display report
+        console.log(`📊 Generating report for ${perfectBalancePatterns.length} perfect balance patterns`);
+        // Implementation would generate detailed report...
+    }
+    
+    /**
+     * Stop current exploration
+     */
+    stopExploration() {
+        if (this.isExploring) {
+            this.explorer.stop();
+            this.isExploring = false;
+            this.hideExplorationProgress();
+            console.log('🛑 Exploration stopped by user');
+        }
+    }
+    
+    /**
+     * Export database
+     */
+    exportDatabase() {
+        try {
+            this.database.exportToFile();
+            console.log('📤 Database exported successfully');
+        } catch (error) {
+            console.error('❌ Export failed:', error);
+            alert('Export failed: ' + error.message);
+        }
+    }
+    
+    /**
+     * Import database
+     */
+    importDatabase() {
+        UIComponents.showModal('Import Database', `
+            <div class="input-group">
+                <label class="input-label">Paste JSON data:</label>
+                <textarea class="input" id="importData" placeholder="${AppConfig.UI.PLACEHOLDERS.IMPORT_DATA}" rows="10"></textarea>
+            </div>
+            <div class="btn-group">
+                <button class="btn primary" onclick="app.processImport()">Import</button>
+                <button class="btn secondary" onclick="UIComponents.hideModal()">Cancel</button>
+            </div>
+        `);
+    }
+    
+    /**
+     * Process database import
+     */
+    processImport() {
+        const importData = document.getElementById('importData')?.value;
+        if (!importData) return;
+        
+        try {
+            this.database.importFromJSON(importData);
+            this.updatePatternList();
+            this.updateDatabaseStats();
+            UIComponents.hideModal();
+            alert(AppConfig.MESSAGES.SUCCESS.DATABASE_IMPORTED);
+            console.log('📥 Database imported successfully');
+        } catch (error) {
+            console.error('❌ Import failed:', error);
+            alert(AppConfig.MESSAGES.ERRORS.IMPORT_FAILED + ': ' + error.message);
+        }
+    }
+    
+    /**
+     * Clear database
+     */
+    clearDatabase() {
+        if (confirm(AppConfig.MESSAGES.ALERTS.CLEAR_CONFIRM)) {
+            this.database.clearAll();
+            this.updatePatternList();
+            this.updateDatabaseStats();
+            console.log('🗑️ Database cleared');
+        }
+    }
+    
+    /**
+     * Handle search input
+     */
+    handleSearch() {
+        this.updatePatternList();
+    }
+    
+    /**
+     * Handle filter change
+     */
+    handleFilter() {
+        this.updatePatternList();
+    }
+    
+    /**
+     * Toggle sort order
+     */
+    toggleSort() {
+        this.sortByDate = !this.sortByDate;
+        this.updateSortButton();
+        this.updatePatternList();
+    }
+    
+    /**
+     * Update pattern list display
+     */
+    updatePatternList() {
+        const patternList = document.getElementById('patternList');
+        if (!patternList) return;
+        
+        try {
+            const searchTerm = document.getElementById('searchInput')?.value || '';
+            const filterType = document.getElementById('filterSelect')?.value || 'all';
+            
+            const patterns = this.database.searchPatterns(searchTerm, filterType);
+            const sortedPatterns = this.sortByDate ? 
+                patterns.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)) :
+                patterns.sort((a, b) => a.stepCount - b.stepCount);
+            
+            patternList.innerHTML = sortedPatterns.map(pattern => 
+                this.createPatternEntryHTML(pattern)
+            ).join('');
+            
+        } catch (error) {
+            console.error('❌ Failed to update pattern list:', error);
+            patternList.innerHTML = '<div class="error-box">Failed to load patterns</div>';
+        }
+    }
+    
+    /**
+     * Create HTML for pattern entry
+     */
+    createPatternEntryHTML(pattern) {
+        const analysis = PerfectBalanceAnalyzer.analyzePattern(pattern.steps);
+        const representations = PatternConverter.getAllRepresentations(pattern);
+        
+        return `
+            <div class="pattern-entry ${analysis.isPerfectlyBalanced ? 'perfect-balance' : ''} ${pattern.favorite ? 'favorite' : ''}">
+                <span class="pattern-star ${pattern.favorite ? 'active' : ''}" onclick="app.toggleFavorite('${pattern.id}')">★</span>
+                <div class="pattern-info">
+                    <div class="pattern-name ${!pattern.name ? 'unnamed' : ''}" onclick="app.editPatternName('${pattern.id}')">
+                        ${pattern.name || AppConfig.UI.PLACEHOLDERS.NO_NAME}
+                    </div>
+                    <div class="pattern-representations">
+                        ${representations.map(repr => `<span class="pattern-repr">${repr}</span>`).join('')}
+                        ${analysis.isPerfectlyBalanced ? '<span class="pattern-repr perfect-balance-badge">✨ Perfect Balance</span>' : ''}
+                        ${pattern.isRegularPolygon ? `<span class="pattern-repr polygon-type">🔺 ${pattern.polygonType}</span>` : ''}
+                        ${pattern.isEuclidean ? `<span class="pattern-repr euclidean-type">🌀 ${pattern.formula}</span>` : ''}
+                    </div>
+                </div>
+                <div class="pattern-actions">
+                    <button class="btn btn-sm success" onclick="app.loadPattern('${pattern.id}')">Load</button>
+                    <button class="btn btn-sm danger" onclick="app.deletePattern('${pattern.id}')">Delete</button>
+                </div>
+            </div>
+        `;
+    }
+    
+    /**
+     * Update database statistics
+     */
+    updateDatabaseStats() {
+        const stats = this.database.getStatistics();
+        
+        document.getElementById('totalPatterns').textContent = stats.total || '0';
+        document.getElementById('perfectBalanceCount').textContent = stats.perfectBalance || '0';
+        document.getElementById('favoriteCount').textContent = stats.favorites || '0';
+        document.getElementById('polygonCount').textContent = stats.polygons || '0';
+        document.getElementById('euclideanCount').textContent = stats.euclidean || '0';
+        document.getElementById('combinedCount').textContent = stats.combined || '0';
+        document.getElementById('wellformedCount').textContent = stats.wellformed || '0';
+        document.getElementById('avgCogValue').textContent = (stats.avgCog || 0).toFixed(3);
+    }
+    
+    /**
+     * Update sort button text
+     */
+    updateSortButton() {
+        const sortBtn = document.getElementById('sortBtn');
+        if (sortBtn) {
+            sortBtn.textContent = this.sortByDate ? 
+                AppConfig.UI.TEXT.BUTTON_LABELS.SORT_BY_STEPS : 
+                AppConfig.UI.TEXT.BUTTON_LABELS.SORT_BY_DATE;
+        }
+    }
+    
+    /**
+     * Show exploration progress
+     */
+    showExplorationProgress() {
+        const progressContainer = document.getElementById('progressContainer');
+        const stopBtn = document.getElementById('stopBtn');
+        const findPerfectBtn = document.getElementById('findPerfectBtn');
+        const findNearBtn = document.getElementById('findNearBtn');
+        
+        if (progressContainer) progressContainer.style.display = 'block';
+        if (stopBtn) stopBtn.style.display = 'inline-block';
+        if (findPerfectBtn) findPerfectBtn.style.display = 'none';
+        if (findNearBtn) findNearBtn.style.display = 'none';
+    }
+    
+    /**
+     * Hide exploration progress
+     */
+    hideExplorationProgress() {
+        const progressContainer = document.getElementById('progressContainer');
+        const stopBtn = document.getElementById('stopBtn');
+        const findPerfectBtn = document.getElementById('findPerfectBtn');
+        const findNearBtn = document.getElementById('findNearBtn');
+        
+        if (progressContainer) progressContainer.style.display = 'none';
+        if (stopBtn) stopBtn.style.display = 'none';
+        if (findPerfectBtn) findPerfectBtn.style.display = 'inline-block';
+        if (findNearBtn) findNearBtn.style.display = 'inline-block';
+    }
+    
+    /**
+     * Update exploration progress
+     */
+    updateExplorationProgress(progress) {
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        
+        if (progressFill) {
+            progressFill.style.width = `${progress.percentage}%`;
+        }
+        
+        if (progressText) {
+            progressText.textContent = progress.message || 'Searching...';
+        }
+    }
+    
+    /**
+     * Reset exploration controls
+     */
+    resetExplorationControls() {
+        const minSides = document.getElementById('minSides');
+        const maxSides = document.getElementById('maxSides');
+        const maxCombinations = document.getElementById('maxCombinations');
+        
+        if (minSides) minSides.value = AppConfig.DEFAULTS.EXPLORATION.MIN_SIDES;
+        if (maxSides) maxSides.value = AppConfig.DEFAULTS.EXPLORATION.MAX_SIDES;
+        if (maxCombinations) maxCombinations.value = AppConfig.DEFAULTS.EXPLORATION.MAX_COMBINATIONS;
+    }
+    
+    /**
+     * Toggle pattern favorite status
+     */
+    toggleFavorite(patternId) {
+        this.database.toggleFavorite(patternId);
+        this.updatePatternList();
+        this.updateDatabaseStats();
+    }
+    
+    /**
+     * Edit pattern name
+     */
+    editPatternName(patternId) {
+        const pattern = this.database.getPattern(patternId);
+        if (!pattern) return;
+        
+        const newName = prompt('Enter pattern name:', pattern.name || '');
+        if (newName !== null) {
+            this.database.updatePattern(patternId, { name: newName });
+            this.updatePatternList();
+        }
+    }
+    
+    /**
+     * Load pattern into input
+     */
+    loadPattern(patternId) {
+        const pattern = this.database.getPattern(patternId);
+        if (!pattern) return;
+        
+        const input = document.getElementById('universalInput');
+        if (input) {
+            input.value = PatternConverter.toHex(pattern.steps);
+            this.parseUniversalInput();
+        }
+    }
+    
+    /**
+     * Delete pattern
+     */
+    deletePattern(patternId) {
+        if (confirm('Delete this pattern?')) {
+            this.database.removePattern(patternId);
+            this.updatePatternList();
+            this.updateDatabaseStats();
+        }
+    }
+}
+
+// Export for global access
+window.EnhancedPatternApp = EnhancedPatternApp;
+
+console.log('✅ Enhanced Pattern App Controller loaded (browser-compatible version)');
