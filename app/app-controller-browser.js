@@ -290,8 +290,10 @@ class EnhancedPatternApp {
         const binary = PatternConverter.toBinary(pattern.steps, pattern.stepCount);
         const decimal = PatternConverter.toDecimal(binary);
         const hex = PatternConverter.toHex(decimal);
+        const octal = PatternConverter.toOctal(decimal);
         content += `<strong>Pattern:</strong> ${binary}<br>`;
         content += `<strong>Hex:</strong> ${hex}<br>`;
+        content += `<strong>Octal:</strong> ${octal}<br>`;
         content += `<strong>Decimal:</strong> ${decimal}<br>`;
         content += `<strong>Steps:</strong> ${pattern.stepCount}<br>`;
         content += `<strong>Beats:</strong> ${pattern.steps.filter(step => step).length}<br>`;
@@ -360,6 +362,21 @@ class EnhancedPatternApp {
             if (pattern.offset) {
                 content += `Offset: ${pattern.offset} steps`;
             }
+            content += '</div></div>';
+        }
+        
+        // Rotation analysis
+        if (pattern.isRotated) {
+            content += '<div class="analysis-item rotation">';
+            content += '<div class="analysis-title">🔄 Pattern Rotation</div>';
+            content += '<div class="analysis-content">';
+            content += `<strong>Rotated Pattern:</strong> Applied ${pattern.rotationSteps} step rotation<br>`;
+            if (pattern.formula) {
+                content += `<strong>Formula:</strong> ${pattern.formula}<br>`;
+            }
+            const direction = pattern.rotationSteps > 0 ? 'clockwise' : 'counter-clockwise';
+            const normalizedSteps = Math.abs(pattern.rotationSteps) % pattern.stepCount;
+            content += `<strong>Direction:</strong> ${direction} (${normalizedSteps} effective steps)`;
             content += '</div></div>';
         }
         
@@ -486,6 +503,7 @@ class EnhancedPatternApp {
             
             // Add results to database
             let addedCount = 0;
+            let duplicateCount = 0;
             results.forEach(result => {
                 try {
                     // Create database pattern with perfect balance analysis
@@ -493,9 +511,12 @@ class EnhancedPatternApp {
                     const patternId = this.database.add(databasePattern);
                     if (patternId) {
                         addedCount++;
+                    } else {
+                        duplicateCount++;
                     }
                 } catch (error) {
                     // Pattern might already exist, that's okay
+                    duplicateCount++;
                 }
             });
             
@@ -503,7 +524,14 @@ class EnhancedPatternApp {
             this.updateDatabaseStats();
             this.hideExplorationProgress();
             
-            alert(`✅ Exploration complete: ${results.length} perfect balance patterns found, ${addedCount} new patterns added to database`);
+            // Create more informative message
+            let message = `✅ Exploration complete: ${results.length} perfect balance patterns discovered\n`;
+            message += `📊 Results: ${addedCount} new patterns added to database`;
+            if (duplicateCount > 0) {
+                message += `, ${duplicateCount} duplicates skipped`;
+            }
+            
+            alert(message);
             
         } catch (error) {
             console.error('❌ Exploration failed:', error);
@@ -542,6 +570,7 @@ class EnhancedPatternApp {
             
             // Add results to database
             let addedCount = 0;
+            let duplicateCount = 0;
             results.forEach(result => {
                 try {
                     // Create database pattern with perfect balance analysis
@@ -549,9 +578,12 @@ class EnhancedPatternApp {
                     const patternId = this.database.add(databasePattern);
                     if (patternId) {
                         addedCount++;
+                    } else {
+                        duplicateCount++;
                     }
                 } catch (error) {
                     // Pattern might already exist, that's okay
+                    duplicateCount++;
                 }
             });
             
@@ -559,7 +591,14 @@ class EnhancedPatternApp {
             this.updateDatabaseStats();
             this.hideExplorationProgress();
             
-            alert(`✅ Exploration complete: ${results.length} near-perfect balance patterns found, ${addedCount} new patterns added to database`);
+            // Create more informative message
+            let message = `✅ Exploration complete: ${results.length} near-perfect balance patterns discovered\n`;
+            message += `📊 Results: ${addedCount} new patterns added to database`;
+            if (duplicateCount > 0) {
+                message += `, ${duplicateCount} duplicates skipped`;
+            }
+            
+            alert(message);
             
         } catch (error) {
             console.error('❌ Exploration failed:', error);
@@ -778,6 +817,10 @@ ${perfectBalancePatterns.map((pattern, index) => {
         const hex = PatternConverter.toHex(decimal);
         representations.push(`${hex}`);
         
+        // Octal representation
+        const octal = PatternConverter.toOctal(decimal);
+        representations.push(`${octal}`);
+        
         // Enhanced notation if available
         if (pattern.stepCount) {
             representations.push(`${decimal}:${pattern.stepCount}`);
@@ -842,6 +885,7 @@ ${perfectBalancePatterns.map((pattern, index) => {
                             
                             return `<span class="pattern-repr combined-type" style="background: #e3f2fd; color: #1976d2; font-weight: bold; border-left: 3px solid #2196f3; padding: 2px 6px;">🎯 COMBINED: ${combinationText}</span>`;
                         })()}
+                        ${pattern.isRotated ? `<span class="pattern-repr rotation-type" style="background: #fff3e0; color: #f57c00; font-weight: bold;">🔄 Rotated @${pattern.rotationSteps}</span>` : ''}
                     </div>
                 </div>
                 <div class="pattern-actions">

@@ -201,7 +201,7 @@ const AppConfig = {
          * Placeholder Text
          */
         PLACEHOLDERS: {
-            UNIVERSAL_INPUT: 'P(3,1)+P(5,0)+P(2,5), P(3,0)+P(5,1)-P(2,0), E(5,8,0)>>2, 0xAB88, etc.',
+            UNIVERSAL_INPUT: 'P(3,1)+P(5,0)+P(2,5), P(3,0)+P(5,1)-P(2,0), E(5,8,0), 0x92@3, 0o452, etc.',
             SEARCH_INPUT: 'Search patterns...',
             PATTERN_NAME: 'Enter pattern name',
             IMPORT_DATA: 'Paste your JSON pattern database here...',
@@ -219,9 +219,10 @@ const AppConfig = {
                 POLYGON_EXPANDED: 'P(3,1,4) - Triangle×4',
                 EUCLIDEAN: 'E(5,8,0) - Quintillo',
                 HEX: '0x92 - Tresillo',
-                HEX_ROTATED: '0x92>>3 - Tresillo rotated 3 steps',
+                OCTAL: '0o452 - Octal pattern for ternary rhythms',
                 BINARY: 'b101010 - Binary pattern',
-                DECIMAL: '146 - Decimal pattern'
+                DECIMAL: '146 - Decimal pattern',
+                ROTATION: '0x92@3 - Tresillo rotated 3 steps'
             },
             
             INITIAL_HELP: 'Parse a pattern using the universal input above to see comprehensive mathematical analysis.'
@@ -563,13 +564,15 @@ const AppConfig = {
          */
         INPUT: {
             MAX_INPUT_LENGTH: 1000,
-            ALLOWED_CHARACTERS: /^[0-9a-fA-F+\-*().,\s>@PEbx]+$/,
+            ALLOWED_CHARACTERS: /^[0-9a-fA-F+\-*().,\s:@PEbxo]+$/,
             PATTERN_FORMATS: [
                 'polygon',      // P(v,o) or P(v,o,e)
                 'euclidean',    // E(b,s,o)
                 'binary',       // b101010
-                'hexadecimal',  // 0xAB or 0xAB@3
-                'decimal',      // 123
+                'hexadecimal',  // 0xAB or 0xAB:8
+                'octal',        // 0o452 or 0o452:9
+                'decimal',      // 123 or 123:8
+                'rotation',     // pattern@steps
                 'combination'   // pattern+pattern
             ]
         },

@@ -21,6 +21,10 @@ class PatternConverter {
         return '0x' + decimal.toString(16).toUpperCase();
     }
     
+    static toOctal(decimal) {
+        return '0o' + decimal.toString(8);
+    }
+    
     static fromDecimalWithSteps(decimal, stepCount) {
         if (decimal === 0) return { steps: new Array(stepCount).fill(false), stepCount };
         
@@ -73,9 +77,38 @@ class PatternConverter {
         return this.fromDecimal(decimal);
     }
     
+    static fromOctal(octalString) {
+        // Handle colon notation: "0o452:9" or "452:9"
+        if (octalString.includes(':')) {
+            const [octalPart, stepsPart] = octalString.split(':');
+            const stepCount = parseInt(stepsPart);
+            const cleaned = octalPart.replace(/^0o/i, '').replace(/[^0-7]/g, '');
+            if (!cleaned) return null;
+            
+            const decimal = parseInt(cleaned, 8);
+            if (isNaN(decimal)) return null;
+            
+            return this.fromDecimalWithSteps(decimal, stepCount);
+        }
+        
+        // Handle regular octal without step count
+        const cleaned = octalString.replace(/^0o/i, '').replace(/[^0-7]/g, '');
+        if (!cleaned) return null;
+        
+        const decimal = parseInt(cleaned, 8);
+        if (isNaN(decimal)) return null;
+        
+        return this.fromDecimal(decimal);
+    }
+    
     static toEnhancedHex(decimal, stepCount) {
         const hex = this.toHex(decimal);
         return `${hex}:${stepCount}`;
+    }
+    
+    static toEnhancedOctal(decimal, stepCount) {
+        const octal = this.toOctal(decimal);
+        return `${octal}:${stepCount}`;
     }
     
     static toEnhancedDecimal(decimal, stepCount) {
@@ -201,6 +234,22 @@ class UnifiedPatternParser {
     static parsePattern(input) {
         const cleaned = input.trim();
         
+        // Check for rotation notation: pattern@steps
+        if (cleaned.includes('@')) {
+            const parts = cleaned.split('@');
+            if (parts.length === 2) {
+                const pattern = parts[0].trim();
+                const rotationSteps = parseInt(parts[1].trim());
+                
+                if (!isNaN(rotationSteps)) {
+                    // Parse the base pattern first
+                    const basePattern = this.parsePattern(pattern);
+                    // Apply rotation
+                    return this.rotatePattern(basePattern, rotationSteps);
+                }
+            }
+        }
+        
         const polygonMatch2 = cleaned.match(/^P\((\d+),(\d+)\)$/i);
         if (polygonMatch2) {
             const vertices = parseInt(polygonMatch2[1]);
@@ -244,6 +293,13 @@ class UnifiedPatternParser {
             throw new Error(`Invalid binary pattern: ${cleaned}. Binary patterns can only contain 0s and 1s`);
         }
         
+        // Octal notation: 0o452:9 or 452:9 (with step count) or 0o452 (if looks like octal)
+        const octalMatch = cleaned.match(/^(0o)?([0-7]+)(?::(\d+))?$/i);
+        if (octalMatch && (octalMatch[1] || !/[89a-f]/i.test(octalMatch[2]))) {
+            const pattern = PatternConverter.fromOctal(cleaned);
+            if (pattern) return pattern;
+        }
+        
         // Hexadecimal notation: 0x92:8 or 92:8 (with step count) or 0x92 or 92 (if looks like hex)
         const hexMatch = cleaned.match(/^(0x)?([0-9a-f]+)(?::(\d+))?$/i);
         if (hexMatch && (hexMatch[1] || /[a-f]/i.test(hexMatch[2]))) {
@@ -260,14 +316,51 @@ class UnifiedPatternParser {
         throw new Error(`Unrecognized pattern format: ${input}`);
     }
     
+    static rotatePattern(pattern, rotationSteps) {
+        if (!pattern || !pattern.steps || !Array.isArray(pattern.steps)) {
+            throw new Error('Invalid pattern for rotation');
+        }
+        
+        const stepCount = pattern.stepCount;
+        const normalizedRotation = ((rotationSteps % stepCount) + stepCount) % stepCount;
+        
+        if (normalizedRotation === 0) {
+            // No rotation needed
+            return { ...pattern };
+        }
+        
+        // Rotate the steps array
+        const rotatedSteps = new Array(stepCount);
+        for (let i = 0; i < stepCount; i++) {
+            rotatedSteps[i] = pattern.steps[(i - normalizedRotation + stepCount) % stepCount];
+        }
+        
+        // Create rotated pattern with rotation info
+        const rotatedPattern = {
+            ...pattern,
+            steps: rotatedSteps,
+            isRotated: true,
+            rotationSteps: rotationSteps,
+            originalPattern: pattern.steps
+        };
+        
+        // Update formula if it exists
+        if (pattern.formula) {
+            rotatedPattern.formula = `${pattern.formula}@${rotationSteps}`;
+        }
+        
+        return rotatedPattern;
+    }
+    
     static formatCompact(pattern) {
         const binary = PatternConverter.toBinary(pattern.steps, pattern.stepCount);
         const decimal = PatternConverter.toDecimal(binary);
         const hex = PatternConverter.toHex(decimal);
+        const octal = PatternConverter.toOctal(decimal);
         const beats = pattern.steps.filter(s => s).length;
         const density = ((beats / pattern.stepCount) * 100).toFixed(1);
         
-        let result = `b${binary}, ${hex}, ${decimal} (${pattern.stepCount} steps, ${beats} beats, ${density}% density)`;
+        let result = `b${binary}, ${hex}, ${octal}, ${decimal} (${pattern.stepCount} steps, ${beats} beats, ${density}% density)`;
         
         const types = [];
         
@@ -302,6 +395,10 @@ class UnifiedPatternParser {
         
         if (pattern.hasExplicitSteps) {
             types.push(`🎯Enhanced`);
+        }
+        
+        if (pattern.isRotated) {
+            types.push(`🔄Rotated @${pattern.rotationSteps}`);
         }
         
         if (types.length > 0) {
