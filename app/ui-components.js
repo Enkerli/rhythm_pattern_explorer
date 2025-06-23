@@ -690,6 +690,19 @@ function createPatternEntry(pattern) {
     return entry;
 }
 
+// === UI INTERACTION UTILITIES ===
+
+/**
+ * Toggle info box visibility
+ * @param {string} infoBoxId - ID of the info box to toggle
+ */
+function toggleInfoBox(infoBoxId) {
+    const infoBox = document.getElementById(infoBoxId);
+    if (infoBox) {
+        infoBox.style.display = infoBox.style.display === 'none' ? 'block' : 'none';
+    }
+}
+
 // === EVENT HANDLING UTILITIES ===
 
 /**
@@ -1269,4 +1282,15 @@ function selectFile(accept = '*', multiple = false) {
         document.body.appendChild(fileInput);
         fileInput.click();
     });
+}
+
+/**
+ * Toggle visibility of info boxes
+ * @param {string} infoBoxId - ID of the info box to toggle
+ */
+function toggleInfoBox(infoBoxId) {
+    const infoBox = document.getElementById(infoBoxId);
+    if (infoBox) {
+        infoBox.style.display = infoBox.style.display === 'none' ? 'block' : 'none';
+    }
 }

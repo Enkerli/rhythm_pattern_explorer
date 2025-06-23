@@ -138,6 +138,12 @@ class EnhancedPatternApp {
             universalInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
                     this.parseUniversalInput();
+                    // Auto-add to database after successful parse
+                    setTimeout(() => {
+                        if (this.currentPattern) {
+                            this.addCurrentPatternToDatabase();
+                        }
+                    }, 100);
                 }
             });
         }
@@ -288,25 +294,74 @@ class EnhancedPatternApp {
      * Display comprehensive pattern analysis
      */
     displayPatternAnalysis(pattern) {
-        const analysisDisplay = document.getElementById('analysisDisplay');
-        if (!analysisDisplay) return;
-        
         try {
             // Generate comprehensive analysis
             const analysis = this.generateComprehensiveAnalysis(pattern);
             
-            // Update analysis display
-            analysisDisplay.innerHTML = `
-                <div class="analysis-title">${analysis.title}</div>
-                <div class="analysis-content">${analysis.content}</div>
-            `;
+            // Hide placeholder
+            const placeholder = document.getElementById('analysisPlaceholder');
+            if (placeholder) placeholder.style.display = 'none';
+            
+            // Show and populate pattern output line
+            const patternOutputLine = document.getElementById('patternOutputLine');
+            if (patternOutputLine) {
+                patternOutputLine.style.display = 'flex';
+                patternOutputLine.innerHTML = analysis.patternOutputItems.map(item => 
+                    `<div class="output-item">${item}</div>`
+                ).join('');
+            }
+            
+            // Show and populate balance section
+            const balanceSection = document.getElementById('balanceSection');
+            if (balanceSection) {
+                balanceSection.style.display = 'flex';
+                
+                const balanceInfo = balanceSection.querySelector('.balance-info-compact');
+                const balanceViz = balanceSection.querySelector('.balance-visualization-large');
+                
+                if (balanceInfo) {
+                    balanceInfo.innerHTML = `
+                        <div class="balance-score-display balance-${analysis.balanceAnalysis.balanceScore.toLowerCase()}">
+                            ${analysis.balanceAnalysis.balanceScore}
+                        </div>
+                        <div class="balance-score-value">
+                            Score: ${analysis.balanceAnalysis.normalizedMagnitude.toFixed(4)}
+                        </div>
+                        <div class="balance-score-status">
+                            ${analysis.balanceAnalysis.isPerfectlyBalanced ? '✨ PERFECTLY BALANCED' : 'Not perfectly balanced'}
+                        </div>
+                        <button class="info-btn-inline" onclick="toggleInfoBox('balance-equation')" title="Show mathematical formula">🧮</button>
+                        <div class="info-box" id="balance-equation" style="display: none; margin-top: 8px; font-size: 12px; background: #f8f9fa; padding: 6px; border-radius: 4px; border-left: 3px solid #28a745;">
+                            <strong>Milne's Formula:</strong> |∑(e^(i2πkⱼ/n))| / onsets = ${analysis.balanceAnalysis.normalizedMagnitude.toFixed(6)}
+                        </div>
+                    `;
+                }
+                
+                if (balanceViz) {
+                    balanceViz.innerHTML = UIComponents.renderCogVisualization(analysis.cogAnalysis, analysis.stepCount);
+                }
+            }
             
         } catch (error) {
             console.error('❌ Analysis display error:', error);
-            analysisDisplay.innerHTML = `
-                <div class="analysis-title">Analysis Error</div>
-                <div class="analysis-content">Failed to generate analysis: ${error.message}</div>
-            `;
+            
+            // Hide other elements and show error
+            const placeholder = document.getElementById('analysisPlaceholder');
+            if (placeholder) {
+                placeholder.style.display = 'block';
+                placeholder.innerHTML = `
+                    <div class="analysis-error">
+                        <strong>Analysis Error</strong><br>
+                        Failed to generate analysis: ${error.message}
+                    </div>
+                `;
+            }
+            
+            const patternOutputLine = document.getElementById('patternOutputLine');
+            if (patternOutputLine) patternOutputLine.style.display = 'none';
+            
+            const balanceSection = document.getElementById('balanceSection');
+            if (balanceSection) balanceSection.style.display = 'none';
         }
     }
     
@@ -314,118 +369,52 @@ class EnhancedPatternApp {
      * Generate comprehensive mathematical analysis
      */
     generateComprehensiveAnalysis(pattern) {
-        let content = '<div class="analysis-section">';
-        
-        // Basic properties
-        content += '<div class="analysis-item">';
-        content += '<div class="analysis-title">📊 Basic Properties</div>';
-        content += '<div class="analysis-content">';
+        // Generate pattern output line data
+        const structureAnalysis = PatternAnalyzer.analyzeStructure(pattern.steps, pattern.stepCount);
         const binary = PatternConverter.toBinary(pattern.steps, pattern.stepCount);
         const decimal = PatternConverter.toDecimal(binary);
         const hex = PatternConverter.toHex(decimal);
         const octal = PatternConverter.toOctal(decimal);
-        content += `<strong>Pattern:</strong> ${binary}<br>`;
-        content += `<strong>Hex:</strong> ${hex}<br>`;
-        content += `<strong>Octal:</strong> ${octal}<br>`;
-        content += `<strong>Decimal:</strong> ${decimal}<br>`;
-        content += `<strong>Steps:</strong> ${pattern.stepCount}<br>`;
-        content += `<strong>Beats:</strong> ${pattern.steps.filter(step => step).length}<br>`;
-        content += `<strong>Density:</strong> ${((pattern.steps.filter(step => step).length / pattern.stepCount) * 100).toFixed(1)}%`;
-        content += '</div></div>';
+        const onsetCount = pattern.steps.filter(step => step).length;
+        const density = ((onsetCount / pattern.stepCount) * 100).toFixed(1);
         
-        // Structure analysis
-        const structureAnalysis = PatternAnalyzer.analyzeStructure(pattern.steps, pattern.stepCount);
-        content += '<div class="analysis-item structure">';
-        content += '<div class="analysis-title">📐 Structure Analysis</div>';
-        content += '<div class="analysis-content">';
-        content += `<strong>Step Count:</strong> ${structureAnalysis.stepCount}<br>`;
-        content += `<strong>Onset Count:</strong> ${structureAnalysis.onsetCount}<br>`;
-        content += `<strong>Density:</strong> ${structureAnalysis.density.toFixed(1)}%<br>`;
-        content += `<strong>Maximum Silence Gap:</strong> ${structureAnalysis.maxSilenceGap} steps<br>`;
-        content += `<strong>Average Onset Interval:</strong> ${structureAnalysis.avgOnsetInterval.toFixed(2)} steps`;
-        content += '</div></div>';
-        
-        // Repetition analysis
+        // Generate pattern types
+        let patternTypes = [];
+        if (pattern.isEuclidean) {
+            patternTypes.push(`Euclidean: ${pattern.formula}`);
+        }
+        if (pattern.isRegularPolygon) {
+            patternTypes.push(`Polygon: P(${pattern.vertices},${pattern.offset || 0})`);
+        }
         const repetitionAnalysis = PatternAnalyzer.detectRepetition(pattern.steps, pattern.stepCount);
         if (repetitionAnalysis) {
-            content += '<div class="analysis-item repetition">';
-            content += '<div class="analysis-title">🔄 Repetition Analysis</div>';
-            content += '<div class="analysis-content">';
-            content += `<strong>Repetitive Pattern Detected!</strong><br>`;
-            content += `<strong>Unit Length:</strong> ${repetitionAnalysis.unitLength} (pattern "${repetitionAnalysis.unitBinary}" repeats ${repetitionAnalysis.repetitions} times)<br>`;
-            content += `<strong>Compression Ratio:</strong> ${repetitionAnalysis.compressionRatio}:1<br>`;
-            content += `<strong>Unit Pattern:</strong> ${repetitionAnalysis.unitBinary} (${repetitionAnalysis.unitHex}, ${repetitionAnalysis.unitDecimal})<br>`;
-            content += `<strong>Regularity Score:</strong> High (perfect repetition)`;
-            content += '</div></div>';
+            patternTypes.push(`Repetition: ${repetitionAnalysis.unitBinary}×${repetitionAnalysis.repetitions}`);
         }
         
-        // Perfect balance analysis
+        // Pattern output line
+        const patternOutputItems = [
+            `Binary: ${binary}`,
+            `Hex: ${hex}`,
+            `Oct: ${octal}`,
+            `Dec: ${decimal}`,
+            `Steps: ${pattern.stepCount}`,
+            `Beats: ${onsetCount}`,
+            `Density: ${density}%`,
+            `Max Gap: ${structureAnalysis.maxSilenceGap}`,
+            `Avg Interval: ${structureAnalysis.avgOnsetInterval.toFixed(1)}`,
+            ...patternTypes
+        ];
+        
+        // Balance analysis
         const balanceAnalysis = PerfectBalanceAnalyzer.calculateBalance(pattern.steps, pattern.stepCount);
-        content += '<div class="analysis-item perfect-balance">';
-        content += '<div class="analysis-title">🎼 Perfect Balance Analysis (Milne)</div>';
-        content += '<div class="analysis-content">';
-        content += `<div class="mathematical-formula">|∑(e^(i2πkⱼ/n))| / onsets = ${balanceAnalysis.normalizedMagnitude.toFixed(6)}</div>`;
-        content += `<strong>Balance Quality:</strong> `;
-        content += `<span class="balance-score balance-${balanceAnalysis.balanceScore.toLowerCase()}">${balanceAnalysis.balanceScore}</span><br>`;
-        content += `<strong>Status:</strong> ${balanceAnalysis.isPerfectlyBalanced ? '✨ PERFECTLY BALANCED - Center of gravity at origin!' : 'Not perfectly balanced'}`;
-        content += '</div></div>';
-        
-        // Pattern type detection
-        if (pattern.isRegularPolygon) {
-            content += '<div class="analysis-item polygon">';
-            content += '<div class="analysis-title">🔺 Regular Polygon Detected</div>';
-            content += '<div class="analysis-content">';
-            content += `<div class="mathematical-formula">P(${pattern.vertices},${pattern.offset || 0}): ${pattern.polygonType}</div>`;
-            content += `<strong>${pattern.polygonType}</strong> with ${pattern.vertices} vertices<br>`;
-            if (pattern.expansion && pattern.expansion > 1) {
-                content += `Expansion factor: ×${pattern.expansion}<br>`;
-            }
-            if (pattern.offset) {
-                content += `Rotational offset: ${pattern.offset} steps`;
-            }
-            content += '</div></div>';
-        }
-        
-        if (pattern.isEuclidean) {
-            content += '<div class="analysis-item euclidean">';
-            content += '<div class="analysis-title">🌀 Euclidean Rhythm Detected</div>';
-            content += '<div class="analysis-content">';
-            content += `<div class="mathematical-formula">${pattern.formula}: Bjorklund's Algorithm</div>`;
-            content += `<strong>Euclidean Rhythm</strong> distributing ${pattern.beats} beats across ${pattern.steps} steps<br>`;
-            if (pattern.offset) {
-                content += `Offset: ${pattern.offset} steps`;
-            }
-            content += '</div></div>';
-        }
-        
-        // Rotation analysis
-        if (pattern.isRotated) {
-            content += '<div class="analysis-item rotation">';
-            content += '<div class="analysis-title">🔄 Pattern Rotation</div>';
-            content += '<div class="analysis-content">';
-            content += `<strong>Rotated Pattern:</strong> Applied ${pattern.rotationSteps} step rotation<br>`;
-            if (pattern.formula) {
-                content += `<strong>Formula:</strong> ${pattern.formula}<br>`;
-            }
-            const direction = pattern.rotationSteps > 0 ? 'clockwise' : 'counter-clockwise';
-            const normalizedSteps = Math.abs(pattern.rotationSteps) % pattern.stepCount;
-            content += `<strong>Direction:</strong> ${direction} (${normalizedSteps} effective steps)`;
-            content += '</div></div>';
-        }
-        
-        // Center of gravity analysis
         const cogAnalysis = CenterOfGravityCalculator.calculateCenterOfGravity(pattern.steps);
-        content += '<div class="analysis-item center-gravity">';
-        content += '<div class="analysis-title">📐 Center of Gravity Analysis</div>';
-        content += '<div class="analysis-content">';
-        content += UIComponents.renderCogVisualization(cogAnalysis, pattern.stepCount);
-        content += '</div></div>';
-        
-        content += '</div>';
         
         return {
             title: 'Mathematical Pattern Analysis',
-            content: content
+            patternOutputItems: patternOutputItems,
+            balanceAnalysis: balanceAnalysis,
+            cogAnalysis: cogAnalysis,
+            stepCount: pattern.stepCount
         };
     }
     
@@ -511,15 +500,47 @@ class EnhancedPatternApp {
     /**
      * Start perfect balance exploration
      */
-    async startPerfectBalanceExploration() {
-        const minSides = parseInt(document.getElementById('minSides')?.value || '3');
-        const maxSides = parseInt(document.getElementById('maxSides')?.value || '7');
-        const maxCombinations = parseInt(document.getElementById('maxCombinations')?.value || '3');
-        
-        if (minSides > maxSides) {
-            showNotification('Minimum sides cannot be greater than maximum sides', 'warning');
-            return;
+    /**
+     * Parse comma-separated exploration parameters
+     * @returns {Object} Parsed parameters or null if invalid
+     */
+    parseExplorationParams() {
+        try {
+            const paramInput = document.getElementById('explorerParams')?.value || '3,7,3';
+            const parts = paramInput.split(',').map(part => part.trim());
+            
+            if (parts.length !== 3) {
+                throw new Error('Expected format: min sides, max sides, max patterns');
+            }
+            
+            const minSides = parseInt(parts[0]);
+            const maxSides = parseInt(parts[1]);
+            const maxCombinations = parseInt(parts[2]);
+            
+            if (isNaN(minSides) || isNaN(maxSides) || isNaN(maxCombinations)) {
+                throw new Error('All parameters must be valid numbers');
+            }
+            
+            if (minSides < 2 || maxSides < 2 || maxCombinations < 2) {
+                throw new Error('All parameters must be at least 2');
+            }
+            
+            if (minSides > maxSides) {
+                throw new Error('Minimum sides cannot be greater than maximum sides');
+            }
+            
+            return { minSides, maxSides, maxCombinations };
+        } catch (error) {
+            showNotification(`Invalid parameters: ${error.message}`, 'warning');
+            return null;
         }
+    }
+    
+    async startPerfectBalanceExploration() {
+        const params = this.parseExplorationParams();
+        if (!params) return;
+        
+        const { minSides, maxSides, maxCombinations } = params;
         
         try {
             this.isExploring = true;
@@ -579,14 +600,10 @@ class EnhancedPatternApp {
      * Start near perfect balance exploration
      */
     async startNearPerfectExploration() {
-        const minSides = parseInt(document.getElementById('minSides')?.value || '3');
-        const maxSides = parseInt(document.getElementById('maxSides')?.value || '7');
-        const maxCombinations = parseInt(document.getElementById('maxCombinations')?.value || '3');
+        const params = this.parseExplorationParams();
+        if (!params) return;
         
-        if (minSides > maxSides) {
-            showNotification('Minimum sides cannot be greater than maximum sides', 'warning');
-            return;
-        }
+        const { minSides, maxSides, maxCombinations } = params;
         
         try {
             this.isExploring = true;
@@ -880,64 +897,36 @@ ${perfectBalancePatterns.map((pattern, index) => {
         
         const stepCountClass = pattern.stepCount <= 8 ? 'small' : pattern.stepCount <= 16 ? 'medium' : 'large';
         
+        // Get polygon labels for combined patterns
+        const polygonLabels = pattern.isCombined && pattern.polygonComponents 
+            ? pattern.polygonComponents.map(comp => `🔺 ${comp.polygonType}`).join(' ') 
+            : '';
+
         return `
             <div class="pattern-entry ${analysis.isPerfectlyBalanced ? 'perfect-balance' : ''} ${pattern.favorite ? 'favorite' : ''}" data-step-count="${pattern.stepCount}" data-step-count-size="${stepCountClass}">
-                <span class="pattern-star ${pattern.favorite ? 'active' : ''}" onclick="app.toggleFavorite('${pattern.id}')">★</span>
+                <span class="pattern-star ${pattern.favorite ? 'active' : ''}" onclick="app.toggleFavorite('${pattern.id}')">${pattern.favorite ? '★' : '☆'}</span>
+                <div class="pattern-actions">
+                    <button class="btn btn-sm success" onclick="app.loadPattern('${pattern.id}')">Load</button>
+                    <button class="btn btn-sm danger" onclick="app.deletePattern('${pattern.id}')">Delete</button>
+                </div>
                 <div class="pattern-info">
                     <div class="pattern-header">
                         <div class="pattern-name ${!pattern.name ? 'unnamed' : ''}" onclick="app.editPatternName('${pattern.id}')">
                             ${pattern.name || AppConfig.UI.PLACEHOLDERS.NO_NAME}
                         </div>
+                    </div>
+                    <div class="pattern-badges">
                         <span class="step-count-badge">${pattern.stepCount} steps</span>
+                        ${analysis.isPerfectlyBalanced ? '<span class="pattern-repr perfect-balance-badge">✨ Perfect Balance</span>' : ''}
+                        ${pattern.isCombined ? '<span class="pattern-repr combined-type">🎯 Combined</span>' : ''}
+                        ${pattern.isRegularPolygon ? `<span class="pattern-repr polygon-type">🔺 ${pattern.polygonType}</span>` : ''}
+                        ${polygonLabels ? `<span class="pattern-repr polygon-components">${polygonLabels}</span>` : ''}
+                        ${pattern.isEuclidean ? `<span class="pattern-repr euclidean-type">🌀 ${pattern.formula}</span>` : ''}
                     </div>
                     <div class="pattern-representations">
                         ${representations.map(repr => `<span class="pattern-repr">${repr}</span>`).join('')}
-                        ${analysis.isPerfectlyBalanced ? '<span class="pattern-repr perfect-balance-badge">✨ Perfect Balance</span>' : ''}
-                        ${pattern.isRegularPolygon ? `<span class="pattern-repr polygon-type">🔺 ${pattern.polygonType}</span>` : ''}
-                        ${pattern.isEuclidean ? `<span class="pattern-repr euclidean-type">🌀 ${pattern.formula}</span>` : ''}
-                        ${(() => {
-                            // Get original patterns from either structure
-                            const originalPatterns = pattern.isCombined ? 
-                                (pattern.combined?.originalPatterns || pattern.originalPatterns) : null;
-                            
-                            if (!originalPatterns) return '';
-                            
-                            return originalPatterns.map(p => {
-                                if (p.isRegularPolygon) {
-                                    return `<span class="pattern-repr polygon-type">🔺 ${p.polygonType}</span>`;
-                                } else if (p.isEuclidean) {
-                                    return `<span class="pattern-repr euclidean-type">🌀 ${p.formula}</span>`;
-                                }
-                                return '';
-                            }).join('');
-                        })()}
-                        ${(() => {
-                            // Get original patterns from either structure
-                            const originalPatterns = pattern.isCombined ? 
-                                (pattern.combined?.originalPatterns || pattern.originalPatterns) : null;
-                            
-                            if (!originalPatterns) return '';
-                            
-                            const combinationText = originalPatterns.map(p => {
-                                if (p.isRegularPolygon) {
-                                    return `P(${p.vertices},${p.offset || 0}${p.expansion && p.expansion !== 1 ? ',' + p.expansion : ''})`;
-                                } else if (p.isEuclidean) {
-                                    return `E(${p.beats},${p.stepCount},${p.offset || 0})`;
-                                } else if (p.binary) {
-                                    return `b${p.binary}`;
-                                } else {
-                                    return `${p.stepCount}steps`;
-                                }
-                            }).join(' + ');
-                            
-                            return `<span class="pattern-repr combined-type" style="background: #e3f2fd; color: #1976d2; font-weight: bold; border-left: 3px solid #2196f3; padding: 2px 6px;">🎯 COMBINED: ${combinationText}</span>`;
-                        })()}
                         ${pattern.isRotated ? `<span class="pattern-repr rotation-type" style="background: #fff3e0; color: #f57c00; font-weight: bold;">🔄 Rotated @${pattern.rotationSteps}</span>` : ''}
                     </div>
-                </div>
-                <div class="pattern-actions">
-                    <button class="btn btn-sm success" onclick="app.loadPattern('${pattern.id}')">Load</button>
-                    <button class="btn btn-sm danger" onclick="app.deletePattern('${pattern.id}')">Delete</button>
                 </div>
             </div>
         `;
