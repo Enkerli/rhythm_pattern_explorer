@@ -224,6 +224,30 @@ class UnifiedPatternParser {
     static parse(input) {
         const cleaned = input.trim();
         
+        // Check for pattern naming: name=pattern
+        if (cleaned.includes('=') && !cleaned.includes('P(') && !cleaned.includes('E(')) {
+            const parts = cleaned.split('=');
+            if (parts.length === 2) {
+                const name = parts[0].trim();
+                const patternInput = parts[1].trim();
+                
+                if (name.length > 0 && patternInput.length > 0) {
+                    const result = this.parse(patternInput);
+                    
+                    // Add name to the result
+                    if (result.type === 'single') {
+                        result.pattern.name = name;
+                        result.pattern.hasCustomName = true;
+                    } else if (result.type === 'combination') {
+                        result.combined.name = name;
+                        result.combined.hasCustomName = true;
+                    }
+                    
+                    return result;
+                }
+            }
+        }
+        
         if (cleaned.includes('+')) {
             const parts = cleaned.split('+').map(p => p.trim());
             if (parts.length < 2) {
@@ -253,6 +277,21 @@ class UnifiedPatternParser {
     
     static parsePattern(input) {
         const cleaned = input.trim();
+        
+        // Check for transformation prefixes: ~, rev, inv
+        if (cleaned.startsWith('~') || cleaned.startsWith('inv ')) {
+            // Inversion (bit flipping)
+            const pattern = cleaned.startsWith('~') ? cleaned.substring(1).trim() : cleaned.substring(4).trim();
+            const basePattern = this.parsePattern(pattern);
+            return this.invertPattern(basePattern);
+        }
+        
+        if (cleaned.startsWith('rev ')) {
+            // Retrograde (reverse)
+            const pattern = cleaned.substring(4).trim();
+            const basePattern = this.parsePattern(pattern);
+            return this.retrogradePattern(basePattern);
+        }
         
         // Check for rotation notation: pattern@steps
         if (cleaned.includes('@')) {
@@ -285,11 +324,12 @@ class UnifiedPatternParser {
             return RegularPolygonGenerator.generate(vertices, offset, expansion);
         }
         
-        const euclideanMatch = cleaned.match(/^E\((\d+),(\d+),(\d+)\)$/i);
-        if (euclideanMatch) {
-            const beats = parseInt(euclideanMatch[1]);
-            const steps = parseInt(euclideanMatch[2]);
-            const offset = parseInt(euclideanMatch[3]);
+        // Euclidean with offset: E(beats,steps,offset)
+        const euclideanMatch3 = cleaned.match(/^E\((\d+),(\d+),(\d+)\)$/i);
+        if (euclideanMatch3) {
+            const beats = parseInt(euclideanMatch3[1]);
+            const steps = parseInt(euclideanMatch3[2]);
+            const offset = parseInt(euclideanMatch3[3]);
             const euclideanSteps = EuclideanGenerator.generate(beats, steps, offset);
             return {
                 steps: euclideanSteps,
@@ -298,6 +338,63 @@ class UnifiedPatternParser {
                 offset,
                 isEuclidean: true,
                 formula: `E(${beats},${steps},${offset})`
+            };
+        }
+        
+        // Euclidean without offset: E(beats,steps) - defaults to offset 0
+        const euclideanMatch2 = cleaned.match(/^E\((\d+),(\d+)\)$/i);
+        if (euclideanMatch2) {
+            const beats = parseInt(euclideanMatch2[1]);
+            const steps = parseInt(euclideanMatch2[2]);
+            const offset = 0; // Default offset
+            const euclideanSteps = EuclideanGenerator.generate(beats, steps, offset);
+            return {
+                steps: euclideanSteps,
+                stepCount: steps,
+                beats,
+                offset,
+                isEuclidean: true,
+                formula: `E(${beats},${steps})`
+            };
+        }
+        
+        // Random pattern notation: R(onsets,steps)
+        const randomMatch = cleaned.match(/^R\((\d+),(\d+)\)$/i);
+        if (randomMatch) {
+            const onsets = parseInt(randomMatch[1]);
+            const steps = parseInt(randomMatch[2]);
+            
+            if (onsets > steps) {
+                throw new Error(`Random pattern error: cannot have ${onsets} onsets in ${steps} steps`);
+            }
+            if (onsets < 0 || steps < 1) {
+                throw new Error(`Random pattern error: invalid parameters R(${onsets},${steps})`);
+            }
+            
+            // Generate random pattern
+            const stepArray = new Array(steps).fill(false);
+            const positions = [];
+            
+            // Generate unique random positions
+            while (positions.length < onsets) {
+                const pos = Math.floor(Math.random() * steps);
+                if (!positions.includes(pos)) {
+                    positions.push(pos);
+                }
+            }
+            
+            // Set onsets at selected positions
+            positions.forEach(pos => {
+                stepArray[pos] = true;
+            });
+            
+            return {
+                steps: stepArray,
+                stepCount: steps,
+                beats: onsets,
+                isRandom: true,
+                formula: `R(${onsets},${steps})`,
+                randomSeed: Date.now() // For debugging/reproduction
             };
         }
         
@@ -335,6 +432,31 @@ class UnifiedPatternParser {
                 isOnsetArray: true,
                 formula: explicitStepCount ? `[${onsets.join(',')}]:${stepCount}` : `[${onsets.join(',')}]`
             };
+        }
+        
+        // Shorthand polygon notation: tri, pent, hept, etc.
+        const shorthandMap = {
+            'bi': 2, 'bip': 2, 'bipod': 2,
+            'tri': 3, 'triangle': 3,
+            'quad': 4, 'square': 4, 'tetra': 4,
+            'pent': 5, 'pentagon': 5, 'penta': 5,
+            'hex': 6, 'hexagon': 6, 'hexa': 6,
+            'hept': 7, 'heptagon': 7, 'hepta': 7, 'sept': 7, 'septa': 7,
+            'oct': 8, 'octagon': 8, 'octa': 8,
+            'enn': 9, 'enneagon': 9, 'nona': 9,
+            'dec': 10, 'decagon': 10, 'deca': 10,
+            'dod': 12, 'dodecagon': 12, 'dodeca': 12
+        };
+        
+        const shorthandMatch = cleaned.match(/^(bi|bip|bipod|tri|triangle|quad|square|tetra|pent|pentagon|penta|hex|hexagon|hexa|hept|heptagon|hepta|sept|septa|oct|octagon|octa|enn|enneagon|nona|dec|decagon|deca|dod|dodecagon|dodeca)(?:\+(\d+))?$/i);
+        if (shorthandMatch) {
+            const shape = shorthandMatch[1].toLowerCase();
+            const offset = shorthandMatch[2] ? parseInt(shorthandMatch[2]) : 0;
+            const vertices = shorthandMap[shape];
+            
+            if (vertices) {
+                return RegularPolygonGenerator.generate(vertices, offset);
+            }
         }
         
         // Binary notation: strict validation for only 0s and 1s
@@ -406,6 +528,54 @@ class UnifiedPatternParser {
         }
         
         return rotatedPattern;
+    }
+    
+    static invertPattern(pattern) {
+        if (!pattern || !pattern.steps || !Array.isArray(pattern.steps)) {
+            throw new Error('Invalid pattern for inversion');
+        }
+        
+        // Invert each step (flip bits)
+        const invertedSteps = pattern.steps.map(step => !step);
+        
+        // Create inverted pattern
+        const invertedPattern = {
+            ...pattern,
+            steps: invertedSteps,
+            isInverted: true,
+            originalPattern: pattern.steps
+        };
+        
+        // Update formula if it exists
+        if (pattern.formula) {
+            invertedPattern.formula = `~${pattern.formula}`;
+        }
+        
+        return invertedPattern;
+    }
+    
+    static retrogradePattern(pattern) {
+        if (!pattern || !pattern.steps || !Array.isArray(pattern.steps)) {
+            throw new Error('Invalid pattern for retrograde');
+        }
+        
+        // Reverse the steps array
+        const retrogradeSteps = [...pattern.steps].reverse();
+        
+        // Create retrograde pattern
+        const retrogradePattern = {
+            ...pattern,
+            steps: retrogradeSteps,
+            isRetrograde: true,
+            originalPattern: pattern.steps
+        };
+        
+        // Update formula if it exists
+        if (pattern.formula) {
+            retrogradePattern.formula = `rev ${pattern.formula}`;
+        }
+        
+        return retrogradePattern;
     }
     
     static formatCompact(pattern) {

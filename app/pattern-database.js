@@ -289,6 +289,8 @@ class PatternDatabase {
                 return this.patterns.filter(p => p.hasSubtraction);
             case 'repetitive':
                 return this.patterns.filter(p => p.repetition);
+            case 'non_repetitive':
+                return this.patterns.filter(p => !p.repetition);
             case 'wellformed':
                 return this.patterns.filter(p => p.milne && p.milne.wellformed);
             case 'balanced':

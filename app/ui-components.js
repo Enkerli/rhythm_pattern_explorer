@@ -19,9 +19,9 @@ function renderCogVisualization(cogAnalysis, stepCount) {
     }
     
     const { coordinates, normalizedMagnitude } = cogAnalysis;
-    const radius = 80;
-    const centerX = 100;
-    const centerY = 100;
+    const radius = 120; // Larger radius for bigger visualization
+    const centerX = 150; // Larger center coordinates
+    const centerY = 150;
     
     // Calculate CoG position - scale coordinates appropriately
     // For perfectly balanced patterns, coordinates should be very close to (0,0)
@@ -44,15 +44,16 @@ function renderCogVisualization(cogAnalysis, stepCount) {
         onsetPoints += `
             <div class="onset-point" style="
                 position: absolute;
-                left: ${x - 4}px;
-                top: ${y - 4}px;
-                width: 8px;
-                height: 8px;
+                left: ${x - 8}px;
+                top: ${y - 8}px;
+                width: 16px;
+                height: 16px;
                 border-radius: 50%;
                 background: #4CAF50;
-                border: 2px solid #fff;
+                border: 3px solid #fff;
                 box-sizing: border-box;
                 transform: translate(0, 0);
+                box-shadow: 0 3px 6px rgba(0,0,0,0.3);
             "></div>
         `;
     }
@@ -67,13 +68,13 @@ function renderCogVisualization(cogAnalysis, stepCount) {
         stepMarkers += `
             <div class="step-marker" style="
                 position: absolute;
-                left: ${x - 3}px;
-                top: ${y - 3}px;
-                width: 6px;
-                height: 6px;
+                left: ${x - 5}px;
+                top: ${y - 5}px;
+                width: 10px;
+                height: 10px;
                 border-radius: 50%;
-                background: #eee;
-                border: 1px solid #ccc;
+                background: #f0f0f0;
+                border: 2px solid #ddd;
                 box-sizing: border-box;
                 transform: translate(0, 0);
             "></div>
@@ -86,12 +87,12 @@ function renderCogVisualization(cogAnalysis, stepCount) {
     return `
         <div class="cog-visualization" style="
             position: relative;
-            width: 200px;
-            height: 200px;
+            width: 300px;
+            height: 300px;
             margin: 10px auto;
-            border: 1px solid #ddd;
+            border: 2px solid #ddd;
             border-radius: 50%;
-            background: radial-gradient(circle, #f9f9f9, #e9e9e9);
+            background: #ffffff;
         ">
             ${stepMarkers}
             ${onsetPoints}

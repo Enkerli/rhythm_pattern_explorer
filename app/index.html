@@ -42,15 +42,20 @@
                     <strong>Supported Formats:</strong><br>
                     • <strong>Polygons:</strong> P(vertices,offset) → P(3,1)+P(5,0) = Auto-expansion to LCM<br>
                     • <strong>Single Polygons:</strong> P(vertices,offset,expansion) → P(3,1,4) = Explicit expansion<br>
-                    • <strong>Euclidean:</strong> E(beats,steps,offset) → E(5,8,0) = Quintillo<br>
+                    • <strong>Euclidean:</strong> E(beats,steps,offset) or E(beats,steps) → E(5,8,0) or E(5,8)<br>
+                    • <strong>Random:</strong> R(onsets,steps) → R(3,8) = Random 3 onsets in 8 steps<br>
+                    • <strong>Shorthand:</strong> tri, pent, hept, oct → triangle, pentagon, heptagon, octagon<br>
                     • <strong>Subtraction:</strong> P(3,0)+P(5,1)-P(2,0) = Perfect balance via subtraction<br>
+                    • <strong>Transformations:</strong> ~pattern (invert), rev pattern (retrograde)<br>
+                    • <strong>Named Patterns:</strong> tresillo=E(3,8), mypattern=P(3,1)+P(5,0)<br>
                     • <strong>Binary:</strong> b101010 or 101010<br>
                     • <strong>Hex:</strong> 0x92 → Tresillo<br>
                     • <strong>Octal:</strong> 0o452 → Ternary rhythms<br>
                     • <strong>Decimal:</strong> 146<br>
                     • <strong>Onset Arrays:</strong> [0,3,6]:8 → Onset positions with step count<br>
                     • <strong>Rotation:</strong> pattern@steps → 0x92@3, P(3,1)@2<br>
-                    • <strong>Multi-combinations:</strong> P(3,1)+P(5,0)+P(2,5) → Proper LCM(3,5,2)=30
+                    • <strong>Multi-combinations:</strong> P(3,1)+P(5,0)+P(2,5) → Proper LCM(3,5,2)=30<br>
+                    • <strong>Keyboard:</strong> Enter = Parse, Cmd/Ctrl+Enter = Parse & Add to Database
                 </div>
             </section>
 
@@ -176,6 +181,7 @@
                             <option value="combined">Combined Patterns</option>
                             <option value="subtraction">With Subtraction</option>
                             <option value="repetitive">Repetitive</option>
+                            <option value="non_repetitive">Non-Repetitive</option>
                             <option value="wellformed">Well-formed</option>
                             <option value="balanced">Perfectly Balanced (Milne)</option>
                             <option value="geometric_centered">Geometrically Centered (CoG < 0.1)</option>
