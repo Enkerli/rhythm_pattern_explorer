@@ -137,13 +137,18 @@ class EnhancedPatternApp {
         if (universalInput) {
             universalInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
-                    this.parseUniversalInput();
-                    // Auto-add to database after successful parse
-                    setTimeout(() => {
-                        if (this.currentPattern) {
-                            this.addCurrentPatternToDatabase();
-                        }
-                    }, 100);
+                    if (e.metaKey || e.ctrlKey) {
+                        // Cmd+Enter or Ctrl+Enter: Parse and add to database
+                        this.parseUniversalInput();
+                        setTimeout(() => {
+                            if (this.currentPattern) {
+                                this.addCurrentPatternToDatabase();
+                            }
+                        }, 100);
+                    } else {
+                        // Just Enter: Parse only
+                        this.parseUniversalInput();
+                    }
                 }
             });
         }
@@ -321,18 +326,26 @@ class EnhancedPatternApp {
                 
                 if (balanceInfo) {
                     balanceInfo.innerHTML = `
-                        <div class="balance-score-display balance-${analysis.balanceAnalysis.balanceScore.toLowerCase()}">
-                            ${analysis.balanceAnalysis.balanceScore}
-                        </div>
-                        <div class="balance-score-value">
-                            Score: ${analysis.balanceAnalysis.normalizedMagnitude.toFixed(4)}
-                        </div>
-                        <div class="balance-score-status">
-                            ${analysis.balanceAnalysis.isPerfectlyBalanced ? '✨ PERFECTLY BALANCED' : 'Not perfectly balanced'}
-                        </div>
-                        <button class="info-btn-inline" onclick="toggleInfoBox('balance-equation')" title="Show mathematical formula">🧮</button>
-                        <div class="info-box" id="balance-equation" style="display: none; margin-top: 8px; font-size: 12px; background: #f8f9fa; padding: 6px; border-radius: 4px; border-left: 3px solid #28a745;">
-                            <strong>Milne's Formula:</strong> |∑(e^(i2πkⱼ/n))| / onsets = ${analysis.balanceAnalysis.normalizedMagnitude.toFixed(6)}
+                        <div class="analysis-box balance-box">
+                            <div class="analysis-box-header">
+                                <span class="analysis-box-icon">⚖️</span>
+                                <span class="analysis-box-title">Perfect Balance</span>
+                                <button class="info-btn-inline" onclick="toggleInfoBox('balance-equation')" title="Show mathematical formula">🧮</button>
+                            </div>
+                            <div class="analysis-box-content">
+                                <div class="balance-score-display balance-${analysis.balanceAnalysis.balanceScore.toLowerCase()}">
+                                    ${analysis.balanceAnalysis.balanceScore}
+                                </div>
+                                <div class="balance-score-value">
+                                    Score: ${analysis.balanceAnalysis.normalizedMagnitude.toFixed(4)}
+                                </div>
+                                <div class="balance-score-status">
+                                    ${analysis.balanceAnalysis.isPerfectlyBalanced ? '✨ PERFECTLY BALANCED' : 'Not perfectly balanced'}
+                                </div>
+                            </div>
+                            <div class="info-box" id="balance-equation" style="display: none; margin-top: 8px; font-size: 12px; background: #f8f9fa; padding: 6px; border-radius: 4px; border-left: 3px solid #28a745;">
+                                <strong>Milne's Formula:</strong> |∑(e^(i2πkⱼ/n))| / onsets = ${analysis.balanceAnalysis.normalizedMagnitude.toFixed(6)}
+                            </div>
                         </div>
                     `;
                 }
@@ -378,17 +391,24 @@ class EnhancedPatternApp {
         const onsetCount = pattern.steps.filter(step => step).length;
         const density = ((onsetCount / pattern.stepCount) * 100).toFixed(1);
         
-        // Generate pattern types
+        // Generate pattern types with colored polygon info
         let patternTypes = [];
         if (pattern.isEuclidean) {
-            patternTypes.push(`Euclidean: ${pattern.formula}`);
+            patternTypes.push(`<span class="pattern-type euclidean">🌀 Euclidean: ${pattern.formula}</span>`);
         }
         if (pattern.isRegularPolygon) {
-            patternTypes.push(`Polygon: P(${pattern.vertices},${pattern.offset || 0})`);
+            const polygonName = pattern.polygonType || `${pattern.vertices}-gon`;
+            patternTypes.push(`<span class="pattern-type polygon">🔺 ${polygonName}</span>`);
+        }
+        if (pattern.isCombined && pattern.polygonComponents && pattern.polygonComponents.length > 0) {
+            const polygonLabels = pattern.polygonComponents.map(comp => 
+                `🔺 ${comp.polygonType || comp.type || 'Polygon'}`
+            ).join(' + ');
+            patternTypes.push(`<span class="pattern-type polygon-combined">${polygonLabels}</span>`);
         }
         const repetitionAnalysis = PatternAnalyzer.detectRepetition(pattern.steps, pattern.stepCount);
         if (repetitionAnalysis) {
-            patternTypes.push(`Repetition: ${repetitionAnalysis.unitBinary}×${repetitionAnalysis.repetitions}`);
+            patternTypes.push(`<span class="pattern-type repetition">🔄 Repetition: ${repetitionAnalysis.unitBinary}×${repetitionAnalysis.repetitions}</span>`);
         }
         
         // Pattern output line
@@ -897,10 +917,118 @@ ${perfectBalancePatterns.map((pattern, index) => {
         
         const stepCountClass = pattern.stepCount <= 8 ? 'small' : pattern.stepCount <= 16 ? 'medium' : 'large';
         
-        // Get polygon labels for combined patterns
-        const polygonLabels = pattern.isCombined && pattern.polygonComponents 
-            ? pattern.polygonComponents.map(comp => `🔺 ${comp.polygonType}`).join(' ') 
-            : '';
+        // Get polygon labels for combined patterns - check multiple possible locations
+        let polygonLabels = '';
+        if (pattern.isCombined) {
+            if (pattern.polygonComponents && pattern.polygonComponents.length > 0) {
+                polygonLabels = pattern.polygonComponents.map(comp => `🔺 ${comp.polygonType || comp.type || 'Polygon'}`).join(' ');
+            } else if (pattern.combined && pattern.combined.originalPatterns && pattern.combined.originalPatterns.length > 0) {
+                // Check combined.originalPatterns for polygon data
+                const polygonComps = pattern.combined.originalPatterns.filter(comp => 
+                    comp.isRegularPolygon || comp.type === 'polygon' || (comp.vertices && comp.vertices > 0)
+                );
+                if (polygonComps.length > 0) {
+                    const polygonNames = polygonComps.map(comp => {
+                        if (comp.polygonType) return `🔺 ${comp.polygonType}`;
+                        if (comp.vertices) {
+                            const sides = comp.vertices;
+                            const name = sides === 3 ? 'Triangle' : 
+                                       sides === 4 ? 'Square' : 
+                                       sides === 5 ? 'Pentagon' : 
+                                       sides === 6 ? 'Hexagon' : 
+                                       sides === 7 ? 'Heptagon' : 
+                                       sides === 8 ? 'Octagon' : 
+                                       `${sides}-gon`;
+                            return `🔺 ${name}`;
+                        }
+                        return `🔺 ${comp.name || comp.type || 'Polygon'}`;
+                    });
+                    polygonLabels = polygonNames.join(' ');
+                }
+            } else if (pattern.components && pattern.components.length > 0) {
+                // Check if any components are polygons
+                const polygonComps = pattern.components.filter(comp => comp.type === 'polygon' || comp.isRegularPolygon);
+                if (polygonComps.length > 0) {
+                    polygonLabels = polygonComps.map(comp => `🔺 ${comp.polygonType || comp.name || 'Polygon'}`).join(' ');
+                }
+            } else if (pattern.expression && pattern.expression.includes('P(')) {
+                // Extract polygon information from expression as fallback
+                const polygonMatches = pattern.expression.match(/P\((\d+),(\d+)\)/g);
+                if (polygonMatches) {
+                    const polygonNames = polygonMatches.map(match => {
+                        const [, vertices] = match.match(/P\((\d+),\d+\)/);
+                        const sides = parseInt(vertices);
+                        const name = sides === 3 ? 'Triangle' : 
+                                   sides === 4 ? 'Square' : 
+                                   sides === 5 ? 'Pentagon' : 
+                                   sides === 6 ? 'Hexagon' : 
+                                   sides === 7 ? 'Heptagon' : 
+                                   sides === 8 ? 'Octagon' : 
+                                   `${sides}-gon`;
+                        return `🔺 ${name}`;
+                    });
+                    polygonLabels = polygonNames.join(' ');
+                }
+            } else if (pattern.formula && pattern.formula.includes('P(')) {
+                // Extract polygon information from formula as fallback
+                const polygonMatches = pattern.formula.match(/P\((\d+),(\d+)\)/g);
+                if (polygonMatches) {
+                    const polygonNames = polygonMatches.map(match => {
+                        const [, vertices] = match.match(/P\((\d+),\d+\)/);
+                        const sides = parseInt(vertices);
+                        const name = sides === 3 ? 'Triangle' : 
+                                   sides === 4 ? 'Square' : 
+                                   sides === 5 ? 'Pentagon' : 
+                                   sides === 6 ? 'Hexagon' : 
+                                   sides === 7 ? 'Heptagon' : 
+                                   sides === 8 ? 'Octagon' : 
+                                   `${sides}-gon`;
+                        return `🔺 ${name}`;
+                    });
+                    polygonLabels = polygonNames.join(' ');
+                }
+            }
+        }
+
+        // Get safe polygon type with proper names - check both direct and nested properties
+        let polygonType = 'Polygon';
+        if (pattern.polygonType) {
+            polygonType = pattern.polygonType;
+        } else if (pattern.polygon && pattern.polygon.polygonType) {
+            polygonType = pattern.polygon.polygonType;
+        } else if (pattern.vertices) {
+            const sides = pattern.vertices;
+            polygonType = sides === 3 ? 'Triangle' : 
+                         sides === 4 ? 'Square' : 
+                         sides === 5 ? 'Pentagon' : 
+                         sides === 6 ? 'Hexagon' : 
+                         sides === 7 ? 'Heptagon' : 
+                         sides === 8 ? 'Octagon' : 
+                         `${sides}-gon`;
+        } else if (pattern.polygon && pattern.polygon.vertices) {
+            const sides = pattern.polygon.vertices;
+            polygonType = sides === 3 ? 'Triangle' : 
+                         sides === 4 ? 'Square' : 
+                         sides === 5 ? 'Pentagon' : 
+                         sides === 6 ? 'Hexagon' : 
+                         sides === 7 ? 'Heptagon' : 
+                         sides === 8 ? 'Octagon' : 
+                         `${sides}-gon`;
+        } else if (pattern.type && pattern.type !== 'polygon') {
+            polygonType = pattern.type;
+        }
+        
+        // Get Euclidean formula with actual parameters - check both direct and nested properties
+        let euclideanFormula = 'Euclidean';
+        if (pattern.formula) {
+            euclideanFormula = pattern.formula;
+        } else if (pattern.euclidean && typeof pattern.euclidean === 'string') {
+            euclideanFormula = pattern.euclidean;
+        } else if (pattern.beats && pattern.steps) {
+            euclideanFormula = `E(${pattern.beats},${pattern.steps},${pattern.offset || 0})`;
+        } else if (pattern.euclideanParams) {
+            euclideanFormula = `E(${pattern.euclideanParams.beats || '?'},${pattern.euclideanParams.steps || '?'},${pattern.euclideanParams.offset || 0})`;
+        }
 
         return `
             <div class="pattern-entry ${analysis.isPerfectlyBalanced ? 'perfect-balance' : ''} ${pattern.favorite ? 'favorite' : ''}" data-step-count="${pattern.stepCount}" data-step-count-size="${stepCountClass}">
@@ -919,9 +1047,10 @@ ${perfectBalancePatterns.map((pattern, index) => {
                         <span class="step-count-badge">${pattern.stepCount} steps</span>
                         ${analysis.isPerfectlyBalanced ? '<span class="pattern-repr perfect-balance-badge">✨ Perfect Balance</span>' : ''}
                         ${pattern.isCombined ? '<span class="pattern-repr combined-type">🎯 Combined</span>' : ''}
-                        ${pattern.isRegularPolygon ? `<span class="pattern-repr polygon-type">🔺 ${pattern.polygonType}</span>` : ''}
+                        ${pattern.isRegularPolygon ? `<span class="pattern-repr polygon-type">🔺 ${polygonType}</span>` : ''}
                         ${polygonLabels ? `<span class="pattern-repr polygon-components">${polygonLabels}</span>` : ''}
-                        ${pattern.isEuclidean ? `<span class="pattern-repr euclidean-type">🌀 ${pattern.formula}</span>` : ''}
+                        ${pattern.isEuclidean ? `<span class="pattern-repr euclidean-type">🌀 ${euclideanFormula}</span>` : ''}
+                        ${(!pattern.isRegularPolygon && !polygonLabels && ((pattern.formula && pattern.formula.includes('P(')) || (pattern.expression && pattern.expression.includes('P(')))) ? `<span class="pattern-repr polygon-type">🔺 Contains Polygons</span>` : ''}
                     </div>
                     <div class="pattern-representations">
                         ${representations.map(repr => `<span class="pattern-repr">${repr}</span>`).join('')}
@@ -1100,9 +1229,13 @@ ${perfectBalancePatterns.map((pattern, index) => {
         
         const input = document.getElementById('universalInput');
         if (input) {
+            // Use explicit step count notation for loading
             const binary = PatternConverter.toBinary(pattern.steps, pattern.stepCount);
             const decimal = PatternConverter.toDecimal(binary);
-            input.value = PatternConverter.toHex(decimal);
+            const hex = PatternConverter.toHex(decimal);
+            
+            // Always include explicit step count when loading
+            input.value = `${hex}:${pattern.stepCount}`;
             this.parseUniversalInput();
         }
     }
