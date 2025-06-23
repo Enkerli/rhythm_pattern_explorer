@@ -197,6 +197,8 @@ class EnhancedPatternApp {
         const searchInput = document.getElementById('searchInput');
         const filterSelect = document.getElementById('filterSelect');
         const sortBtn = document.getElementById('sortBtn');
+        const minStepCountInput = document.getElementById('minStepCount');
+        const maxStepCountInput = document.getElementById('maxStepCount');
         
         if (searchInput) {
             searchInput.addEventListener('input', () => this.handleSearch());
@@ -208,6 +210,37 @@ class EnhancedPatternApp {
         
         if (sortBtn) {
             sortBtn.addEventListener('click', () => this.toggleSort());
+        }
+        
+        // Step count filter event listeners
+        if (minStepCountInput) {
+            minStepCountInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    this.updatePatternList();
+                }
+            });
+            minStepCountInput.addEventListener('input', () => {
+                // Optional: Add debounced filtering on input change
+                clearTimeout(this.stepCountFilterTimeout);
+                this.stepCountFilterTimeout = setTimeout(() => {
+                    this.updatePatternList();
+                }, 500);
+            });
+        }
+        
+        if (maxStepCountInput) {
+            maxStepCountInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    this.updatePatternList();
+                }
+            });
+            maxStepCountInput.addEventListener('input', () => {
+                // Optional: Add debounced filtering on input change
+                clearTimeout(this.stepCountFilterTimeout);
+                this.stepCountFilterTimeout = setTimeout(() => {
+                    this.updatePatternList();
+                }, 500);
+            });
         }
     }
     
@@ -845,12 +878,17 @@ ${perfectBalancePatterns.map((pattern, index) => {
         const analysis = PerfectBalanceAnalyzer.calculateBalance(pattern.steps, pattern.stepCount);
         const representations = this.getPatternRepresentations(pattern);
         
+        const stepCountClass = pattern.stepCount <= 8 ? 'small' : pattern.stepCount <= 16 ? 'medium' : 'large';
+        
         return `
-            <div class="pattern-entry ${analysis.isPerfectlyBalanced ? 'perfect-balance' : ''} ${pattern.favorite ? 'favorite' : ''}">
+            <div class="pattern-entry ${analysis.isPerfectlyBalanced ? 'perfect-balance' : ''} ${pattern.favorite ? 'favorite' : ''}" data-step-count="${pattern.stepCount}" data-step-count-size="${stepCountClass}">
                 <span class="pattern-star ${pattern.favorite ? 'active' : ''}" onclick="app.toggleFavorite('${pattern.id}')">★</span>
                 <div class="pattern-info">
-                    <div class="pattern-name ${!pattern.name ? 'unnamed' : ''}" onclick="app.editPatternName('${pattern.id}')">
-                        ${pattern.name || AppConfig.UI.PLACEHOLDERS.NO_NAME}
+                    <div class="pattern-header">
+                        <div class="pattern-name ${!pattern.name ? 'unnamed' : ''}" onclick="app.editPatternName('${pattern.id}')">
+                            ${pattern.name || AppConfig.UI.PLACEHOLDERS.NO_NAME}
+                        </div>
+                        <span class="step-count-badge">${pattern.stepCount} steps</span>
                     </div>
                     <div class="pattern-representations">
                         ${representations.map(repr => `<span class="pattern-repr">${repr}</span>`).join('')}
