@@ -87,6 +87,7 @@ class EnhancedPatternApp {
         
         // Update UI state
         this.updateSortButton();
+        this.updateButtonStates();
         
         console.log('🎯 Application initialization complete');
     }
@@ -197,6 +198,9 @@ class EnhancedPatternApp {
                     // Update the universal input to reflect the new pattern
                     this.updateUniversalInputFromPattern(this.currentPattern);
                     
+                    // Update button states
+                    this.updateButtonStates();
+                    
                 } catch (error) {
                     console.error('❌ Error updating pattern from sequencer:', error);
                     showNotification('Error updating pattern from sequencer', 'error', 3000);
@@ -245,7 +249,7 @@ class EnhancedPatternApp {
      */
     setupUniversalInputEvents() {
         const parseBtn = document.getElementById('parseBtn');
-        const addBtn = document.getElementById('addUniversalBtn');
+        const addBtn = document.getElementById('addToDbBtn');
         const copyBtn = document.getElementById('copyHexUniversalBtn');
         const testBtn = document.getElementById('testBtn');
         const universalInput = document.getElementById('universalInput');
@@ -410,11 +414,13 @@ class EnhancedPatternApp {
                 this.currentPattern = result.pattern;
                 this.displayPatternAnalysis(this.currentPattern);
                 this.showCompactOutput(this.currentPattern);
+                this.updateButtonStates();
                 console.log('✅ Pattern parsed successfully');
             } else if (result.type === 'combination') {
                 this.currentPattern = result.combined;
                 this.displayPatternAnalysis(this.currentPattern);
                 this.showCompactOutput(this.currentPattern);
+                this.updateButtonStates();
                 console.log('✅ Combined pattern parsed successfully');
             } else {
                 showNotification('Failed to parse pattern: Unknown result type', 'error');
@@ -495,6 +501,28 @@ class EnhancedPatternApp {
                                 </div>
                                 <div class="cog-description">
                                     ${(analysis.cogAnalysis?.normalizedMagnitude || analysis.cogAnalysis?.distance || 1) < 0.1 ? '🎯 Geometrically Centered' : 'Off-center pattern'}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="analysis-box longshort-box" style="margin-top: 8px;">
+                            <div class="analysis-box-header">
+                                <span class="analysis-box-icon">🎼</span>
+                                <span class="analysis-box-title">Rhythmic Prosody</span>
+                            </div>
+                            <div class="analysis-box-content">
+                                <div class="prosody-type">
+                                    ${analysis.longShortAnalysis?.description || 'No prosodic pattern'}
+                                </div>
+                                <div class="longshort-pattern" style="font-family: monospace; margin-top: 4px;">
+                                    Pattern: ${analysis.longShortAnalysis?.longShortPattern || 'N/A'}
+                                </div>
+                                <div class="morse-notation" style="font-family: monospace; margin-top: 4px; font-size: 16px;">
+                                    Morse: ${analysis.longShortAnalysis?.morseNotation || 'N/A'}${analysis.longShortAnalysis?.morseCharacter ? ` (${analysis.longShortAnalysis.morseCharacter})` : ''}
+                                </div>
+                                <div class="interval-details" style="font-size: 12px; color: #666; margin-top: 4px;">
+                                    ${analysis.longShortAnalysis?.intervals?.length > 0 ? 
+                                        `Intervals: [${analysis.longShortAnalysis.intervals.join(', ')}]` : 
+                                        'No intervals'}
                                 </div>
                             </div>
                         </div>
@@ -589,12 +617,27 @@ class EnhancedPatternApp {
         const balanceAnalysis = PerfectBalanceAnalyzer.calculateBalance(pattern.steps, pattern.stepCount);
         const cogAnalysis = CenterOfGravityCalculator.calculateCenterOfGravity(pattern.steps);
         
+        // Long-short analysis
+        let longShortAnalysis = LongShortAnalyzer.analyzeLongShort(pattern.steps, pattern.stepCount);
+        
+        // If this is a Morse pattern, prioritize the original Morse information
+        if (pattern.isMorse && pattern.morseCode) {
+            longShortAnalysis = {
+                ...longShortAnalysis,
+                morseNotation: pattern.morseCode,
+                morseCharacter: pattern.morseCharacters || LongShortAnalyzer.detectMorseCharacter(pattern.morseCode),
+                description: pattern.morseCharacters ? 
+                    `Morse Code: ${pattern.morseCharacters} (${pattern.morseCode})` : 
+                    `Morse Pattern (${pattern.morseCode})`
+            };
+        }
         
         return {
             title: 'Mathematical Pattern Analysis',
             patternOutputItems: patternOutputItems,
             balanceAnalysis: balanceAnalysis,
             cogAnalysis: cogAnalysis,
+            longShortAnalysis: longShortAnalysis,
             stepCount: pattern.stepCount
         };
     }
@@ -632,11 +675,15 @@ class EnhancedPatternApp {
             // Calculate Euclidean analysis for database storage
             const euclideanAnalysis = PatternAnalyzer.detectEuclideanPattern(this.currentPattern.steps, this.currentPattern.stepCount);
             
+            // Calculate long-short analysis for database storage
+            const longShortAnalysis = LongShortAnalyzer.analyzeLongShort(this.currentPattern.steps, this.currentPattern.stepCount);
+            
             // Create database pattern with analysis
             const databasePattern = createDatabasePattern(this.currentPattern, { 
                 perfectBalance,
                 repetition: repetitionAnalysis,
-                euclidean: euclideanAnalysis
+                euclidean: euclideanAnalysis,
+                longShort: longShortAnalysis
             });
             
             const patternId = this.database.add(databasePattern);
@@ -650,6 +697,26 @@ class EnhancedPatternApp {
         } catch (error) {
             console.error('❌ Failed to add pattern:', error);
             showNotification('Failed to add pattern\n' + error.message, 'error');
+        }
+    }
+    
+    /**
+     * Update UI button states based on current pattern
+     */
+    updateButtonStates() {
+        const addBtn = document.getElementById('addToDbBtn');
+        const copyBtn = document.getElementById('copyHexUniversalBtn');
+        
+        const hasPattern = !!this.currentPattern;
+        
+        if (addBtn) {
+            addBtn.disabled = !hasPattern;
+            addBtn.style.opacity = hasPattern ? '1' : '0.5';
+        }
+        
+        if (copyBtn) {
+            copyBtn.disabled = !hasPattern;
+            copyBtn.style.opacity = hasPattern ? '1' : '0.5';
         }
     }
     
@@ -751,8 +818,12 @@ class EnhancedPatternApp {
             let duplicateCount = 0;
             results.forEach(result => {
                 try {
-                    // Create database pattern with perfect balance analysis
-                    const databasePattern = createDatabasePattern(result.pattern, { perfectBalance: result.balance });
+                    // Create database pattern with comprehensive analysis
+                    const longShortAnalysis = LongShortAnalyzer.analyzeLongShort(result.pattern.steps, result.pattern.stepCount);
+                    const databasePattern = createDatabasePattern(result.pattern, { 
+                        perfectBalance: result.balance,
+                        longShort: longShortAnalysis
+                    });
                     const patternId = this.database.add(databasePattern);
                     if (patternId) {
                         addedCount++;
@@ -814,8 +885,12 @@ class EnhancedPatternApp {
             let duplicateCount = 0;
             results.forEach(result => {
                 try {
-                    // Create database pattern with perfect balance analysis
-                    const databasePattern = createDatabasePattern(result.pattern, { perfectBalance: result.balance });
+                    // Create database pattern with comprehensive analysis
+                    const longShortAnalysis = LongShortAnalyzer.analyzeLongShort(result.pattern.steps, result.pattern.stepCount);
+                    const databasePattern = createDatabasePattern(result.pattern, { 
+                        perfectBalance: result.balance,
+                        longShort: longShortAnalysis
+                    });
                     const patternId = this.database.add(databasePattern);
                     if (patternId) {
                         addedCount++;
@@ -1075,6 +1150,17 @@ ${perfectBalancePatterns.map((pattern, index) => {
         // Onset array representation with explicit step count
         const onsetArray = PatternConverter.toEnhancedOnsetArray(pattern.steps, pattern.stepCount);
         representations.push(onsetArray);
+        
+        // Morse notation representation if available
+        if (pattern.longShort && pattern.longShort.morseNotation && 
+            pattern.longShort.morseNotation.length > 0 && 
+            pattern.longShort.morseNotation !== '=' && 
+            pattern.longShort.morseNotation !== 'N/A') {
+            const morseDisplay = pattern.longShort.morseCharacter ? 
+                `${pattern.longShort.morseNotation} (${pattern.longShort.morseCharacter})` : 
+                pattern.longShort.morseNotation;
+            representations.push(`Morse: ${morseDisplay}`);
+        }
         
         return representations;
     }

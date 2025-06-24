@@ -125,6 +125,19 @@ class EuclideanGenerator {
         
         return pattern;
     }
+    
+    /**
+     * Generate Euclidean complement pattern
+     * E(3,8) complement is E(5,8) - fills the remaining positions with Euclidean distribution
+     * @param {number} beats - Original number of beats
+     * @param {number} steps - Total number of steps  
+     * @param {number} offset - Rotation offset (default: 0)
+     * @returns {Array} Complement pattern as boolean array
+     */
+    static generateComplement(beats, steps, offset = 0) {
+        const complementBeats = steps - beats;
+        return this.generate(complementBeats, steps, offset);
+    }
 }
 
 // Export to global scope for browser compatibility

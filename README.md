@@ -20,7 +20,8 @@ A comprehensive web application for analyzing and exploring rhythmic patterns us
 1. Open `app/index.html` in a modern web browser
 2. Enter a pattern in the Universal Pattern Input field (e.g., `P(3,1)+P(5,0)`)
 3. Press **Enter** to parse and analyze, or **Ctrl/Cmd+Enter** to parse and automatically add to database
-4. Click "Parse & Analyze" button for analysis only
+4. Use "Add to Database" button to save any current pattern (especially useful for random patterns and sequencer modifications)
+5. Click "Parse & Analyze" button for analysis only
 
 ## Supported Pattern Formats
 
@@ -32,6 +33,7 @@ A comprehensive web application for analyzing and exploring rhythmic patterns us
 ### Euclidean Rhythms
 - `E(5,8,0)` - 5 beats in 8 steps with no offset (Quintillo)
 - `E(3,8,2)` - 3 beats in 8 steps with offset 2 (Tresillo)
+- `comp E(3,8)` - Euclidean complement (E(5,8) - fills remaining positions)
 
 ### Binary/Hex/Octal/Decimal
 - `b101010` - Binary pattern
@@ -88,6 +90,11 @@ app/
 ### Basic Analysis
 1. Enter `P(5,0)` to analyze a pentagon pattern
 2. View perfect balance score, center of gravity, and structure analysis
+
+### Euclidean Complements
+1. Enter `E(3,8)` to see the classic Tresillo pattern
+2. Enter `comp E(3,8)` to see its Euclidean complement (E(5,8))
+3. Notice how they fill all positions without overlap
 
 ### Pattern Combinations
 1. Enter `P(3,1)+P(5,0)` to combine triangle and pentagon

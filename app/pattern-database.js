@@ -325,6 +325,254 @@ class PatternDatabase {
                 return this.patterns.filter(p => p.cogAnalysis && p.cogAnalysis.normalizedMagnitude < 0.1);
             case 'coprime':
                 return this.patterns.filter(p => p.coprime && p.coprime.areCoprimes);
+            case 'iambic':
+                return this.patterns.filter(p => {
+                    // Check if long-short analysis exists and is iambic
+                    if (p.longShort && p.longShort.prosodyType === 'iambic') {
+                        return true;
+                    }
+                    // Fallback: analyze on the fly for patterns without stored prosody data
+                    try {
+                        const longShortAnalysis = LongShortAnalyzer.analyzeLongShort(p.steps, p.stepCount);
+                        return longShortAnalysis.prosodyType === 'iambic';
+                    } catch (e) {
+                        return false;
+                    }
+                });
+            case 'trochaic':
+                return this.patterns.filter(p => {
+                    // Check if long-short analysis exists and is trochaic
+                    if (p.longShort && p.longShort.prosodyType === 'trochaic') {
+                        return true;
+                    }
+                    // Fallback: analyze on the fly for patterns without stored prosody data
+                    try {
+                        const longShortAnalysis = LongShortAnalyzer.analyzeLongShort(p.steps, p.stepCount);
+                        return longShortAnalysis.prosodyType === 'trochaic';
+                    } catch (e) {
+                        return false;
+                    }
+                });
+            case 'dactylic':
+                return this.patterns.filter(p => {
+                    // Check if long-short analysis exists and is dactylic
+                    if (p.longShort && p.longShort.prosodyType === 'dactylic') {
+                        return true;
+                    }
+                    // Fallback: analyze on the fly for patterns without stored prosody data
+                    try {
+                        const longShortAnalysis = LongShortAnalyzer.analyzeLongShort(p.steps, p.stepCount);
+                        return longShortAnalysis.prosodyType === 'dactylic';
+                    } catch (e) {
+                        return false;
+                    }
+                });
+            case 'morse_patterns':
+                return this.patterns.filter(p => {
+                    // Check if long-short analysis exists and has morse notation
+                    if (p.longShort && p.longShort.morseNotation && p.longShort.morseNotation.length > 0 && p.longShort.morseNotation !== '=') {
+                        return true;
+                    }
+                    // Fallback: analyze on the fly for patterns without stored prosody data
+                    try {
+                        const longShortAnalysis = LongShortAnalyzer.analyzeLongShort(p.steps, p.stepCount);
+                        return longShortAnalysis.morseNotation && longShortAnalysis.morseNotation.length > 0 && longShortAnalysis.morseNotation !== '=';
+                    } catch (e) {
+                        return false;
+                    }
+                });
+            case 'anapestic':
+                return this.patterns.filter(p => {
+                    if (p.longShort && p.longShort.prosodyType === 'anapestic') {
+                        return true;
+                    }
+                    try {
+                        const longShortAnalysis = LongShortAnalyzer.analyzeLongShort(p.steps, p.stepCount);
+                        return longShortAnalysis.prosodyType === 'anapestic';
+                    } catch (e) {
+                        return false;
+                    }
+                });
+            case 'spondaic':
+                return this.patterns.filter(p => {
+                    if (p.longShort && p.longShort.prosodyType === 'spondaic') {
+                        return true;
+                    }
+                    try {
+                        const longShortAnalysis = LongShortAnalyzer.analyzeLongShort(p.steps, p.stepCount);
+                        return longShortAnalysis.prosodyType === 'spondaic';
+                    } catch (e) {
+                        return false;
+                    }
+                });
+            case 'pyrrhic':
+                return this.patterns.filter(p => {
+                    if (p.longShort && p.longShort.prosodyType === 'pyrrhic') {
+                        return true;
+                    }
+                    try {
+                        const longShortAnalysis = LongShortAnalyzer.analyzeLongShort(p.steps, p.stepCount);
+                        return longShortAnalysis.prosodyType === 'pyrrhic';
+                    } catch (e) {
+                        return false;
+                    }
+                });
+            case 'bacchic':
+                return this.patterns.filter(p => {
+                    if (p.longShort && p.longShort.prosodyType === 'bacchic') {
+                        return true;
+                    }
+                    try {
+                        const longShortAnalysis = LongShortAnalyzer.analyzeLongShort(p.steps, p.stepCount);
+                        return longShortAnalysis.prosodyType === 'bacchic';
+                    } catch (e) {
+                        return false;
+                    }
+                });
+            case 'molossic':
+                return this.patterns.filter(p => {
+                    if (p.longShort && p.longShort.prosodyType === 'molossic') {
+                        return true;
+                    }
+                    try {
+                        const longShortAnalysis = LongShortAnalyzer.analyzeLongShort(p.steps, p.stepCount);
+                        return longShortAnalysis.prosodyType === 'molossic';
+                    } catch (e) {
+                        return false;
+                    }
+                });
+            case 'tribrach':
+                return this.patterns.filter(p => {
+                    if (p.longShort && p.longShort.prosodyType === 'tribrach') {
+                        return true;
+                    }
+                    try {
+                        const longShortAnalysis = LongShortAnalyzer.analyzeLongShort(p.steps, p.stepCount);
+                        return longShortAnalysis.prosodyType === 'tribrach';
+                    } catch (e) {
+                        return false;
+                    }
+                });
+            case 'ionic_minor':
+                return this.patterns.filter(p => {
+                    if (p.longShort && p.longShort.prosodyType === 'ionic_minor') {
+                        return true;
+                    }
+                    try {
+                        const longShortAnalysis = LongShortAnalyzer.analyzeLongShort(p.steps, p.stepCount);
+                        return longShortAnalysis.prosodyType === 'ionic_minor';
+                    } catch (e) {
+                        return false;
+                    }
+                });
+            case 'ionic_major':
+                return this.patterns.filter(p => {
+                    if (p.longShort && p.longShort.prosodyType === 'ionic_major') {
+                        return true;
+                    }
+                    try {
+                        const longShortAnalysis = LongShortAnalyzer.analyzeLongShort(p.steps, p.stepCount);
+                        return longShortAnalysis.prosodyType === 'ionic_major';
+                    } catch (e) {
+                        return false;
+                    }
+                });
+            case 'choriamb':
+                return this.patterns.filter(p => {
+                    if (p.longShort && p.longShort.prosodyType === 'choriamb') {
+                        return true;
+                    }
+                    try {
+                        const longShortAnalysis = LongShortAnalyzer.analyzeLongShort(p.steps, p.stepCount);
+                        return longShortAnalysis.prosodyType === 'choriamb';
+                    } catch (e) {
+                        return false;
+                    }
+                });
+            case 'antispast':
+                return this.patterns.filter(p => {
+                    if (p.longShort && p.longShort.prosodyType === 'antispast') {
+                        return true;
+                    }
+                    try {
+                        const longShortAnalysis = LongShortAnalyzer.analyzeLongShort(p.steps, p.stepCount);
+                        return longShortAnalysis.prosodyType === 'antispast';
+                    } catch (e) {
+                        return false;
+                    }
+                });
+            case 'ditrochee':
+                return this.patterns.filter(p => {
+                    if (p.longShort && p.longShort.prosodyType === 'ditrochee') {
+                        return true;
+                    }
+                    try {
+                        const longShortAnalysis = LongShortAnalyzer.analyzeLongShort(p.steps, p.stepCount);
+                        return longShortAnalysis.prosodyType === 'ditrochee';
+                    } catch (e) {
+                        return false;
+                    }
+                });
+            case 'diiamb':
+                return this.patterns.filter(p => {
+                    if (p.longShort && p.longShort.prosodyType === 'diiamb') {
+                        return true;
+                    }
+                    try {
+                        const longShortAnalysis = LongShortAnalyzer.analyzeLongShort(p.steps, p.stepCount);
+                        return longShortAnalysis.prosodyType === 'diiamb';
+                    } catch (e) {
+                        return false;
+                    }
+                });
+            case 'primus_paeon':
+                return this.patterns.filter(p => {
+                    if (p.longShort && p.longShort.prosodyType === 'primus_paeon') {
+                        return true;
+                    }
+                    try {
+                        const longShortAnalysis = LongShortAnalyzer.analyzeLongShort(p.steps, p.stepCount);
+                        return longShortAnalysis.prosodyType === 'primus_paeon';
+                    } catch (e) {
+                        return false;
+                    }
+                });
+            case 'quartus_paeon':
+                return this.patterns.filter(p => {
+                    if (p.longShort && p.longShort.prosodyType === 'quartus_paeon') {
+                        return true;
+                    }
+                    try {
+                        const longShortAnalysis = LongShortAnalyzer.analyzeLongShort(p.steps, p.stepCount);
+                        return longShortAnalysis.prosodyType === 'quartus_paeon';
+                    } catch (e) {
+                        return false;
+                    }
+                });
+            case 'first_epitrite':
+                return this.patterns.filter(p => {
+                    if (p.longShort && p.longShort.prosodyType === 'first_epitrite') {
+                        return true;
+                    }
+                    try {
+                        const longShortAnalysis = LongShortAnalyzer.analyzeLongShort(p.steps, p.stepCount);
+                        return longShortAnalysis.prosodyType === 'first_epitrite';
+                    } catch (e) {
+                        return false;
+                    }
+                });
+            case 'fourth_epitrite':
+                return this.patterns.filter(p => {
+                    if (p.longShort && p.longShort.prosodyType === 'fourth_epitrite') {
+                        return true;
+                    }
+                    try {
+                        const longShortAnalysis = LongShortAnalyzer.analyzeLongShort(p.steps, p.stepCount);
+                        return longShortAnalysis.prosodyType === 'fourth_epitrite';
+                    } catch (e) {
+                        return false;
+                    }
+                });
             default:
                 return [...this.patterns];
         }
@@ -530,6 +778,20 @@ function createDatabasePattern(patternData, analyses = {}) {
         pattern.isEuclidean = true;
         pattern.detectedEuclidean = true; // Flag to indicate this was detected, not input
         pattern.euclideanData = analyses.euclidean;
+    }
+    
+    // Add long-short analysis
+    if (analyses.longShort) {
+        pattern.longShort = {
+            intervals: analyses.longShort.intervals,
+            longShortPattern: analyses.longShort.longShortPattern,
+            morseNotation: analyses.longShort.morseNotation,
+            morseCharacter: analyses.longShort.morseCharacter,
+            prosodyType: analyses.longShort.prosodyType,
+            description: analyses.longShort.description,
+            shortInterval: analyses.longShort.shortInterval,
+            longInterval: analyses.longShort.longInterval
+        };
     }
     
     if (patternData.isRegularPolygon) {
