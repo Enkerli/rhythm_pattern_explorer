@@ -190,6 +190,47 @@ class PatternAnalyzer {
         return null;
     }
     
+    static detectEuclideanPattern(steps, stepCount) {
+        // Test various Euclidean rhythm parameters to see if this pattern matches
+        const onsetCount = steps.filter(s => s).length;
+        
+        if (onsetCount === 0) {
+            return null; // All silence isn't Euclidean
+        }
+        
+        // Test different offsets for the given beats and steps
+        for (let offset = 0; offset < stepCount; offset++) {
+            try {
+                const euclideanSteps = EuclideanGenerator.generate(onsetCount, stepCount, offset);
+                
+                // Check if generated pattern matches our pattern
+                if (euclideanSteps.length === steps.length) {
+                    let matches = true;
+                    for (let i = 0; i < steps.length; i++) {
+                        if (steps[i] !== euclideanSteps[i]) {
+                            matches = false;
+                            break;
+                        }
+                    }
+                    
+                    if (matches) {
+                        return {
+                            beats: onsetCount,
+                            steps: stepCount,
+                            offset: offset,
+                            formula: offset === 0 ? `E(${onsetCount},${stepCount})` : `E(${onsetCount},${stepCount},${offset})`
+                        };
+                    }
+                }
+            } catch (error) {
+                // Skip invalid Euclidean parameters
+                continue;
+            }
+        }
+        
+        return null; // Not a Euclidean pattern
+    }
+    
     static analyzeStructure(steps, stepCount) {
         const analysis = {
             stepCount,

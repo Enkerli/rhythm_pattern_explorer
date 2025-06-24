@@ -9,12 +9,20 @@ class PatternConverter {
     static fromBinary(binaryString) {
         return {
             steps: binaryString.split('').map(bit => bit === '1'),
-            stepCount: binaryString.length
+            stepCount: binaryString.length,
+            isBinaryInput: true // Flag to indicate this came from binary input
         };
     }
     
-    static toDecimal(binaryString) {
-        return parseInt(binaryString, 2) || 0;
+    static toDecimal(binaryString, shouldReverse = true) {
+        if (shouldReverse) {
+            // Reverse the binary string so leftmost position (first downbeat) gets bit value 1
+            const reversedBinary = binaryString.split('').reverse().join('');
+            return parseInt(reversedBinary, 2) || 0;
+        } else {
+            // Use standard binary interpretation (for binary input)
+            return parseInt(binaryString, 2) || 0;
+        }
     }
     
     static toHex(decimal) {
@@ -28,9 +36,13 @@ class PatternConverter {
     static fromDecimalWithSteps(decimal, stepCount) {
         if (decimal === 0) return { steps: new Array(stepCount).fill(false), stepCount };
         
-        const binaryString = decimal.toString(2).padStart(stepCount, '0');
+        // Convert using left-to-right bit ordering, then pad to desired step count
+        const standardBinary = decimal.toString(2);
+        const reversedBinary = standardBinary.split('').reverse().join('');
+        const paddedBinary = reversedBinary.padEnd(stepCount, '0');
+        
         return {
-            steps: binaryString.split('').map(bit => bit === '1'),
+            steps: paddedBinary.split('').map(bit => bit === '1'),
             stepCount: stepCount,
             hasExplicitSteps: true
         };
@@ -49,12 +61,17 @@ class PatternConverter {
         if (numericDecimal === 0) return { steps: [false], stepCount: 1 };
         
         const stepCount = Math.max(minSteps, Math.floor(Math.log2(numericDecimal)) + 1);
-        const binaryString = numericDecimal.toString(2).padStart(stepCount, '0');
-        return this.fromBinary(binaryString);
+        // Convert to binary and reverse so leftmost position gets bit value 1
+        const standardBinary = numericDecimal.toString(2);
+        const reversedBinary = standardBinary.split('').reverse().join('').padEnd(stepCount, '0');
+        const result = this.fromBinary(reversedBinary);
+        // Remove the isBinaryInput flag since this is decimal input, not binary input
+        delete result.isBinaryInput;
+        return result;
     }
     
     static fromHex(hexString) {
-        // Handle colon notation: "0x92:8" or "92:8"
+        // Handle colon notation: "0x49:8" or "49:8"
         if (hexString.includes(':')) {
             const [hexPart, stepsPart] = hexString.split(':');
             const stepCount = parseInt(stepsPart);
@@ -78,7 +95,7 @@ class PatternConverter {
     }
     
     static fromOctal(octalString) {
-        // Handle colon notation: "0o452:9" or "452:9"
+        // Handle colon notation: "0o111:9" or "111:9"
         if (octalString.includes(':')) {
             const [octalPart, stepsPart] = octalString.split(':');
             const stepCount = parseInt(stepsPart);
@@ -149,7 +166,8 @@ class AdvancedPatternCombiner {
             if (pattern.isRegularPolygon) {
                 return this.extendPolygonToLCM(pattern, lcm);
             } else {
-                return this.extendByRepetition(pattern.steps, pattern.stepCount, lcm);
+                // Treat non-polygon patterns as geometric distributions
+                return this.extendByGeometricDistribution(pattern.steps, pattern.stepCount, lcm);
             }
         });
         
@@ -198,6 +216,38 @@ class AdvancedPatternCombiner {
         return extended;
     }
     
+    static extendByGeometricDistribution(steps, originalLength, targetLength) {
+        // Distribute the onsets geometrically across the target length
+        const extended = new Array(targetLength).fill(false);
+        
+        // Find all onset positions in the original pattern
+        const onsetPositions = [];
+        for (let i = 0; i < steps.length; i++) {
+            if (steps[i]) {
+                onsetPositions.push(i);
+            }
+        }
+        
+        // Distribute each onset geometrically across the target length
+        onsetPositions.forEach(originalPos => {
+            // Map original position to new position proportionally
+            const exactPosition = (originalPos * targetLength) / originalLength;
+            const newPosition = Math.round(exactPosition) % targetLength;
+            extended[newPosition] = true;
+        });
+        
+        return extended;
+    }
+    
+    static extendByPadding(steps, originalLength, targetLength) {
+        // Extend pattern by padding with zeros (silence), not repetition
+        const extended = [...steps];
+        while (extended.length < targetLength) {
+            extended.push(false);
+        }
+        return extended;
+    }
+    
     static extendByRepetition(steps, originalLength, targetLength) {
         const extended = [];
         const repetitions = targetLength / originalLength;
@@ -225,7 +275,7 @@ class UnifiedPatternParser {
         const cleaned = input.trim();
         
         // Check for pattern naming: name=pattern
-        if (cleaned.includes('=') && !cleaned.includes('P(') && !cleaned.includes('E(')) {
+        if (cleaned.includes('=')) {
             const parts = cleaned.split('=');
             if (parts.length === 2) {
                 const name = parts[0].trim();
@@ -459,36 +509,83 @@ class UnifiedPatternParser {
             }
         }
         
-        // Binary notation: strict validation for only 0s and 1s
-        const binaryMatch = cleaned.match(/^b?([01]+)$/i);
+        // Binary notation: strict validation for only 0s and 1s, with optional step count
+        const binaryMatch = cleaned.match(/^b?([01]+)(?::(\d+))?$/i);
         if (binaryMatch) {
-            return PatternConverter.fromBinary(binaryMatch[1]);
+            const binaryString = binaryMatch[1];
+            const explicitStepCount = binaryMatch[2] ? parseInt(binaryMatch[2]) : null;
+            
+            if (explicitStepCount) {
+                // Handle binary with explicit step count (like b1010:4)
+                let paddedBinary;
+                if (binaryString.length < explicitStepCount) {
+                    paddedBinary = binaryString.padEnd(explicitStepCount, '0');
+                } else if (binaryString.length > explicitStepCount) {
+                    paddedBinary = binaryString.substring(0, explicitStepCount);
+                } else {
+                    paddedBinary = binaryString;
+                }
+                const result = PatternConverter.fromBinary(paddedBinary);
+                result.hasExplicitSteps = true;
+                return result;
+            } else {
+                // Handle regular binary (like b1010)
+                return PatternConverter.fromBinary(binaryString);
+            }
         }
         
-        // Check for invalid binary patterns (contains digits other than 0,1)
-        const invalidBinaryMatch = cleaned.match(/^b?([0-9]+)$/i);
+        // Decimal notation: 73:8 (with step count) or 73 (pure numbers) - MUST come before invalid binary check
+        // But first check if it's actually binary (only 0s and 1s)
+        const decimalMatch = cleaned.match(/^(\d+)(?::(\d+))?$/);
+        if (decimalMatch && !cleaned.startsWith('b')) {
+            const numberPart = decimalMatch[1];
+            
+            // If it only contains 0s and 1s, treat as binary
+            if (/^[01]+$/.test(numberPart)) {
+                const binaryString = numberPart;
+                const explicitStepCount = decimalMatch[2] ? parseInt(decimalMatch[2]) : null;
+                
+                if (explicitStepCount) {
+                    // Handle binary with explicit step count (like 1010:4)
+                    let paddedBinary;
+                    if (binaryString.length < explicitStepCount) {
+                        paddedBinary = binaryString.padEnd(explicitStepCount, '0');
+                    } else if (binaryString.length > explicitStepCount) {
+                        paddedBinary = binaryString.substring(0, explicitStepCount);
+                    } else {
+                        paddedBinary = binaryString;
+                    }
+                    const result = PatternConverter.fromBinary(paddedBinary);
+                    result.hasExplicitSteps = true;
+                    return result;
+                } else {
+                    // Handle regular binary (like 1010)
+                    return PatternConverter.fromBinary(binaryString);
+                }
+            } else {
+                // Handle as actual decimal
+                return PatternConverter.fromDecimal(cleaned);
+            }
+        }
+        
+        // Check for invalid binary patterns (contains digits other than 0,1) - only for patterns starting with 'b'
+        const invalidBinaryMatch = cleaned.match(/^b([0-9]+)$/i);
         if (invalidBinaryMatch && /[2-9]/.test(invalidBinaryMatch[1])) {
             throw new Error(`Invalid binary pattern: ${cleaned}. Binary patterns can only contain 0s and 1s`);
         }
         
-        // Octal notation: 0o452:9 or 452:9 (with step count) or 0o452 (if looks like octal)
+        // Octal notation: 0o111:9 or 111:9 (with step count) or 0o111 (if looks like octal)
         const octalMatch = cleaned.match(/^(0o)?([0-7]+)(?::(\d+))?$/i);
         if (octalMatch && (octalMatch[1] || !/[89a-f]/i.test(octalMatch[2]))) {
             const pattern = PatternConverter.fromOctal(cleaned);
             if (pattern) return pattern;
         }
         
-        // Hexadecimal notation: 0x92:8 or 92:8 (with step count) or 0x92 or 92 (if looks like hex)
+        // Hexadecimal notation: 0x49:8 or 49:8 (with step count) or 0x49 or 49 (if looks like hex)
         const hexMatch = cleaned.match(/^(0x)?([0-9a-f]+)(?::(\d+))?$/i);
         if (hexMatch && (hexMatch[1] || /[a-f]/i.test(hexMatch[2]))) {
             const pattern = PatternConverter.fromHex(cleaned);
             if (pattern) return pattern;
-        }
-        
-        // Decimal notation: 146:8 (with step count) or 146 (pure numbers)
-        const decimalMatch = cleaned.match(/^(\d+)(?::(\d+))?$/);
-        if (decimalMatch) {
-            return PatternConverter.fromDecimal(cleaned);
         }
         
         throw new Error(`Unrecognized pattern format: ${input}`);
@@ -580,7 +677,8 @@ class UnifiedPatternParser {
     
     static formatCompact(pattern) {
         const binary = PatternConverter.toBinary(pattern.steps, pattern.stepCount);
-        const decimal = PatternConverter.toDecimal(binary);
+        // Use standard binary interpretation for binary input, reversed for numeric input
+        const decimal = PatternConverter.toDecimal(binary, !pattern.isBinaryInput);
         const hex = PatternConverter.toHex(decimal);
         const octal = PatternConverter.toOctal(decimal);
         const beats = pattern.steps.filter(s => s).length;
