@@ -115,7 +115,12 @@ class EuclideanGenerator {
         
         if (offset !== 0) {
             offset = ((offset % steps) + steps) % steps;
-            pattern = pattern.slice(offset).concat(pattern.slice(0, offset));
+            // Apply offset by rotating RIGHT (same direction as @ rotation operator)
+            const offsetPattern = new Array(steps);
+            for (let i = 0; i < steps; i++) {
+                offsetPattern[i] = pattern[(i - offset + steps) % steps];
+            }
+            pattern = offsetPattern;
         }
         
         return pattern;
