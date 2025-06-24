@@ -41,6 +41,7 @@ class EnhancedPatternApp {
         this.sortByDate = true;
         this.explorationResults = [];
         this.isExploring = false;
+        this.isUpdatingFromSequencer = false;
         
         // Initialize the application
         this.setupEventListeners();
@@ -167,6 +168,46 @@ class EnhancedPatternApp {
             if (statusDisplay) {
                 statusDisplay.textContent = data.isPlaying ? 'Playing' : 
                                           data.isPaused ? 'Paused' : 'Ready';
+            }
+        });
+        
+        this.sequencer.on('onPatternChange', (data) => {
+            // Prevent infinite loop - ignore updates from sequencer when we're already updating
+            if (this.isUpdatingFromSequencer) {
+                return;
+            }
+            
+            // Ignore pattern changes from controller (these are from loadPatternIntoSequencer calls)
+            // Only respond to visual interaction changes
+            if (data.source === 'controller') {
+                return;
+            }
+            
+            // Update current pattern with the modified steps
+            if (this.currentPattern && data.pattern) {
+                try {
+                    this.isUpdatingFromSequencer = true;
+                    
+                    this.currentPattern.steps = [...data.pattern.steps];
+                    this.currentPattern.stepCount = data.pattern.stepCount;
+                    
+                    // Regenerate analysis with full sequencer integration (loop is prevented by source filtering)
+                    this.displayPatternAnalysis(this.currentPattern);
+                    
+                    // Update the universal input to reflect the new pattern
+                    this.updateUniversalInputFromPattern(this.currentPattern);
+                    
+                } catch (error) {
+                    console.error('❌ Error updating pattern from sequencer:', error);
+                    showNotification('Error updating pattern from sequencer', 'error', 3000);
+                } finally {
+                    this.isUpdatingFromSequencer = false;
+                }
+            } else {
+                console.warn('⚠️ Pattern update skipped: no current pattern or invalid data', {
+                    hasCurrentPattern: !!this.currentPattern,
+                    hasDataPattern: !!(data && data.pattern)
+                });
             }
         });
         
@@ -548,11 +589,6 @@ class EnhancedPatternApp {
         const balanceAnalysis = PerfectBalanceAnalyzer.calculateBalance(pattern.steps, pattern.stepCount);
         const cogAnalysis = CenterOfGravityCalculator.calculateCenterOfGravity(pattern.steps);
         
-        console.log('🔍 Analysis generated:', {
-            balanceAnalysis: balanceAnalysis ? 'OK' : 'MISSING',
-            cogAnalysis: cogAnalysis ? 'OK' : 'MISSING',
-            cogProperties: cogAnalysis ? Object.keys(cogAnalysis) : 'N/A'
-        });
         
         return {
             title: 'Mathematical Pattern Analysis',
@@ -1400,6 +1436,27 @@ ${perfectBalancePatterns.map((pattern, index) => {
             this.database.remove(patternId);
             this.updatePatternList();
             this.updateDatabaseStats();
+        }
+    }
+    
+    /**
+     * Update universal input field from pattern
+     */
+    updateUniversalInputFromPattern(pattern) {
+        const input = document.getElementById('universalInput');
+        if (!input || !pattern) return;
+        
+        try {
+            // Convert pattern to hex representation with explicit step count
+            const binary = PatternConverter.toBinary(pattern.steps, pattern.stepCount);
+            const decimal = PatternConverter.toDecimal(binary);
+            const hex = PatternConverter.toHex(decimal);
+            
+            // Update input with hex:stepCount format
+            input.value = `${hex}:${pattern.stepCount}`;
+            
+        } catch (error) {
+            console.error('❌ Failed to update universal input:', error);
         }
     }
     
