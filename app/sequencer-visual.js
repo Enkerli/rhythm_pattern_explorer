@@ -22,8 +22,19 @@
  */
 class SequencerVisualEngine {
     constructor(canvasId, containerId) {
+        console.log(`🎨 Looking for canvas: '${canvasId}' and container: '${containerId}'`);
+        
         this.canvas = document.getElementById(canvasId);
         this.container = document.getElementById(containerId);
+        
+        console.log(`🎨 Canvas found:`, {
+            canvas: !!this.canvas,
+            canvasId: canvasId,
+            canvasElement: this.canvas,
+            container: !!this.container,
+            containerId: containerId
+        });
+        
         this.ctx = this.canvas ? this.canvas.getContext('2d') : null;
         
         if (!this.canvas || !this.ctx) {
@@ -103,10 +114,21 @@ class SequencerVisualEngine {
      * Setup responsive canvas sizing
      */
     setupResponsiveCanvas() {
-        if (!this.container || !this.canvas) return;
+        if (!this.container || !this.canvas) {
+            console.warn('⚠️ No container or canvas found for sizing');
+            return;
+        }
         
         // Get container dimensions
         const rect = this.container.getBoundingClientRect();
+        console.log('🎨 Container rect:', {
+            width: rect.width,
+            height: rect.height,
+            display: getComputedStyle(this.container).display,
+            visibility: getComputedStyle(this.container).visibility,
+            containerElement: this.container
+        });
+        
         const size = Math.min(rect.width, rect.height, 500); // Max 500px
         
         // Set canvas size
@@ -129,7 +151,7 @@ class SequencerVisualEngine {
             )
         );
         
-        console.log(`🎨 Canvas sized: ${size}x${size}px`);
+        console.log(`🎨 Canvas sized: ${size}x${size}px, center: ${this.config.centerX}, ${this.config.centerY}`);
         
         // Trigger re-render now that canvas is properly sized
         if (size > 0) {
@@ -184,6 +206,9 @@ class SequencerVisualEngine {
         this.pattern.steps = [...patternData.steps] || new Array(16).fill(false);
         this.pattern.stepCount = patternData.stepCount || this.pattern.steps.length;
         
+        // Check if container is now visible and resize canvas if needed
+        this.ensureCanvasSize();
+        
         // Calculate Center of Gravity if calculator is available
         if (typeof CenterOfGravityCalculator !== 'undefined') {
             try {
@@ -220,6 +245,31 @@ class SequencerVisualEngine {
         }
         
         this.render();
+    }
+    
+    /**
+     * Ensure canvas is properly sized, especially after container becomes visible
+     */
+    ensureCanvasSize() {
+        if (!this.container || !this.canvas) return;
+        
+        // Check if container is now visible
+        const rect = this.container.getBoundingClientRect();
+        const style = getComputedStyle(this.container);
+        
+        console.log('🎨 Checking canvas size:', {
+            containerWidth: rect.width,
+            containerHeight: rect.height,
+            display: style.display,
+            currentCanvasWidth: this.canvas.width,
+            currentCanvasHeight: this.canvas.height
+        });
+        
+        // If container has dimensions but canvas doesn't, resize it
+        if ((rect.width > 0 || rect.height > 0) && this.canvas.width === 0) {
+            console.log('🎨 Container now visible, resizing canvas');
+            this.setupResponsiveCanvas();
+        }
     }
     
     /**
@@ -298,20 +348,37 @@ class SequencerVisualEngine {
      * Main render method
      */
     render() {
+        console.log('🎨 RENDER DEBUG:', {
+            hasCtx: !!this.ctx,
+            hasCanvas: !!this.canvas,
+            canvasSize: this.config.canvasSize,
+            canvasWidth: this.canvas?.width,
+            canvasHeight: this.canvas?.height,
+            canvasInDOM: document.contains(this.canvas)
+        });
+        
         if (!this.ctx) {
             console.warn('⚠️ No canvas context available for rendering');
             return;
         }
         
+        if (!this.canvas) {
+            console.warn('⚠️ No canvas element available');
+            return;
+        }
+        
         // Skip rendering if canvas isn't properly sized yet
         if (this.config.canvasSize <= 0) {
+            console.warn('⚠️ Canvas config size is 0');
             return;
         }
         
         // If canvas element isn't sized yet, try to size it now
         if (this.canvas.width <= 0) {
+            console.warn('⚠️ Canvas element width is 0, calling setupResponsiveCanvas');
             this.setupResponsiveCanvas();
             if (this.canvas.width <= 0) {
+                console.warn('⚠️ Canvas still has 0 width after setup');
                 return;
             }
         }
@@ -320,6 +387,13 @@ class SequencerVisualEngine {
         
         // Clear canvas
         this.ctx.clearRect(0, 0, this.config.canvasSize, this.config.canvasSize);
+        
+        // Test: Draw a visible circle to verify canvas is working
+        this.ctx.beginPath();
+        this.ctx.arc(this.config.centerX, this.config.centerY, 50, 0, Math.PI * 2);
+        this.ctx.fillStyle = 'red';
+        this.ctx.fill();
+        console.log(`🔴 Test circle drawn at ${this.config.centerX}, ${this.config.centerY}`);
         
         // Draw background
         this.drawBackground();
@@ -338,6 +412,9 @@ class SequencerVisualEngine {
         
         // Update performance stats
         this.updateRenderStats(startTime);
+        
+        // Force a repaint to ensure canvas is visible
+        this.forceRepaint();
     }
     
     /**
@@ -565,6 +642,27 @@ class SequencerVisualEngine {
         // Calculate rolling average FPS
         if (this.stats.framesRendered % 60 === 0) {
             this.stats.averageFPS = Math.round(1000 / renderTime);
+        }
+    }
+    
+    /**
+     * Force canvas repaint to ensure visibility
+     */
+    forceRepaint() {
+        // Force layout recalculation to fix rendering issues
+        const canvas = this.canvas;
+        const originalDisplay = canvas.style.display;
+        canvas.style.display = 'none';
+        canvas.offsetHeight; // Trigger reflow
+        canvas.style.display = originalDisplay;
+        
+        // Alternative: trigger a style recalculation
+        const wrapper = canvas.parentElement;
+        if (wrapper) {
+            wrapper.style.transform = 'translateZ(0)';
+            setTimeout(() => {
+                wrapper.style.transform = '';
+            }, 1);
         }
     }
     

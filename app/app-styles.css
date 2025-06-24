@@ -489,6 +489,11 @@ li {
     width: 100%;
     height: 100%;
     border-radius: 50%;
+    display: block;
+    /* Force hardware acceleration */
+    transform: translateZ(0);
+    /* Ensure proper rendering */
+    will-change: transform;
 }
 
 .sequencer-controls-compact {
