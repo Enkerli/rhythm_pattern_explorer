@@ -130,6 +130,11 @@ class SequencerVisualEngine {
         );
         
         console.log(`🎨 Canvas sized: ${size}x${size}px`);
+        
+        // Trigger re-render now that canvas is properly sized
+        if (size > 0) {
+                setTimeout(() => this.render(), 50);
+        }
     }
     
     /**
@@ -183,15 +188,28 @@ class SequencerVisualEngine {
         if (typeof CenterOfGravityCalculator !== 'undefined') {
             try {
                 const cogResult = CenterOfGravityCalculator.calculateCenterOfGravity(this.pattern.steps);
-                this.cogData = {
-                    distance: cogResult.distance,
-                    angle: cogResult.angle,
-                    x: cogResult.x,
-                    y: cogResult.y,
-                    isCalculated: true
-                };
+                // CoG calculation successful
                 
-                console.log(`🎨 CoG calculated: distance=${cogResult.distance.toFixed(3)}, angle=${cogResult.angle.toFixed(2)}°`);
+                if (cogResult && typeof cogResult.magnitude === 'number') {
+                    // Convert the result format to what we expect
+                    const distance = cogResult.normalizedMagnitude || cogResult.magnitude;
+                    const x = cogResult.coordinates?.x || cogResult.x || 0;
+                    const y = cogResult.coordinates?.y || cogResult.y || 0;
+                    const angle = Math.atan2(y, x) * (180 / Math.PI);
+                    
+                    this.cogData = {
+                        distance: distance,
+                        angle: angle,
+                        x: x,
+                        y: y,
+                        isCalculated: true
+                    };
+                    
+                    console.log(`🎨 CoG calculated: distance=${distance.toFixed(4)}, angle=${angle.toFixed(1)}°`);
+                } else {
+                    console.warn('⚠️ Invalid CoG result:', cogResult);
+                    this.cogData.isCalculated = false;
+                }
             } catch (error) {
                 console.warn('⚠️ CoG calculation failed:', error);
                 this.cogData.isCalculated = false;
@@ -285,9 +303,20 @@ class SequencerVisualEngine {
             return;
         }
         
-        const startTime = performance.now();
+        // Skip rendering if canvas isn't properly sized yet
+        if (this.config.canvasSize <= 0) {
+            return;
+        }
         
-        console.log(`🎨 Rendering pattern: ${this.pattern.stepCount} steps, canvas: ${this.config.canvasSize}x${this.config.canvasSize}`);
+        // If canvas element isn't sized yet, try to size it now
+        if (this.canvas.width <= 0) {
+            this.setupResponsiveCanvas();
+            if (this.canvas.width <= 0) {
+                return;
+            }
+        }
+        
+        const startTime = performance.now();
         
         // Clear canvas
         this.ctx.clearRect(0, 0, this.config.canvasSize, this.config.canvasSize);
@@ -464,7 +493,7 @@ class SequencerVisualEngine {
         const stepSize = this.config.stepElementActualSize;
         const fontSize = stepSize * 0.4;
         
-        console.log(`🎨 Drawing ${this.pattern.stepCount} steps:`, this.pattern.steps.slice(0, 8));
+        // Draw step elements around the circle
         
         for (let i = 0; i < this.pattern.stepCount; i++) {
             const angle = (i / this.pattern.stepCount) * Math.PI * 2 - Math.PI / 2;
