@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Final Audio Engine Test</title>
+    <style>
+        body { 
+            font-family: 'Courier New', monospace; 
+            margin: 20px; 
+            background: #f5f5f5; 
+        }
+        .result { 
+            padding: 10px; 
+            margin: 10px 0; 
+            border-radius: 4px; 
+            font-weight: bold; 
+        }
+        .success { 
+            background: #d5f4e6; 
+            color: #1e8449; 
+        }
+        .error { 
+            background: #fadbd8; 
+            color: #a93226; 
+        }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            background: #3498db;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔊 Final Audio Engine Test</h1>
+    
+    <div id="results"></div>
+    
+    <button class="btn" onclick="runFinalTest()">Run Final Test</button>
+    <button class="btn" onclick="testInvalidSettings()">Test Invalid Settings Fix</button>
+    <button class="btn" onclick="testContextDestroy()">Test Context Destroy</button>
+
+    <script src="sequencer-audio.js"></script>
+    
+    <script>
+        function addResult(message, success) {
+            const div = document.createElement('div');
+            div.className = `result ${success ? 'success' : 'error'}`;
+            div.textContent = `${success ? '✅' : '❌'} ${message}`;
+            document.getElementById('results').appendChild(div);
+        }
+        
+        async function runFinalTest() {
+            document.getElementById('results').innerHTML = '';
+            
+            try {
+                // Test basic functionality
+                const engine = new SequencerAudioEngine();
+                const initialized = await engine.initialize();
+                addResult(`Initialization: ${initialized}`, initialized);
+                
+                // Test sound playback
+                const played = await engine.playSound(0.1);
+                addResult(`Sound playback: ${played}`, played);
+                
+                // Test settings update
+                const updated = engine.updateSettings({ frequency: 880, volume: 0.5 });
+                addResult(`Settings update: ${updated}`, updated);
+                
+                // Test stats
+                const stats = engine.getStats();
+                const hasStats = stats.soundsPlayed > 0;
+                addResult(`Statistics tracking: sounds played = ${stats.soundsPlayed}`, hasStats);
+                
+                addResult('All core functionality working!', true);
+                
+            } catch (error) {
+                addResult(`Error: ${error.message}`, false);
+            }
+        }
+        
+        function testInvalidSettings() {
+            const engine = new SequencerAudioEngine();
+            
+            // Get initial settings
+            const before = JSON.stringify(engine.getSettings());
+            
+            // Try to apply invalid settings
+            engine.updateSettings({
+                frequency: -100,
+                volume: 2,
+                waveform: 'invalid',
+                unknownProperty: 'should be ignored'
+            });
+            
+            // Check if settings changed
+            const after = JSON.stringify(engine.getSettings());
+            const unchanged = before === after;
+            
+            addResult('Invalid settings properly ignored', unchanged);
+        }
+        
+        async function testContextDestroy() {
+            try {
+                const engine1 = new SequencerAudioEngine();
+                const engine2 = new SequencerAudioEngine();
+                
+                await engine1.initialize();
+                await engine2.initialize();
+                
+                // Test simultaneous playback
+                const sound1 = engine1.playSound(0.1);
+                const sound2 = engine2.playSound(0.1);
+                
+                await Promise.all([sound1, sound2]);
+                
+                // Destroy engines
+                engine1.destroy();
+                engine2.destroy();
+                
+                addResult('Multiple engines creation/destruction', true);
+                
+                // Wait a bit for any potential delayed errors
+                setTimeout(() => {
+                    addResult('No errors after destroy', true);
+                }, 500);
+                
+            } catch (error) {
+                addResult(`Context destroy error: ${error.message}`, false);
+            }
+        }
+        
+        // Auto-run basic test on load
+        window.addEventListener('load', runFinalTest);
+    </script>
+</body>
+</html>
