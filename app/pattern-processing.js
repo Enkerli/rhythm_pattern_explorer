@@ -343,14 +343,30 @@ class UnifiedPatternParser {
             return this.retrogradePattern(basePattern);
         }
         
-        // Check for rotation notation: pattern@steps
+        // Check for rotation notation: pattern@steps (but not shorthand polygons)
         if (cleaned.includes('@')) {
             const parts = cleaned.split('@');
             if (parts.length === 2) {
                 const pattern = parts[0].trim();
                 const rotationSteps = parseInt(parts[1].trim());
                 
-                if (!isNaN(rotationSteps)) {
+                // Check if this is a shorthand polygon (let shorthand parser handle it)
+                const shorthandMap = {
+                    'bi': 2, 'bip': 2, 'bipod': 2,
+                    'tri': 3, 'triangle': 3,
+                    'quad': 4, 'square': 4, 'tetra': 4,
+                    'pent': 5, 'pentagon': 5, 'penta': 5,
+                    'hex': 6, 'hexagon': 6, 'hexa': 6,
+                    'hept': 7, 'heptagon': 7, 'hepta': 7, 'sept': 7, 'septa': 7,
+                    'oct': 8, 'octagon': 8, 'octa': 8,
+                    'enn': 9, 'enneagon': 9, 'nona': 9,
+                    'dec': 10, 'decagon': 10, 'deca': 10,
+                    'dod': 12, 'dodecagon': 12, 'dodeca': 12
+                };
+                
+                if (shorthandMap[pattern.toLowerCase()]) {
+                    // This is a shorthand polygon, skip rotation parsing - let shorthand parser handle it
+                } else if (!isNaN(rotationSteps)) {
                     // Parse the base pattern first
                     const basePattern = this.parsePattern(pattern);
                     // Apply rotation
@@ -498,7 +514,7 @@ class UnifiedPatternParser {
             'dod': 12, 'dodecagon': 12, 'dodeca': 12
         };
         
-        const shorthandMatch = cleaned.match(/^(bi|bip|bipod|tri|triangle|quad|square|tetra|pent|pentagon|penta|hex|hexagon|hexa|hept|heptagon|hepta|sept|septa|oct|octagon|octa|enn|enneagon|nona|dec|decagon|deca|dod|dodecagon|dodeca)(?:\+(\d+))?$/i);
+        const shorthandMatch = cleaned.match(/^(bi|bip|bipod|tri|triangle|quad|square|tetra|pent|pentagon|penta|hex|hexagon|hexa|hept|heptagon|hepta|sept|septa|oct|octagon|octa|enn|enneagon|nona|dec|decagon|deca|dod|dodecagon|dodeca)(?:@(\d+))?$/i);
         if (shorthandMatch) {
             const shape = shorthandMatch[1].toLowerCase();
             const offset = shorthandMatch[2] ? parseInt(shorthandMatch[2]) : 0;
