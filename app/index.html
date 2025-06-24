@@ -44,7 +44,7 @@
                     • <strong>Single Polygons:</strong> P(vertices,offset,expansion) → P(3,1,4) = Explicit expansion<br>
                     • <strong>Euclidean:</strong> E(beats,steps,offset) or E(beats,steps) → E(5,8,0) or E(5,8)<br>
                     • <strong>Random:</strong> R(onsets,steps) → R(3,8) = Random 3 onsets in 8 steps<br>
-                    • <strong>Shorthand:</strong> tri, pent, hept, oct → triangle, pentagon, heptagon, octagon (tri+1 for offset)<br>
+                    • <strong>Shorthand:</strong> tri, pent, hept, oct → triangle, pentagon, heptagon, octagon (tri@1 for offset)<br>
                     • <strong>Subtraction:</strong> P(3,0)+P(5,1)-P(2,0) = Perfect balance via subtraction<br>
                     • <strong>Transformations:</strong> ~pattern (invert), rev pattern (retrograde)<br>
                     • <strong>Named Patterns:</strong> tresillo=E(3,8), mypattern=P(3,1)+P(5,0)<br>
@@ -70,13 +70,39 @@
                     <!-- Will be dynamically filled -->
                 </div>
 
-                <!-- BALANCE SECTION -->
+                <!-- BALANCE & SEQUENCER SECTION -->
                 <div class="balance-section" id="balanceSection" style="display: none;">
                     <div class="balance-info-compact">
-                        <!-- Balance rating, score, description (30% width max) -->
+                        <!-- Balance rating, score, description (left column) -->
                     </div>
-                    <div class="balance-visualization-large">
-                        <!-- Large CoG visualization (60%+ width) -->
+                    <div class="sequencer-visualization-large">
+                        <!-- Interactive circular sequencer with CoG visualization (center) -->
+                        <div class="sequencer-container">
+                            <div class="sequencer-canvas-wrapper">
+                                <canvas id="patternSequencerCanvas"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="sequencer-controls-container">
+                        <!-- Sequencer controls (right column) -->
+                        <div class="sequencer-controls-compact">
+                            <div class="sequencer-playback-row">
+                                <button class="btn-sequencer play" id="sequencerPlayBtn">▶</button>
+                                <button class="btn-sequencer pause" id="sequencerPauseBtn">⏸</button>
+                                <button class="btn-sequencer stop" id="sequencerStopBtn">⏹</button>
+                            </div>
+                            <div class="sequencer-status" id="sequencerStatus">Ready</div>
+                            <div class="sequencer-settings-row">
+                                <label class="sequencer-label">Tempo:</label>
+                                <input type="range" id="sequencerTempoSlider" class="sequencer-slider" min="60" max="180" value="120">
+                                <span id="sequencerTempoDisplay" class="sequencer-value">120</span>
+                            </div>
+                            <div class="sequencer-settings-row">
+                                <label class="sequencer-label">Volume:</label>
+                                <input type="range" id="sequencerVolumeSlider" class="sequencer-slider" min="0" max="100" value="50">
+                                <span id="sequencerVolumeDisplay" class="sequencer-value">50%</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -219,6 +245,9 @@
             'pattern-processing.js',
             'pattern-exploration.js',
             'pattern-database.js',
+            'sequencer-audio.js',
+            'sequencer-visual.js',
+            'sequencer-controller.js',
             'ui-components.js',
             'app-controller-browser.js'
         ];

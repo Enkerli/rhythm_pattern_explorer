@@ -34,6 +34,7 @@ class EnhancedPatternApp {
         // Initialize core components
         this.database = new PatternDatabase();
         this.explorer = new SystematicExplorer();
+        this.sequencer = null;
         
         // Application state
         this.currentPattern = null;
@@ -44,6 +45,7 @@ class EnhancedPatternApp {
         // Initialize the application
         this.setupEventListeners();
         this.initialize();
+        this.initializeSequencer();
         
         console.log('✅ Enhanced Pattern Application initialized successfully');
     }
@@ -56,7 +58,8 @@ class EnhancedPatternApp {
             'MathUtils', 'RegularPolygonGenerator', 'EuclideanGenerator',
             'PerfectBalanceAnalyzer', 'PatternAnalyzer', 'CenterOfGravityCalculator',
             'AdvancedPatternCombiner', 'UnifiedPatternParser', 'PatternConverter',
-            'SystematicExplorer', 'PatternDatabase', 'UIComponents', 'AppConfig'
+            'SystematicExplorer', 'PatternDatabase', 'UIComponents', 'AppConfig',
+            'SequencerController', 'SequencerIntegration'
         ];
         
         const missingClasses = requiredClasses.filter(className => 
@@ -85,6 +88,94 @@ class EnhancedPatternApp {
         this.updateSortButton();
         
         console.log('🎯 Application initialization complete');
+    }
+    
+    /**
+     * Initialize the sequencer controller
+     */
+    async initializeSequencer() {
+        try {
+            console.log('🎵 Initializing sequencer...');
+            
+            // Create sequencer controller
+            this.sequencer = new SequencerController('patternSequencerCanvas', 'balanceSection', {
+                autoPlay: false,
+                defaultTempo: 120,
+                defaultVolume: 0.5,
+                enableAudio: true,
+                enableVisual: true
+            });
+            
+            // Setup sequencer event listeners
+            this.setupSequencerEvents();
+            
+            console.log('✅ Sequencer initialized successfully');
+            
+        } catch (error) {
+            console.error('❌ Failed to initialize sequencer:', error);
+            // Continue without sequencer if initialization fails
+            this.sequencer = null;
+        }
+    }
+    
+    /**
+     * Setup sequencer event listeners
+     */
+    setupSequencerEvents() {
+        if (!this.sequencer) return;
+        
+        // Sequencer control buttons
+        const playBtn = document.getElementById('sequencerPlayBtn');
+        const pauseBtn = document.getElementById('sequencerPauseBtn');
+        const stopBtn = document.getElementById('sequencerStopBtn');
+        const tempoSlider = document.getElementById('sequencerTempoSlider');
+        const volumeSlider = document.getElementById('sequencerVolumeSlider');
+        const tempoDisplay = document.getElementById('sequencerTempoDisplay');
+        const volumeDisplay = document.getElementById('sequencerVolumeDisplay');
+        const statusDisplay = document.getElementById('sequencerStatus');
+        
+        if (playBtn) {
+            playBtn.addEventListener('click', () => this.sequencer.play());
+        }
+        
+        if (pauseBtn) {
+            pauseBtn.addEventListener('click', () => this.sequencer.pause());
+        }
+        
+        if (stopBtn) {
+            stopBtn.addEventListener('click', () => this.sequencer.stop());
+        }
+        
+        if (tempoSlider && tempoDisplay) {
+            tempoSlider.addEventListener('input', (e) => {
+                const tempo = parseInt(e.target.value);
+                this.sequencer.setTempo(tempo);
+                tempoDisplay.textContent = tempo;
+            });
+        }
+        
+        if (volumeSlider && volumeDisplay) {
+            volumeSlider.addEventListener('input', (e) => {
+                const volume = parseInt(e.target.value) / 100;
+                this.sequencer.updateAudioSettings({ volume });
+                volumeDisplay.textContent = `${e.target.value}%`;
+            });
+        }
+        
+        // Listen for sequencer events
+        this.sequencer.on('onPlaybackChange', (data) => {
+            if (statusDisplay) {
+                statusDisplay.textContent = data.isPlaying ? 'Playing' : 
+                                          data.isPaused ? 'Paused' : 'Ready';
+            }
+        });
+        
+        this.sequencer.on('onError', (error) => {
+            console.error('Sequencer error:', error);
+            if (statusDisplay) {
+                statusDisplay.textContent = 'Error';
+            }
+        });
     }
     
     /**
@@ -319,7 +410,7 @@ class EnhancedPatternApp {
             // Show and populate balance section
             const balanceSection = document.getElementById('balanceSection');
             if (balanceSection) {
-                balanceSection.style.display = 'flex';
+                balanceSection.style.display = 'grid';
                 
                 const balanceInfo = balanceSection.querySelector('.balance-info-compact');
                 const balanceViz = balanceSection.querySelector('.balance-visualization-large');
@@ -347,13 +438,29 @@ class EnhancedPatternApp {
                                 <strong>Milne's Formula:</strong> |∑(e^(i2πkⱼ/n))| / onsets = ${analysis.balanceAnalysis.normalizedMagnitude.toFixed(6)}
                             </div>
                         </div>
+                        <div class="analysis-box cog-box" style="margin-top: 8px;">
+                            <div class="analysis-box-header">
+                                <span class="analysis-box-icon">🎯</span>
+                                <span class="analysis-box-title">Center of Gravity</span>
+                            </div>
+                            <div class="analysis-box-content">
+                                <div class="cog-distance-value">
+                                    Distance: ${analysis.cogAnalysis?.distance?.toFixed(4) || 'N/A'}
+                                </div>
+                                <div class="cog-angle-value">
+                                    Angle: ${analysis.cogAnalysis?.angle?.toFixed(1) || 'N/A'}°
+                                </div>
+                                <div class="cog-description">
+                                    ${analysis.cogAnalysis?.distance < 0.1 ? '🎯 Geometrically Centered' : 'Pattern analysis'}
+                                </div>
+                            </div>
+                        </div>
                     `;
                 }
-                
-                if (balanceViz) {
-                    balanceViz.innerHTML = UIComponents.renderCogVisualization(analysis.cogAnalysis, analysis.stepCount);
-                }
             }
+            
+            // Load pattern into sequencer
+            this.loadPatternIntoSequencer(pattern, analysis);
             
         } catch (error) {
             console.error('❌ Analysis display error:', error);
@@ -438,6 +545,12 @@ class EnhancedPatternApp {
         // Balance analysis
         const balanceAnalysis = PerfectBalanceAnalyzer.calculateBalance(pattern.steps, pattern.stepCount);
         const cogAnalysis = CenterOfGravityCalculator.calculateCenterOfGravity(pattern.steps);
+        
+        console.log('🔍 Analysis generated:', {
+            balanceAnalysis: balanceAnalysis ? 'OK' : 'MISSING',
+            cogAnalysis: cogAnalysis ? 'OK' : 'MISSING',
+            cogProperties: cogAnalysis ? Object.keys(cogAnalysis) : 'N/A'
+        });
         
         return {
             title: 'Mathematical Pattern Analysis',
@@ -1285,6 +1398,34 @@ ${perfectBalancePatterns.map((pattern, index) => {
             this.database.remove(patternId);
             this.updatePatternList();
             this.updateDatabaseStats();
+        }
+    }
+    
+    /**
+     * Load pattern into sequencer for playback and visualization
+     */
+    loadPatternIntoSequencer(pattern, analysis) {
+        if (!this.sequencer) {
+            console.warn('⚠️ Sequencer not available');
+            return;
+        }
+        
+        try {
+            // Create sequencer-compatible pattern object
+            const sequencerPattern = SequencerIntegration.convertPatternResult(pattern);
+            
+            // Add CoG data for visualization
+            if (analysis && analysis.cogAnalysis) {
+                sequencerPattern.cogData = analysis.cogAnalysis;
+            }
+            
+            // Load pattern into sequencer
+            this.sequencer.updatePattern(sequencerPattern);
+            
+            console.log(`🎵 Pattern loaded into sequencer: ${sequencerPattern.name}`);
+            
+        } catch (error) {
+            console.error('❌ Failed to load pattern into sequencer:', error);
         }
     }
 }
