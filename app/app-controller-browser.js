@@ -393,8 +393,18 @@ class EnhancedPatternApp {
         
         // Generate pattern types with colored polygon info
         let patternTypes = [];
+        
+        // Check for Euclidean patterns (both input and detected)
         if (pattern.isEuclidean) {
-            patternTypes.push(`<span class="pattern-type euclidean">🌀 Euclidean: ${pattern.formula}</span>`);
+            const euclideanLabel = pattern.detectedEuclidean ? 'Detected Euclidean' : 'Euclidean';
+            const formula = pattern.formula || pattern.euclidean || (pattern.euclideanData && pattern.euclideanData.formula);
+            patternTypes.push(`<span class="pattern-type euclidean">🌀 ${euclideanLabel}: ${formula}</span>`);
+        } else {
+            // Check if this pattern matches a Euclidean rhythm (for real-time detection)
+            const euclideanAnalysis = PatternAnalyzer.detectEuclideanPattern(pattern.steps, pattern.stepCount);
+            if (euclideanAnalysis) {
+                patternTypes.push(`<span class="pattern-type euclidean detected">🌀 Detected Euclidean: ${euclideanAnalysis.formula}</span>`);
+            }
         }
         if (pattern.isRegularPolygon) {
             const polygonName = pattern.polygonType || `${pattern.vertices}-gon`;
@@ -465,8 +475,18 @@ class EnhancedPatternApp {
             // Calculate perfect balance analysis for database storage
             const perfectBalance = PerfectBalanceAnalyzer.calculateBalance(this.currentPattern.steps, this.currentPattern.stepCount);
             
+            // Calculate repetition analysis for database storage
+            const repetitionAnalysis = PatternAnalyzer.detectRepetition(this.currentPattern.steps, this.currentPattern.stepCount);
+            
+            // Calculate Euclidean analysis for database storage
+            const euclideanAnalysis = PatternAnalyzer.detectEuclideanPattern(this.currentPattern.steps, this.currentPattern.stepCount);
+            
             // Create database pattern with analysis
-            const databasePattern = createDatabasePattern(this.currentPattern, { perfectBalance });
+            const databasePattern = createDatabasePattern(this.currentPattern, { 
+                perfectBalance,
+                repetition: repetitionAnalysis,
+                euclidean: euclideanAnalysis
+            });
             
             const patternId = this.database.add(databasePattern);
             console.log(`✅ Pattern added to database with ID: ${patternId}`);
@@ -505,7 +525,7 @@ class EnhancedPatternApp {
             'P(3,1)+P(5,0)+P(2,5)',
             'P(3,0)+P(5,1)-P(2,0)',
             'E(5,8,0)',
-            '0x92',
+            '0x49',
             'b101010'
         ];
         
@@ -1018,16 +1038,33 @@ ${perfectBalancePatterns.map((pattern, index) => {
             polygonType = pattern.type;
         }
         
-        // Get Euclidean formula with actual parameters - check both direct and nested properties
+        // Check for Euclidean patterns (both input and detected)
+        let isEuclideanPattern = pattern.isEuclidean;
         let euclideanFormula = 'Euclidean';
-        if (pattern.formula) {
-            euclideanFormula = pattern.formula;
-        } else if (pattern.euclidean && typeof pattern.euclidean === 'string') {
-            euclideanFormula = pattern.euclidean;
-        } else if (pattern.beats && pattern.steps) {
-            euclideanFormula = `E(${pattern.beats},${pattern.steps},${pattern.offset || 0})`;
-        } else if (pattern.euclideanParams) {
-            euclideanFormula = `E(${pattern.euclideanParams.beats || '?'},${pattern.euclideanParams.steps || '?'},${pattern.euclideanParams.offset || 0})`;
+        let euclideanLabel = 'Euclidean';
+        
+        if (pattern.isEuclidean) {
+            // Pattern was originally entered as Euclidean or detected and stored
+            euclideanLabel = pattern.detectedEuclidean ? 'Detected Euclidean' : 'Euclidean';
+            if (pattern.formula) {
+                euclideanFormula = pattern.formula;
+            } else if (pattern.euclidean && typeof pattern.euclidean === 'string') {
+                euclideanFormula = pattern.euclidean;
+            } else if (pattern.euclideanData && pattern.euclideanData.formula) {
+                euclideanFormula = pattern.euclideanData.formula;
+            } else if (pattern.beats && pattern.steps) {
+                euclideanFormula = `E(${pattern.beats},${pattern.steps},${pattern.offset || 0})`;
+            } else if (pattern.euclideanParams) {
+                euclideanFormula = `E(${pattern.euclideanParams.beats || '?'},${pattern.euclideanParams.steps || '?'},${pattern.euclideanParams.offset || 0})`;
+            }
+        } else {
+            // Check if this pattern matches a Euclidean rhythm (for real-time detection)
+            const euclideanAnalysis = PatternAnalyzer.detectEuclideanPattern(pattern.steps, pattern.stepCount);
+            if (euclideanAnalysis) {
+                isEuclideanPattern = true;
+                euclideanLabel = 'Detected Euclidean';
+                euclideanFormula = euclideanAnalysis.formula;
+            }
         }
 
         return `
@@ -1049,7 +1086,7 @@ ${perfectBalancePatterns.map((pattern, index) => {
                         ${pattern.isCombined ? '<span class="pattern-repr combined-type">🎯 Combined</span>' : ''}
                         ${pattern.isRegularPolygon ? `<span class="pattern-repr polygon-type">🔺 ${polygonType}</span>` : ''}
                         ${polygonLabels ? `<span class="pattern-repr polygon-components">${polygonLabels}</span>` : ''}
-                        ${pattern.isEuclidean ? `<span class="pattern-repr euclidean-type">🌀 ${euclideanFormula}</span>` : ''}
+                        ${isEuclideanPattern ? `<span class="pattern-repr euclidean-type">🌀 ${euclideanLabel}: ${euclideanFormula}</span>` : ''}
                         ${(!pattern.isRegularPolygon && !polygonLabels && ((pattern.formula && pattern.formula.includes('P(')) || (pattern.expression && pattern.expression.includes('P(')))) ? `<span class="pattern-repr polygon-type">🔺 Contains Polygons</span>` : ''}
                     </div>
                     <div class="pattern-representations">

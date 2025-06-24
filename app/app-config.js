@@ -201,7 +201,7 @@ const AppConfig = {
          * Placeholder Text
          */
         PLACEHOLDERS: {
-            UNIVERSAL_INPUT: 'P(3,1)+P(5,0)+P(2,5), P(3,0)+P(5,1)-P(2,0), E(5,8,0), 0x92@3, 0o452, [0,3,6]:8, etc.',
+            UNIVERSAL_INPUT: 'P(3,1)+P(5,0)+P(2,5), P(3,0)+P(5,1)-P(2,0), E(5,8,0), 0x49@3, 0o111, [0,3,6]:8, etc.',
             SEARCH_INPUT: 'Search patterns...',
             PATTERN_NAME: 'Enter pattern name',
             IMPORT_DATA: 'Paste your JSON pattern database here...',
@@ -218,12 +218,12 @@ const AppConfig = {
                 PERFECT_BALANCE: 'P(3,0)+P(5,1)-P(2,0) - Perfect balance via subtraction',
                 POLYGON_EXPANDED: 'P(3,1,4) - Triangle×4',
                 EUCLIDEAN: 'E(5,8,0) - Quintillo',
-                HEX: '0x92 - Tresillo',
-                OCTAL: '0o452 - Octal pattern for ternary rhythms',
+                HEX: '0x49 - Tresillo',
+                OCTAL: '0o111 - Octal pattern for ternary rhythms',
                 BINARY: 'b101010 - Binary pattern',
-                DECIMAL: '146 - Decimal pattern',
+                DECIMAL: '73 - Decimal pattern',
                 ONSET_ARRAY: '[0,3,6]:8 - Onset positions with step count',
-                ROTATION: '0x92@3 - Tresillo rotated 3 steps'
+                ROTATION: '0x49@3 - Tresillo rotated 3 steps'
             },
             
             INITIAL_HELP: 'Parse a pattern using the universal input above to see comprehensive mathematical analysis.'
@@ -323,12 +323,12 @@ const AppConfig = {
         FAMOUS_RHYTHMS: {
             TRESILLO: {
                 name: 'Tresillo',
-                hex: '0x92',
+                hex: '0x49',
                 description: 'Cuban tresillo rhythm'
             },
             CINQUILLO: {
                 name: 'Cinquillo',
-                hex: '0x96',
+                hex: '0x69',
                 description: 'Cuban cinquillo rhythm'
             },
             SON: {

@@ -282,15 +282,38 @@ class PatternDatabase {
                     return false;
                 });
             case 'euclidean':
-                return this.patterns.filter(p => p.euclidean || p.isEuclidean);
+                return this.patterns.filter(p => {
+                    // Include patterns marked as Euclidean from input
+                    if (p.euclidean || p.isEuclidean) return true;
+                    
+                    // Fallback: detect Euclidean patterns on the fly for older database entries
+                    const euclideanAnalysis = PatternAnalyzer.detectEuclideanPattern(p.steps, p.stepCount);
+                    return !!euclideanAnalysis;
+                });
             case 'combined':
                 return this.patterns.filter(p => p.combined || p.isCombined);
             case 'subtraction':
                 return this.patterns.filter(p => p.hasSubtraction);
             case 'repetitive':
-                return this.patterns.filter(p => p.repetition);
+                return this.patterns.filter(p => {
+                    // If repetition analysis exists, use it
+                    if (p.repetition !== undefined) {
+                        return !!p.repetition;
+                    }
+                    // Fallback: analyze on the fly for patterns without stored repetition data
+                    const repetitionAnalysis = PatternAnalyzer.detectRepetition(p.steps, p.stepCount);
+                    return !!repetitionAnalysis;
+                });
             case 'non_repetitive':
-                return this.patterns.filter(p => !p.repetition);
+                return this.patterns.filter(p => {
+                    // If repetition analysis exists, use it
+                    if (p.repetition !== undefined) {
+                        return !p.repetition;
+                    }
+                    // Fallback: analyze on the fly for patterns without stored repetition data
+                    const repetitionAnalysis = PatternAnalyzer.detectRepetition(p.steps, p.stepCount);
+                    return !repetitionAnalysis;
+                });
             case 'wellformed':
                 return this.patterns.filter(p => p.milne && p.milne.wellformed);
             case 'balanced':
@@ -495,6 +518,18 @@ function createDatabasePattern(patternData, analyses = {}) {
     // Add analysis results if provided
     if (analyses.perfectBalance) {
         pattern.perfectBalance = analyses.perfectBalance;
+    }
+    
+    if (analyses.repetition) {
+        pattern.repetition = analyses.repetition;
+    }
+    
+    // Add detected Euclidean analysis (if not already Euclidean from input)
+    if (analyses.euclidean && !patternData.isEuclidean) {
+        pattern.euclidean = analyses.euclidean.formula;
+        pattern.isEuclidean = true;
+        pattern.detectedEuclidean = true; // Flag to indicate this was detected, not input
+        pattern.euclideanData = analyses.euclidean;
     }
     
     if (patternData.isRegularPolygon) {
