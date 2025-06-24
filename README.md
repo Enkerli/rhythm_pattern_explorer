@@ -1,4 +1,4 @@
-# Rhythmic Pattern Explorer
+# Enhanced Pattern Database with Perfect Balance Explorer
 
 A comprehensive web application for analyzing and exploring rhythmic patterns using mathematical principles including perfect balance analysis, center of gravity calculations, and pattern combinations.
 
@@ -17,10 +17,10 @@ A comprehensive web application for analyzing and exploring rhythmic patterns us
 
 ## Quick Start
 
-1. Open `index.html` in a modern web browser
+1. Open `app/index.html` in a modern web browser
 2. Enter a pattern in the Universal Pattern Input field (e.g., `P(3,1)+P(5,0)`)
-3. Click "Parse & Analyze" to see comprehensive analysis
-4. Use "Add to Database" to save patterns for later reference
+3. Press **Enter** to parse and analyze, or **Ctrl/Cmd+Enter** to parse and automatically add to database
+4. Click "Parse & Analyze" button for analysis only
 
 ## Supported Pattern Formats
 
@@ -62,17 +62,19 @@ A comprehensive web application for analyzing and exploring rhythmic patterns us
 ```
 app/
 ├── index.html                    # Main application HTML
-├── app-styles.css               # Application styles
-├── math-core.js                 # Mathematical utilities
-├── app-config.js                # Application configuration
-├── pattern-generators.js        # Pattern generation algorithms
+├── app-styles.css               # Application styles and UI components
+├── math-core.js                 # Mathematical utilities and core functions
+├── app-config.js                # Application configuration and constants
+├── pattern-generators.js        # Pattern generation algorithms (Polygon, Euclidean)
 ├── pattern-analysis.js          # Analysis tools (balance, CoG, repetition)
-├── pattern-processing.js        # Pattern parsing and conversion
-├── pattern-exploration.js       # Systematic pattern exploration
-├── pattern-database.js          # Database management
-├── ui-components.js             # User interface components
-├── app-controller-browser.js    # Main application controller
-└── README.md                    # This file
+├── pattern-processing.js        # Pattern parsing and conversion utilities
+├── pattern-exploration.js       # Systematic pattern exploration and discovery
+├── pattern-database.js          # Database management with localStorage
+├── sequencer-audio.js           # Audio synthesis and playback
+├── sequencer-visual.js          # Visual sequencer with CoG display
+├── sequencer-controller.js      # Sequencer integration and controls
+├── ui-components.js             # User interface components and utilities
+└── app-controller-browser.js    # Main application controller and orchestrator
 ```
 
 ## Browser Compatibility
@@ -93,14 +95,17 @@ app/
 3. Save to database for later reference
 
 ### Database Operations
-1. Use search bar to find patterns by polygon type (e.g., "pentagon")
-2. Filter by type using dropdown (polygons, euclidean, combined, etc.)
-3. Export/import pattern collections as JSON
+1. Use search bar to find patterns by name or characteristics
+2. Filter by type using dropdown (perfect balance, polygons, euclidean, combined, etc.)
+3. Filter by step count range using min/max step inputs
+4. Export/import pattern collections as JSON
+5. Toggle between date-based and step-count sorting
 
 ### Exploration
-1. Set exploration parameters (min/max sides, combinations)
-2. Click "Find Perfect Balance" to discover new patterns
-3. Results automatically added to database
+1. Set exploration parameters using comma-separated format: `min sides, max sides, max patterns` (e.g., `3,7,3`)
+2. Click "Find Perfect Balance" to discover patterns with perfect mathematical balance
+3. Results automatically added to database with duplicate detection
+4. Generate comprehensive reports of perfect balance patterns
 
 ## Mathematical Background
 
@@ -111,7 +116,14 @@ app/
 
 ## Development
 
-The application uses a modular architecture with browser-compatible ES5/ES6 JavaScript. All modules are loaded sequentially to ensure proper dependency resolution.
+The application uses a modular architecture with browser-compatible ES5/ES6 JavaScript. All modules are loaded sequentially to ensure proper dependency resolution. Features include:
+
+- **Sequencer Integration**: Real-time audio playback with visual feedback
+- **Interactive Visualization**: Circular pattern display with center of gravity indicators  
+- **Advanced Pattern Detection**: Automatic recognition of Euclidean rhythms and repetitive patterns
+- **Keyboard Shortcuts**: Enter to parse, Ctrl/Cmd+Enter to parse and save
+- **Smart Notifications**: Non-intrusive feedback system
+- **Comprehensive Analysis**: Perfect balance, center of gravity, structure analysis
 
 ## License
 
