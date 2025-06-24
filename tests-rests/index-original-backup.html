@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Pattern Database with Perfect Balance Explorer</title>
+    
+    <!-- Load CSS Styles Module -->
+    <link rel="stylesheet" href="app-styles.css">
+</head>
+<body>
+    <!-- MAIN APPLICATION HEADER -->
+    <h1>🎼 Enhanced Pattern Database with Perfect Balance Explorer</h1>
+
+    <!-- NOTIFICATION CONTAINER -->
+    <div id="notification-container" class="notification-container"></div>
+
+    <!-- MAIN APPLICATION CONTAINER -->
+    <div class="main-container">
+        
+        <!-- ================================================
+             LEFT SECTION: UNIVERSAL PATTERN INPUT & ANALYSIS
+             ================================================ -->
+        <div class="section">
+            <!-- UNIVERSAL PATTERN INPUT -->
+            <div class="section-header">🎵 Universal Pattern Input</div>
+            
+            <div class="input-group">
+                <label class="input-label">Pattern Input - Supports subtraction for perfect balance discovery!</label>
+                <input type="text" class="input" id="universalInput" placeholder="P(3,1)+P(5,0)+P(2,5), P(3,0)+P(5,1)-P(2,0), E(5,8,0)>>2, 0xAB88, etc." style="font-size: 16px; padding: 12px;">
+            </div>
+
+            <div class="btn-group">
+                <button class="btn primary" id="parseBtn">Parse & Analyze</button>
+                <button class="btn success" id="addUniversalBtn">Add to Database</button>
+                <button class="btn warning" id="copyHexUniversalBtn">Copy Hex</button>
+                <button class="btn" id="testBtn">Test Examples</button>
+            </div>
+
+            <!-- FORMAT INFORMATION BOX -->
+            <div class="info-box">
+                <strong>Supported Formats:</strong><br>
+                • <strong>Polygons:</strong> P(vertices,offset) → P(3,1)+P(5,0) = Auto-expansion to LCM<br>
+                • <strong>Single Polygons:</strong> P(vertices,offset,expansion) → P(3,1,4) = Explicit expansion<br>
+                • <strong>Euclidean:</strong> E(beats,steps,offset) → E(5,8,0) = Quintillo<br>
+                • <strong>Subtraction:</strong> P(3,0)+P(5,1)-P(2,0) = Perfect balance via subtraction<br>
+                • <strong>Binary:</strong> b101010 or 101010<br>
+                • <strong>Hex:</strong> 0x92 → Tresillo<br>
+                • <strong>Octal:</strong> 0o452 → Ternary rhythms<br>
+                • <strong>Decimal:</strong> 146<br>
+                • <strong>Rotation:</strong> pattern@steps → 0x92@3, P(3,1)@2<br>
+                • <strong>Multi-combinations:</strong> P(3,1)+P(5,0)+P(2,5) → Proper LCM(3,5,2)=30
+            </div>
+
+            <!-- PERFECT BALANCE EXPLORER -->
+            <div class="exploration-controls">
+                <div class="section-header" style="margin: 0 0 15px 0; border: none; font-size: 16px;">🔍 Perfect Balance Explorer</div>
+                
+                <div class="theory-box" style="margin: 10px 0;">
+                    <strong>Milne's Perfect Balance Theory:</strong><br>
+                    A pattern is perfectly balanced when <em>∑(e^(i2πkⱼ/n)) = 0</em><br>
+                    Key insights: Coprime polygon sides, strategic offsets, and subtraction operations can achieve perfect balance.
+                </div>
+
+                <!-- EXPLORATION PARAMETERS -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                    <div>
+                        <input type="number" class="input" id="minSides" value="3" min="2" max="12" placeholder="Min sides">
+                        <label style="font-size: 10px; color: #666;">Min sides</label>
+                    </div>
+                    <div>
+                        <input type="number" class="input" id="maxSides" value="7" min="2" max="12" placeholder="Max sides">
+                        <label style="font-size: 10px; color: #666;">Max sides</label>
+                    </div>
+                    <div>
+                        <input type="number" class="input" id="maxCombinations" value="3" min="2" max="5" placeholder="Max combos">
+                        <label style="font-size: 10px; color: #666;">Max patterns</label>
+                    </div>
+                </div>
+
+                <!-- EXPLORATION CONTROLS -->
+                <div class="btn-group">
+                    <button class="btn primary" id="findPerfectBtn">Find Perfect Balance</button>
+                    <button class="btn warning" id="findNearBtn">Find Near Balance</button>
+                    <button class="btn success" id="generateReportBtn">Generate Report</button>
+                    <button class="btn danger" id="stopBtn" style="display: none;">Stop</button>
+                </div>
+
+                <!-- PROGRESS INDICATOR -->
+                <div id="progressContainer" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div id="progressText" style="text-align: center; font-size: 11px; color: #666;">
+                        Searching...
+                    </div>
+                </div>
+            </div>
+
+            <!-- COMPACT OUTPUT DISPLAY -->
+            <div id="compactOutput" class="compact-output" style="display: none;">
+                <div style="font-weight: bold; margin-bottom: 8px; color: #495057;">Pattern Analysis:</div>
+                <div id="compactResult"></div>
+            </div>
+            
+            <!-- DETAILED ANALYSIS DISPLAY -->
+            <div class="analysis-section" id="analysisDisplay">
+                <div class="analysis-title">Mathematical Pattern Analysis</div>
+                <div class="analysis-content">Parse a pattern using the universal input above to see comprehensive mathematical analysis</div>
+            </div>
+        </div>
+
+        <!-- ================================================
+             RIGHT SECTION: DATABASE AND STATISTICS
+             ================================================ -->
+        <div class="section">
+            <!-- DATABASE HEADER WITH CONTROLS -->
+            <div class="database-header">
+                <div class="section-header" style="margin: 0;">Pattern Database</div>
+                <div class="database-controls">
+                    <button class="btn" id="exportBtn">Export</button>
+                    <button class="btn" id="importBtn">Import</button>
+                    <button class="btn danger" id="clearDbBtn">Clear All</button>
+                </div>
+            </div>
+
+            <!-- SEARCH AND FILTER CONTROLS -->
+            <div class="search-filter">
+                <input type="text" class="input" id="searchInput" placeholder="Search patterns...">
+                <select class="input" id="filterSelect">
+                    <option value="all">All Patterns</option>
+                    <option value="favorites">Favorites Only</option>
+                    <option value="perfect_balance">Perfect Balance</option>
+                    <option value="polygons">Regular Polygons</option>
+                    <option value="euclidean">Euclidean Rhythms</option>
+                    <option value="combined">Combined Patterns</option>
+                    <option value="subtraction">With Subtraction</option>
+                    <option value="repetitive">Repetitive</option>
+                    <option value="wellformed">Well-formed</option>
+                    <option value="balanced">Perfectly Balanced (Milne)</option>
+                    <option value="geometric_centered">Geometrically Centered (CoG < 0.1)</option>
+                    <option value="coprime">Coprime Combinations</option>
+                </select>
+                <div class="step-count-filter">
+                    <label class="step-count-label">Step Count Range:</label>
+                    <input type="number" class="input step-count-input" id="minStepCount" placeholder="Min" min="1" max="64" value="">
+                    <span class="step-count-separator">-</span>
+                    <input type="number" class="input step-count-input" id="maxStepCount" placeholder="Max" min="1" max="64" value="">
+                </div>
+                <button class="btn" id="sortBtn">Sort by Date</button>
+            </div>
+
+            <!-- STATISTICS GRID -->
+            <div class="stats-grid" id="statsGrid" style="margin-bottom: 15px;">
+                <div class="stat-item">
+                    <span class="stat-value" id="totalPatterns">0</span>
+                    <span class="stat-label">Total Patterns</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="perfectBalanceCount">0</span>
+                    <span class="stat-label">Perfect Balance</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="favoriteCount">0</span>
+                    <span class="stat-label">Favorites</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="polygonCount">0</span>
+                    <span class="stat-label">Polygons</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="euclideanCount">0</span>
+                    <span class="stat-label">Euclidean</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="combinedCount">0</span>
+                    <span class="stat-label">Combined</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="wellformedCount">0</span>
+                    <span class="stat-label">Well-formed</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="avgCogValue">0.000</span>
+                    <span class="stat-label">Avg CoG</span>
+                </div>
+            </div>
+
+            <!-- PATTERN LIST DISPLAY -->
+            <div class="pattern-list" id="patternList">
+                <!-- Patterns will be dynamically rendered here by the application -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================
+         BROWSER-COMPATIBLE MODULE LOADING
+         ================================================ -->
+    
+    <!-- Load modules using script tags in dependency order -->
+    <!-- This approach works with direct file opening (no web server required) -->
+    
+    <!-- Foundation Layer: No dependencies -->
+    <script>
+        // Create temporary loading indicator
+        console.log('🎼 Loading Rhythm Pattern Explorer modules...');
+        
+        // Track module loading
+        window.moduleLoadingStatus = {
+            total: 9,
+            loaded: 0,
+            failed: 0,
+            modules: []
+        };
+        
+        function updateLoadingStatus(moduleName, success = true) {
+            window.moduleLoadingStatus.loaded++;
+            if (!success) window.moduleLoadingStatus.failed++;
+            window.moduleLoadingStatus.modules.push({ name: moduleName, success });
+            
+            console.log(`${success ? '✅' : '❌'} ${moduleName} ${success ? 'loaded' : 'failed'} (${window.moduleLoadingStatus.loaded}/${window.moduleLoadingStatus.total})`);
+            
+            if (window.moduleLoadingStatus.loaded === window.moduleLoadingStatus.total) {
+                if (window.moduleLoadingStatus.failed === 0) {
+                    console.log('🎯 All modules loaded successfully! Initializing application...');
+                    initializeApplication();
+                } else {
+                    console.error(`❌ ${window.moduleLoadingStatus.failed} modules failed to load`);
+                    alert('Some modules failed to load. Please check that all module files are present.');
+                }
+            }
+        }
+        
+        // Load modules in sequence to avoid dependency issues
+        function loadModulesSequentially() {
+            const modules = [
+                'math-core.js',
+                'app-config.js',
+                'pattern-generators.js', 
+                'pattern-analysis.js',
+                'pattern-processing.js',
+                'pattern-exploration.js',
+                'pattern-database.js',
+                'ui-components.js',
+                'app-controller-browser.js'
+            ];
+            
+            let currentIndex = 0;
+            
+            function loadNextModule() {
+                if (currentIndex >= modules.length) {
+                    return;
+                }
+                
+                const moduleName = modules[currentIndex];
+                const script = document.createElement('script');
+                script.src = moduleName;
+                
+                script.onload = function() {
+                    updateLoadingStatus(moduleName, true);
+                    currentIndex++;
+                    // Add small delay to ensure module is fully processed
+                    setTimeout(loadNextModule, 100);
+                };
+                
+                script.onerror = function() {
+                    updateLoadingStatus(moduleName, false);
+                    currentIndex++;
+                    setTimeout(loadNextModule, 100);
+                };
+                
+                document.head.appendChild(script);
+            }
+            
+            loadNextModule();
+        }
+        
+        // Initialize application after all modules are loaded
+        function initializeApplication() {
+            try {
+                // Verify all required classes are available
+                const requiredClasses = [
+                    'MathUtils', 'RegularPolygonGenerator', 'EuclideanGenerator',
+                    'PerfectBalanceAnalyzer', 'PatternAnalyzer', 'AdvancedPatternCombiner',
+                    'UnifiedPatternParser', 'PatternConverter', 'SystematicExplorer',
+                    'PatternDatabase', 'UIComponents', 'EnhancedPatternApp'
+                ];
+                
+                const missingClasses = requiredClasses.filter(className => 
+                    typeof window[className] === 'undefined'
+                );
+                
+                if (missingClasses.length > 0) {
+                    console.error('❌ Missing required classes:', missingClasses);
+                    alert('Application Error: Some modules failed to load properly. Missing: ' + missingClasses.join(', '));
+                    return;
+                }
+                
+                // Verify AppConfig is available
+                if (typeof window.AppConfig === 'undefined') {
+                    console.error('❌ AppConfig not loaded');
+                    alert('Application Error: Configuration module failed to load.');
+                    return;
+                }
+                
+                console.log('✅ All modules verified and ready');
+                
+                // Initialize the main application
+                window.app = new EnhancedPatternApp();
+                
+                console.log('🎯 Enhanced Pattern Database ready!');
+                console.log('📊 Features available:');
+                console.log('  • Universal pattern input (polygons, Euclidean, binary, hex, combinations)');
+                console.log('  • Perfect balance discovery using Milne\'s theory');
+                console.log('  • Advanced pattern combinations with subtraction support');
+                console.log('  • Comprehensive mathematical analysis');
+                console.log('  • Pattern database with search and filtering');
+                console.log('  • Export/import functionality');
+                
+                // Hide any loading indicators and show success
+                document.body.style.opacity = '1';
+                
+            } catch (error) {
+                console.error('❌ Application initialization failed:', error);
+                alert('Application Error: ' + error.message);
+            }
+        }
+        
+        // Start loading modules when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Starting module loading sequence...');
+            loadModulesSequentially();
+        });
+        
+        // Global error handling
+        window.addEventListener('error', function(event) {
+            console.error('🚨 Application Error:', event.error);
+        });
+        
+        // Handle unhandled promise rejections
+        window.addEventListener('unhandledrejection', function(event) {
+            console.error('🚨 Unhandled Promise Rejection:', event.reason);
+            event.preventDefault();
+        });
+    </script>
+</body>
+</html>

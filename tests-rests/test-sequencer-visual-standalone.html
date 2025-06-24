@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Standalone Visual Engine Test</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            margin: 20px;
+            background: #f5f5f5;
+            color: #333;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        
+        .test-section {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            margin: 5px;
+        }
+        
+        .btn.primary { background: #3498db; color: white; }
+        .btn.primary:hover { background: #2980b9; }
+        .btn.success { background: #27ae60; color: white; }
+        .btn.success:hover { background: #229954; }
+        .btn.danger { background: #e74c3c; color: white; }
+        .btn.danger:hover { background: #c0392b; }
+        
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .test-result.success {
+            background: #d5f4e6;
+            border: 1px solid #27ae60;
+            color: #1e8449;
+        }
+        
+        .test-result.error {
+            background: #fadbd8;
+            border: 1px solid #e74c3c;
+            color: #a93226;
+        }
+        
+        .canvas-container {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        
+        .canvas-wrapper {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            background: white;
+            text-align: center;
+        }
+        
+        .canvas-wrapper h3 {
+            margin: 0 0 10px 0;
+            color: #495057;
+        }
+        
+        #testLog {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎨 Standalone Visual Engine Test</h1>
+    
+    <!-- TEST RESULTS -->
+    <div class="test-section">
+        <h2>📊 Test Results</h2>
+        <div id="testResults">
+            <div class="test-result">Click buttons below to run tests...</div>
+        </div>
+    </div>
+    
+    <!-- VISUAL DEMONSTRATION -->
+    <div class="test-section">
+        <h2>🎨 Visual Demonstration</h2>
+        <div class="canvas-container">
+            <div class="canvas-wrapper">
+                <h3>Main Test Canvas</h3>
+                <div id="testCanvasContainer" style="width: 300px; height: 300px; border: 1px solid #ccc;">
+                    <canvas id="testCanvas"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 20px;">
+            <button class="btn primary" onclick="testBasicVisualization()">Test Basic Visualization</button>
+            <button class="btn primary" onclick="testPatternLoading()">Test Pattern Loading</button>
+            <button class="btn primary" onclick="testInteractivity()">Test Click Interaction</button>
+            <button class="btn success" onclick="startAnimation()">Start Animation</button>
+            <button class="btn danger" onclick="stopAnimation()">Stop Animation</button>
+        </div>
+    </div>
+    
+    <!-- PATTERN CONTROLS -->
+    <div class="test-section">
+        <h2>🎵 Pattern Controls</h2>
+        <div>
+            <button class="btn success" onclick="loadPattern('tresillo')">Load Tresillo</button>
+            <button class="btn success" onclick="loadPattern('fourOnFloor')">Load Four-on-floor</button>
+            <button class="btn success" onclick="loadPattern('singleBeat')">Single Beat</button>
+            <button class="btn success" onclick="loadPattern('random')">Load Random</button>
+            <button class="btn success" onclick="loadPattern('clear')">Clear Pattern</button>
+        </div>
+        <div style="margin-top: 10px;">
+            <strong>Current Pattern:</strong> <span id="patternDisplay">None loaded</span>
+        </div>
+    </div>
+    
+    <!-- TEST LOG -->
+    <div class="test-section">
+        <h2>📝 Test Log</h2>
+        <div id="testLog"></div>
+        <button class="btn primary" onclick="clearLog()">Clear Log</button>
+    </div>
+
+    <!-- Load only the visual module -->
+    <script src="sequencer-visual.js"></script>
+    
+    <script>
+        // Mock dependencies if they don't exist
+        if (typeof CenterOfGravityCalculator === 'undefined') {
+            window.CenterOfGravityCalculator = {
+                calculate: function(steps) {
+                    // Simple mock CoG calculation
+                    // Start from 12 o'clock (top) and go clockwise
+                    let x = 0, y = 0, count = 0;
+                    for (let i = 0; i < steps.length; i++) {
+                        if (steps[i]) {
+                            // Angle starts from top (12 o'clock) and goes clockwise
+                            // -π/2 rotates from 3 o'clock to 12 o'clock starting position
+                            const angle = (i / steps.length) * Math.PI * 2 - Math.PI / 2;
+                            x += Math.cos(angle);
+                            y += Math.sin(angle);
+                            count++;
+                        }
+                    }
+                    if (count > 0) {
+                        x /= count;
+                        y /= count;
+                    }
+                    const distance = Math.sqrt(x * x + y * y);
+                    const angle = Math.atan2(y, x);
+                    return { distance, angle, x, y };
+                }
+            };
+            logMessage('📝 Using mock CenterOfGravityCalculator (12 o\'clock aligned)');
+        }
+        
+        // Global test state
+        let visualEngine = null;
+        let animationInterval = null;
+        let currentStep = 0;
+        
+        // Test patterns
+        const testPatterns = {
+            tresillo: {
+                steps: [true, false, false, true, false, false, true, false],
+                stepCount: 8,
+                name: 'Tresillo'
+            },
+            fourOnFloor: {
+                steps: [true, false, false, false, true, false, false, false, true, false, false, false, true, false, false, false],
+                stepCount: 16,
+                name: 'Four-on-floor'
+            },
+            random: {
+                steps: Array(12).fill(false).map(() => Math.random() < 0.4),
+                stepCount: 12,
+                name: 'Random'
+            },
+            clear: {
+                steps: Array(8).fill(false),
+                stepCount: 8,
+                name: 'Clear'
+            },
+            singleBeat: {
+                steps: [true, false, false, false, false, false, false, false],
+                stepCount: 8,
+                name: 'Single Beat (12 o\'clock)'
+            }
+        };
+        
+        // Logging function
+        function logMessage(message) {
+            const log = document.getElementById('testLog');
+            const timestamp = new Date().toLocaleTimeString();
+            log.textContent += `[${timestamp}] ${message}\n`;
+            log.scrollTop = log.scrollHeight;
+            console.log(message);
+        }
+        
+        // Clear log
+        function clearLog() {
+            document.getElementById('testLog').textContent = '';
+            logMessage('🧹 Log cleared');
+        }
+        
+        // Display test result
+        function displayResult(testName, passed, details = '') {
+            const container = document.getElementById('testResults');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${passed ? 'success' : 'error'}`;
+            resultDiv.innerHTML = `
+                <strong>${testName}:</strong> ${passed ? '✅ PASSED' : '❌ FAILED'}
+                ${details ? `<br><small>${details}</small>` : ''}
+            `;
+            container.appendChild(resultDiv);
+            logMessage(`${testName}: ${passed ? 'PASSED' : 'FAILED'} ${details}`);
+        }
+        
+        // Initialize visual engine
+        function initializeEngine() {
+            if (!visualEngine) {
+                try {
+                    visualEngine = new SequencerVisualEngine('testCanvas', 'testCanvasContainer');
+                    logMessage('🎨 Visual engine initialized successfully');
+                    return true;
+                } catch (error) {
+                    logMessage(`❌ Failed to initialize engine: ${error.message}`);
+                    return false;
+                }
+            }
+            return true;
+        }
+        
+        // Test basic visualization
+        function testBasicVisualization() {
+            logMessage('🧪 Testing basic visualization...');
+            
+            const initialized = initializeEngine();
+            displayResult('Engine Initialization', initialized);
+            
+            if (!initialized) return;
+            
+            try {
+                // Test basic render
+                visualEngine.render();
+                displayResult('Basic Render', true, 'Canvas rendered without errors');
+                
+                // Check canvas dimensions
+                const canvas = visualEngine.canvas;
+                const hasDimensions = canvas.width > 0 && canvas.height > 0;
+                displayResult('Canvas Dimensions', hasDimensions, `${canvas.width}x${canvas.height}px`);
+                
+                // Check configuration
+                const config = visualEngine.config;
+                const hasConfig = config && config.canvasSize > 0;
+                displayResult('Configuration Setup', hasConfig, `Canvas size: ${config.canvasSize}px`);
+                
+            } catch (error) {
+                displayResult('Basic Visualization', false, error.message);
+            }
+        }
+        
+        // Test pattern loading
+        function testPatternLoading() {
+            logMessage('🧪 Testing pattern loading...');
+            
+            if (!initializeEngine()) return;
+            
+            try {
+                // Test loading tresillo pattern
+                const pattern = testPatterns.tresillo;
+                visualEngine.updatePattern(pattern);
+                
+                const patternLoaded = visualEngine.pattern.stepCount === pattern.stepCount;
+                displayResult('Pattern Loading', patternLoaded, `${pattern.stepCount} steps loaded`);
+                
+                // Test CoG calculation
+                const cogCalculated = visualEngine.cogData.isCalculated;
+                displayResult('CoG Calculation', cogCalculated, 
+                    cogCalculated ? `Distance: ${visualEngine.cogData.distance.toFixed(3)}` : 'Not calculated');
+                
+                // Update display
+                updatePatternDisplay(pattern);
+                
+            } catch (error) {
+                displayResult('Pattern Loading', false, error.message);
+            }
+        }
+        
+        // Test interactivity
+        function testInteractivity() {
+            logMessage('🧪 Testing click interaction...');
+            
+            if (!initializeEngine()) return;
+            
+            try {
+                // Load a pattern first
+                visualEngine.updatePattern(testPatterns.clear);
+                
+                // Test step toggling
+                visualEngine.toggleStep(0);
+                visualEngine.toggleStep(3);
+                
+                const step0Active = visualEngine.pattern.steps[0];
+                const step3Active = visualEngine.pattern.steps[3];
+                const step1Inactive = !visualEngine.pattern.steps[1];
+                
+                const toggleWorking = step0Active && step3Active && step1Inactive;
+                displayResult('Step Toggling', toggleWorking, 'Steps 0 and 3 activated, step 1 inactive');
+                
+                // Test click detection
+                const centerX = visualEngine.config.centerX;
+                const centerY = visualEngine.config.centerY;
+                const stepRadius = visualEngine.config.canvasSize * visualEngine.config.stepRadius;
+                
+                // Calculate position of first step (top of circle)
+                const step0X = centerX;
+                const step0Y = centerY - stepRadius;
+                
+                const detectedStep = visualEngine.getStepAtPosition(step0X, step0Y);
+                const clickDetectionWorking = detectedStep === 0;
+                displayResult('Click Detection', clickDetectionWorking, `Expected step 0, detected step ${detectedStep}`);
+                
+            } catch (error) {
+                displayResult('Interactivity', false, error.message);
+            }
+        }
+        
+        // Load a specific pattern
+        function loadPattern(patternName) {
+            if (!initializeEngine()) return;
+            
+            if (patternName === 'random') {
+                // Generate new random pattern
+                testPatterns.random.steps = Array(12).fill(false).map(() => Math.random() < 0.4);
+            }
+            
+            const pattern = testPatterns[patternName];
+            if (!pattern) {
+                logMessage(`❌ Unknown pattern: ${patternName}`);
+                return;
+            }
+            
+            try {
+                visualEngine.updatePattern(pattern);
+                updatePatternDisplay(pattern);
+                logMessage(`🎵 Loaded pattern: ${pattern.name}`);
+            } catch (error) {
+                logMessage(`❌ Failed to load pattern: ${error.message}`);
+            }
+        }
+        
+        // Update pattern display
+        function updatePatternDisplay(pattern) {
+            const display = document.getElementById('patternDisplay');
+            const visual = pattern.steps.map(s => s ? '●' : '∅').join(' ');
+            display.textContent = `${pattern.name}: ${visual}`;
+        }
+        
+        // Start animation
+        function startAnimation() {
+            if (!initializeEngine()) return;
+            
+            stopAnimation(); // Stop any existing animation
+            
+            // Load tresillo pattern for animation
+            loadPattern('tresillo');
+            
+            currentStep = 0;
+            const stepDuration = 200; // 200ms per step
+            
+            animationInterval = setInterval(() => {
+                visualEngine.updatePlayback({
+                    currentStep: currentStep,
+                    isPlaying: true
+                });
+                
+                currentStep = (currentStep + 1) % visualEngine.pattern.stepCount;
+            }, stepDuration);
+            
+            logMessage('🎬 Animation started');
+        }
+        
+        // Stop animation
+        function stopAnimation() {
+            if (animationInterval) {
+                clearInterval(animationInterval);
+                animationInterval = null;
+                
+                if (visualEngine) {
+                    visualEngine.updatePlayback({ currentStep: 0, isPlaying: false });
+                }
+                
+                logMessage('🛑 Animation stopped');
+            }
+        }
+        
+        // Initialize on load
+        window.addEventListener('load', () => {
+            logMessage('🎨 Standalone Visual Test ready!');
+            logMessage('Click buttons above to test functionality');
+            
+            // Auto-initialize and load a pattern
+            setTimeout(() => {
+                initializeEngine();
+                loadPattern('tresillo');
+            }, 100);
+        });
+        
+        // Cleanup on unload
+        window.addEventListener('beforeunload', () => {
+            stopAnimation();
+            if (visualEngine) {
+                visualEngine.destroy();
+            }
+        });
+        
+        // Test that buttons work
+        logMessage('📝 JavaScript loaded and functions defined');
+    </script>
+</body>
+</html>

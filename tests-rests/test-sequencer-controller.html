@@ -1,0 +1,1618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sequencer Controller Tests</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            margin: 20px;
+            background: #f5f5f5;
+            color: #333;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        
+        .test-section {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .test-controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        
+        .btn.primary { background: #3498db; color: white; }
+        .btn.primary:hover { background: #2980b9; }
+        .btn.success { background: #27ae60; color: white; }
+        .btn.success:hover { background: #229954; }
+        .btn.danger { background: #e74c3c; color: white; }
+        .btn.danger:hover { background: #c0392b; }
+        .btn.warning { background: #f39c12; color: white; }
+        .btn.warning:hover { background: #e67e22; }
+        
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        
+        .control-group label {
+            min-width: 100px;
+            font-weight: bold;
+        }
+        
+        .control-group input, .control-group select {
+            padding: 4px 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: inherit;
+        }
+        
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .test-result.success {
+            background: #d5f4e6;
+            border: 1px solid #27ae60;
+            color: #1e8449;
+        }
+        
+        .test-result.error {
+            background: #fadbd8;
+            border: 1px solid #e74c3c;
+            color: #a93226;
+        }
+        
+        .test-result.info {
+            background: #d6eaf8;
+            border: 1px solid #3498db;
+            color: #1f618d;
+        }
+        
+        .sequencer-demo {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            margin: 20px 0;
+        }
+        
+        .canvas-wrapper {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            background: white;
+            text-align: center;
+        }
+        
+        .canvas-wrapper h3 {
+            margin: 0 0 10px 0;
+            color: #495057;
+        }
+        
+        .playback-controls {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .stats-display {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        
+        .stat-group {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+        }
+        
+        .stat-group h4 {
+            margin: 0 0 10px 0;
+            color: #495057;
+            font-size: 14px;
+        }
+        
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+            border-bottom: 1px solid #f8f9fa;
+            font-size: 12px;
+        }
+        
+        .stat-label {
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .stat-value {
+            color: #007bff;
+            font-family: monospace;
+        }
+        
+        #testLog {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        .pattern-display {
+            font-family: monospace;
+            font-size: 16px;
+            letter-spacing: 2px;
+            text-align: center;
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-indicator.playing { background: #27ae60; }
+        .status-indicator.paused { background: #f39c12; }
+        .status-indicator.stopped { background: #e74c3c; }
+        
+        .event-log {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            max-height: 150px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎼 Sequencer Controller Test Suite</h1>
+    
+    <!-- TEST RESULTS SUMMARY -->
+    <div class="test-section">
+        <h2>📊 Test Results Summary</h2>
+        <div id="testSummary">
+            <div class="test-result info">Ready to run tests...</div>
+        </div>
+        <div class="test-controls">
+            <button class="btn primary" onclick="runAllTests()">Run All Tests</button>
+            <button class="btn warning" onclick="clearResults()">Clear Results</button>
+        </div>
+    </div>
+    
+    <!-- SEQUENCER DEMONSTRATION -->
+    <div class="test-section">
+        <h2>🎼 Live Sequencer Demo</h2>
+        <div class="sequencer-demo">
+            <div class="canvas-wrapper">
+                <h3>Sequencer Visualization</h3>
+                <div id="sequencerContainer" style="width: 350px; height: 350px; border: 1px solid #ccc;">
+                    <canvas id="sequencerCanvas"></canvas>
+                </div>
+            </div>
+            
+            <div style="flex: 1;">
+                <div class="playback-controls">
+                    <h3>Playbook Controls</h3>
+                    <div style="font-size: 11px; color: #666; margin-bottom: 10px;">
+                        <strong>Note:</strong> Click Play to enable audio (browser autoplay policy)
+                    </div>
+                    <div class="control-group">
+                        <button class="btn success" onclick="playSequencer()">▶️ Play</button>
+                        <button class="btn warning" onclick="pauseSequencer()">⏸️ Pause</button>
+                        <button class="btn danger" onclick="stopSequencer()">⏹️ Stop</button>
+                        <span id="playbackStatus">
+                            <span class="status-indicator stopped"></span>Stopped
+                        </span>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label>Tempo:</label>
+                        <input type="range" id="tempoSlider" min="60" max="180" value="120">
+                        <span id="tempoDisplay">120</span> BPM
+                    </div>
+                    
+                    <div class="control-group">
+                        <label>Volume:</label>
+                        <input type="range" id="volumeSlider" min="0" max="100" value="50">
+                        <span id="volumeDisplay">50</span>%
+                    </div>
+                    
+                    <div class="control-group">
+                        <label>Waveform:</label>
+                        <select id="waveformSelect">
+                            <option value="sine">Sine</option>
+                            <option value="square">Square</option>
+                            <option value="triangle">Triangle</option>
+                            <option value="sawtooth">Sawtooth</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="playback-controls">
+                    <h3>Pattern Selection</h3>
+                    <div class="test-controls">
+                        <button class="btn success" onclick="loadDemoPattern('tresillo')">Tresillo</button>
+                        <button class="btn success" onclick="loadDemoPattern('euclidean')">Euclidean E(5,8)</button>
+                        <button class="btn success" onclick="loadDemoPattern('polygon')">Pentagon</button>
+                        <button class="btn success" onclick="loadDemoPattern('random')">Random</button>
+                    </div>
+                    <div class="pattern-display" id="currentPatternDisplay">Click a pattern to load</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- INITIALIZATION TESTS -->
+    <div class="test-section">
+        <h2>🧪 Initialization Tests</h2>
+        <div class="test-controls">
+            <button class="btn primary" onclick="testControllerInit()">Test Controller Init</button>
+            <button class="btn primary" onclick="testEngineInit()">Test Engine Init</button>
+            <button class="btn primary" onclick="testDefaultState()">Test Default State</button>
+        </div>
+        <div id="initTestResults"></div>
+    </div>
+    
+    <!-- PATTERN MANAGEMENT TESTS -->
+    <div class="test-section">
+        <h2>🎵 Pattern Management Tests</h2>
+        <div class="test-controls">
+            <button class="btn primary" onclick="testPatternLoading()">Test Pattern Loading</button>
+            <button class="btn primary" onclick="testPatternValidation()">Test Pattern Validation</button>
+            <button class="btn primary" onclick="testPatternUpdates()">Test Pattern Updates</button>
+            <button class="btn primary" onclick="testPatternExport()">Test Export/Import</button>
+        </div>
+        <div id="patternTestResults"></div>
+    </div>
+    
+    <!-- PLAYBACK CONTROL TESTS -->
+    <div class="test-section">
+        <h2>🎬 Playback Control Tests</h2>
+        <div class="test-controls">
+            <button class="btn primary" onclick="testPlaybackStates()">Test Playback States</button>
+            <button class="btn primary" onclick="testTempoChanges()">Test Tempo Changes</button>
+            <button class="btn primary" onclick="testAudioSettings()">Test Audio Settings</button>
+            <button class="btn primary" onclick="testPlaybackTiming()">Test Timing Accuracy</button>
+        </div>
+        <div id="playbackTestResults"></div>
+    </div>
+    
+    <!-- EVENT SYSTEM TESTS -->
+    <div class="test-section">
+        <h2>📡 Event System Tests</h2>
+        <div class="test-controls">
+            <button class="btn primary" onclick="testEventRegistration()">Test Event Registration</button>
+            <button class="btn primary" onclick="testEventEmission()">Test Event Emission</button>
+            <button class="btn primary" onclick="testEventCallbacks()">Test Callbacks</button>
+        </div>
+        <div id="eventTestResults"></div>
+        
+        <div class="event-log" id="eventLog">
+            <strong>Event Log:</strong><br>
+            Events will appear here...
+        </div>
+    </div>
+    
+    <!-- INTEGRATION TESTS -->
+    <div class="test-section">
+        <h2>🔗 Integration Tests</h2>
+        <div class="test-controls">
+            <button class="btn primary" onclick="testAnalysisIntegration()">Test Analysis Integration</button>
+            <button class="btn primary" onclick="testVisualInteraction()">Test Visual Interaction</button>
+            <button class="btn primary" onclick="testAudioVisualSync()">Test Audio-Visual Sync</button>
+        </div>
+        <div id="integrationTestResults"></div>
+    </div>
+    
+    <!-- PERFORMANCE TESTS -->
+    <div class="test-section">
+        <h2>🚀 Performance Tests</h2>
+        <div class="test-controls">
+            <button class="btn warning" onclick="testPlaybackPerformance()">Test Playback Performance</button>
+            <button class="btn warning" onclick="testMemoryUsage()">Test Memory Usage</button>
+            <button class="btn warning" onclick="testLargePatterns()">Test Large Patterns</button>
+        </div>
+        <div id="performanceTestResults"></div>
+    </div>
+    
+    <!-- SEQUENCER STATISTICS -->
+    <div class="test-section">
+        <h2>📈 Sequencer Statistics</h2>
+        <div class="stats-display">
+            <div class="stats-grid" id="sequencerStats">
+                <!-- Stats will be populated here -->
+            </div>
+        </div>
+        <button class="btn primary" onclick="updateStats()">Refresh Stats</button>
+    </div>
+    
+    <!-- TEST LOG -->
+    <div class="test-section">
+        <h2>📝 Test Log</h2>
+        <div id="testLog"></div>
+        <button class="btn primary" onclick="clearLog()">Clear Log</button>
+    </div>
+
+    <!-- Load dependencies -->
+    <script src="sequencer-audio.js"></script>
+    <script src="sequencer-visual.js"></script>
+    <script src="sequencer-controller.js"></script>
+    
+    <script>
+        // Mock CenterOfGravityCalculator if not available
+        if (typeof CenterOfGravityCalculator === 'undefined') {
+            window.CenterOfGravityCalculator = {
+                calculate: function(steps) {
+                    let x = 0, y = 0, count = 0;
+                    for (let i = 0; i < steps.length; i++) {
+                        if (steps[i]) {
+                            const angle = (i / steps.length) * Math.PI * 2 - Math.PI / 2;
+                            x += Math.cos(angle);
+                            y += Math.sin(angle);
+                            count++;
+                        }
+                    }
+                    if (count > 0) {
+                        x /= count;
+                        y /= count;
+                    }
+                    const distance = Math.sqrt(x * x + y * y);
+                    const angle = Math.atan2(y, x);
+                    return { distance, angle, x, y };
+                }
+            };
+        }
+        
+        // Global test state
+        let sequencer = null;
+        let testResults = {
+            passed: 0,
+            failed: 0,
+            total: 0
+        };
+        let eventLog = [];
+        
+        // Demo patterns
+        const demoPatterns = {
+            tresillo: {
+                steps: [true, false, false, true, false, false, true, false],
+                stepCount: 8,
+                name: 'Tresillo',
+                formula: 'Cuban Tresillo'
+            },
+            euclidean: {
+                steps: [true, false, true, false, true, false, true, false],
+                stepCount: 8,
+                name: 'Euclidean E(5,8)',
+                isEuclidean: true,
+                formula: 'E(5,8)'
+            },
+            polygon: {
+                steps: [true, false, false, false, true, false, false, false, true, false],
+                stepCount: 10,
+                name: 'Pentagon',
+                isRegularPolygon: true,
+                formula: 'P(5,0)'
+            },
+            random: {
+                steps: Array(12).fill(false).map(() => Math.random() < 0.4),
+                stepCount: 12,
+                name: 'Random Pattern'
+            }
+        };
+        
+        // Initialize sequencer
+        function initializeSequencer() {
+            if (!sequencer) {
+                try {
+                    sequencer = new SequencerController('sequencerCanvas', 'sequencerContainer', {
+                        autoPlay: false,
+                        defaultTempo: 120,
+                        defaultVolume: 0.5,
+                        enableAudio: true,
+                        enableVisual: true
+                    });
+                    
+                    setupSequencerEventListeners();
+                    logMessage('🎼 Sequencer controller created');
+                    return true;
+                } catch (error) {
+                    logMessage(`❌ Failed to create sequencer: ${error.message}`);
+                    return false;
+                }
+            }
+            return true;
+        }
+        
+        // Setup event listeners for the sequencer
+        function setupSequencerEventListeners() {
+            if (!sequencer) return;
+            
+            sequencer.on('onPatternChange', (data) => {
+                logEvent('Pattern Change', data);
+                updatePatternDisplay(data.pattern);
+            });
+            
+            sequencer.on('onPlaybackChange', (data) => {
+                logEvent('Playback Change', data);
+                updatePlaybackStatus(data);
+            });
+            
+            sequencer.on('onStepChange', (data) => {
+                logEvent('Step Change', `Step ${data.currentStep}, Active: ${data.isActive}`);
+            });
+            
+            sequencer.on('onSettingsChange', (data) => {
+                logEvent('Settings Change', `${data.setting}: ${data.oldValue} → ${data.newValue}`);
+            });
+            
+            sequencer.on('onError', (data) => {
+                logEvent('Error', `${data.context}: ${data.message}`);
+            });
+        }
+        
+        // Logging functions
+        function logMessage(message) {
+            const log = document.getElementById('testLog');
+            const timestamp = new Date().toLocaleTimeString();
+            log.textContent += `[${timestamp}] ${message}\n`;
+            log.scrollTop = log.scrollHeight;
+            console.log(message);
+        }
+        
+        function logEvent(eventType, data) {
+            const eventLogElement = document.getElementById('eventLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const dataStr = typeof data === 'object' ? JSON.stringify(data, null, 2) : data;
+            
+            eventLog.push({ timestamp, eventType, data: dataStr });
+            
+            eventLogElement.innerHTML = `<strong>Event Log:</strong><br>` +
+                eventLog.slice(-10).map(e => 
+                    `[${e.timestamp}] <strong>${e.eventType}:</strong> ${e.data}`
+                ).join('<br>');
+            
+            eventLogElement.scrollTop = eventLogElement.scrollHeight;
+        }
+        
+        function clearLog() {
+            document.getElementById('testLog').textContent = '';
+            logMessage('🧹 Log cleared');
+        }
+        
+        // Test result display
+        function displayResult(containerId, testName, passed, details = '') {
+            const container = document.getElementById(containerId);
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${passed ? 'success' : 'error'}`;
+            resultDiv.innerHTML = `
+                <strong>${testName}:</strong> ${passed ? '✅ PASSED' : '❌ FAILED'}
+                ${details ? `<br><small>${details}</small>` : ''}
+            `;
+            container.appendChild(resultDiv);
+            
+            testResults.total++;
+            if (passed) {
+                testResults.passed++;
+            } else {
+                testResults.failed++;
+            }
+            
+            updateTestSummary();
+            logMessage(`${testName}: ${passed ? 'PASSED' : 'FAILED'} ${details}`);
+        }
+        
+        // Update test summary
+        function updateTestSummary() {
+            const summary = document.getElementById('testSummary');
+            const passRate = testResults.total > 0 ? (testResults.passed / testResults.total * 100).toFixed(1) : 0;
+            
+            summary.innerHTML = `
+                <div class="test-result ${testResults.failed === 0 ? 'success' : 'error'}">
+                    <strong>Tests:</strong> ${testResults.passed}/${testResults.total} passed (${passRate}%)
+                    ${testResults.failed > 0 ? `<br><strong>Failures:</strong> ${testResults.failed}` : ''}
+                </div>
+            `;
+        }
+        
+        // Clear all test results
+        function clearResults() {
+            testResults = { passed: 0, failed: 0, total: 0 };
+            document.getElementById('testLog').textContent = '';
+            document.querySelectorAll('.test-result').forEach(el => el.remove());
+            updateTestSummary();
+            eventLog = [];
+            document.getElementById('eventLog').innerHTML = '<strong>Event Log:</strong><br>Events will appear here...';
+            logMessage('🧹 Test results cleared');
+        }
+        
+        // === DEMO CONTROLS ===
+        
+        function loadDemoPattern(patternName) {
+            if (!initializeSequencer()) return;
+            
+            if (patternName === 'random') {
+                demoPatterns.random.steps = Array(12).fill(false).map(() => Math.random() < 0.4);
+            }
+            
+            const pattern = demoPatterns[patternName];
+            if (pattern) {
+                sequencer.updatePattern(pattern);
+                logMessage(`🎵 Loaded demo pattern: ${pattern.name}`);
+            }
+        }
+        
+        function playSequencer() {
+            if (!sequencer) return;
+            sequencer.play();
+        }
+        
+        function pauseSequencer() {
+            if (!sequencer) return;
+            sequencer.pause();
+        }
+        
+        function stopSequencer() {
+            if (!sequencer) return;
+            sequencer.stop();
+        }
+        
+        function updatePatternDisplay(pattern) {
+            const display = document.getElementById('currentPatternDisplay');
+            const visual = pattern.steps.map(s => s ? '●' : '∅').join(' ');
+            display.textContent = `${pattern.name}: ${visual}`;
+        }
+        
+        function updatePlaybackStatus(data) {
+            const statusElement = document.getElementById('playbackStatus');
+            const indicator = statusElement.querySelector('.status-indicator');
+            
+            if (data.isPlaying) {
+                indicator.className = 'status-indicator playing';
+                statusElement.innerHTML = `<span class="status-indicator playing"></span>Playing (Step ${data.currentStep})`;
+            } else if (data.isPaused) {
+                indicator.className = 'status-indicator paused';
+                statusElement.innerHTML = `<span class="status-indicator paused"></span>Paused (Step ${data.currentStep})`;
+            } else {
+                indicator.className = 'status-indicator stopped';
+                statusElement.innerHTML = `<span class="status-indicator stopped"></span>Stopped`;
+            }
+        }
+        
+        // === INITIALIZATION TESTS ===
+        
+        function testControllerInit() {
+            logMessage('🧪 Testing controller initialization...');
+            
+            const success = initializeSequencer();
+            displayResult('initTestResults', 'Controller Initialization', success);
+            
+            if (success) {
+                const hasAudioEngine = !!sequencer.audioEngine;
+                const hasVisualEngine = !!sequencer.visualEngine;
+                const hasState = !!sequencer.state;
+                
+                displayResult('initTestResults', 'Audio Engine Created', hasAudioEngine);
+                displayResult('initTestResults', 'Visual Engine Created', hasVisualEngine);
+                displayResult('initTestResults', 'State Initialized', hasState);
+            }
+        }
+        
+        function testEngineInit() {
+            logMessage('🧪 Testing engine initialization...');
+            
+            if (!sequencer) {
+                displayResult('initTestResults', 'Engine Initialization', false, 'Controller not initialized');
+                return;
+            }
+            
+            try {
+                const audioStats = sequencer.audioEngine?.getStats();
+                const visualStats = sequencer.visualEngine?.getStats();
+                
+                // Audio context can be 'suspended' before user interaction - this is normal
+                const audioEngineCreated = !!sequencer.audioEngine;
+                const audioContextExists = audioStats && audioStats.contextState !== 'none';
+                const audioAcceptableStates = ['running', 'suspended']; // Both are acceptable
+                const audioStateOK = audioStats && audioAcceptableStates.includes(audioStats.contextState);
+                
+                const visualInitialized = visualStats?.canvasSize > 0;
+                
+                displayResult('initTestResults', 'Audio Engine Created', audioEngineCreated,
+                    audioStats ? `Context: ${audioStats.contextState}` : 'No audio engine');
+                displayResult('initTestResults', 'Audio Context State OK', audioStateOK,
+                    audioStats ? `State: ${audioStats.contextState} (suspended is normal before user interaction)` : 'No context');
+                displayResult('initTestResults', 'Visual Engine Initialized', visualInitialized,
+                    visualStats ? `Canvas: ${visualStats.canvasSize}px` : 'No stats');
+                
+            } catch (error) {
+                displayResult('initTestResults', 'Engine Initialization', false, error.message);
+            }
+        }
+        
+        function testDefaultState() {
+            logMessage('🧪 Testing default state...');
+            
+            if (!sequencer) {
+                displayResult('initTestResults', 'Default State', false, 'Controller not initialized');
+                return;
+            }
+            
+            const state = sequencer.getState();
+            
+            const correctTempo = state.tempo === 120;
+            const correctVolume = state.volume === 0.5;
+            const notPlaying = !state.isPlaying;
+            const hasPattern = Array.isArray(state.pattern.steps);
+            
+            displayResult('initTestResults', 'Default Tempo', correctTempo, `Tempo: ${state.tempo}`);
+            displayResult('initTestResults', 'Default Volume', correctVolume, `Volume: ${state.volume}`);
+            displayResult('initTestResults', 'Not Playing Initially', notPlaying);
+            displayResult('initTestResults', 'Default Pattern', hasPattern, `Steps: ${state.pattern.stepCount}`);
+        }
+        
+        // === PATTERN MANAGEMENT TESTS ===
+        
+        function testPatternLoading() {
+            logMessage('🧪 Testing pattern loading...');
+            
+            if (!sequencer) {
+                displayResult('patternTestResults', 'Pattern Loading', false, 'Controller not initialized');
+                return;
+            }
+            
+            try {
+                // Test loading tresillo pattern
+                const pattern = demoPatterns.tresillo;
+                sequencer.updatePattern(pattern);
+                
+                const state = sequencer.getState();
+                const correctStepCount = state.pattern.stepCount === pattern.stepCount;
+                const correctName = state.pattern.name === pattern.name;
+                const stepsLoaded = JSON.stringify(state.pattern.steps) === JSON.stringify(pattern.steps);
+                
+                displayResult('patternTestResults', 'Pattern Step Count', correctStepCount,
+                    `Expected: ${pattern.stepCount}, Got: ${state.pattern.stepCount}`);
+                displayResult('patternTestResults', 'Pattern Name', correctName,
+                    `Name: ${state.pattern.name}`);
+                displayResult('patternTestResults', 'Pattern Steps', stepsLoaded);
+                
+            } catch (error) {
+                displayResult('patternTestResults', 'Pattern Loading', false, error.message);
+            }
+        }
+        
+        function testPatternValidation() {
+            logMessage('🧪 Testing pattern validation...');
+            
+            if (!sequencer) {
+                displayResult('patternTestResults', 'Pattern Validation', false, 'Controller not initialized');
+                return;
+            }
+            
+            try {
+                // Test invalid patterns
+                const invalidPatterns = [
+                    { steps: null, stepCount: 8 },
+                    { steps: [true, false], stepCount: 100 },
+                    { steps: [], stepCount: 0 },
+                    { steps: [true, false, true], stepCount: 2 }
+                ];
+                
+                let allValid = true;
+                invalidPatterns.forEach((pattern, index) => {
+                    try {
+                        sequencer.updatePattern(pattern);
+                        const state = sequencer.getState();
+                        
+                        // Should have valid state after validation
+                        if (state.pattern.stepCount < 1 || state.pattern.steps.length !== state.pattern.stepCount) {
+                            allValid = false;
+                        }
+                    } catch (error) {
+                        // Validation errors are expected
+                    }
+                });
+                
+                displayResult('patternTestResults', 'Pattern Validation', allValid,
+                    'Invalid patterns were handled correctly');
+                
+            } catch (error) {
+                displayResult('patternTestResults', 'Pattern Validation', false, error.message);
+            }
+        }
+        
+        function testPatternUpdates() {
+            logMessage('🧪 Testing pattern updates...');
+            
+            if (!sequencer) {
+                displayResult('patternTestResults', 'Pattern Updates', false, 'Controller not initialized');
+                return;
+            }
+            
+            try {
+                let updateCount = 0;
+                
+                // Listen for pattern change events
+                sequencer.on('onPatternChange', () => {
+                    updateCount++;
+                });
+                
+                // Load different patterns
+                sequencer.updatePattern(demoPatterns.tresillo);
+                sequencer.updatePattern(demoPatterns.euclidean);
+                sequencer.updatePattern(demoPatterns.polygon);
+                
+                // Wait for events
+                setTimeout(() => {
+                    const correctUpdates = updateCount >= 3;
+                    displayResult('patternTestResults', 'Pattern Update Events', correctUpdates,
+                        `Events fired: ${updateCount}`);
+                }, 100);
+                
+            } catch (error) {
+                displayResult('patternTestResults', 'Pattern Updates', false, error.message);
+            }
+        }
+        
+        function testPatternExport() {
+            logMessage('🧪 Testing pattern export/import...');
+            
+            if (!sequencer) {
+                displayResult('patternTestResults', 'Pattern Export', false, 'Controller not initialized');
+                return;
+            }
+            
+            try {
+                // Load a pattern
+                sequencer.updatePattern(demoPatterns.tresillo);
+                sequencer.setTempo(140);
+                
+                // Export pattern
+                const exported = sequencer.exportPattern();
+                
+                const hasSteps = Array.isArray(exported.steps);
+                const hasMetadata = exported.metadata && exported.metadata.tempo === 140;
+                
+                displayResult('patternTestResults', 'Pattern Export', hasSteps && hasMetadata,
+                    `Exported with metadata: ${!!exported.metadata}`);
+                
+                // Test import
+                const newPattern = {
+                    steps: [true, true, false, false],
+                    stepCount: 4,
+                    name: 'Import Test'
+                };
+                
+                sequencer.importPattern(newPattern);
+                const state = sequencer.getState();
+                const importWorked = state.pattern.name === 'Import Test';
+                
+                displayResult('patternTestResults', 'Pattern Import', importWorked,
+                    `Imported pattern: ${state.pattern.name}`);
+                
+            } catch (error) {
+                displayResult('patternTestResults', 'Pattern Export', false, error.message);
+            }
+        }
+        
+        // === PLAYBACK CONTROL TESTS ===
+        
+        function testPlaybackStates() {
+            logMessage('🧪 Testing playback states...');
+            
+            if (!sequencer) {
+                displayResult('playbackTestResults', 'Playback States', false, 'Controller not initialized');
+                return;
+            }
+            
+            try {
+                // Initial state
+                let state = sequencer.getState();
+                const initiallyPaused = !state.isPlaying && !state.isPaused;
+                displayResult('playbackTestResults', 'Initial State (Stopped)', initiallyPaused);
+                
+                // Test play
+                sequencer.play();
+                setTimeout(() => {
+                    state = sequencer.getState();
+                    const nowPlaying = state.isPlaying && !state.isPaused;
+                    displayResult('playbackTestResults', 'Play State', nowPlaying);
+                    
+                    // Test pause
+                    sequencer.pause();
+                    setTimeout(() => {
+                        state = sequencer.getState();
+                        const nowPaused = !state.isPlaying && state.isPaused;
+                        displayResult('playbackTestResults', 'Pause State', nowPaused);
+                        
+                        // Test stop
+                        sequencer.stop();
+                        setTimeout(() => {
+                            state = sequencer.getState();
+                            const nowStopped = !state.isPlaying && !state.isPaused && state.currentStep === 0;
+                            displayResult('playbackTestResults', 'Stop State', nowStopped);
+                        }, 50);
+                        
+                    }, 50);
+                }, 50);
+                
+            } catch (error) {
+                displayResult('playbackTestResults', 'Playback States', false, error.message);
+            }
+        }
+        
+        function testTempoChanges() {
+            logMessage('🧪 Testing tempo changes...');
+            
+            if (!sequencer) {
+                displayResult('playbackTestResults', 'Tempo Changes', false, 'Controller not initialized');
+                return;
+            }
+            
+            try {
+                const originalTempo = sequencer.getState().tempo;
+                
+                // Test valid tempo change
+                sequencer.setTempo(90);
+                const newTempo = sequencer.getState().tempo;
+                const tempoChanged = newTempo === 90;
+                
+                displayResult('playbackTestResults', 'Valid Tempo Change', tempoChanged,
+                    `${originalTempo} → ${newTempo} BPM`);
+                
+                // Test invalid tempo (should be ignored)
+                sequencer.setTempo(500); // Too high
+                const invalidTempo = sequencer.getState().tempo;
+                const invalidIgnored = invalidTempo === 90; // Should stay at 90
+                
+                displayResult('playbackTestResults', 'Invalid Tempo Ignored', invalidIgnored,
+                    `Tempo remained: ${invalidTempo} BPM`);
+                
+                // Reset
+                sequencer.setTempo(120);
+                
+            } catch (error) {
+                displayResult('playbackTestResults', 'Tempo Changes', false, error.message);
+            }
+        }
+        
+        function testAudioSettings() {
+            logMessage('🧪 Testing audio settings...');
+            
+            if (!sequencer) {
+                displayResult('playbackTestResults', 'Audio Settings', false, 'Controller not initialized');
+                return;
+            }
+            
+            try {
+                const originalState = sequencer.getState();
+                
+                // Test volume change
+                sequencer.updateAudioSettings({ volume: 0.8 });
+                const volumeChanged = sequencer.getState().volume === 0.8;
+                
+                displayResult('playbackTestResults', 'Volume Change', volumeChanged,
+                    `Volume: ${originalState.volume} → ${sequencer.getState().volume}`);
+                
+                // Test waveform change
+                sequencer.updateAudioSettings({ waveform: 'square' });
+                const waveformChanged = sequencer.getState().waveform === 'square';
+                
+                displayResult('playbackTestResults', 'Waveform Change', waveformChanged,
+                    `Waveform: ${originalState.waveform} → ${sequencer.getState().waveform}`);
+                
+            } catch (error) {
+                displayResult('playbackTestResults', 'Audio Settings', false, error.message);
+            }
+        }
+        
+        function testPlaybackTiming() {
+            logMessage('🧪 Testing playback timing...');
+            
+            if (!sequencer) {
+                displayResult('playbackTestResults', 'Playback Timing', false, 'Controller not initialized');
+                return;
+            }
+            
+            try {
+                let stepCount = 0;
+                const startTime = performance.now();
+                
+                // Listen for steps
+                sequencer.on('onStepChange', () => {
+                    stepCount++;
+                });
+                
+                // Start playback
+                sequencer.setTempo(120); // 500ms per step at 120 BPM with 16th notes
+                sequencer.play();
+                
+                // Check timing after a few steps
+                setTimeout(() => {
+                    sequencer.stop();
+                    const endTime = performance.now();
+                    const duration = endTime - startTime;
+                    const expectedDuration = stepCount * 125; // 125ms per step at 120 BPM
+                    const timingAccuracy = Math.abs(duration - expectedDuration) / expectedDuration;
+                    
+                    const goodTiming = timingAccuracy < 0.1; // Within 10%
+                    
+                    displayResult('playbackTestResults', 'Timing Accuracy', goodTiming,
+                        `Steps: ${stepCount}, Duration: ${duration.toFixed(1)}ms, Accuracy: ${(100 - timingAccuracy * 100).toFixed(1)}%`);
+                    
+                }, 1000); // Test for 1 second
+                
+            } catch (error) {
+                displayResult('playbackTestResults', 'Playback Timing', false, error.message);
+            }
+        }
+        
+        // === EVENT SYSTEM TESTS ===
+        
+        function testEventRegistration() {
+            logMessage('🧪 Testing event registration...');
+            
+            if (!sequencer) {
+                displayResult('eventTestResults', 'Event Registration', false, 'Controller not initialized');
+                return;
+            }
+            
+            try {
+                let callbackCalled = false;
+                
+                const testCallback = () => {
+                    callbackCalled = true;
+                };
+                
+                // Register callback
+                sequencer.on('onPatternChange', testCallback);
+                
+                // Trigger event
+                sequencer.updatePattern(demoPatterns.tresillo);
+                
+                setTimeout(() => {
+                    displayResult('eventTestResults', 'Event Registration', callbackCalled,
+                        'Pattern change callback was called');
+                    
+                    // Test unregistration
+                    sequencer.off('onPatternChange', testCallback);
+                    callbackCalled = false;
+                    
+                    sequencer.updatePattern(demoPatterns.euclidean);
+                    
+                    setTimeout(() => {
+                        const unregistered = !callbackCalled;
+                        displayResult('eventTestResults', 'Event Unregistration', unregistered,
+                            'Callback was not called after unregistration');
+                    }, 50);
+                    
+                }, 50);
+                
+            } catch (error) {
+                displayResult('eventTestResults', 'Event Registration', false, error.message);
+            }
+        }
+        
+        function testEventEmission() {
+            logMessage('🧪 Testing event emission...');
+            
+            if (!sequencer) {
+                displayResult('eventTestResults', 'Event Emission', false, 'Controller not initialized');
+                return;
+            }
+            
+            try {
+                const events = [];
+                
+                // Register callbacks for all event types
+                sequencer.on('onPatternChange', (data) => events.push('pattern'));
+                sequencer.on('onPlaybackChange', (data) => events.push('playback'));
+                sequencer.on('onStepChange', (data) => events.push('step'));
+                sequencer.on('onSettingsChange', (data) => events.push('settings'));
+                
+                // Trigger various events
+                sequencer.updatePattern(demoPatterns.tresillo);
+                sequencer.setTempo(140);
+                sequencer.play();
+                
+                setTimeout(() => {
+                    sequencer.stop();
+                    
+                    const hasPatternEvent = events.includes('pattern');
+                    const hasPlaybackEvent = events.includes('playback');
+                    const hasSettingsEvent = events.includes('settings');
+                    
+                    displayResult('eventTestResults', 'Pattern Events', hasPatternEvent);
+                    displayResult('eventTestResults', 'Playback Events', hasPlaybackEvent);
+                    displayResult('eventTestResults', 'Settings Events', hasSettingsEvent);
+                    displayResult('eventTestResults', 'Multiple Event Types', 
+                        hasPatternEvent && hasPlaybackEvent && hasSettingsEvent,
+                        `Events fired: ${events.join(', ')}`);
+                        
+                }, 200);
+                
+            } catch (error) {
+                displayResult('eventTestResults', 'Event Emission', false, error.message);
+            }
+        }
+        
+        function testEventCallbacks() {
+            logMessage('🧪 Testing event callbacks...');
+            
+            if (!sequencer) {
+                displayResult('eventTestResults', 'Event Callbacks', false, 'Controller not initialized');
+                return;
+            }
+            
+            try {
+                let callbackData = null;
+                
+                sequencer.on('onPatternChange', (data) => {
+                    callbackData = data;
+                });
+                
+                sequencer.updatePattern({
+                    steps: [true, false, true, false],
+                    stepCount: 4,
+                    name: 'Test Pattern'
+                });
+                
+                setTimeout(() => {
+                    const hasData = callbackData !== null;
+                    const hasPattern = callbackData && callbackData.pattern;
+                    const correctPattern = hasPattern && callbackData.pattern.name === 'Test Pattern';
+                    
+                    displayResult('eventTestResults', 'Callback Data', hasData,
+                        hasData ? 'Callback received data' : 'No data received');
+                    displayResult('eventTestResults', 'Callback Pattern', correctPattern,
+                        hasPattern ? `Pattern: ${callbackData.pattern.name}` : 'No pattern data');
+                        
+                }, 50);
+                
+            } catch (error) {
+                displayResult('eventTestResults', 'Event Callbacks', false, error.message);
+            }
+        }
+        
+        // === INTEGRATION TESTS ===
+        
+        function testAnalysisIntegration() {
+            logMessage('🧪 Testing analysis integration...');
+            
+            try {
+                // Mock analysis result
+                const analysisResult = {
+                    type: 'single',
+                    pattern: {
+                        steps: [true, false, false, true, false, false, true, false],
+                        stepCount: 8,
+                        formula: 'E(3,8)',
+                        isEuclidean: true
+                    }
+                };
+                
+                // Test SequencerIntegration.createFromAnalysis
+                const testSequencer = SequencerIntegration.createFromAnalysis(
+                    analysisResult, 
+                    'sequencerCanvas', 
+                    'sequencerContainer'
+                );
+                
+                const created = testSequencer instanceof SequencerController;
+                const hasPattern = testSequencer.getState().pattern.stepCount === 8;
+                const hasFormula = testSequencer.getState().pattern.formula === 'E(3,8)';
+                
+                displayResult('integrationTestResults', 'Analysis Integration', created);
+                displayResult('integrationTestResults', 'Pattern From Analysis', hasPattern);
+                displayResult('integrationTestResults', 'Metadata Preserved', hasFormula);
+                
+                // Clean up
+                testSequencer.destroy();
+                
+            } catch (error) {
+                displayResult('integrationTestResults', 'Analysis Integration', false, error.message);
+            }
+        }
+        
+        function testVisualInteraction() {
+            logMessage('🧪 Testing visual interaction...');
+            
+            if (!sequencer) {
+                displayResult('integrationTestResults', 'Visual Interaction', false, 'Controller not initialized');
+                return;
+            }
+            
+            try {
+                // Test if visual engine responds to pattern changes
+                sequencer.updatePattern(demoPatterns.tresillo);
+                
+                const visualEngine = sequencer.visualEngine;
+                const hasVisualPattern = visualEngine && visualEngine.pattern.stepCount === 8;
+                const hasCogData = visualEngine && visualEngine.cogData.isCalculated;
+                
+                displayResult('integrationTestResults', 'Visual Pattern Update', hasVisualPattern);
+                displayResult('integrationTestResults', 'Visual CoG Calculation', hasCogData);
+                
+                // Test playback state sync
+                sequencer.play();
+                setTimeout(() => {
+                    const playbackSynced = visualEngine.pattern.isPlaying;
+                    displayResult('integrationTestResults', 'Visual Playback Sync', playbackSynced);
+                    sequencer.stop();
+                }, 100);
+                
+            } catch (error) {
+                displayResult('integrationTestResults', 'Visual Interaction', false, error.message);
+            }
+        }
+        
+        function testAudioVisualSync() {
+            logMessage('🧪 Testing audio-visual synchronization...');
+            
+            if (!sequencer) {
+                displayResult('integrationTestResults', 'Audio-Visual Sync', false, 'Controller not initialized');
+                return;
+            }
+            
+            try {
+                // Load pattern and start playback
+                sequencer.updatePattern(demoPatterns.tresillo);
+                sequencer.play();
+                
+                let stepChanges = 0;
+                sequencer.on('onStepChange', () => {
+                    stepChanges++;
+                });
+                
+                setTimeout(() => {
+                    sequencer.stop();
+                    
+                    const audioEngine = sequencer.audioEngine;
+                    const visualEngine = sequencer.visualEngine;
+                    
+                    const audioWorking = audioEngine && audioEngine.getStats().soundsPlayed > 0;
+                    const visualWorking = visualEngine && visualEngine.getStats().framesRendered > 0;
+                    const stepsWorking = stepChanges > 0;
+                    
+                    displayResult('integrationTestResults', 'Audio Engine Active', audioWorking,
+                        audioEngine ? `Sounds played: ${audioEngine.getStats().soundsPlayed}` : 'No audio');
+                    displayResult('integrationTestResults', 'Visual Engine Active', visualWorking,
+                        visualEngine ? `Frames rendered: ${visualEngine.getStats().framesRendered}` : 'No visual');
+                    displayResult('integrationTestResults', 'Step Changes', stepsWorking,
+                        `Step changes: ${stepChanges}`);
+                    displayResult('integrationTestResults', 'Audio-Visual Sync', 
+                        audioWorking && visualWorking && stepsWorking,
+                        'Both engines active during playback');
+                        
+                }, 500);
+                
+            } catch (error) {
+                displayResult('integrationTestResults', 'Audio-Visual Sync', false, error.message);
+            }
+        }
+        
+        // === PERFORMANCE TESTS ===
+        
+        function testPlaybackPerformance() {
+            logMessage('🧪 Testing playback performance...');
+            
+            if (!sequencer) {
+                displayResult('performanceTestResults', 'Playback Performance', false, 'Controller not initialized');
+                return;
+            }
+            
+            try {
+                let stepCount = 0;
+                const stepTimings = [];
+                let lastStepTime = 0;
+                
+                sequencer.on('onStepChange', (data) => {
+                    stepCount++;
+                    if (lastStepTime > 0) {
+                        const actualInterval = data.stepTime - lastStepTime;
+                        stepTimings.push(actualInterval);
+                    }
+                    lastStepTime = data.stepTime;
+                });
+                
+                // Test at 180 BPM (should be ~83.33ms per step for 16th notes)
+                sequencer.setTempo(180);
+                const expectedInterval = 60000 / 180 / 4; // ~83.33ms
+                
+                sequencer.play();
+                
+                setTimeout(() => {
+                    sequencer.stop();
+                    
+                    if (stepTimings.length > 0) {
+                        const avgTiming = stepTimings.reduce((a, b) => a + b, 0) / stepTimings.length;
+                        const timingError = Math.abs(avgTiming - expectedInterval);
+                        const timingAccuracy = (1 - (timingError / expectedInterval)) * 100;
+                        
+                        // Good performance = timing within 10% of expected
+                        const performanceGood = timingAccuracy > 90;
+                        
+                        displayResult('performanceTestResults', 'Playback Performance', performanceGood,
+                            `${stepCount} steps, ${timingAccuracy.toFixed(1)}% timing accuracy (${avgTiming.toFixed(1)}ms avg, expected ${expectedInterval.toFixed(1)}ms)`);
+                    } else {
+                        displayResult('performanceTestResults', 'Playback Performance', false, 'No step timings recorded');
+                    }
+                    
+                    // Reset tempo
+                    sequencer.setTempo(120);
+                    
+                }, 1000);
+                
+            } catch (error) {
+                displayResult('performanceTestResults', 'Playback Performance', false, error.message);
+            }
+        }
+        
+        function testMemoryUsage() {
+            logMessage('🧪 Testing memory usage...');
+            
+            if (!window.performance || !window.performance.memory) {
+                // Alternative test without memory API - test creation/destruction without errors
+                try {
+                    const sequencers = [];
+                    
+                    // Create multiple sequencers
+                    for (let i = 0; i < 3; i++) {
+                        const tempSequencer = new SequencerController('sequencerCanvas', 'sequencerContainer');
+                        tempSequencer.updatePattern(demoPatterns.tresillo);
+                        sequencers.push(tempSequencer);
+                    }
+                    
+                    // Destroy them all
+                    sequencers.forEach(seq => {
+                        seq.destroy();
+                    });
+                    
+                    displayResult('performanceTestResults', 'Memory Usage (Basic)', true,
+                        'Multiple sequencers created and destroyed without errors (Memory API not available)');
+                        
+                } catch (error) {
+                    displayResult('performanceTestResults', 'Memory Usage (Basic)', false, error.message);
+                }
+                return;
+            }
+            
+            try {
+                const before = window.performance.memory.usedJSHeapSize;
+                
+                // Create and destroy multiple sequencers
+                for (let i = 0; i < 5; i++) {
+                    const tempSequencer = new SequencerController('sequencerCanvas', 'sequencerContainer');
+                    tempSequencer.updatePattern(demoPatterns.tresillo);
+                    tempSequencer.play();
+                    setTimeout(() => tempSequencer.stop(), 10);
+                    tempSequencer.destroy();
+                }
+                
+                setTimeout(() => {
+                    const after = window.performance.memory.usedJSHeapSize;
+                    const memoryIncrease = after - before;
+                    const acceptable = memoryIncrease < 2000000; // Less than 2MB increase
+                    
+                    displayResult('performanceTestResults', 'Memory Usage (Detailed)', acceptable,
+                        `Memory increase: ${(memoryIncrease / 1024).toFixed(1)}KB`);
+                }, 1000);
+                
+            } catch (error) {
+                displayResult('performanceTestResults', 'Memory Usage (Detailed)', false, error.message);
+            }
+        }
+        
+        function testLargePatterns() {
+            logMessage('🧪 Testing large patterns...');
+            
+            if (!sequencer) {
+                displayResult('performanceTestResults', 'Large Patterns', false, 'Controller not initialized');
+                return;
+            }
+            
+            try {
+                // Test 64-step pattern
+                const largePattern = {
+                    steps: Array(64).fill(false).map((_, i) => i % 5 === 0),
+                    stepCount: 64,
+                    name: 'Large Pattern (64 steps)'
+                };
+                
+                const startTime = performance.now();
+                sequencer.updatePattern(largePattern);
+                sequencer.play();
+                
+                setTimeout(() => {
+                    sequencer.stop();
+                    const endTime = performance.now();
+                    const duration = endTime - startTime;
+                    
+                    const state = sequencer.getState();
+                    const patternLoaded = state.pattern.stepCount === 64;
+                    const playbackWorked = duration < 1000; // Should start quickly
+                    
+                    displayResult('performanceTestResults', 'Large Pattern Loading', patternLoaded,
+                        `64 steps loaded`);
+                    displayResult('performanceTestResults', 'Large Pattern Playback', playbackWorked,
+                        `Started in ${duration.toFixed(1)}ms`);
+                        
+                }, 200);
+                
+            } catch (error) {
+                displayResult('performanceTestResults', 'Large Patterns', false, error.message);
+            }
+        }
+        
+        // === STATISTICS ===
+        
+        function updateStats() {
+            if (!sequencer) return;
+            
+            const stats = sequencer.getStats();
+            const statsContainer = document.getElementById('sequencerStats');
+            
+            statsContainer.innerHTML = `
+                <div class="stat-group">
+                    <h4>Controller</h4>
+                    <div class="stat-item">
+                        <span class="stat-label">Steps Played:</span>
+                        <span class="stat-value">${stats.controller.stepsPlayed}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Patterns Loaded:</span>
+                        <span class="stat-value">${stats.controller.patternsLoaded}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Playback Sessions:</span>
+                        <span class="stat-value">${stats.controller.playbackSessions}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Errors:</span>
+                        <span class="stat-value">${stats.controller.errors}</span>
+                    </div>
+                </div>
+                
+                <div class="stat-group">
+                    <h4>Audio Engine</h4>
+                    <div class="stat-item">
+                        <span class="stat-label">Initialized:</span>
+                        <span class="stat-value">${stats.audio.isInitialized ? 'Yes' : 'No'}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Sounds Played:</span>
+                        <span class="stat-value">${stats.audio.soundsPlayed || 0}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Context State:</span>
+                        <span class="stat-value">${stats.audio.contextState || 'N/A'}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Sample Rate:</span>
+                        <span class="stat-value">${stats.audio.sampleRate || 0} Hz</span>
+                    </div>
+                </div>
+                
+                <div class="stat-group">
+                    <h4>Visual Engine</h4>
+                    <div class="stat-item">
+                        <span class="stat-label">Canvas Size:</span>
+                        <span class="stat-value">${stats.visual.canvasSize || 0}px</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Frames Rendered:</span>
+                        <span class="stat-value">${stats.visual.framesRendered || 0}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">CoG Calculated:</span>
+                        <span class="stat-value">${stats.visual.cogCalculated ? 'Yes' : 'No'}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">CoG Distance:</span>
+                        <span class="stat-value">${stats.visual.cogDistance ? stats.visual.cogDistance.toFixed(3) : 'N/A'}</span>
+                    </div>
+                </div>
+                
+                <div class="stat-group">
+                    <h4>Timing</h4>
+                    <div class="stat-item">
+                        <span class="stat-label">Expected Step Duration:</span>
+                        <span class="stat-value">${stats.timing.expectedStepDuration.toFixed(1)}ms</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Actual Avg Duration:</span>
+                        <span class="stat-value">${stats.timing.actualAverageStepDuration.toFixed(1)}ms</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Timing Accuracy:</span>
+                        <span class="stat-value">${(stats.timing.timingAccuracy * 100).toFixed(1)}%</span>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // === RUN ALL TESTS ===
+        
+        async function runAllTests() {
+            clearResults();
+            logMessage('🚀 Starting comprehensive controller test suite...');
+            
+            // Initialization tests
+            testControllerInit();
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            testEngineInit();
+            await new Promise(resolve => setTimeout(resolve, 200));
+            
+            testDefaultState();
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Pattern tests
+            testPatternLoading();
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            testPatternValidation();
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            testPatternUpdates();
+            await new Promise(resolve => setTimeout(resolve, 200));
+            
+            testPatternExport();
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Playback tests
+            testPlaybackStates();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            testTempoChanges();
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            testAudioSettings();
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            testPlaybackTiming();
+            await new Promise(resolve => setTimeout(resolve, 1200));
+            
+            // Event tests
+            testEventRegistration();
+            await new Promise(resolve => setTimeout(resolve, 200));
+            
+            testEventEmission();
+            await new Promise(resolve => setTimeout(resolve, 400));
+            
+            testEventCallbacks();
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Integration tests
+            testAnalysisIntegration();
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            testVisualInteraction();
+            await new Promise(resolve => setTimeout(resolve, 200));
+            
+            testAudioVisualSync();
+            await new Promise(resolve => setTimeout(resolve, 700));
+            
+            // Performance tests
+            testPlaybackPerformance();
+            await new Promise(resolve => setTimeout(resolve, 1200));
+            
+            testMemoryUsage();
+            await new Promise(resolve => setTimeout(resolve, 1200));
+            
+            testLargePatterns();
+            await new Promise(resolve => setTimeout(resolve, 400));
+            
+            updateStats();
+            logMessage('✅ All controller tests completed!');
+        }
+        
+        // Setup interactive controls
+        function setupInteractiveControls() {
+            const tempoSlider = document.getElementById('tempoSlider');
+            const volumeSlider = document.getElementById('volumeSlider');
+            const waveformSelect = document.getElementById('waveformSelect');
+            
+            tempoSlider.addEventListener('input', (e) => {
+                const tempo = parseInt(e.target.value);
+                document.getElementById('tempoDisplay').textContent = tempo;
+                if (sequencer) {
+                    sequencer.setTempo(tempo);
+                }
+            });
+            
+            volumeSlider.addEventListener('input', (e) => {
+                const volume = parseInt(e.target.value);
+                document.getElementById('volumeDisplay').textContent = volume;
+                if (sequencer) {
+                    sequencer.updateAudioSettings({ volume: volume / 100 });
+                }
+            });
+            
+            waveformSelect.addEventListener('change', (e) => {
+                if (sequencer) {
+                    sequencer.updateAudioSettings({ waveform: e.target.value });
+                }
+            });
+        }
+        
+        // Initialize on load
+        window.addEventListener('load', () => {
+            setupInteractiveControls();
+            updateStats();
+            
+            // Auto-initialize and load a demo pattern
+            setTimeout(() => {
+                initializeSequencer();
+                loadDemoPattern('tresillo');
+            }, 100);
+            
+            logMessage('🎼 Sequencer Controller Test Suite ready!');
+        });
+        
+        // Cleanup on unload
+        window.addEventListener('beforeunload', () => {
+            if (sequencer) {
+                sequencer.destroy();
+            }
+        });
+    </script>
+</body>
+</html>
