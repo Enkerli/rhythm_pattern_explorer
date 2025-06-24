@@ -34,6 +34,7 @@
                 <div class="input-row">
                     <input type="text" class="input-main" id="universalInput" placeholder="P(3,1)+P(5,0)+P(2,5), P(3,0)+P(5,1)-P(2,0), E(5,8,0), 0x49@3, 0o111, [0,3,6]:8, etc.">
                     <button class="btn primary" id="parseBtn">Parse & Analyze</button>
+                    <button class="btn success" id="addToDbBtn">Add to Database</button>
                     <button class="btn secondary" id="copyHexUniversalBtn">Copy Hex</button>
                 </div>
 
@@ -44,9 +45,11 @@
                     • <strong>Single Polygons:</strong> P(vertices,offset,expansion) → P(3,1,4) = Explicit expansion<br>
                     • <strong>Euclidean:</strong> E(beats,steps,offset) or E(beats,steps) → E(5,8,0) or E(5,8)<br>
                     • <strong>Random:</strong> R(onsets,steps) → R(3,8) = Random 3 onsets in 8 steps<br>
+                    • <strong>Morse Intervals:</strong> -.-- (dots=short, dashes=long intervals) → Creates rhythmic patterns based on interval timing<br>
+                    • <strong>Morse Characters:</strong> M:C, M:SOS, M:HELLO → Converts Morse code characters to rhythmic patterns<br>
                     • <strong>Shorthand:</strong> tri, pent, hept, oct → triangle, pentagon, heptagon, octagon (tri@1 for offset)<br>
                     • <strong>Subtraction:</strong> P(3,0)+P(5,1)-P(2,0) = Perfect balance via subtraction<br>
-                    • <strong>Transformations:</strong> ~pattern (invert), rev pattern (retrograde)<br>
+                    • <strong>Transformations:</strong> ~pattern (invert), rev pattern (retrograde), comp pattern (Euclidean complement)<br>
                     • <strong>Named Patterns:</strong> tresillo=E(3,8), mypattern=P(3,1)+P(5,0)<br>
                     • <strong>Binary:</strong> b101010 or 101010<br>
                     • <strong>Hex:</strong> 0x92:8 → Tresillo<br>
@@ -55,7 +58,8 @@
                     • <strong>Onset Arrays:</strong> [0,3,6]:8 → Onset positions with step count<br>
                     • <strong>Rotation:</strong> pattern@steps → 0x92@3, P(3,1)@2<br>
                     • <strong>Multi-combinations:</strong> P(3,1)+P(5,0)+P(2,5) → Proper LCM(3,5,2)=30<br>
-                    • <strong>Keyboard:</strong> Enter = Parse, Cmd/Ctrl+Enter = Parse & Add to Database
+                    • <strong>Keyboard:</strong> Enter = Parse, Cmd/Ctrl+Enter = Parse & Add to Database<br>
+                    • <strong>Buttons:</strong> "Add to Database" button available for any current pattern
                 </div>
             </section>
 
@@ -212,6 +216,26 @@
                             <option value="balanced">Perfectly Balanced (Milne)</option>
                             <option value="geometric_centered">Geometrically Centered (CoG < 0.1)</option>
                             <option value="coprime">Coprime Combinations</option>
+                            <option value="iambic">Iambic Rhythm</option>
+                            <option value="trochaic">Trochaic Rhythm</option>
+                            <option value="dactylic">Dactylic Rhythm</option>
+                            <option value="anapestic">Anapestic Rhythm</option>
+                            <option value="spondaic">Spondaic Rhythm</option>
+                            <option value="pyrrhic">Pyrrhic Rhythm</option>
+                            <option value="bacchic">Bacchic Rhythm</option>
+                            <option value="molossic">Molossic Rhythm</option>
+                            <option value="tribrach">Tribrach Rhythm</option>
+                            <option value="ionic_minor">Ionic Minor</option>
+                            <option value="ionic_major">Ionic Major</option>
+                            <option value="choriamb">Choriamb</option>
+                            <option value="antispast">Antispast</option>
+                            <option value="ditrochee">Ditrochee</option>
+                            <option value="diiamb">Diiamb</option>
+                            <option value="primus_paeon">Primus Paeon</option>
+                            <option value="quartus_paeon">Quartus Paeon</option>
+                            <option value="first_epitrite">First Epitrite</option>
+                            <option value="fourth_epitrite">Fourth Epitrite</option>
+                            <option value="morse_patterns">Morse Patterns</option>
                         </select>
                     </div>
                     

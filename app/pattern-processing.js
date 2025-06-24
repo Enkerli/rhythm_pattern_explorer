@@ -341,6 +341,13 @@ class UnifiedPatternParser {
             return this.retrogradePattern(basePattern);
         }
         
+        if (cleaned.startsWith('comp ')) {
+            // Euclidean complement
+            const pattern = cleaned.substring(5).trim();
+            const basePattern = this.parsePattern(pattern);
+            return this.complementPattern(basePattern);
+        }
+        
         // Check for rotation notation: pattern@steps (but not shorthand polygons)
         if (cleaned.includes('@')) {
             const parts = cleaned.split('@');
@@ -460,6 +467,134 @@ class UnifiedPatternParser {
                 formula: `R(${onsets},${steps})`,
                 randomSeed: Date.now() // For debugging/reproduction
             };
+        }
+        
+        // Morse character notation: M:C or M:SOS
+        const morseCharMatch = cleaned.match(/^M:([A-Z0-9]+)(?::(\d+))?$/i);
+        if (morseCharMatch) {
+            const morseChars = morseCharMatch[1].toUpperCase();
+            const explicitStepCount = morseCharMatch[2] ? parseInt(morseCharMatch[2]) : null;
+            
+            // Morse code lookup table
+            const morseTable = {
+                'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.', 'F': '..-.',
+                'G': '--.', 'H': '....', 'I': '..', 'J': '.---', 'K': '-.-', 'L': '.-..',
+                'M': '--', 'N': '-.', 'O': '---', 'P': '.--.', 'Q': '--.-', 'R': '.-.',
+                'S': '...', 'T': '-', 'U': '..-', 'V': '...-', 'W': '.--', 'X': '-..-',
+                'Y': '-.--', 'Z': '--..', '0': '-----', '1': '.----', '2': '..---',
+                '3': '...--', '4': '....-', '5': '.....', '6': '-....', '7': '--...',
+                '8': '---..', '9': '----.', ' ': '/'
+            };
+            
+            // Convert characters to morse string
+            let morseString = '';
+            for (const char of morseChars) {
+                if (morseTable[char]) {
+                    if (morseString) morseString += ' '; // Space between letters
+                    morseString += morseTable[char];
+                }
+            }
+            
+            if (!morseString) return null; // Invalid characters
+            
+            // Convert morse to binary pattern with proper spacing
+            // Each dot = 1 beat on, each dash = 1 beat on + 1 beat off
+            let binaryPattern = '';
+            const parts = morseString.split(' '); // Split by spaces between letters
+            
+            for (let i = 0; i < parts.length; i++) {
+                const letter = parts[i];
+                for (const symbol of letter) {
+                    if (symbol === '.') {
+                        binaryPattern += '1'; // Dot: one beat on
+                    } else if (symbol === '-') {
+                        binaryPattern += '10'; // Dash: one beat on, one beat off
+                    }
+                }
+                
+                // Add space between letters (except after the last letter)
+                if (i < parts.length - 1) {
+                    binaryPattern += ' '; // Space marker between letters
+                }
+            }
+            
+            // Replace space markers with nothing (direct concatenation for letters)
+            let finalPattern = binaryPattern.replace(/ /g, '');
+            
+            // Handle explicit step count
+            const totalSteps = explicitStepCount || finalPattern.length;
+            
+            if (explicitStepCount) {
+                if (finalPattern.length < explicitStepCount) {
+                    // Pad with zeros
+                    finalPattern = finalPattern.padEnd(explicitStepCount, '0');
+                } else if (finalPattern.length > explicitStepCount) {
+                    // Truncate
+                    finalPattern = finalPattern.substring(0, explicitStepCount);
+                }
+            }
+            
+            // Convert to steps array
+            const steps = finalPattern.split('').map(bit => bit === '1');
+            
+            const stepCount = totalSteps;
+            const result = {
+                steps,
+                stepCount,
+                isMorse: true,
+                morseCode: morseString,
+                morseCharacters: morseChars,
+                binaryPattern: finalPattern,
+                formula: explicitStepCount ? `M:${morseChars}:${stepCount}` : `M:${morseChars}`,
+                hasExplicitSteps: !!explicitStepCount
+            };
+            
+            return result;
+        }
+        
+        // Morse notation: -.-- (dot=short interval, dash=long interval) 
+        const morseMatch = cleaned.match(/^([.-]+)(?::(\d+))?$/);
+        if (morseMatch) {
+            const morseString = morseMatch[1];
+            const explicitStepCount = morseMatch[2] ? parseInt(morseMatch[2]) : null;
+            
+            // Convert Morse to interval pattern using dots and dashes
+            // This creates a rhythmic pattern based on interval lengths
+            // Dot = short interval (1), Dash = long interval (2)
+            const intervals = [];
+            for (const symbol of morseString) {
+                if (symbol === '.') {
+                    intervals.push(1); // Short interval
+                } else if (symbol === '-') {
+                    intervals.push(2); // Long interval (2x duration)
+                }
+            }
+            
+            // Convert intervals to binary pattern
+            // Place onsets with spacing based on interval values
+            const totalSteps = explicitStepCount || intervals.reduce((sum, interval) => sum + interval, 0);
+            const steps = new Array(totalSteps).fill(false);
+            
+            let position = 0;
+            for (let i = 0; i < intervals.length; i++) {
+                if (position < totalSteps) {
+                    steps[position] = true; // Place onset
+                    position += intervals[i]; // Move by interval amount
+                }
+            }
+            
+            const stepCount = totalSteps;
+            const result = {
+                steps,
+                stepCount,
+                isMorse: true,
+                morseCode: morseString,
+                intervals: intervals,
+                formula: explicitStepCount ? `${morseString}:${stepCount}` : morseString,
+                hasExplicitSteps: !!explicitStepCount
+            };
+            
+            return result;
         }
         
         // Onset array notation: [0,3,6] or [0,3,6]:8
@@ -687,6 +822,51 @@ class UnifiedPatternParser {
         }
         
         return retrogradePattern;
+    }
+    
+    static complementPattern(pattern) {
+        if (!pattern || !pattern.steps || !Array.isArray(pattern.steps)) {
+            throw new Error('Invalid pattern for complement');
+        }
+        
+        // Only works for Euclidean patterns
+        if (!pattern.isEuclidean) {
+            throw new Error('Complement operation only supported for Euclidean patterns');
+        }
+        
+        const beats = pattern.beats || pattern.steps.filter(step => step).length;
+        const steps = pattern.stepCount;
+        const offset = pattern.offset || 0;
+        
+        // Generate Euclidean complement pattern
+        const complementSteps = EuclideanGenerator.generateComplement(beats, steps, offset);
+        const complementBeats = steps - beats;
+        
+        // Create complement pattern
+        const complementPattern = {
+            ...pattern,
+            steps: complementSteps,
+            beats: complementBeats,
+            isComplement: true,
+            originalPattern: pattern.steps,
+            originalBeats: beats
+        };
+        
+        // Update formula if it exists
+        if (pattern.formula) {
+            complementPattern.formula = `comp ${pattern.formula}`;
+        } else if (pattern.euclidean) {
+            complementPattern.formula = `comp ${pattern.euclidean}`;
+        } else {
+            // Create a formula for the complement
+            const originalFormula = `E(${beats},${steps}${offset ? ',' + offset : ''})`;
+            complementPattern.formula = `comp ${originalFormula}`;
+        }
+        
+        // Update euclidean properties
+        complementPattern.euclidean = `E(${complementBeats},${steps}${offset ? ',' + offset : ''})`;
+        
+        return complementPattern;
     }
     
     static formatCompact(pattern) {
