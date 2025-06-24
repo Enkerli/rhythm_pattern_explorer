@@ -48,7 +48,7 @@ A comprehensive web application for analyzing and exploring rhythmic patterns us
 - `[0,2,4,6,7]` - Multiple onset positions
 
 ### Pattern Rotation
-- `0x92@3` - Rotate Tresillo by 3 steps
+- `0x92@3` - Rotate pattern by 3 steps
 - `P(5,0)@2` - Rotate pentagon by 2 steps  
 - `b101010@-1` - Rotate binary pattern by -1 steps (counter-clockwise)
 

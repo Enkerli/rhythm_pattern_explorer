@@ -36,10 +36,9 @@ class PatternConverter {
     static fromDecimalWithSteps(decimal, stepCount) {
         if (decimal === 0) return { steps: new Array(stepCount).fill(false), stepCount };
         
-        // Convert using left-to-right bit ordering, then pad to desired step count
+        // Convert using standard left-to-right bit ordering
         const standardBinary = decimal.toString(2);
-        const reversedBinary = standardBinary.split('').reverse().join('');
-        const paddedBinary = reversedBinary.padEnd(stepCount, '0');
+        const paddedBinary = standardBinary.padStart(stepCount, '0');
         
         return {
             steps: paddedBinary.split('').map(bit => bit === '1'),
@@ -61,10 +60,9 @@ class PatternConverter {
         if (numericDecimal === 0) return { steps: [false], stepCount: 1 };
         
         const stepCount = Math.max(minSteps, Math.floor(Math.log2(numericDecimal)) + 1);
-        // Convert to binary and reverse so leftmost position gets bit value 1
-        const standardBinary = numericDecimal.toString(2);
-        const reversedBinary = standardBinary.split('').reverse().join('').padEnd(stepCount, '0');
-        const result = this.fromBinary(reversedBinary);
+        // Convert to binary using standard left-to-right bit ordering
+        const standardBinary = numericDecimal.toString(2).padStart(stepCount, '0');
+        const result = this.fromBinary(standardBinary);
         // Remove the isBinaryInput flag since this is decimal input, not binary input
         delete result.isBinaryInput;
         return result;

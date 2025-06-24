@@ -535,7 +535,7 @@ class EnhancedPatternApp {
         // Generate pattern output line data
         const structureAnalysis = PatternAnalyzer.analyzeStructure(pattern.steps, pattern.stepCount);
         const binary = PatternConverter.toBinary(pattern.steps, pattern.stepCount);
-        const decimal = PatternConverter.toDecimal(binary);
+        const decimal = PatternConverter.toDecimal(binary, false);
         const hex = PatternConverter.toHex(decimal);
         const octal = PatternConverter.toOctal(decimal);
         const onsetCount = pattern.steps.filter(step => step).length;
@@ -663,7 +663,7 @@ class EnhancedPatternApp {
         }
         
         const binary = PatternConverter.toBinary(this.currentPattern.steps, this.currentPattern.stepCount);
-        const decimal = PatternConverter.toDecimal(binary);
+        const decimal = PatternConverter.toDecimal(binary, false);
         const hex = PatternConverter.toHex(decimal);
         UIComponents.copyToClipboard(hex);
     }
@@ -1061,7 +1061,7 @@ ${perfectBalancePatterns.map((pattern, index) => {
         representations.push(`b${binary}:${pattern.stepCount}`);
         
         // Decimal representation with explicit step count
-        const decimal = PatternConverter.toDecimal(binary);
+        const decimal = PatternConverter.toDecimal(binary, false);
         representations.push(`${decimal}:${pattern.stepCount}`);
         
         // Hex representation with explicit step count
@@ -1419,7 +1419,7 @@ ${perfectBalancePatterns.map((pattern, index) => {
         if (input) {
             // Use explicit step count notation for loading
             const binary = PatternConverter.toBinary(pattern.steps, pattern.stepCount);
-            const decimal = PatternConverter.toDecimal(binary);
+            const decimal = PatternConverter.toDecimal(binary, false);
             const hex = PatternConverter.toHex(decimal);
             
             // Always include explicit step count when loading
@@ -1449,7 +1449,7 @@ ${perfectBalancePatterns.map((pattern, index) => {
         try {
             // Convert pattern to hex representation with explicit step count
             const binary = PatternConverter.toBinary(pattern.steps, pattern.stepCount);
-            const decimal = PatternConverter.toDecimal(binary);
+            const decimal = PatternConverter.toDecimal(binary, false);
             const hex = PatternConverter.toHex(decimal);
             
             // Update input with hex:stepCount format
