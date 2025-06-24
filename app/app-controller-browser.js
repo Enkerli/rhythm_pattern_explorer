@@ -445,13 +445,15 @@ class EnhancedPatternApp {
                             </div>
                             <div class="analysis-box-content">
                                 <div class="cog-distance-value">
-                                    Distance: ${analysis.cogAnalysis?.distance?.toFixed(4) || 'N/A'}
+                                    Distance: ${analysis.cogAnalysis?.normalizedMagnitude?.toFixed(4) || analysis.cogAnalysis?.distance?.toFixed(4) || 'N/A'}
                                 </div>
                                 <div class="cog-angle-value">
-                                    Angle: ${analysis.cogAnalysis?.angle?.toFixed(1) || 'N/A'}°
+                                    Angle: ${analysis.cogAnalysis?.angle?.toFixed(1) || 
+                                            (analysis.cogAnalysis?.coordinates ? 
+                                                Math.atan2(analysis.cogAnalysis.coordinates.y, analysis.cogAnalysis.coordinates.x) * (180 / Math.PI) : 0).toFixed(1)}°
                                 </div>
                                 <div class="cog-description">
-                                    ${analysis.cogAnalysis?.distance < 0.1 ? '🎯 Geometrically Centered' : 'Pattern analysis'}
+                                    ${(analysis.cogAnalysis?.normalizedMagnitude || analysis.cogAnalysis?.distance || 1) < 0.1 ? '🎯 Geometrically Centered' : 'Off-center pattern'}
                                 </div>
                             </div>
                         </div>
