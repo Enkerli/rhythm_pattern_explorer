@@ -1327,7 +1327,7 @@ ${perfectBalancePatterns.map((pattern, index) => {
                         ${(!pattern.isRegularPolygon && !polygonLabels && ((pattern.formula && pattern.formula.includes('P(')) || (pattern.expression && pattern.expression.includes('P(')))) ? `<span class="pattern-repr polygon-type">🔺 Contains Polygons</span>` : ''}
                     </div>
                     <div class="pattern-representations">
-                        ${representations.map(repr => `<span class="pattern-repr">${repr}</span>`).join('')}
+                        ${representations.map(repr => `<span class="pattern-repr" title="${repr}" onclick="togglePatternRepr(this)">${repr}</span>`).join('')}
                         ${pattern.isRotated ? `<span class="pattern-repr rotation-type" style="background: #fff3e0; color: #f57c00; font-weight: bold;">🔄 Rotated @${pattern.rotationSteps}</span>` : ''}
                     </div>
                 </div>
@@ -1574,6 +1574,34 @@ ${perfectBalancePatterns.map((pattern, index) => {
         }
     }
 }
+
+// Global utility functions
+function togglePatternRepr(element) {
+    try {
+        console.log('Toggling pattern repr:', element);
+        element.classList.toggle('expanded');
+        
+        // Temporarily select the text when expanded
+        if (element.classList.contains('expanded')) {
+            setTimeout(() => {
+                try {
+                    const range = document.createRange();
+                    range.selectNodeContents(element);
+                    const selection = window.getSelection();
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                } catch (e) {
+                    console.log('Selection failed:', e);
+                }
+            }, 50);
+        }
+    } catch (error) {
+        console.error('Toggle error:', error);
+    }
+}
+
+// Export to global scope
+window.togglePatternRepr = togglePatternRepr;
 
 // Export for global access
 window.EnhancedPatternApp = EnhancedPatternApp;

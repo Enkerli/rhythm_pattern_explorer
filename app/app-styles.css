@@ -301,7 +301,7 @@ li {
 
 .app-header {
     background: var(--bg-secondary);
-    padding: var(--spacing-lg) var(--spacing-xl);
+    padding: var(--spacing-md);
     border-radius: var(--border-radius-base);
     box-shadow: var(--shadow-sm);
     margin-bottom: var(--spacing-xl);
@@ -325,8 +325,9 @@ li {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-lg);
-    max-width: 1400px;
-    margin: 0 auto;
+    max-width: none;
+    margin: 0;
+    width: 100%;
 }
 
 /* === ROW STYLES (MATCHING BENTO CARDS) === */
@@ -337,7 +338,7 @@ li {
     background: var(--bg-secondary);
     border-radius: var(--border-radius-base);
     box-shadow: var(--shadow-sm);
-    padding: var(--spacing-lg);
+    padding: var(--spacing-md);
     transition: all var(--transition-hover);
     border: 1px solid var(--border-light);
 }
@@ -467,7 +468,9 @@ li {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-md);
-    min-width: 160px;
+    min-width: 240px;
+    max-width: 260px;
+    overflow: hidden;
 }
 
 .sequencer-canvas-wrapper {
@@ -520,13 +523,15 @@ li {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-md);
-    margin: var(--spacing-sm);
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    margin: 0;
     background: var(--color-bg-subtle);
     border-radius: var(--border-radius-base);
     border: 1px solid var(--border-light);
     font-size: var(--font-size-sm);
+    box-sizing: border-box;
+    width: 100%;
 }
 
 .btn-sequencer {
@@ -598,8 +603,8 @@ li {
 
 .sequencer-slider {
     flex: 1;
-    min-width: 80px;
-    max-width: 120px;
+    min-width: 60px;
+    max-width: 90px;
     margin: 0 var(--spacing-xs);
 }
 
@@ -745,8 +750,8 @@ li {
 
 .controls-stats-row {
     display: grid;
-    grid-template-columns: auto 1fr auto;
-    gap: var(--spacing-xl);
+    grid-template-columns: 200px 2fr 1fr;
+    gap: var(--spacing-lg);
     align-items: start;
 }
 
@@ -762,6 +767,7 @@ li {
 
 .statistics-col {
     flex: 1;
+    min-width: 0;
 }
 
 .stats-grid-horizontal {
@@ -791,7 +797,8 @@ li {
 }
 
 .pbe-col {
-    min-width: 250px;
+    min-width: 200px;
+    max-width: 220px;
 }
 
 .pbe-compact {
@@ -872,31 +879,52 @@ li {
 .search-input {
     flex: 2;
     padding: var(--spacing-md);
-    border: 2px solid var(--border-light);
+    border: 2px solid #d1d5db;
     border-radius: var(--border-radius-base);
     background: white;
-    transition: border-color var(--transition-base);
+    transition: all var(--transition-base);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    font-size: var(--font-size-base);
+}
+
+.search-input:hover {
+    border-color: #9ca3af;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .search-input:focus {
     border-color: var(--color-primary);
     outline: none;
-    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1), 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .filter-select {
     flex: 1;
     padding: var(--spacing-md);
-    border: 2px solid var(--border-light);
+    border: 2px solid #d1d5db;
     border-radius: var(--border-radius-base);
     background: white;
-    transition: border-color var(--transition-base);
+    transition: all var(--transition-base);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    font-size: var(--font-size-base);
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right var(--spacing-sm) center;
+    background-repeat: no-repeat;
+    background-size: 1.5em 1.5em;
+    padding-right: calc(var(--spacing-md) + 2em);
+}
+
+.filter-select:hover {
+    border-color: #9ca3af;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .filter-select:focus {
     border-color: var(--color-primary);
     outline: none;
-    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1), 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .step-count-row {
