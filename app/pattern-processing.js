@@ -301,8 +301,7 @@ class UnifiedPatternParser {
         if (cleaned.includes(',') && !cleaned.includes('+')) {
             // Check if this looks like pattern stringing vs single pattern with commas
             const hasPatternSeparatorCommas = this.hasPatternSeparatorCommas(cleaned);
-            console.log(`🔍 hasPatternSeparatorCommas("${cleaned}") = ${hasPatternSeparatorCommas}`);
-            if (hasPatternSeparatorCommas) {
+                if (hasPatternSeparatorCommas) {
                 const stringedResult = this.parseStringedPatterns(cleaned);
                 if (stringedResult) {
                     return {
@@ -1106,7 +1105,6 @@ class UnifiedPatternParser {
         // Split by commas and check if we get multiple valid pattern-like parts
         // Use smart comma splitting to respect parentheses
         const parts = this.smartCommaSplit(input);
-        console.log(`🔍 hasPatternSeparatorCommas parts:`, parts);
         if (parts.length < 2) return false;
         
         // Check if each part looks like a standalone pattern
@@ -1119,23 +1117,17 @@ class UnifiedPatternParser {
             // Patterns that contain unmatched parentheses are likely incomplete
             const openParens = (part.match(/\(/g) || []).length;
             const closeParens = (part.match(/\)/g) || []).length;
-            console.log(`🔍 Part "${part}": openParens=${openParens}, closeParens=${closeParens}`);
             
             // If parentheses are unmatched, this is likely part of a larger pattern
             if (openParens !== closeParens) {
-                console.log(`🔍 Unmatched parentheses in "${part}" - returning false`);
                 return false;
             }
             
             // Check if this looks like a recognizable pattern format
-            const looksLike = this.looksLikePattern(part);
-            console.log(`🔍 looksLikePattern("${part}") = ${looksLike}`);
-            if (looksLike) {
+            if (this.looksLikePattern(part)) {
                 validPatternParts++;
             }
         }
-        
-        console.log(`🔍 validPatternParts: ${validPatternParts}, required: 2+`);
         // If we have 2+ parts that each look like valid patterns, it's pattern stringing
         return validPatternParts >= 2;
     }
@@ -1266,6 +1258,32 @@ class UnifiedPatternParser {
     }
     
     static formatCompact(pattern) {
+        console.log(`🔍 formatCompact called with pattern:`, pattern);
+        // Special handling for stringed patterns
+        if (pattern.isStringed && pattern.stringedPatterns) {
+            console.log(`🔍 Processing stringed pattern with ${pattern.stringedPatterns.length} parts`);
+            const patternReprs = pattern.stringedPatterns.map(p => {
+                const binary = PatternConverter.toBinary(p.steps, p.stepCount);
+                const decimal = PatternConverter.toDecimal(binary, !p.isBinaryInput);
+                const hex = PatternConverter.toHex(decimal);
+                return { binary: `b${binary}`, hex, decimal };
+            });
+            
+            const binaryParts = patternReprs.map(r => r.binary).join(' ');
+            const hexParts = patternReprs.map(r => r.hex).join(' ');
+            const decimalParts = patternReprs.map(r => r.decimal).join(' ');
+            
+            const beats = pattern.steps.filter(s => s).length;
+            const density = ((beats / pattern.stepCount) * 100).toFixed(1);
+            
+            let result = `Binary: ${binaryParts}, Hex: ${hexParts}, Decimal: ${decimalParts} (${pattern.stepCount} steps, ${beats} beats, ${density}% density)`;
+            
+            // Add stringed pattern type info
+            result += ` [🔗 STRINGED: ${pattern.originalString}]`;
+            return result;
+        }
+        
+        // Regular pattern formatting
         const binary = PatternConverter.toBinary(pattern.steps, pattern.stepCount);
         // Use standard binary interpretation for binary input, reversed for numeric input
         const decimal = PatternConverter.toDecimal(binary, !pattern.isBinaryInput);
