@@ -613,19 +613,54 @@ class EnhancedPatternApp {
             patternTypes.push(`<span class="pattern-type repetition">🔄 Repetition: ${repetitionAnalysis.unitBinary}×${repetitionAnalysis.repetitions}</span>`);
         }
         
-        // Pattern output line
-        const patternOutputItems = [
-            `Binary: ${binary}`,
-            `Hex: ${hex}`,
-            `Oct: ${octal}`,
-            `Dec: ${decimal}`,
-            `Steps: ${pattern.stepCount}`,
-            `Beats: ${onsetCount}`,
-            `Density: ${density}%`,
-            `Max Gap: ${structureAnalysis.maxSilenceGap}`,
-            `Avg Interval: ${structureAnalysis.avgOnsetInterval.toFixed(1)}`,
-            ...patternTypes
-        ];
+        // Pattern output line - special handling for stringed patterns
+        let patternOutputItems;
+        if (pattern.isStringed && pattern.stringedPatterns) {
+            // Generate spaced representations for stringed patterns
+            console.log(`🔍 Stringed patterns order:`, pattern.stringedPatterns.map((p, i) => `${i}: ${p.formula || 'unknown'} (${p.stepCount} steps)`));
+            const patternReprs = pattern.stringedPatterns.map(p => {
+                const pBinary = PatternConverter.toBinary(p.steps, p.stepCount);
+                // Use consistent binary interpretation (false = standard left-to-right)
+                const pDecimal = PatternConverter.toDecimal(pBinary, false);
+                const pHex = PatternConverter.toHex(pDecimal);
+                const pOct = PatternConverter.toOctal(pDecimal);
+                console.log(`🔍 Pattern ${p.formula || 'unknown'}: Steps=${p.steps}, Binary=${pBinary}, Decimal=${pDecimal}, Hex=${pHex}`);
+                return { binary: pBinary, hex: pHex, oct: pOct, decimal: pDecimal };
+            });
+            
+            const binaryParts = patternReprs.map(r => r.binary).join(' ');
+            const hexParts = patternReprs.map(r => r.hex).join(' ');
+            const octParts = patternReprs.map(r => r.oct).join(' ');
+            const decParts = patternReprs.map(r => r.decimal).join(' ');
+            
+            patternOutputItems = [
+                `Binary: ${binaryParts}`,
+                `Hex: ${hexParts}`,
+                `Oct: ${octParts}`,
+                `Dec: ${decParts}`,
+                `Steps: ${pattern.stepCount}`,
+                `Beats: ${onsetCount}`,
+                `Density: ${density}%`,
+                `Max Gap: ${structureAnalysis.maxSilenceGap}`,
+                `Avg Interval: ${structureAnalysis.avgOnsetInterval.toFixed(1)}`,
+                `🔗 Stringed: ${pattern.originalString}`,
+                ...patternTypes
+            ];
+        } else {
+            // Regular pattern formatting
+            patternOutputItems = [
+                `Binary: ${binary}`,
+                `Hex: ${hex}`,
+                `Oct: ${octal}`,
+                `Dec: ${decimal}`,
+                `Steps: ${pattern.stepCount}`,
+                `Beats: ${onsetCount}`,
+                `Density: ${density}%`,
+                `Max Gap: ${structureAnalysis.maxSilenceGap}`,
+                `Avg Interval: ${structureAnalysis.avgOnsetInterval.toFixed(1)}`,
+                ...patternTypes
+            ];
+        }
         
         // Balance analysis
         const balanceAnalysis = PerfectBalanceAnalyzer.calculateBalance(pattern.steps, pattern.stepCount);
