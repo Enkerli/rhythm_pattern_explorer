@@ -348,6 +348,57 @@ class UnifiedPatternParser {
             return this.complementPattern(basePattern);
         }
         
+        // Check for custom duration notation: D:1,3 pattern (short=1, long=3)
+        const durationMatch = cleaned.match(/^D:([0-9.]+),([0-9.]+)\s+(.+)$/i);
+        if (durationMatch) {
+            const shortDuration = parseFloat(durationMatch[1]);
+            const longDuration = parseFloat(durationMatch[2]);
+            const basePattern = durationMatch[3];
+            
+            if (isNaN(shortDuration) || isNaN(longDuration) || shortDuration <= 0 || longDuration <= 0) return null;
+            
+            // Parse the base pattern first
+            const baseParsed = this.parsePattern(basePattern);
+            if (!baseParsed) return null;
+            
+            // Apply custom duration transformation
+            const transformed = this.applyCustomDurations(baseParsed, shortDuration, longDuration);
+            if (transformed) {
+                transformed.isTransformed = true;
+                transformed.transformationType = 'custom_durations';
+                transformed.shortDuration = shortDuration;
+                transformed.longDuration = longDuration;
+                transformed.basePattern = basePattern;
+                transformed.formula = `D:${shortDuration},${longDuration} ${basePattern}`;
+            }
+            return transformed;
+        }
+        
+        // Check for stretch/squeeze transformations: S:2 pattern, Q:0.5 pattern
+        const stretchMatch = cleaned.match(/^([SQ]):([0-9.]+)\s+(.+)$/i);
+        if (stretchMatch) {
+            const transformType = stretchMatch[1].toUpperCase();
+            const factor = parseFloat(stretchMatch[2]);
+            const basePattern = stretchMatch[3];
+            
+            if (isNaN(factor) || factor <= 0) return null;
+            
+            // Parse the base pattern first
+            const baseParsed = this.parsePattern(basePattern);
+            if (!baseParsed) return null;
+            
+            // Apply stretch or squeeze transformation
+            const transformed = this.applyStretchTransformation(baseParsed, factor, transformType);
+            if (transformed) {
+                transformed.isTransformed = true;
+                transformed.transformationType = transformType === 'S' ? 'stretch' : 'squeeze';
+                transformed.transformationFactor = factor;
+                transformed.basePattern = basePattern;
+                transformed.formula = `${transformType}:${factor} ${basePattern}`;
+            }
+            return transformed;
+        }
+        
         // Check for rotation notation: pattern@steps (but not shorthand polygons)
         if (cleaned.includes('@')) {
             const parts = cleaned.split('@');
@@ -867,6 +918,137 @@ class UnifiedPatternParser {
         complementPattern.euclidean = `E(${complementBeats},${steps}${offset ? ',' + offset : ''})`;
         
         return complementPattern;
+    }
+    
+    /**
+     * Apply stretch or squeeze transformation to a pattern
+     * @param {Object} pattern - Pattern object to transform
+     * @param {number} factor - Stretch factor (>1 = stretch, <1 = squeeze)
+     * @param {string} type - 'S' for stretch or 'Q' for squeeze
+     * @returns {Object} Transformed pattern
+     */
+    static applyStretchTransformation(pattern, factor, type) {
+        if (!pattern || !pattern.steps) return null;
+        
+        const originalSteps = pattern.steps;
+        const originalStepCount = pattern.stepCount;
+        
+        // Create stretched/squeezed pattern
+        let newSteps = [];
+        
+        if (factor >= 1) {
+            // Stretch: make each step longer
+            const stretchAmount = Math.round(factor);
+            for (let i = 0; i < originalStepCount; i++) {
+                if (originalSteps[i]) {
+                    // Onset: single beat followed by (stretchAmount-1) rests
+                    newSteps.push(true);
+                    for (let j = 1; j < stretchAmount; j++) {
+                        newSteps.push(false);
+                    }
+                } else {
+                    // Rest: stretch the rest proportionally
+                    for (let j = 0; j < stretchAmount; j++) {
+                        newSteps.push(false);
+                    }
+                }
+            }
+        } else {
+            // Squeeze: make pattern shorter by sampling
+            const squeezeRatio = factor;
+            const newLength = Math.max(1, Math.round(originalStepCount * squeezeRatio));
+            
+            for (let i = 0; i < newLength; i++) {
+                const originalIndex = Math.round(i / squeezeRatio);
+                if (originalIndex < originalStepCount) {
+                    newSteps.push(originalSteps[originalIndex]);
+                }
+            }
+        }
+        
+        const transformedPattern = {
+            ...pattern,
+            steps: newSteps,
+            stepCount: newSteps.length,
+            isTransformed: true,
+            transformationType: type === 'S' ? 'stretch' : 'squeeze',
+            transformationFactor: factor,
+            originalPattern: originalSteps,
+            originalStepCount: originalStepCount
+        };
+        
+        return transformedPattern;
+    }
+    
+    /**
+     * Apply custom durations to short and long intervals
+     * @param {Object} pattern - Pattern object to transform
+     * @param {number} shortDuration - Duration for short intervals
+     * @param {number} longDuration - Duration for long intervals
+     * @returns {Object} Transformed pattern
+     */
+    static applyCustomDurations(pattern, shortDuration, longDuration) {
+        if (!pattern || !pattern.steps) return null;
+        
+        // First, analyze the original pattern to identify long and short intervals
+        const longShortAnalysis = LongShortAnalyzer.analyzeLongShort(pattern.steps, pattern.stepCount);
+        
+        if (!longShortAnalysis || !longShortAnalysis.intervals || longShortAnalysis.intervals.length === 0) {
+            return pattern; // Can't transform if no intervals
+        }
+        
+        const intervals = longShortAnalysis.intervals;
+        const intervalTypes = longShortAnalysis.intervalTypes;
+        
+        // Create new pattern with custom durations
+        let newSteps = [];
+        let position = 0;
+        
+        // Start with first onset
+        newSteps.push(true);
+        position++;
+        
+        // Apply custom durations to each interval
+        for (let i = 0; i < intervals.length; i++) {
+            const intervalType = intervalTypes[i];
+            let duration;
+            
+            if (intervalType === 'short') {
+                duration = Math.round(shortDuration);
+            } else if (intervalType === 'long') {
+                duration = Math.round(longDuration);
+            } else {
+                // Equal intervals - use average of short and long
+                duration = Math.round((shortDuration + longDuration) / 2);
+            }
+            
+            // Add the duration as rests (except for the last beat which will be the next onset)
+            for (let j = 1; j < duration; j++) {
+                newSteps.push(false);
+                position++;
+            }
+            
+            // Add the next onset (unless this is the last interval)
+            if (i < intervals.length - 1) {
+                newSteps.push(true);
+                position++;
+            }
+        }
+        
+        const transformedPattern = {
+            ...pattern,
+            steps: newSteps,
+            stepCount: newSteps.length,
+            isTransformed: true,
+            transformationType: 'custom_durations',
+            shortDuration: shortDuration,
+            longDuration: longDuration,
+            originalPattern: pattern.steps,
+            originalStepCount: pattern.stepCount,
+            originalAnalysis: longShortAnalysis
+        };
+        
+        return transformedPattern;
     }
     
     static formatCompact(pattern) {
