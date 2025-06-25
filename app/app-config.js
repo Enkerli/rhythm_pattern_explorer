@@ -201,7 +201,7 @@ const AppConfig = {
          * Placeholder Text
          */
         PLACEHOLDERS: {
-            UNIVERSAL_INPUT: 'P(3,1)+P(5,0)+P(2,5), P(3,0)+P(5,1)-P(2,0), E(5,8,0), 0x49@3, 0o111, [0,3,6]:8, etc.',
+            UNIVERSAL_INPUT: 'P(3,1)+P(5,0)+P(2,5), P(3,0)+P(5,1)-P(2,0), E(5,8,0), 0x49@3, 0o111, [0,3,6]:8, E(3,8);12, 0x92;-6, etc.',
             SEARCH_INPUT: 'Search patterns...',
             PATTERN_NAME: 'Enter pattern name',
             IMPORT_DATA: 'Paste your JSON pattern database here...',
@@ -223,7 +223,9 @@ const AppConfig = {
                 BINARY: 'b101010 - Binary pattern',
                 DECIMAL: '73 - Decimal pattern',
                 ONSET_ARRAY: '[0,3,6]:8 - Onset positions with step count',
-                ROTATION: '0x49@3 - Tresillo rotated 3 steps'
+                ROTATION: '0x49@3 - Tresillo rotated 3 steps',
+                QUANTIZATION_CLOCKWISE: 'E(3,8);12 - Quantize Tresillo to 12 steps (clockwise)',
+                QUANTIZATION_COUNTERCLOCKWISE: '0x92;-6 - Quantize pattern to 6 steps (counterclockwise)'
             },
             
             INITIAL_HELP: 'Parse a pattern using the universal input above to see comprehensive mathematical analysis.'
