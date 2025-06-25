@@ -7,6 +7,7 @@ A comprehensive web application for analyzing and exploring rhythmic patterns us
 - **Universal Pattern Input**: Support for multiple pattern formats (polygons, Euclidean rhythms, binary, hex, octal, decimal)
 - **Pattern Rotation**: Rotate any pattern using `@` notation (e.g., `0x92@3`)
 - **Pattern Combinations**: Combine multiple patterns using logical operations with automatic LCM calculation
+- **Pattern Quantization**: Binarization/ternarization using angular mapping with `;` notation (e.g., `E(3,8);12`)
 - **Perfect Balance Analysis**: Milne's perfect balance theory implementation with geometric visualization
 - **Center of Gravity**: Mathematical analysis of pattern balance using complex number representation
 - **Pattern Database**: Store, search, filter, and manage pattern collections with localStorage persistence
@@ -59,6 +60,14 @@ A comprehensive web application for analyzing and exploring rhythmic patterns us
 - `P(3,0)+P(5,1)-P(2,0)` - Addition and subtraction
 - `P(3,1)+P(5,0)+P(7,2)` - Multiple pattern combination
 
+### Pattern Quantization (Binarization/Ternarization)
+- `10111010:8;9` - Quantize 8-step binary pattern to 9 steps (clockwise)
+- `E(3,8);12` - Quantize Euclidean pattern from 8 to 12 steps (clockwise)
+- `P(5,0);-16` - Quantize pentagon to 16 steps (counterclockwise)
+- `0x92:8;-6` - Quantize hex pattern from 8 to 6 steps (counterclockwise)
+
+Uses angular mapping to redistribute onsets when changing time signatures, preserving rhythmic character while adapting to new step counts. Based on Toussaint's binarization algorithm.
+
 ## File Structure
 
 ```
@@ -101,6 +110,12 @@ app/
 2. See LCM calculation and combined pattern analysis
 3. Save to database for later reference
 
+### Pattern Quantization (Time Signature Changes)
+1. Enter `E(3,8);12` to transform a Tresillo from 8 to 12 steps (ternary expansion)
+2. Enter `10111010:8;-6` to compress a binary pattern counterclockwise from 8 to 6 steps
+3. Notice how onsets are redistributed using angular mapping to preserve rhythmic character
+4. View quantization metadata showing direction, original step count, and expansion/compression ratio
+
 ### Database Operations
 1. Use search bar to find patterns by name or characteristics
 2. Filter by type using dropdown (perfect balance, polygons, euclidean, combined, etc.)
@@ -120,6 +135,7 @@ app/
 - **Center of Gravity**: Geometric analysis of pattern distribution on unit circle
 - **LCM Calculations**: Automatic least common multiple for pattern combinations
 - **Euclidean Rhythms**: Implementation of Bjorklund's algorithm
+- **Pattern Quantization**: Angular mapping algorithm based on Toussaint's binarization/ternarization research
 
 ## Development
 
