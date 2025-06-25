@@ -430,6 +430,14 @@ class EnhancedPatternApp {
                 this.showCompactOutput(this.currentPattern);
                 this.updateButtonStates();
                 console.log('✅ Stringed pattern parsed successfully');
+            } else if (result.type === 'quantized') {
+                console.log('🔍 Quantized pattern result:', result);
+                this.currentPattern = result.pattern;
+                console.log('🔍 Current pattern after assignment:', this.currentPattern);
+                this.displayPatternAnalysis(this.currentPattern);
+                this.showCompactOutput(this.currentPattern);
+                this.updateButtonStates();
+                console.log('✅ Quantized pattern parsed successfully');
             } else {
                 showNotification('Failed to parse pattern: Unknown result type', 'error');
                 console.error('❌ Pattern parsing failed: Unknown result type');
@@ -628,6 +636,12 @@ ${(() => {
         const repetitionAnalysis = PatternAnalyzer.detectRepetition(pattern.steps, pattern.stepCount);
         if (repetitionAnalysis) {
             patternTypes.push(`<span class="pattern-type repetition">🔄 Repetition: ${repetitionAnalysis.unitBinary}×${repetitionAnalysis.repetitions}</span>`);
+        }
+        if (pattern.isQuantized) {
+            const direction = pattern.quantizationDirection === 'clockwise' ? '↻' : '↺';
+            const ratio = pattern.quantizationRatio;
+            const ratioText = ratio > 1 ? `expanded ${ratio.toFixed(2)}×` : `compressed ${ratio.toFixed(2)}×`;
+            patternTypes.push(`<span class="pattern-type quantization">⚡ Quantized ${direction}: ${pattern.originalStepCount}→${pattern.stepCount} (${ratioText})</span>`);
         }
         
         // Pattern output line - special handling for stringed patterns
@@ -1408,6 +1422,7 @@ ${perfectBalancePatterns.map((pattern, index) => {
                         ${pattern.isRegularPolygon ? `<span class="pattern-repr polygon-type">🔺 ${polygonType}</span>` : ''}
                         ${polygonLabels ? `<span class="pattern-repr polygon-components">${polygonLabels}</span>` : ''}
                         ${isEuclideanPattern ? `<span class="pattern-repr euclidean-type">🌀 ${euclideanLabel}: ${euclideanFormula}</span>` : ''}
+                        ${pattern.isQuantized ? `<span class="pattern-repr quantization-type">⚡ Quantized ${pattern.quantizationDirection === 'clockwise' ? '↻' : '↺'}: ${pattern.originalStepCount}→${pattern.stepCount}</span>` : ''}
                         ${(!pattern.isRegularPolygon && !polygonLabels && ((pattern.formula && pattern.formula.includes('P(')) || (pattern.expression && pattern.expression.includes('P(')))) ? `<span class="pattern-repr polygon-type">🔺 Contains Polygons</span>` : ''}
                     </div>
                     ${this.generateLongShortDisplayForDB(pattern)}

@@ -737,6 +737,9 @@ function createDatabasePattern(patternData, analyses = {}) {
         defaultName = `Expression: ${patternData.expression}`;
     } else if (patternData.isCombined) {
         defaultName = `Combined (${patternData.originalPatterns ? patternData.originalPatterns.length : 'multi'} patterns)`;
+    } else if (patternData.isQuantized) {
+        const direction = patternData.quantizationDirection === 'clockwise' ? '↻' : '↺';
+        defaultName = `Quantized ${direction} (${patternData.originalStepCount}→${stepCount} steps)`;
     } else if (patternData.isRegularPolygon) {
         defaultName = `${patternData.polygonType} (${patternData.vertices},${patternData.expansion || 1},${patternData.offset || 0})`;
     } else if (patternData.isEuclidean) {
@@ -819,6 +822,20 @@ function createDatabasePattern(patternData, analyses = {}) {
         };
         pattern.isCombined = true;
         pattern.hasSubtraction = patternData.hasSubtraction || false;
+    }
+    
+    if (patternData.isQuantized) {
+        pattern.quantization = {
+            direction: patternData.quantizationDirection,
+            originalStepCount: patternData.originalStepCount,
+            originalPattern: patternData.originalPattern,
+            ratio: patternData.quantizationRatio,
+            formula: patternData.formula
+        };
+        pattern.isQuantized = true;
+        pattern.quantizationDirection = patternData.quantizationDirection;
+        pattern.originalStepCount = patternData.originalStepCount;
+        pattern.quantizationRatio = patternData.quantizationRatio;
     }
     
     return pattern;
