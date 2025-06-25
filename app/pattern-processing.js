@@ -272,6 +272,40 @@ class UnifiedPatternParser {
     static parse(input) {
         const cleaned = input.trim();
         
+        // Check for quantization notation first: pattern;newSteps or pattern;-newSteps
+        if (QuantizationEngine.hasQuantizationNotation(cleaned)) {
+            const quantizationInfo = QuantizationEngine.parseQuantizationNotation(cleaned);
+            if (quantizationInfo) {
+                // Parse the base pattern first
+                const baseResult = this.parse(quantizationInfo.basePattern);
+                let basePattern;
+                
+                if (baseResult.type === 'single') {
+                    basePattern = baseResult.pattern;
+                } else if (baseResult.type === 'stringed') {
+                    basePattern = baseResult.pattern;
+                } else if (baseResult.type === 'combination') {
+                    basePattern = baseResult.combined;
+                } else {
+                    basePattern = baseResult;
+                }
+                
+                // Apply quantization
+                const quantizedPattern = QuantizationEngine.quantizePattern(
+                    basePattern, 
+                    quantizationInfo.newSteps, 
+                    quantizationInfo.clockwise
+                );
+                
+                return {
+                    type: 'quantized',
+                    pattern: quantizedPattern,
+                    originalPattern: basePattern,
+                    quantizationInfo: quantizationInfo
+                };
+            }
+        }
+        
         // Check for pattern naming: name=pattern
         if (cleaned.includes('=')) {
             const parts = cleaned.split('=');
@@ -1346,9 +1380,174 @@ class UnifiedPatternParser {
     }
 }
 
+/**
+ * Quantization Engine for Binarization/Ternarization
+ * Implements onset redistribution based on Toussaint's algorithm
+ */
+class QuantizationEngine {
+    /**
+     * Quantize a pattern to a new step count using angular mapping
+     * @param {Object} pattern - Source pattern
+     * @param {number} newSteps - Target step count
+     * @param {boolean} clockwise - Direction of quantization (true = clockwise, false = counterclockwise)
+     * @returns {Object} Quantized pattern
+     */
+    static quantizePattern(pattern, newSteps, clockwise = true) {
+        if (!pattern || !pattern.steps || !Array.isArray(pattern.steps)) {
+            throw new Error('Invalid pattern for quantization');
+        }
+        
+        if (newSteps < 1 || newSteps > 128) {
+            throw new Error('New step count must be between 1 and 128');
+        }
+        
+        const originalSteps = pattern.steps;
+        const originalStepCount = pattern.stepCount;
+        
+        // Handle edge cases
+        if (newSteps === originalStepCount) {
+            return { ...pattern }; // No quantization needed
+        }
+        
+        // Find all onset positions in the original pattern
+        const onsetPositions = [];
+        for (let i = 0; i < originalStepCount; i++) {
+            if (originalSteps[i]) {
+                onsetPositions.push(i);
+            }
+        }
+        
+        // If no onsets, return empty pattern
+        if (onsetPositions.length === 0) {
+            return {
+                ...pattern,
+                steps: new Array(newSteps).fill(false),
+                stepCount: newSteps,
+                isQuantized: true,
+                quantizationDirection: clockwise ? 'clockwise' : 'counterclockwise',
+                originalStepCount: originalStepCount,
+                originalPattern: originalSteps
+            };
+        }
+        
+        // Convert onset positions to angular positions (0 to 2π)
+        const angularPositions = onsetPositions.map(pos => {
+            const angle = (pos / originalStepCount) * 2 * Math.PI;
+            return clockwise ? angle : (2 * Math.PI - angle);
+        });
+        
+        // Map angular positions to new step positions
+        const newStepsArray = new Array(newSteps).fill(false);
+        const mappedPositions = new Set(); // Track to handle conflicts
+        
+        for (const angle of angularPositions) {
+            // Convert angle back to step position in new pattern
+            const normalizedAngle = clockwise ? angle : (2 * Math.PI - angle);
+            const newPosition = Math.round((normalizedAngle / (2 * Math.PI)) * newSteps) % newSteps;
+            
+            // Handle the case where position maps to step 0 when it should be at the end
+            const finalPosition = newPosition === 0 && normalizedAngle > Math.PI ? newSteps - 1 : newPosition;
+            
+            mappedPositions.add(finalPosition);
+        }
+        
+        // Set onsets at mapped positions
+        for (const pos of mappedPositions) {
+            newStepsArray[pos] = true;
+        }
+        
+        // Create quantized pattern
+        const quantizedPattern = {
+            ...pattern,
+            steps: newStepsArray,
+            stepCount: newSteps,
+            isQuantized: true,
+            quantizationDirection: clockwise ? 'clockwise' : 'counterclockwise',
+            originalStepCount: originalStepCount,
+            originalPattern: originalSteps,
+            quantizationRatio: newSteps / originalStepCount
+        };
+        
+        // Update formula if it exists
+        if (pattern.formula) {
+            const direction = clockwise ? '' : '-';
+            quantizedPattern.formula = `${pattern.formula};${direction}${newSteps}`;
+        }
+        
+        return quantizedPattern;
+    }
+    
+    /**
+     * Parse quantization notation from input string
+     * @param {string} input - Input like "pattern:steps;newSteps" or "pattern;-newSteps"
+     * @returns {Object|null} Parsed quantization info or null if not quantization
+     */
+    static parseQuantizationNotation(input) {
+        // Match pattern with semicolon quantization: pattern:steps;newSteps or pattern;-newSteps
+        const quantizationMatch = input.match(/^(.+);(-?\d+)$/);
+        
+        if (!quantizationMatch) {
+            return null;
+        }
+        
+        const [, basePattern, quantizationStr] = quantizationMatch;
+        const quantizationValue = parseInt(quantizationStr);
+        
+        if (isNaN(quantizationValue) || quantizationValue === 0) {
+            throw new Error('Invalid quantization step count');
+        }
+        
+        const newSteps = Math.abs(quantizationValue);
+        const clockwise = quantizationValue > 0;
+        
+        return {
+            basePattern: basePattern.trim(),
+            newSteps,
+            clockwise
+        };
+    }
+    
+    /**
+     * Check if input contains quantization notation
+     * @param {string} input - Input string to check
+     * @returns {boolean} True if contains quantization notation
+     */
+    static hasQuantizationNotation(input) {
+        return /^.+;-?\d+$/.test(input.trim());
+    }
+    
+    /**
+     * Calculate quantization quality metrics
+     * @param {Object} originalPattern - Original pattern
+     * @param {Object} quantizedPattern - Quantized pattern
+     * @returns {Object} Quality metrics
+     */
+    static calculateQuantizationMetrics(originalPattern, quantizedPattern) {
+        const originalOnsets = originalPattern.steps.filter(s => s).length;
+        const quantizedOnsets = quantizedPattern.steps.filter(s => s).length;
+        
+        const onsetPreservation = originalOnsets > 0 ? quantizedOnsets / originalOnsets : 1;
+        const densityChange = quantizedPattern.stepCount / originalPattern.stepCount;
+        
+        return {
+            onsetPreservation: onsetPreservation,
+            densityChange: densityChange,
+            onsetCount: {
+                original: originalOnsets,
+                quantized: quantizedOnsets
+            },
+            stepCount: {
+                original: originalPattern.stepCount,
+                quantized: quantizedPattern.stepCount
+            }
+        };
+    }
+}
+
 // Export to global scope for browser compatibility
 if (typeof window !== 'undefined') {
     window.PatternConverter = PatternConverter;
     window.AdvancedPatternCombiner = AdvancedPatternCombiner;
     window.UnifiedPatternParser = UnifiedPatternParser;
+    window.QuantizationEngine = QuantizationEngine;
 }

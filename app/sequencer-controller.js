@@ -665,6 +665,10 @@ class SequencerIntegration {
             patternData = analysisResult.pattern;
         } else if (analysisResult.type === 'combination') {
             patternData = analysisResult.combined;
+        } else if (analysisResult.type === 'stringed') {
+            patternData = analysisResult.pattern;
+        } else if (analysisResult.type === 'quantized') {
+            patternData = analysisResult.pattern;
         } else {
             patternData = analysisResult;
         }
@@ -699,7 +703,9 @@ class SequencerIntegration {
         const metadataFields = [
             'isEuclidean', 'isRegularPolygon', 'formula', 'binary', 
             'vertices', 'offset', 'beats', 'expansion', 'polygonType',
-            'dividerPositions', 'isStringed'
+            'dividerPositions', 'isStringed', 'isQuantized', 
+            'quantizationDirection', 'originalStepCount', 'originalPattern', 
+            'quantizationRatio'
         ];
         
         metadataFields.forEach(field => {

@@ -691,6 +691,11 @@ li {
     color: white;
 }
 
+.pattern-type.quantization {
+    background: var(--color-warning);
+    color: white;
+}
+
 /* === ANALYSIS BOX STYLING === */
 .analysis-box {
     background: var(--bg-secondary);
@@ -1827,6 +1832,11 @@ textarea.input {
 
 .pattern-repr.combined-type {
     background: var(--pattern-combined);
+    color: white;
+}
+
+.pattern-repr.quantization-type {
+    background: var(--color-warning);
     color: white;
 }
 
