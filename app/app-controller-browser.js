@@ -512,28 +512,45 @@ class EnhancedPatternApp {
                                 </div>
                             </div>
                         </div>
-                        <div class="analysis-box longshort-box" style="margin-top: 8px;">
-                            <div class="analysis-box-header">
-                                <span class="analysis-box-icon">🎼</span>
-                                <span class="analysis-box-title">Rhythmic Prosody</span>
-                            </div>
-                            <div class="analysis-box-content">
-                                <div class="prosody-type">
-                                    ${analysis.longShortAnalysis?.description || 'No prosodic pattern'}
+${(() => {
+                            // Skip entire prosody display for generic interval descriptions
+                            const skipEntireDisplay = analysis.longShortAnalysis?.description && 
+                                (analysis.longShortAnalysis.description.includes('Predominantly') || 
+                                 analysis.longShortAnalysis.description.includes('intervals') ||
+                                 analysis.longShortAnalysis.description.includes('Complex rhythmic pattern') ||
+                                 analysis.longShortAnalysis.description.includes('No prosodic pattern'));
+
+                            // Only show if there's meaningful analysis
+                            if (!analysis.longShortAnalysis?.description || 
+                                analysis.longShortAnalysis.description === 'No prosodic pattern' || 
+                                skipEntireDisplay) {
+                                return '';
+                            }
+
+                            return `
+                                <div class="analysis-box longshort-box" style="margin-top: 8px;">
+                                    <div class="analysis-box-header">
+                                        <span class="analysis-box-icon">🎼</span>
+                                        <span class="analysis-box-title">Rhythmic Prosody</span>
+                                    </div>
+                                    <div class="analysis-box-content">
+                                        <div class="prosody-type">
+                                            ${analysis.longShortAnalysis.description}
+                                        </div>
+                                        ${analysis.longShortAnalysis.morseNotation ? 
+                                            `<div class="morse-notation" style="font-family: monospace; margin-top: 4px; font-size: 16px;">
+                                                Morse: ${analysis.longShortAnalysis.morseNotation}${analysis.longShortAnalysis.morseCharacter ? ` (${analysis.longShortAnalysis.morseCharacter})` : ''}
+                                            </div>` : ''
+                                        }
+                                        <div class="interval-details" style="font-size: 12px; color: #666; margin-top: 4px;">
+                                            ${analysis.longShortAnalysis.intervals?.length > 0 ? 
+                                                `Intervals: [${analysis.longShortAnalysis.intervals.join(', ')}]` : 
+                                                'No intervals'}
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="longshort-pattern" style="font-family: monospace; margin-top: 4px;">
-                                    Pattern: ${analysis.longShortAnalysis?.longShortPattern || 'N/A'}
-                                </div>
-                                <div class="morse-notation" style="font-family: monospace; margin-top: 4px; font-size: 16px;">
-                                    Morse: ${analysis.longShortAnalysis?.morseNotation || 'N/A'}${analysis.longShortAnalysis?.morseCharacter ? ` (${analysis.longShortAnalysis.morseCharacter})` : ''}
-                                </div>
-                                <div class="interval-details" style="font-size: 12px; color: #666; margin-top: 4px;">
-                                    ${analysis.longShortAnalysis?.intervals?.length > 0 ? 
-                                        `Intervals: [${analysis.longShortAnalysis.intervals.join(', ')}]` : 
-                                        'No intervals'}
-                                </div>
-                            </div>
-                        </div>
+                            `;
+                        })()}
                     `;
                 }
             }
@@ -669,16 +686,34 @@ class EnhancedPatternApp {
         // Long-short analysis
         let longShortAnalysis = LongShortAnalyzer.analyzeLongShort(pattern.steps, pattern.stepCount);
         
-        // If this is a Morse pattern, prioritize the original Morse information
+        // If this is a Morse pattern, add Morse information while preserving prosodic analysis
         if (pattern.isMorse && pattern.morseCode) {
+            const morseDescription = pattern.morseCharacters ? 
+                `Morse Code: ${pattern.morseCharacters} (${pattern.morseCode})` : 
+                `Morse Pattern (${pattern.morseCode})`;
+            
             longShortAnalysis = {
                 ...longShortAnalysis,
                 morseNotation: pattern.morseCode,
                 morseCharacter: pattern.morseCharacters || LongShortAnalyzer.detectMorseCharacter(pattern.morseCode),
-                description: pattern.morseCharacters ? 
-                    `Morse Code: ${pattern.morseCharacters} (${pattern.morseCode})` : 
-                    `Morse Pattern (${pattern.morseCode})`
+                // Combine prosodic and Morse descriptions if both exist
+                description: longShortAnalysis.description && longShortAnalysis.description !== 'No prosodic pattern' ?
+                    `${longShortAnalysis.description} | ${morseDescription}` :
+                    morseDescription
             };
+        } else {
+            // For non-Morse patterns, still try to detect Morse character if 4 or fewer onsets
+            const onsetCount = pattern.steps.filter(s => s).length;
+            if (onsetCount <= 4 && longShortAnalysis.morseNotation) {
+                const detectedMorse = LongShortAnalyzer.detectMorseCharacter(longShortAnalysis.morseNotation);
+                if (detectedMorse) {
+                    longShortAnalysis.morseCharacter = detectedMorse;
+                    // Combine prosodic and detected Morse if both exist
+                    if (longShortAnalysis.description && longShortAnalysis.description !== 'No prosodic pattern') {
+                        longShortAnalysis.description = `${longShortAnalysis.description} | Morse: ${detectedMorse}`;
+                    }
+                }
+            }
         }
         
         return {
@@ -1375,11 +1410,74 @@ ${perfectBalancePatterns.map((pattern, index) => {
                         ${isEuclideanPattern ? `<span class="pattern-repr euclidean-type">🌀 ${euclideanLabel}: ${euclideanFormula}</span>` : ''}
                         ${(!pattern.isRegularPolygon && !polygonLabels && ((pattern.formula && pattern.formula.includes('P(')) || (pattern.expression && pattern.expression.includes('P(')))) ? `<span class="pattern-repr polygon-type">🔺 Contains Polygons</span>` : ''}
                     </div>
+                    ${this.generateLongShortDisplayForDB(pattern)}
                     <div class="pattern-representations">
                         ${representations.map(repr => `<span class="pattern-repr" title="${repr}" onclick="togglePatternRepr(this)">${repr}</span>`).join('')}
                         ${pattern.isRotated ? `<span class="pattern-repr rotation-type" style="background: #fff3e0; color: #f57c00; font-weight: bold;">🔄 Rotated @${pattern.rotationSteps}</span>` : ''}
                     </div>
                 </div>
+            </div>
+        `;
+    }
+    
+    /**
+     * Generate long-short analysis display for database entries
+     */
+    generateLongShortDisplayForDB(pattern) {
+        // Perform the same enhanced analysis as the main display
+        let longShortAnalysis = LongShortAnalyzer.analyzeLongShort(pattern.steps, pattern.stepCount);
+        const onsetCount = pattern.steps.filter(s => s).length;
+        
+        // Add Morse detection for patterns with 4 or fewer onsets
+        if (onsetCount <= 4 && longShortAnalysis.morseNotation) {
+            const detectedMorse = LongShortAnalyzer.detectMorseCharacter(longShortAnalysis.morseNotation);
+            if (detectedMorse) {
+                longShortAnalysis.morseCharacter = detectedMorse;
+                // Combine prosodic and detected Morse if both exist
+                if (longShortAnalysis.description && longShortAnalysis.description !== 'No prosodic pattern') {
+                    longShortAnalysis.description = `${longShortAnalysis.description} | Morse: ${detectedMorse}`;
+                }
+            }
+        }
+        
+        // Handle explicit Morse patterns
+        if (pattern.isMorse && pattern.morseCode) {
+            const morseDescription = pattern.morseCharacters ? 
+                `Morse Code: ${pattern.morseCharacters} (${pattern.morseCode})` : 
+                `Morse Pattern (${pattern.morseCode})`;
+            
+            longShortAnalysis = {
+                ...longShortAnalysis,
+                morseNotation: pattern.morseCode,
+                morseCharacter: pattern.morseCharacters || LongShortAnalyzer.detectMorseCharacter(pattern.morseCode),
+                description: longShortAnalysis.description && longShortAnalysis.description !== 'No prosodic pattern' ?
+                    `${longShortAnalysis.description} | ${morseDescription}` :
+                    morseDescription
+            };
+        }
+        
+        // Skip entire display for generic interval descriptions
+        const skipEntireDisplay = longShortAnalysis.description && 
+            (longShortAnalysis.description.includes('Predominantly') || 
+             longShortAnalysis.description.includes('intervals') ||
+             longShortAnalysis.description.includes('Complex rhythmic pattern') ||
+             longShortAnalysis.description.includes('No prosodic pattern'));
+
+        // Only show if there's meaningful analysis
+        if (!longShortAnalysis.description || longShortAnalysis.description === 'No prosodic pattern' || skipEntireDisplay) {
+            return '';
+        }
+
+        return `
+            <div class="pattern-longshort-db" style="margin: 6px 0; padding: 6px; background: #f8f9fa; border-radius: 4px; font-size: 13px;">
+                <div style="font-weight: 500; color: #495057;">
+                    📝 ${longShortAnalysis.description}
+                </div>
+                ${longShortAnalysis.morseNotation ? 
+                    `<div style="font-family: monospace; color: #6c757d; margin-top: 2px; font-size: 14px;">
+                        Morse: ${longShortAnalysis.morseNotation}${longShortAnalysis.morseCharacter ? ` (${longShortAnalysis.morseCharacter})` : ''}
+                    </div>` : ''
+                }
             </div>
         `;
     }
