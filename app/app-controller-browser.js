@@ -422,6 +422,14 @@ class EnhancedPatternApp {
                 this.showCompactOutput(this.currentPattern);
                 this.updateButtonStates();
                 console.log('✅ Combined pattern parsed successfully');
+            } else if (result.type === 'stringed') {
+                console.log('🔍 Stringed pattern result:', result);
+                this.currentPattern = result.pattern;
+                console.log('🔍 Current pattern after assignment:', this.currentPattern);
+                this.displayPatternAnalysis(this.currentPattern);
+                this.showCompactOutput(this.currentPattern);
+                this.updateButtonStates();
+                console.log('✅ Stringed pattern parsed successfully');
             } else {
                 showNotification('Failed to parse pattern: Unknown result type', 'error');
                 console.error('❌ Pattern parsing failed: Unknown result type');
@@ -560,6 +568,12 @@ class EnhancedPatternApp {
      * Generate comprehensive mathematical analysis
      */
     generateComprehensiveAnalysis(pattern) {
+        console.log('🔍 Generating analysis for pattern:', pattern);
+        
+        if (!pattern || !pattern.steps) {
+            throw new Error('Invalid pattern: missing steps array');
+        }
+        
         // Generate pattern output line data
         const structureAnalysis = PatternAnalyzer.analyzeStructure(pattern.steps, pattern.stepCount);
         const binary = PatternConverter.toBinary(pattern.steps, pattern.stepCount);

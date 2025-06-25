@@ -229,6 +229,8 @@ class SequencerController {
         if (patternData.formula) pattern.formula = patternData.formula;
         if (patternData.binary) pattern.binary = patternData.binary;
         if (patternData.cogData) pattern.cogData = patternData.cogData;
+        if (patternData.dividerPositions) pattern.dividerPositions = patternData.dividerPositions;
+        if (patternData.isStringed) pattern.isStringed = patternData.isStringed;
         
         return pattern;
     }
@@ -696,7 +698,8 @@ class SequencerIntegration {
         // Copy metadata
         const metadataFields = [
             'isEuclidean', 'isRegularPolygon', 'formula', 'binary', 
-            'vertices', 'offset', 'beats', 'expansion', 'polygonType'
+            'vertices', 'offset', 'beats', 'expansion', 'polygonType',
+            'dividerPositions', 'isStringed'
         ];
         
         metadataFields.forEach(field => {

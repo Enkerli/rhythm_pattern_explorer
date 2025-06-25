@@ -205,6 +205,7 @@ class SequencerVisualEngine {
         
         this.pattern.steps = [...patternData.steps] || new Array(16).fill(false);
         this.pattern.stepCount = patternData.stepCount || this.pattern.steps.length;
+        this.pattern.dividerPositions = patternData.dividerPositions || null;
         
         // Check if container is now visible and resize canvas if needed
         this.ensureCanvasSize();
@@ -593,10 +594,22 @@ class SequencerVisualEngine {
             }
             this.ctx.fill();
             
+            // Check if this step is a divider position
+            const isDivider = this.pattern.dividerPositions && this.pattern.dividerPositions.includes(i);
+            
             // Border
             this.ctx.strokeStyle = isCurrent ? this.config.colors.currentStep : this.config.colors.stepBorder;
-            this.ctx.lineWidth = isCurrent ? 3 : 1;
+            this.ctx.lineWidth = isCurrent ? 3 : (isDivider ? 4 : 1);
             this.ctx.stroke();
+            
+            // Draw additional divider visual for pattern boundaries
+            if (isDivider) {
+                this.ctx.beginPath();
+                this.ctx.arc(x, y, stepSize / 2 + 3, 0, Math.PI * 2);
+                this.ctx.strokeStyle = '#ff6b35';
+                this.ctx.lineWidth = 2;
+                this.ctx.stroke();
+            }
             
             // Add step number for clarity (smart numbering based on step count)
             if (this.shouldShowStepNumber(i)) {

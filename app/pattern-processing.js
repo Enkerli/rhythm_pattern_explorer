@@ -296,6 +296,24 @@ class UnifiedPatternParser {
             }
         }
         
+        // Check for comma-separated pattern stringing before plus combination
+        // Only if there are commas that are likely pattern separators (not within parentheses)
+        if (cleaned.includes(',') && !cleaned.includes('+')) {
+            // Check if this looks like pattern stringing vs single pattern with commas
+            const hasPatternSeparatorCommas = this.hasPatternSeparatorCommas(cleaned);
+            console.log(`🔍 hasPatternSeparatorCommas("${cleaned}") = ${hasPatternSeparatorCommas}`);
+            if (hasPatternSeparatorCommas) {
+                const stringedResult = this.parseStringedPatterns(cleaned);
+                if (stringedResult) {
+                    return {
+                        type: 'stringed',
+                        pattern: stringedResult,
+                        isStringed: true
+                    };
+                }
+            }
+        }
+        
         if (cleaned.includes('+')) {
             const parts = cleaned.split('+').map(p => p.trim());
             if (parts.length < 2) {
@@ -325,8 +343,10 @@ class UnifiedPatternParser {
     
     static parsePattern(input) {
         const cleaned = input.trim();
+        console.log(`🔍 parsePattern called with: "${cleaned}"`);
         
         // Check for transformation prefixes: ~, rev, inv
+        console.log(`🔍 Checking transformation prefixes for: "${cleaned}"`);
         if (cleaned.startsWith('~') || cleaned.startsWith('inv ')) {
             // Inversion (bit flipping)
             const pattern = cleaned.startsWith('~') ? cleaned.substring(1).trim() : cleaned.substring(4).trim();
@@ -346,6 +366,12 @@ class UnifiedPatternParser {
             const pattern = cleaned.substring(5).trim();
             const basePattern = this.parsePattern(pattern);
             return this.complementPattern(basePattern);
+        }
+        
+        // Check for comma-separated pattern stringing: pattern1, pattern2, pattern3
+        // Only at top level - not for individual patterns that contain commas (like E(3,8))
+        if (cleaned.includes(',') && this.hasPatternSeparatorCommas(cleaned)) {
+            return this.parseStringedPatterns(cleaned);
         }
         
         // Check for custom duration notation: D:1,3 pattern (short=1, long=3)
@@ -431,6 +457,7 @@ class UnifiedPatternParser {
             }
         }
         
+        console.log(`🔍 Starting main pattern matching for: "${cleaned}"`);
         const polygonMatch2 = cleaned.match(/^P\((\d+),(\d+)\)$/i);
         if (polygonMatch2) {
             const vertices = parseInt(polygonMatch2[1]);
@@ -464,20 +491,34 @@ class UnifiedPatternParser {
         }
         
         // Euclidean without offset: E(beats,steps) - defaults to offset 0
+        console.log(`🔍 Testing Euclidean regex for: "${cleaned}"`);
         const euclideanMatch2 = cleaned.match(/^E\((\d+),(\d+)\)$/i);
+        console.log(`🔍 Euclidean regex result:`, euclideanMatch2);
         if (euclideanMatch2) {
+            console.log(`🔍 Euclidean match found: ${cleaned}`);
             const beats = parseInt(euclideanMatch2[1]);
             const steps = parseInt(euclideanMatch2[2]);
             const offset = 0; // Default offset
-            const euclideanSteps = EuclideanGenerator.generate(beats, steps, offset);
-            return {
-                steps: euclideanSteps,
-                stepCount: steps,
-                beats,
-                offset,
-                isEuclidean: true,
-                formula: `E(${beats},${steps})`
-            };
+            console.log(`🔍 Euclidean params: beats=${beats}, steps=${steps}, offset=${offset}`);
+            
+            try {
+                const euclideanSteps = EuclideanGenerator.generate(beats, steps, offset);
+                console.log(`🔍 Euclidean steps generated:`, euclideanSteps);
+                
+                const result = {
+                    steps: euclideanSteps,
+                    stepCount: steps,
+                    beats,
+                    offset,
+                    isEuclidean: true,
+                    formula: `E(${beats},${steps})`
+                };
+                console.log(`🔍 Euclidean result:`, result);
+                return result;
+            } catch (error) {
+                console.error(`❌ Euclidean generation failed:`, error);
+                return null;
+            }
         }
         
         // Random pattern notation: R(onsets,steps)
@@ -1049,6 +1090,179 @@ class UnifiedPatternParser {
         };
         
         return transformedPattern;
+    }
+    
+    /**
+     * Parse comma-separated pattern strings: pattern1, pattern2, pattern3
+     * @param {string} patternString - Comma-separated pattern string
+     * @returns {Object} Combined pattern with divider information
+     */
+    /**
+     * Check if commas in the string are pattern separators vs commas within pattern syntax
+     * @param {string} input - Input string to check
+     * @returns {boolean} True if commas are likely pattern separators
+     */
+    static hasPatternSeparatorCommas(input) {
+        // Split by commas and check if we get multiple valid pattern-like parts
+        // Use smart comma splitting to respect parentheses
+        const parts = this.smartCommaSplit(input);
+        console.log(`🔍 hasPatternSeparatorCommas parts:`, parts);
+        if (parts.length < 2) return false;
+        
+        // Check if each part looks like a standalone pattern
+        let validPatternParts = 0;
+        for (const part of parts) {
+            // Skip empty parts
+            if (!part) continue;
+            
+            // Check if this part looks like a complete pattern
+            // Patterns that contain unmatched parentheses are likely incomplete
+            const openParens = (part.match(/\(/g) || []).length;
+            const closeParens = (part.match(/\)/g) || []).length;
+            console.log(`🔍 Part "${part}": openParens=${openParens}, closeParens=${closeParens}`);
+            
+            // If parentheses are unmatched, this is likely part of a larger pattern
+            if (openParens !== closeParens) {
+                console.log(`🔍 Unmatched parentheses in "${part}" - returning false`);
+                return false;
+            }
+            
+            // Check if this looks like a recognizable pattern format
+            const looksLike = this.looksLikePattern(part);
+            console.log(`🔍 looksLikePattern("${part}") = ${looksLike}`);
+            if (looksLike) {
+                validPatternParts++;
+            }
+        }
+        
+        console.log(`🔍 validPatternParts: ${validPatternParts}, required: 2+`);
+        // If we have 2+ parts that each look like valid patterns, it's pattern stringing
+        return validPatternParts >= 2;
+    }
+    
+    /**
+     * Check if a string looks like a recognizable pattern
+     * @param {string} part - String to check
+     * @returns {boolean} True if it looks like a pattern
+     */
+    static looksLikePattern(part) {
+        const cleaned = part.trim();
+        if (!cleaned) return false;
+        
+        // Check for various pattern formats
+        return (
+            /^[01]+$/.test(cleaned) ||                    // Binary: 1011
+            /^b[01]+$/i.test(cleaned) ||                  // Binary with prefix: b1011
+            /^0x[0-9a-f]+$/i.test(cleaned) ||            // Hex: 0x92
+            /^0o[0-7]+$/i.test(cleaned) ||               // Octal: 0o111
+            /^\d+$/.test(cleaned) ||                      // Decimal: 73
+            /^P\(\d+,\d+(,\d+)?\)$/i.test(cleaned) ||    // Polygon: P(3,1) or P(3,1,8)
+            /^E\(\d+,\d+(,\d+)?\)$/i.test(cleaned) ||    // Euclidean: E(3,8) or E(3,8,0)
+            /^R\(\d+,\d+\)$/i.test(cleaned) ||           // Random: R(3,8)
+            /^M:[A-Z0-9]+$/i.test(cleaned) ||            // Morse: M:SOS
+            /^[.\-]+$/.test(cleaned) ||                   // Morse intervals: -.--
+            /^D:\d+,\d+/.test(cleaned) ||                // Duration: D:1,5
+            /^[SQ]:\d*\.?\d+/.test(cleaned) ||           // Stretch/Squeeze: S:2, Q:0.5
+            /^(tri|pent|hex|oct|quad|hept|dec|dod)(@\d+)?$/i.test(cleaned) || // Shorthand
+            /^\[\d+(,\d+)*\]:\d+$/.test(cleaned)         // Onset array: [0,3,6]:8
+        );
+    }
+
+    /**
+     * Split string by commas while respecting parentheses
+     * @param {string} input - Input string to split
+     * @returns {string[]} Array of parts split by top-level commas
+     */
+    static smartCommaSplit(input) {
+        const parts = [];
+        let current = '';
+        let parenDepth = 0;
+        let bracketDepth = 0;
+        
+        for (let i = 0; i < input.length; i++) {
+            const char = input[i];
+            
+            if (char === '(') {
+                parenDepth++;
+            } else if (char === ')') {
+                parenDepth--;
+            } else if (char === '[') {
+                bracketDepth++;
+            } else if (char === ']') {
+                bracketDepth--;
+            } else if (char === ',' && parenDepth === 0 && bracketDepth === 0) {
+                // This is a top-level comma - split here
+                parts.push(current.trim());
+                current = '';
+                continue;
+            }
+            
+            current += char;
+        }
+        
+        // Add the last part
+        if (current.trim()) {
+            parts.push(current.trim());
+        }
+        
+        return parts;
+    }
+
+    static parseStringedPatterns(patternString) {
+        // Smart comma splitting that respects parentheses
+        const parts = this.smartCommaSplit(patternString);
+        if (parts.length < 2) return null;
+        
+        const parsedPatterns = [];
+        const dividerPositions = [];
+        let totalSteps = 0;
+        
+        // Parse each pattern part
+        for (const part of parts) {
+            if (!part) continue;
+            
+            console.log(`🔍 Parsing stringed pattern part: "${part}"`);
+            try {
+                const parsed = this.parsePattern(part);
+                console.log(`🔍 Parsed result:`, parsed);
+                if (!parsed) {
+                    console.error(`❌ Failed to parse pattern part: "${part}"`);
+                    return null; // Invalid pattern part
+                }
+                parsedPatterns.push(parsed);
+                
+                // Record divider position (before this pattern, except for first)
+                if (totalSteps > 0) {
+                    dividerPositions.push(totalSteps);
+                }
+                
+                totalSteps += parsed.stepCount;
+            } catch (error) {
+                console.error(`❌ Pattern parsing threw error for "${part}":`, error);
+                return null;
+            }
+        }
+        
+        if (parsedPatterns.length === 0) return null;
+        
+        // Combine all pattern steps
+        const combinedSteps = [];
+        for (const pattern of parsedPatterns) {
+            combinedSteps.push(...pattern.steps);
+        }
+        
+        // Create the stringed pattern result
+        const result = {
+            steps: combinedSteps,
+            stepCount: totalSteps,
+            isStringed: true,
+            stringedPatterns: parsedPatterns,
+            dividerPositions: dividerPositions,
+            formula: patternString,
+            originalString: patternString
+        };
+        
+        return result;
     }
     
     static formatCompact(pattern) {
