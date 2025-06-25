@@ -206,6 +206,7 @@ class SequencerVisualEngine {
         this.pattern.steps = [...patternData.steps] || new Array(16).fill(false);
         this.pattern.stepCount = patternData.stepCount || this.pattern.steps.length;
         this.pattern.dividerPositions = patternData.dividerPositions || null;
+        this.pattern.isStringed = patternData.isStringed || false;
         
         // Check if container is now visible and resize canvas if needed
         this.ensureCanvasSize();
@@ -411,6 +412,9 @@ class SequencerVisualEngine {
         // Draw step elements
         this.drawStepElements();
         
+        // Draw pattern divider lines
+        this.drawPatternDividers();
+        
         // Update performance stats
         this.updateRenderStats(startTime);
         
@@ -594,22 +598,10 @@ class SequencerVisualEngine {
             }
             this.ctx.fill();
             
-            // Check if this step is a divider position
-            const isDivider = this.pattern.dividerPositions && this.pattern.dividerPositions.includes(i);
-            
             // Border
             this.ctx.strokeStyle = isCurrent ? this.config.colors.currentStep : this.config.colors.stepBorder;
-            this.ctx.lineWidth = isCurrent ? 3 : (isDivider ? 4 : 1);
+            this.ctx.lineWidth = isCurrent ? 3 : 1;
             this.ctx.stroke();
-            
-            // Draw additional divider visual for pattern boundaries
-            if (isDivider) {
-                this.ctx.beginPath();
-                this.ctx.arc(x, y, stepSize / 2 + 3, 0, Math.PI * 2);
-                this.ctx.strokeStyle = '#ff6b35';
-                this.ctx.lineWidth = 2;
-                this.ctx.stroke();
-            }
             
             // Add step number for clarity (smart numbering based on step count)
             if (this.shouldShowStepNumber(i)) {
@@ -619,6 +611,55 @@ class SequencerVisualEngine {
                 this.ctx.textBaseline = 'middle';
                 this.ctx.fillText((i + 1).toString(), x, y);
             }
+        }
+    }
+    
+    /**
+     * Draw pattern divider lines between stringed patterns
+     */
+    drawPatternDividers() {
+        if (!this.pattern.dividerPositions || this.pattern.dividerPositions.length === 0) {
+            return;
+        }
+        
+        const stepRadius = this.config.canvasSize * this.config.stepRadius;
+        const innerRadius = this.config.canvasSize * this.config.donutInnerRadius;
+        const outerRadius = this.config.canvasSize * this.config.donutOuterRadius;
+        
+        // Draw divider lines at each divider position
+        for (const dividerPosition of this.pattern.dividerPositions) {
+            // Calculate angle for the divider line (between steps)
+            const angle = (dividerPosition / this.pattern.stepCount) * Math.PI * 2 - Math.PI / 2;
+            
+            // Calculate start and end points for the divider line
+            const startX = this.config.centerX + innerRadius * Math.cos(angle);
+            const startY = this.config.centerY + innerRadius * Math.sin(angle);
+            const endX = this.config.centerX + outerRadius * Math.cos(angle);
+            const endY = this.config.centerY + outerRadius * Math.sin(angle);
+            
+            // Draw thick black divider line
+            this.ctx.beginPath();
+            this.ctx.moveTo(startX, startY);
+            this.ctx.lineTo(endX, endY);
+            this.ctx.strokeStyle = '#000000';
+            this.ctx.lineWidth = 4;
+            this.ctx.stroke();
+        }
+        
+        // Also draw a divider at the end (between last pattern and loop back to start)
+        if (this.pattern.isStringed) {
+            const endAngle = -Math.PI / 2; // At the top (step 0)
+            const startX = this.config.centerX + innerRadius * Math.cos(endAngle);
+            const startY = this.config.centerY + innerRadius * Math.sin(endAngle);
+            const endX = this.config.centerX + outerRadius * Math.cos(endAngle);
+            const endY = this.config.centerY + outerRadius * Math.sin(endAngle);
+            
+            this.ctx.beginPath();
+            this.ctx.moveTo(startX, startY);
+            this.ctx.lineTo(endX, endY);
+            this.ctx.strokeStyle = '#000000';
+            this.ctx.lineWidth = 4;
+            this.ctx.stroke();
         }
     }
     
