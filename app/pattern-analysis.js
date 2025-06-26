@@ -634,6 +634,7 @@ class SyncopationAnalyzer {
                 expectancyViolation: 0,
                 rhythmicDisplacement: 0,
                 crossRhythmic: 0,
+                barlowIndispensability: 0,
                 overallSyncopation: 0,
                 description: 'No syncopation (no onsets)',
                 level: 'none'
@@ -646,14 +647,16 @@ class SyncopationAnalyzer {
         const expectancyViolation = this.calculateExpectancyViolation(onsetPositions, stepCount);
         const rhythmicDisplacement = this.calculateRhythmicDisplacement(onsetPositions, stepCount);
         const crossRhythmic = this.calculateCrossRhythmic(steps, stepCount);
+        const barlowIndispensability = this.calculateBarlowIndispensability(onsetPositions, stepCount);
         
         // Calculate overall syncopation (weighted average)
         const overallSyncopation = (
-            weightedNoteToBeats * 0.25 +
-            offBeatRatio * 0.2 +
-            expectancyViolation * 0.25 +
+            weightedNoteToBeats * 0.2 +
+            offBeatRatio * 0.15 +
+            expectancyViolation * 0.2 +
             rhythmicDisplacement * 0.15 +
-            crossRhythmic * 0.15
+            crossRhythmic * 0.15 +
+            barlowIndispensability * 0.15
         );
         
         const level = this.getSyncopationLevel(overallSyncopation);
@@ -665,6 +668,7 @@ class SyncopationAnalyzer {
             expectancyViolation: Math.round(expectancyViolation * 1000) / 1000,
             rhythmicDisplacement: Math.round(rhythmicDisplacement * 1000) / 1000,
             crossRhythmic: Math.round(crossRhythmic * 1000) / 1000,
+            barlowIndispensability: Math.round(barlowIndispensability * 1000) / 1000,
             overallSyncopation: Math.round(overallSyncopation * 1000) / 1000,
             description,
             level
@@ -759,6 +763,120 @@ class SyncopationAnalyzer {
         }
         
         return Math.min(maxConflict, 1); // Normalize to 0-1
+    }
+    
+    /**
+     * Barlow Indispensability (Clarence Barlow)
+     * Measures syncopation based on prime factorization of beat positions
+     */
+    static calculateBarlowIndispensability(onsetPositions, stepCount) {
+        let totalIndispensability = 0;
+        const indispensabilityTable = this.generateBarlowIndispensabilityTable(stepCount);
+        
+        for (const position of onsetPositions) {
+            const indispensability = indispensabilityTable[position];
+            // Higher indispensability = less syncopated, so invert for syncopation measure
+            const syncopationValue = 1 - (indispensability / Math.max(...indispensabilityTable));
+            totalIndispensability += syncopationValue;
+        }
+        
+        return onsetPositions.length > 0 ? totalIndispensability / onsetPositions.length : 0;
+    }
+    
+    /**
+     * Generate Barlow's indispensability table for a given length
+     * Based on prime factorization approach
+     */
+    static generateBarlowIndispensabilityTable(length) {
+        const table = new Array(length);
+        
+        for (let i = 0; i < length; i++) {
+            table[i] = this.calculatePositionIndispensability(i, length);
+        }
+        
+        return table;
+    }
+    
+    /**
+     * Calculate indispensability for a specific position
+     * Using enhanced Barlow's method with stratified meter decomposition
+     */
+    static calculatePositionIndispensability(position, length) {
+        if (position === 0) return 1; // Downbeat is most indispensable
+        
+        // Enhanced approach: Stratified meter decomposition
+        const stratification = this.getStratifiedMeter(length);
+        let totalIndispensability = 0;
+        
+        for (let level = 0; level < stratification.length; level++) {
+            const primeAtLevel = stratification[level];
+            const levelSize = length / Math.pow(primeAtLevel, level + 1);
+            
+            if (levelSize > 0 && position % levelSize === 0) {
+                // This position aligns with this stratification level
+                const levelIndispensability = 1 / Math.pow(primeAtLevel, level + 1);
+                totalIndispensability += levelIndispensability;
+            }
+        }
+        
+        // Fallback to original method if stratification doesn't apply
+        if (totalIndispensability === 0) {
+            const gcd = this.greatestCommonDivisor(position, length);
+            const level = length / gcd;
+            const primeFactors = this.getPrimeFactors(level);
+            
+            totalIndispensability = 1;
+            for (const prime of primeFactors) {
+                totalIndispensability *= (1 / prime);
+            }
+        }
+        
+        return Math.min(totalIndispensability, 1);
+    }
+    
+    /**
+     * Get stratified meter decomposition (prime factorization hierarchy)
+     * Following the document's approach: bar → quarters → eighths → sixteenths
+     */
+    static getStratifiedMeter(length) {
+        const primes = this.getPrimeFactors(length);
+        // Sort primes to create hierarchical stratification
+        // Smaller primes (2, 3) typically represent higher-level divisions
+        return primes.sort((a, b) => a - b);
+    }
+    
+    /**
+     * Calculate greatest common divisor using Euclidean algorithm
+     */
+    static greatestCommonDivisor(a, b) {
+        while (b !== 0) {
+            const temp = b;
+            b = a % b;
+            a = temp;
+        }
+        return a;
+    }
+    
+    /**
+     * Get prime factors of a number
+     */
+    static getPrimeFactors(n) {
+        const factors = [];
+        let divisor = 2;
+        
+        while (n > 1) {
+            while (n % divisor === 0) {
+                factors.push(divisor);
+                n /= divisor;
+            }
+            divisor++;
+            if (divisor * divisor > n && n > 1) {
+                factors.push(n);
+                break;
+            }
+        }
+        
+        return factors;
     }
     
     /**
@@ -890,6 +1008,190 @@ class SyncopationAnalyzer {
     }
 }
 
+/**
+ * Stochastic Rhythm Performance Generator
+ * Based on the Core Algorithm from the rhythmicator document
+ * Implements density, metrical strength, and syncopation parameters
+ */
+class StochasticRhythmGenerator {
+    /**
+     * Generate a rhythmic performance from a base pattern
+     * @param {Array} basePattern - Original pattern steps
+     * @param {number} stepCount - Pattern length
+     * @param {Object} parameters - Performance parameters
+     * @returns {Object} Generated performance with timing variations
+     */
+    static generatePerformance(basePattern, stepCount, parameters = {}) {
+        const {
+            density = 0.5,          // R parameter [0,1] - controls event density
+            metricalStrength = 1.0, // M parameter - strength of meter
+            syncopationAmount = 0.2, // PS parameter - amount of syncopation
+            variationMode = 'stable' // stable or unstable variation
+        } = parameters;
+        
+        // Phase 1: Weight Assignment via Stratified Meter + Barlow's Indispensability
+        const weights = this.calculatePulseWeights(stepCount, density);
+        
+        // Phase 2: Stochastic Performance Generation
+        const performance = this.generateStochasticPattern(weights, metricalStrength);
+        
+        // Phase 3: Apply Syncopation Algorithm
+        const syncopatedPerformance = this.applySyncopation(performance, weights, syncopationAmount);
+        
+        // Phase 4: Add Variation
+        const finalPerformance = this.applyVariation(syncopatedPerformance, variationMode);
+        
+        return {
+            originalPattern: basePattern,
+            performedPattern: finalPerformance,
+            weights: weights,
+            parameters: parameters,
+            complexity: this.calculateComplexity(finalPerformance, weights)
+        };
+    }
+    
+    /**
+     * Calculate pulse weights using stratified meter approach
+     * Following the document's W_i = [R^{i-1}, R^i) formula
+     */
+    static calculatePulseWeights(stepCount, density) {
+        const weights = new Array(stepCount);
+        const indispensabilityTable = SyncopationAnalyzer.generateBarlowIndispensabilityTable(stepCount);
+        const stratification = SyncopationAnalyzer.getStratifiedMeter(stepCount);
+        
+        for (let i = 0; i < stepCount; i++) {
+            const indispensability = indispensabilityTable[i];
+            const stratificationLevel = this.getStratificationLevel(i, stepCount, stratification);
+            
+            // Apply density parameter: W_i = [R^{i-1}, R^i)
+            const densityWeight = Math.pow(density, stratificationLevel);
+            
+            // Combine with indispensability
+            weights[i] = indispensability * densityWeight;
+        }
+        
+        return weights;
+    }
+    
+    /**
+     * Generate stochastic pattern using probability λ = (W_ℓ × n)/(M + ε)
+     */
+    static generateStochasticPattern(weights, metricalStrength) {
+        const pattern = new Array(weights.length);
+        const epsilon = 0.001; // Prevent zero division
+        const n = 1; // Normalization factor
+        
+        for (let i = 0; i < weights.length; i++) {
+            const lambda = (weights[i] * n) / (metricalStrength + epsilon);
+            const probability = Math.min(lambda, 1); // Cap at 1
+            
+            pattern[i] = Math.random() < probability;
+        }
+        
+        return pattern;
+    }
+    
+    /**
+     * Apply syncopation algorithm - anticipation before strong beats
+     */
+    static applySyncopation(pattern, weights, syncopationAmount) {
+        const syncopatedPattern = [...pattern];
+        const strongBeats = this.findStrongBeats(weights);
+        
+        for (const strongBeat of strongBeats) {
+            if (Math.random() < syncopationAmount) {
+                const anticipationPosition = (strongBeat - 1 + pattern.length) % pattern.length;
+                
+                // Musicality restrictions from the document
+                if (this.canSyncopate(syncopatedPattern, anticipationPosition, strongBeat)) {
+                    syncopatedPattern[anticipationPosition] = true;
+                    syncopatedPattern[strongBeat] = false; // Prevent double-hits
+                }
+            }
+        }
+        
+        return syncopatedPattern;
+    }
+    
+    /**
+     * Apply variation algorithm (stable vs unstable modes)
+     */
+    static applyVariation(pattern, mode) {
+        if (mode === 'stable') {
+            // Stable: small random variations around original
+            return pattern.map(step => {
+                const variation = Math.random() < 0.1; // 10% variation chance
+                return variation ? !step : step;
+            });
+        } else {
+            // Unstable: random walk away from original
+            return pattern.map(() => Math.random() < 0.4);
+        }
+    }
+    
+    /**
+     * Calculate rhythmic complexity based on 2D complexity space
+     */
+    static calculateComplexity(pattern, weights) {
+        const density = pattern.filter(step => step).length / pattern.length;
+        const syncopation = this.calculateSyncopationLevel(pattern, weights);
+        
+        // Distance from center in complexity space
+        const complexity = Math.sqrt(Math.pow(density - 0.5, 2) + Math.pow(syncopation - 0.5, 2));
+        
+        return {
+            density: density,
+            syncopation: syncopation,
+            overall: complexity
+        };
+    }
+    
+    /**
+     * Helper methods
+     */
+    static getStratificationLevel(position, stepCount, stratification) {
+        for (let level = 0; level < stratification.length; level++) {
+            const prime = stratification[level];
+            const levelSize = stepCount / Math.pow(prime, level + 1);
+            if (position % levelSize === 0) {
+                return level;
+            }
+        }
+        return stratification.length;
+    }
+    
+    static findStrongBeats(weights) {
+        const threshold = Math.max(...weights) * 0.7; // Top 30% of weights
+        return weights.map((weight, index) => ({ weight, index }))
+                     .filter(item => item.weight > threshold)
+                     .map(item => item.index);
+    }
+    
+    static canSyncopate(pattern, anticipationPos, strongPos) {
+        // Musicality restrictions: prevent too many syncopations
+        const recentSyncopations = this.countRecentSyncopations(pattern, anticipationPos);
+        return recentSyncopations < 2 && !pattern[anticipationPos];
+    }
+    
+    static countRecentSyncopations(pattern, position) {
+        let count = 0;
+        for (let i = 1; i <= 3; i++) {
+            const pos = (position - i + pattern.length) % pattern.length;
+            if (pattern[pos]) count++;
+        }
+        return count;
+    }
+    
+    static calculateSyncopationLevel(pattern, weights) {
+        const strongPositions = this.findStrongBeats(weights);
+        const onsetPositions = pattern.map((step, index) => step ? index : -1)
+                                     .filter(index => index !== -1);
+        
+        const syncopatedOnsets = onsetPositions.filter(pos => !strongPositions.includes(pos));
+        return syncopatedOnsets.length / Math.max(onsetPositions.length, 1);
+    }
+}
+
 // Export to global scope for browser compatibility
 if (typeof window !== 'undefined') {
     window.PerfectBalanceAnalyzer = PerfectBalanceAnalyzer;
@@ -897,4 +1199,5 @@ if (typeof window !== 'undefined') {
     window.PatternAnalyzer = PatternAnalyzer;
     window.LongShortAnalyzer = LongShortAnalyzer;
     window.SyncopationAnalyzer = SyncopationAnalyzer;
+    window.StochasticRhythmGenerator = StochasticRhythmGenerator;
 }
