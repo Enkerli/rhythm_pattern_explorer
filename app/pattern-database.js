@@ -797,6 +797,20 @@ function createDatabasePattern(patternData, analyses = {}) {
         };
     }
     
+    // Add syncopation analysis
+    if (analyses.syncopation) {
+        pattern.syncopation = {
+            weightedNoteToBeats: analyses.syncopation.weightedNoteToBeats,
+            offBeatRatio: analyses.syncopation.offBeatRatio,
+            expectancyViolation: analyses.syncopation.expectancyViolation,
+            rhythmicDisplacement: analyses.syncopation.rhythmicDisplacement,
+            crossRhythmic: analyses.syncopation.crossRhythmic,
+            overallSyncopation: analyses.syncopation.overallSyncopation,
+            description: analyses.syncopation.description,
+            level: analyses.syncopation.level
+        };
+    }
+    
     if (patternData.isRegularPolygon) {
         pattern.polygon = {
             vertices: patternData.vertices,

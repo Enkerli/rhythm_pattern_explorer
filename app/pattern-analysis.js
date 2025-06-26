@@ -608,10 +608,293 @@ class LongShortAnalyzer {
     }
 }
 
+/**
+ * Syncopation Analysis based on multiple musicological measures
+ * Implements 5 complementary approaches to measuring rhythmic syncopation
+ */
+class SyncopationAnalyzer {
+    /**
+     * Comprehensive syncopation analysis using multiple measures
+     * @param {Array} steps - Boolean array representing the pattern
+     * @param {number} stepCount - Total number of steps in the pattern
+     * @returns {Object} Syncopation analysis with multiple measures
+     */
+    static analyzeSyncopation(steps, stepCount) {
+        const onsetPositions = [];
+        for (let i = 0; i < stepCount; i++) {
+            if (steps[i]) {
+                onsetPositions.push(i);
+            }
+        }
+        
+        if (onsetPositions.length === 0) {
+            return {
+                weightedNoteToBeats: 0,
+                offBeatRatio: 0,
+                expectancyViolation: 0,
+                rhythmicDisplacement: 0,
+                crossRhythmic: 0,
+                overallSyncopation: 0,
+                description: 'No syncopation (no onsets)',
+                level: 'none'
+            };
+        }
+        
+        // Calculate each syncopation measure
+        const weightedNoteToBeats = this.calculateWeightedNoteToBeats(onsetPositions, stepCount);
+        const offBeatRatio = this.calculateOffBeatRatio(onsetPositions, stepCount);
+        const expectancyViolation = this.calculateExpectancyViolation(onsetPositions, stepCount);
+        const rhythmicDisplacement = this.calculateRhythmicDisplacement(onsetPositions, stepCount);
+        const crossRhythmic = this.calculateCrossRhythmic(steps, stepCount);
+        
+        // Calculate overall syncopation (weighted average)
+        const overallSyncopation = (
+            weightedNoteToBeats * 0.25 +
+            offBeatRatio * 0.2 +
+            expectancyViolation * 0.25 +
+            rhythmicDisplacement * 0.15 +
+            crossRhythmic * 0.15
+        );
+        
+        const level = this.getSyncopationLevel(overallSyncopation);
+        const description = this.getSyncopationDescription(overallSyncopation, level);
+        
+        return {
+            weightedNoteToBeats: Math.round(weightedNoteToBeats * 1000) / 1000,
+            offBeatRatio: Math.round(offBeatRatio * 1000) / 1000,
+            expectancyViolation: Math.round(expectancyViolation * 1000) / 1000,
+            rhythmicDisplacement: Math.round(rhythmicDisplacement * 1000) / 1000,
+            crossRhythmic: Math.round(crossRhythmic * 1000) / 1000,
+            overallSyncopation: Math.round(overallSyncopation * 1000) / 1000,
+            description,
+            level
+        };
+    }
+    
+    /**
+     * Weighted Note-to-Beat Distance (Longuet-Higgins & Lee)
+     * Measures distance from onsets to strong metric positions
+     */
+    static calculateWeightedNoteToBeats(onsetPositions, stepCount) {
+        let totalWeight = 0;
+        let totalDistance = 0;
+        
+        for (const position of onsetPositions) {
+            const metricWeight = this.getMetricWeight(position, stepCount);
+            const distanceToStrongBeat = this.getDistanceToStrongBeat(position, stepCount);
+            
+            totalWeight += metricWeight;
+            totalDistance += distanceToStrongBeat * (1 - metricWeight); // Invert weight for syncopation
+        }
+        
+        return totalWeight > 0 ? totalDistance / onsetPositions.length : 0;
+    }
+    
+    /**
+     * Off-Beat Onset Ratio
+     * Percentage of onsets on weak beats vs strong beats
+     */
+    static calculateOffBeatRatio(onsetPositions, stepCount) {
+        let offBeatCount = 0;
+        
+        for (const position of onsetPositions) {
+            const metricWeight = this.getMetricWeight(position, stepCount);
+            if (metricWeight < 0.5) { // Weak beat threshold
+                offBeatCount++;
+            }
+        }
+        
+        return onsetPositions.length > 0 ? offBeatCount / onsetPositions.length : 0;
+    }
+    
+    /**
+     * Expectancy Violation (Huron)
+     * Based on cognitive expectancy of strong vs weak positions
+     */
+    static calculateExpectancyViolation(onsetPositions, stepCount) {
+        let totalViolation = 0;
+        
+        for (const position of onsetPositions) {
+            const expectedProbability = this.getExpectedOnsetProbability(position, stepCount);
+            const violation = 1 - expectedProbability; // Higher for unexpected positions
+            totalViolation += violation;
+        }
+        
+        return onsetPositions.length > 0 ? totalViolation / onsetPositions.length : 0;
+    }
+    
+    /**
+     * Rhythmic Displacement Index
+     * How far onsets are displaced from expected positions
+     */
+    static calculateRhythmicDisplacement(onsetPositions, stepCount) {
+        let totalDisplacement = 0;
+        
+        for (const position of onsetPositions) {
+            const nearestStrongBeat = this.getNearestStrongBeat(position, stepCount);
+            const displacement = Math.abs(position - nearestStrongBeat);
+            const normalizedDisplacement = displacement / (stepCount / 4); // Normalize by quarter note
+            totalDisplacement += Math.min(normalizedDisplacement, 1); // Cap at 1
+        }
+        
+        return onsetPositions.length > 0 ? totalDisplacement / onsetPositions.length : 0;
+    }
+    
+    /**
+     * Cross-Rhythmic Syncopation (Temperley)
+     * Measures conflict between surface rhythm and implied meter
+     */
+    static calculateCrossRhythmic(steps, stepCount) {
+        // Use auto-correlation to find competing periodicities
+        const periodicities = [2, 3, 4, 6, 8]; // Common metric divisions
+        let maxConflict = 0;
+        
+        for (const period of periodicities) {
+            if (period >= stepCount) continue;
+            
+            const correlation = this.calculateAutoCorrelation(steps, period);
+            const expectedCorrelation = this.getExpectedCorrelation(stepCount, period);
+            const conflict = Math.abs(correlation - expectedCorrelation);
+            maxConflict = Math.max(maxConflict, conflict);
+        }
+        
+        return Math.min(maxConflict, 1); // Normalize to 0-1
+    }
+    
+    /**
+     * Get metric weight for a position (1 = strongest, 0 = weakest)
+     */
+    static getMetricWeight(position, stepCount) {
+        // Create hierarchical metric structure
+        const beatPosition = position % (stepCount / 4); // Assuming 4/4 meter
+        
+        if (position === 0) return 1.0; // Downbeat
+        if (position % (stepCount / 2) === 0) return 0.8; // Half note
+        if (position % (stepCount / 4) === 0) return 0.6; // Quarter note
+        if (position % (stepCount / 8) === 0) return 0.4; // Eighth note
+        if (position % (stepCount / 16) === 0) return 0.2; // Sixteenth note
+        
+        return 0.1; // Syncopated positions
+    }
+    
+    /**
+     * Get distance to nearest strong beat
+     */
+    static getDistanceToStrongBeat(position, stepCount) {
+        const strongBeats = [];
+        const quarterNote = stepCount / 4;
+        
+        for (let i = 0; i < stepCount; i += quarterNote) {
+            strongBeats.push(i);
+        }
+        
+        let minDistance = stepCount;
+        for (const beat of strongBeats) {
+            const distance = Math.min(
+                Math.abs(position - beat),
+                stepCount - Math.abs(position - beat) // Circular distance
+            );
+            minDistance = Math.min(minDistance, distance);
+        }
+        
+        return minDistance / (stepCount / 8); // Normalize by eighth note
+    }
+    
+    /**
+     * Get expected onset probability for cognitive model
+     */
+    static getExpectedOnsetProbability(position, stepCount) {
+        const metricWeight = this.getMetricWeight(position, stepCount);
+        return metricWeight * 0.8 + 0.1; // Scale to 0.1-0.9 range
+    }
+    
+    /**
+     * Get nearest strong beat position
+     */
+    static getNearestStrongBeat(position, stepCount) {
+        const quarterNote = stepCount / 4;
+        const strongBeats = [];
+        
+        for (let i = 0; i < stepCount; i += quarterNote) {
+            strongBeats.push(i);
+        }
+        
+        let nearestBeat = strongBeats[0];
+        let minDistance = stepCount;
+        
+        for (const beat of strongBeats) {
+            const distance = Math.min(
+                Math.abs(position - beat),
+                stepCount - Math.abs(position - beat)
+            );
+            if (distance < minDistance) {
+                minDistance = distance;
+                nearestBeat = beat;
+            }
+        }
+        
+        return nearestBeat;
+    }
+    
+    /**
+     * Calculate auto-correlation for cross-rhythmic analysis
+     */
+    static calculateAutoCorrelation(steps, lag) {
+        let correlation = 0;
+        const n = steps.length;
+        
+        for (let i = 0; i < n; i++) {
+            const j = (i + lag) % n;
+            if (steps[i] && steps[j]) {
+                correlation += 1;
+            }
+        }
+        
+        return correlation / n;
+    }
+    
+    /**
+     * Get expected correlation for metric structure
+     */
+    static getExpectedCorrelation(stepCount, period) {
+        // Expected correlation based on typical metric hierarchy
+        if (period === stepCount / 2) return 0.7; // Half note correlation
+        if (period === stepCount / 4) return 0.5; // Quarter note correlation
+        return 0.3; // Other periods
+    }
+    
+    /**
+     * Get syncopation level description
+     */
+    static getSyncopationLevel(syncopationScore) {
+        if (syncopationScore < 0.1) return 'none';
+        if (syncopationScore < 0.3) return 'low';
+        if (syncopationScore < 0.5) return 'moderate';
+        if (syncopationScore < 0.7) return 'high';
+        return 'extreme';
+    }
+    
+    /**
+     * Get descriptive text for syncopation score
+     */
+    static getSyncopationDescription(score, level) {
+        const descriptions = {
+            'none': 'No syncopation - strong metric alignment',
+            'low': 'Minimal syncopation - mostly on-beat',
+            'moderate': 'Moderate syncopation - balanced off-beat elements',
+            'high': 'High syncopation - significant rhythmic tension',
+            'extreme': 'Extreme syncopation - heavily off-beat emphasis'
+        };
+        
+        return descriptions[level] || 'Unknown syncopation level';
+    }
+}
+
 // Export to global scope for browser compatibility
 if (typeof window !== 'undefined') {
     window.PerfectBalanceAnalyzer = PerfectBalanceAnalyzer;
     window.CenterOfGravityCalculator = CenterOfGravityCalculator;
     window.PatternAnalyzer = PatternAnalyzer;
     window.LongShortAnalyzer = LongShortAnalyzer;
+    window.SyncopationAnalyzer = SyncopationAnalyzer;
 }

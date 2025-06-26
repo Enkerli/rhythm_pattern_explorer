@@ -60,7 +60,7 @@ class EnhancedPatternApp {
             'PerfectBalanceAnalyzer', 'PatternAnalyzer', 'CenterOfGravityCalculator',
             'AdvancedPatternCombiner', 'UnifiedPatternParser', 'PatternConverter',
             'SystematicExplorer', 'PatternDatabase', 'UIComponents', 'AppConfig',
-            'SequencerController', 'SequencerIntegration'
+            'SequencerController', 'SequencerIntegration', 'SyncopationAnalyzer'
         ];
         
         const missingClasses = requiredClasses.filter(className => 
@@ -559,6 +559,26 @@ ${(() => {
                                 </div>
                             `;
                         })()}
+                        
+                        <!-- SYNCOPATION ANALYSIS BOX -->
+                        <div class="analysis-box syncopation-box" style="margin-top: 8px;">
+                            <div class="analysis-box-header">
+                                <span class="analysis-box-icon">🎵</span>
+                                <span class="analysis-box-title">Syncopation Analysis</span>
+                            </div>
+                            <div class="analysis-box-content">
+                                <div class="syncopation-overall">
+                                    ${analysis.syncopationAnalysis.description} (${(analysis.syncopationAnalysis.overallSyncopation * 100).toFixed(1)}%)
+                                </div>
+                                <div class="syncopation-measures" style="font-size: 12px; color: #666; margin-top: 6px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
+                                    <div>Note-to-Beat: ${(analysis.syncopationAnalysis.weightedNoteToBeats * 100).toFixed(0)}%</div>
+                                    <div>Off-Beat Ratio: ${(analysis.syncopationAnalysis.offBeatRatio * 100).toFixed(0)}%</div>
+                                    <div>Expectancy: ${(analysis.syncopationAnalysis.expectancyViolation * 100).toFixed(0)}%</div>
+                                    <div>Displacement: ${(analysis.syncopationAnalysis.rhythmicDisplacement * 100).toFixed(0)}%</div>
+                                    <div style="grid-column: 1 / -1;">Cross-Rhythmic: ${(analysis.syncopationAnalysis.crossRhythmic * 100).toFixed(0)}%</div>
+                                </div>
+                            </div>
+                        </div>
                     `;
                 }
             }
@@ -730,12 +750,16 @@ ${(() => {
             }
         }
         
+        // Syncopation analysis
+        const syncopationAnalysis = SyncopationAnalyzer.analyzeSyncopation(pattern.steps, pattern.stepCount);
+        
         return {
             title: 'Mathematical Pattern Analysis',
             patternOutputItems: patternOutputItems,
             balanceAnalysis: balanceAnalysis,
             cogAnalysis: cogAnalysis,
             longShortAnalysis: longShortAnalysis,
+            syncopationAnalysis: syncopationAnalysis,
             stepCount: pattern.stepCount
         };
     }
@@ -776,12 +800,16 @@ ${(() => {
             // Calculate long-short analysis for database storage
             const longShortAnalysis = LongShortAnalyzer.analyzeLongShort(this.currentPattern.steps, this.currentPattern.stepCount);
             
+            // Calculate syncopation analysis for database storage
+            const syncopationAnalysis = SyncopationAnalyzer.analyzeSyncopation(this.currentPattern.steps, this.currentPattern.stepCount);
+            
             // Create database pattern with analysis
             const databasePattern = createDatabasePattern(this.currentPattern, { 
                 perfectBalance,
                 repetition: repetitionAnalysis,
                 euclidean: euclideanAnalysis,
-                longShort: longShortAnalysis
+                longShort: longShortAnalysis,
+                syncopation: syncopationAnalysis
             });
             
             const patternId = this.database.add(databasePattern);
@@ -1426,6 +1454,7 @@ ${perfectBalancePatterns.map((pattern, index) => {
                         ${(!pattern.isRegularPolygon && !polygonLabels && ((pattern.formula && pattern.formula.includes('P(')) || (pattern.expression && pattern.expression.includes('P(')))) ? `<span class="pattern-repr polygon-type">🔺 Contains Polygons</span>` : ''}
                     </div>
                     ${this.generateLongShortDisplayForDB(pattern)}
+                    ${this.generateSyncopationDisplayForDB(pattern)}
                     <div class="pattern-representations">
                         ${representations.map(repr => `<span class="pattern-repr" title="${repr}" onclick="togglePatternRepr(this)">${repr}</span>`).join('')}
                         ${pattern.isRotated ? `<span class="pattern-repr rotation-type" style="background: #fff3e0; color: #f57c00; font-weight: bold;">🔄 Rotated @${pattern.rotationSteps}</span>` : ''}
@@ -1493,6 +1522,33 @@ ${perfectBalancePatterns.map((pattern, index) => {
                         Morse: ${longShortAnalysis.morseNotation}${longShortAnalysis.morseCharacter ? ` (${longShortAnalysis.morseCharacter})` : ''}
                     </div>` : ''
                 }
+            </div>
+        `;
+    }
+    
+    /**
+     * Generate syncopation display for database entries
+     * @param {Object} pattern - Pattern object from database
+     * @returns {string} HTML for syncopation display
+     */
+    generateSyncopationDisplayForDB(pattern) {
+        // Check if syncopation analysis exists
+        if (!pattern.syncopation) {
+            return '';
+        }
+        
+        const syncopation = pattern.syncopation;
+        
+        return `
+            <div class="pattern-syncopation-db" style="margin: 6px 0; padding: 6px; background: #f0f8ff; border-radius: 4px; font-size: 13px;">
+                <div style="font-weight: 500; color: #495057;">
+                    🎵 ${syncopation.description} (${(syncopation.overallSyncopation * 100).toFixed(1)}%)
+                </div>
+                <div style="font-size: 11px; color: #6c757d; margin-top: 2px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px;">
+                    <div>Note-Beat: ${(syncopation.weightedNoteToBeats * 100).toFixed(0)}%</div>
+                    <div>Off-Beat: ${(syncopation.offBeatRatio * 100).toFixed(0)}%</div>
+                    <div>Expect: ${(syncopation.expectancyViolation * 100).toFixed(0)}%</div>
+                </div>
             </div>
         `;
     }
