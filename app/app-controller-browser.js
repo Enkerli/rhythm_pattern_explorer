@@ -565,6 +565,7 @@ ${(() => {
                             <div class="analysis-box-header">
                                 <span class="analysis-box-icon">🎵</span>
                                 <span class="analysis-box-title">Syncopation Analysis</span>
+                                <button class="info-btn" onclick="toggleInfoBox('syncopation-info')" style="margin-left: auto;">ℹ️</button>
                             </div>
                             <div class="analysis-box-content">
                                 <div class="syncopation-overall">
@@ -577,6 +578,22 @@ ${(() => {
                                     <div>Displacement: ${(analysis.syncopationAnalysis.rhythmicDisplacement * 100).toFixed(0)}%</div>
                                     <div style="grid-column: 1 / -1;">Cross-Rhythmic: ${(analysis.syncopationAnalysis.crossRhythmic * 100).toFixed(0)}%</div>
                                 </div>
+                            </div>
+                            
+                            <!-- SYNCOPATION INFORMATION BOX -->
+                            <div class="info-box" id="syncopation-info" style="display: none; margin-top: 8px;">
+                                <strong>Syncopation Measures:</strong><br>
+                                • <strong>Note-to-Beat:</strong> Distance from onsets to strong beats (Longuet-Higgins & Lee)<br>
+                                • <strong>Off-Beat Ratio:</strong> Percentage of onsets on weak beats vs strong beats<br>
+                                • <strong>Expectancy:</strong> Cognitive expectancy violations (Huron) - surprise factor<br>
+                                • <strong>Displacement:</strong> How far onsets are displaced from expected positions<br>
+                                • <strong>Cross-Rhythmic:</strong> Conflict between surface rhythm and meter (Temperley)<br><br>
+                                <strong>Overall Score:</strong> Weighted combination of all measures<br>
+                                • <strong>0-10%:</strong> No syncopation - strong metric alignment<br>
+                                • <strong>10-30%:</strong> Low syncopation - mostly on-beat<br>
+                                • <strong>30-50%:</strong> Moderate syncopation - balanced off-beat elements<br>
+                                • <strong>50-70%:</strong> High syncopation - significant rhythmic tension<br>
+                                • <strong>70%+:</strong> Extreme syncopation - heavily off-beat emphasis
                             </div>
                         </div>
                     `;
