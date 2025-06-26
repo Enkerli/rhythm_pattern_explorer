@@ -3336,3 +3336,272 @@ html {
         font-size: var(--font-size-xs);
     }
 }
+
+/* ================================================
+   STOCHASTIC RHYTHM GENERATOR STYLES (COMPACT)
+   ================================================ */
+
+.stochastic-section-compact {
+    margin-top: 8px;
+}
+
+.stochastic-compact-box {
+    padding: 8px;
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    background: white;
+    font-size: var(--font-size-xs);
+}
+
+.stochastic-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.stochastic-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: var(--font-size-sm);
+}
+
+.info-btn-small {
+    background: none;
+    border: none;
+    color: var(--color-primary);
+    cursor: pointer;
+    padding: 2px 4px;
+    font-size: 12px;
+    border-radius: 3px;
+    transition: background-color 0.2s ease;
+}
+
+.info-btn-small:hover {
+    background: rgba(0,123,255,0.1);
+}
+
+/* === COMPACT PARAMETER CONTROLS === */
+.stochastic-compact-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.param-row-compact {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.param-compact {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.param-compact label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    min-width: 60px;
+    flex-shrink: 0;
+}
+
+.slider-compact {
+    flex: 1;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--border-light);
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.slider-compact::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    cursor: pointer;
+    border: 1px solid white;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.slider-compact::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    cursor: pointer;
+    border: 1px solid white;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.value-compact {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--color-primary);
+    min-width: 24px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.select-compact {
+    flex: 1;
+    padding: 2px 4px;
+    border: 1px solid var(--border-light);
+    border-radius: 3px;
+    background: white;
+    font-size: 11px;
+    color: var(--text-primary);
+}
+
+/* === COMPACT BUTTONS === */
+.buttons-compact {
+    display: flex;
+    gap: 4px;
+    margin-top: 6px;
+}
+
+.btn-compact {
+    flex: 1;
+    padding: 4px 6px;
+    font-size: 11px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.btn-compact.primary {
+    background: var(--color-primary);
+    color: white;
+}
+
+.btn-compact.secondary {
+    background: var(--color-secondary);
+    color: white;
+}
+
+.btn-compact.success {
+    background: var(--color-success);
+    color: white;
+}
+
+.btn-compact:disabled {
+    background: var(--border-light);
+    color: var(--text-secondary);
+    cursor: not-allowed;
+}
+
+.btn-compact:hover:not(:disabled) {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+/* === COMPACT RESULTS === */
+.stochastic-results-compact {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-light);
+}
+
+.stochastic-results-compact .stochastic-results-header h4 {
+    margin: 0 0 6px 0;
+    font-size: 12px;
+    color: var(--text-primary);
+}
+
+.stochastic-results-compact .stochastic-variations {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.stochastic-results-compact .stochastic-variation {
+    padding: 6px 8px;
+    border: 1px solid var(--border-light);
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 11px;
+}
+
+.stochastic-results-compact .stochastic-variation:hover {
+    border-color: var(--color-primary);
+    box-shadow: 0 1px 3px rgba(0,123,255,0.1);
+}
+
+.stochastic-results-compact .stochastic-variation.selected {
+    border-color: var(--color-primary);
+    background: rgba(0,123,255,0.05);
+    box-shadow: 0 1px 4px rgba(0,123,255,0.15);
+}
+
+.stochastic-results-compact .variation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 3px;
+}
+
+.stochastic-results-compact .variation-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 11px;
+}
+
+.stochastic-results-compact .variation-complexity {
+    font-size: 10px;
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+.stochastic-results-compact .variation-pattern {
+    margin: 3px 0;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    padding: 2px 4px;
+    background: var(--bg-primary);
+    border-radius: 2px;
+    overflow-x: auto;
+}
+
+.stochastic-results-compact .variation-stats {
+    display: flex;
+    gap: 8px;
+    font-size: 10px;
+    color: var(--text-secondary);
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+    .param-row-compact {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+    
+    .buttons-compact {
+        flex-direction: column;
+        gap: 3px;
+    }
+    
+    .stochastic-results-compact .variation-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+    }
+    
+    .stochastic-results-compact .variation-stats {
+        flex-direction: column;
+        gap: 2px;
+    }
+}

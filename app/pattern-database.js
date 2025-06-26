@@ -805,6 +805,7 @@ function createDatabasePattern(patternData, analyses = {}) {
             expectancyViolation: analyses.syncopation.expectancyViolation,
             rhythmicDisplacement: analyses.syncopation.rhythmicDisplacement,
             crossRhythmic: analyses.syncopation.crossRhythmic,
+            barlowIndispensability: analyses.syncopation.barlowIndispensability,
             overallSyncopation: analyses.syncopation.overallSyncopation,
             description: analyses.syncopation.description,
             level: analyses.syncopation.level

@@ -241,6 +241,9 @@ class EnhancedPatternApp {
         // Search and filter events
         this.setupSearchEvents();
         
+        // Stochastic generator events
+        this.setupStochasticEvents();
+        
         console.log('✅ Event listeners configured');
     }
     
@@ -576,7 +579,8 @@ ${(() => {
                                     <div>Off-Beat Ratio: ${(analysis.syncopationAnalysis.offBeatRatio * 100).toFixed(0)}%</div>
                                     <div>Expectancy: ${(analysis.syncopationAnalysis.expectancyViolation * 100).toFixed(0)}%</div>
                                     <div>Displacement: ${(analysis.syncopationAnalysis.rhythmicDisplacement * 100).toFixed(0)}%</div>
-                                    <div style="grid-column: 1 / -1;">Cross-Rhythmic: ${(analysis.syncopationAnalysis.crossRhythmic * 100).toFixed(0)}%</div>
+                                    <div>Cross-Rhythmic: ${(analysis.syncopationAnalysis.crossRhythmic * 100).toFixed(0)}%</div>
+                                    <div>Barlow Index: ${(analysis.syncopationAnalysis.barlowIndispensability * 100).toFixed(0)}%</div>
                                 </div>
                             </div>
                             
@@ -587,7 +591,8 @@ ${(() => {
                                 • <strong>Off-Beat Ratio:</strong> Percentage of onsets on weak beats vs strong beats<br>
                                 • <strong>Expectancy:</strong> Cognitive expectancy violations (Huron) - surprise factor<br>
                                 • <strong>Displacement:</strong> How far onsets are displaced from expected positions<br>
-                                • <strong>Cross-Rhythmic:</strong> Conflict between surface rhythm and meter (Temperley)<br><br>
+                                • <strong>Cross-Rhythmic:</strong> Conflict between surface rhythm and meter (Temperley)<br>
+                                • <strong>Barlow Index:</strong> Prime factorization-based indispensability (Clarence Barlow)<br><br>
                                 <strong>Overall Score:</strong> Weighted combination of all measures<br>
                                 • <strong>0-10%:</strong> No syncopation - strong metric alignment<br>
                                 • <strong>10-30%:</strong> Low syncopation - mostly on-beat<br>
@@ -598,6 +603,14 @@ ${(() => {
                         </div>
                     `;
                 }
+            }
+            
+            // Show and populate stochastic section
+            const stochasticSection = document.getElementById('stochasticSection');
+            if (stochasticSection) {
+                stochasticSection.style.display = 'block';
+                // Reset any previous generation state
+                this.resetStochasticControls();
             }
             
             // Load pattern into sequencer
@@ -1564,7 +1577,7 @@ ${perfectBalancePatterns.map((pattern, index) => {
                 <div style="font-size: 11px; color: #6c757d; margin-top: 2px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px;">
                     <div>Note-Beat: ${(syncopation.weightedNoteToBeats * 100).toFixed(0)}%</div>
                     <div>Off-Beat: ${(syncopation.offBeatRatio * 100).toFixed(0)}%</div>
-                    <div>Expect: ${(syncopation.expectancyViolation * 100).toFixed(0)}%</div>
+                    <div>Barlow: ${(syncopation.barlowIndispensability * 100).toFixed(0)}%</div>
                 </div>
             </div>
         `;
@@ -1806,6 +1819,315 @@ ${perfectBalancePatterns.map((pattern, index) => {
             
         } catch (error) {
             console.error('❌ Failed to load pattern into sequencer:', error);
+        }
+    }
+    
+    /**
+     * Setup stochastic rhythm generator event listeners
+     */
+    setupStochasticEvents() {
+        // Parameter slider events
+        const densitySlider = document.getElementById('densitySlider');
+        const metricStrengthSlider = document.getElementById('metricStrengthSlider');
+        const syncopationSlider = document.getElementById('syncopationSlider');
+        const densityValue = document.getElementById('densityValue');
+        const metricStrengthValue = document.getElementById('metricStrengthValue');
+        const syncopationValue = document.getElementById('syncopationValue');
+        
+        if (densitySlider && densityValue) {
+            densitySlider.addEventListener('input', (e) => {
+                densityValue.textContent = e.target.value;
+            });
+        }
+        
+        if (metricStrengthSlider && metricStrengthValue) {
+            metricStrengthSlider.addEventListener('input', (e) => {
+                metricStrengthValue.textContent = e.target.value;
+            });
+        }
+        
+        if (syncopationSlider && syncopationValue) {
+            syncopationSlider.addEventListener('input', (e) => {
+                syncopationValue.textContent = e.target.value;
+            });
+        }
+        
+        // Generation button events
+        const generateBtn = document.getElementById('generateStochasticBtn');
+        const generateMultipleBtn = document.getElementById('generateMultipleBtn');
+        const addVariationBtn = document.getElementById('addVariationBtn');
+        
+        if (generateBtn) {
+            generateBtn.addEventListener('click', () => this.generateSingleStochasticVariation());
+        }
+        
+        if (generateMultipleBtn) {
+            generateMultipleBtn.addEventListener('click', () => this.generateMultipleStochasticVariations());
+        }
+        
+        if (addVariationBtn) {
+            addVariationBtn.addEventListener('click', () => this.addStochasticVariationToDatabase());
+        }
+    }
+    
+    /**
+     * Reset stochastic controls to default state
+     */
+    resetStochasticControls() {
+        const resultsDiv = document.getElementById('stochasticResults');
+        if (resultsDiv) {
+            resultsDiv.style.display = 'none';
+            resultsDiv.innerHTML = '';
+        }
+        
+        const addBtn = document.getElementById('addVariationBtn');
+        if (addBtn) {
+            addBtn.disabled = true;
+        }
+        
+        this.selectedStochasticVariation = null;
+    }
+    
+    /**
+     * Get current stochastic parameters from UI
+     */
+    getStochasticParameters() {
+        return {
+            density: parseFloat(document.getElementById('densitySlider')?.value || 0.5),
+            metricalStrength: parseFloat(document.getElementById('metricStrengthSlider')?.value || 1.0),
+            syncopationAmount: parseFloat(document.getElementById('syncopationSlider')?.value || 0.2),
+            variationMode: document.getElementById('variationMode')?.value || 'stable'
+        };
+    }
+    
+    /**
+     * Generate a single stochastic variation
+     */
+    generateSingleStochasticVariation() {
+        if (!this.currentPattern) {
+            showNotification('No pattern loaded. Parse a pattern first.', 'warning');
+            return;
+        }
+        
+        try {
+            const params = this.getStochasticParameters();
+            const performance = StochasticRhythmGenerator.generatePerformance(
+                this.currentPattern.steps,
+                this.currentPattern.stepCount,
+                params
+            );
+            
+            this.displayStochasticResults([performance], 'Single Variation');
+            
+        } catch (error) {
+            console.error('❌ Stochastic generation error:', error);
+            showNotification('Error generating stochastic variation: ' + error.message, 'error');
+        }
+    }
+    
+    /**
+     * Generate multiple stochastic variations with different parameters
+     */
+    generateMultipleStochasticVariations() {
+        if (!this.currentPattern) {
+            showNotification('No pattern loaded. Parse a pattern first.', 'warning');
+            return;
+        }
+        
+        try {
+            const baseParams = this.getStochasticParameters();
+            const variations = [];
+            
+            // Generate 3 variations with different parameter combinations
+            const parameterSets = [
+                { ...baseParams, density: Math.max(0, baseParams.density - 0.2), name: 'Sparse' },
+                { ...baseParams, name: 'Current Settings' },
+                { ...baseParams, syncopationAmount: Math.min(1, baseParams.syncopationAmount + 0.3), name: 'High Syncopation' }
+            ];
+            
+            for (const params of parameterSets) {
+                const performance = StochasticRhythmGenerator.generatePerformance(
+                    this.currentPattern.steps,
+                    this.currentPattern.stepCount,
+                    params
+                );
+                performance.name = params.name;
+                variations.push(performance);
+            }
+            
+            this.displayStochasticResults(variations, 'Multiple Variations');
+            
+        } catch (error) {
+            console.error('❌ Multiple stochastic generation error:', error);
+            showNotification('Error generating variations: ' + error.message, 'error');
+        }
+    }
+    
+    /**
+     * Display stochastic generation results (compact version)
+     */
+    displayStochasticResults(performances, title) {
+        const resultsDiv = document.getElementById('stochasticResults');
+        if (!resultsDiv) return;
+        
+        resultsDiv.style.display = 'block';
+        
+        const html = `
+            <div class="stochastic-results-header">
+                <h4>${title}</h4>
+            </div>
+            <div class="stochastic-variations">
+                ${performances.map((perf, index) => this.renderStochasticVariationCompact(perf, index)).join('')}
+            </div>
+        `;
+        
+        resultsDiv.innerHTML = html;
+        
+        // Add click handlers for selection
+        performances.forEach((perf, index) => {
+            const variationDiv = resultsDiv.querySelector(`[data-variation-index="${index}"]`);
+            if (variationDiv) {
+                variationDiv.addEventListener('click', () => this.selectStochasticVariation(perf, index));
+            }
+        });
+        
+        // Auto-select first variation
+        if (performances.length > 0) {
+            this.selectStochasticVariation(performances[0], 0);
+        }
+    }
+    
+    /**
+     * Render a single stochastic variation (compact version)
+     */
+    renderStochasticVariationCompact(performance, index) {
+        const binary = PatternConverter.toBinary(performance.performedPattern, performance.performedPattern.length);
+        const complexity = performance.complexity;
+        
+        return `
+            <div class="stochastic-variation" data-variation-index="${index}">
+                <div class="variation-header">
+                    <span class="variation-name">${performance.name || `Var ${index + 1}`}</span>
+                    <span class="variation-complexity">${(complexity.overall * 100).toFixed(0)}%</span>
+                </div>
+                <div class="variation-pattern">
+                    <span class="pattern-binary">${binary}</span>
+                </div>
+                <div class="variation-stats">
+                    <span>D:${(complexity.density * 100).toFixed(0)}%</span>
+                    <span>S:${(complexity.syncopation * 100).toFixed(0)}%</span>
+                </div>
+            </div>
+        `;
+    }
+    
+    /**
+     * Render a single stochastic variation (legacy method for compatibility)
+     */
+    renderStochasticVariation(performance, index) {
+        return this.renderStochasticVariationCompact(performance, index);
+    }
+    
+    /**
+     * Select a stochastic variation
+     */
+    selectStochasticVariation(performance, index) {
+        // Update UI selection
+        const resultsDiv = document.getElementById('stochasticResults');
+        if (resultsDiv) {
+            resultsDiv.querySelectorAll('.stochastic-variation').forEach(div => {
+                div.classList.remove('selected');
+            });
+            
+            const selectedDiv = resultsDiv.querySelector(`[data-variation-index="${index}"]`);
+            if (selectedDiv) {
+                selectedDiv.classList.add('selected');
+            }
+        }
+        
+        // Store selection
+        this.selectedStochasticVariation = performance;
+        
+        // Enable add to database button
+        const addBtn = document.getElementById('addVariationBtn');
+        if (addBtn) {
+            addBtn.disabled = false;
+        }
+        
+        // Load into sequencer for preview
+        this.loadStochasticVariationIntoSequencer(performance);
+    }
+    
+    /**
+     * Load stochastic variation into sequencer for preview
+     */
+    loadStochasticVariationIntoSequencer(performance) {
+        if (!this.sequencer) return;
+        
+        try {
+            const variationPattern = {
+                steps: performance.performedPattern,
+                stepCount: performance.performedPattern.length,
+                name: `Stochastic: ${performance.name || 'Variation'}`,
+                isStochasticVariation: true
+            };
+            
+            const sequencerPattern = SequencerIntegration.convertPatternResult(variationPattern);
+            this.sequencer.updatePattern(sequencerPattern);
+            
+        } catch (error) {
+            console.error('❌ Failed to load variation into sequencer:', error);
+        }
+    }
+    
+    /**
+     * Add selected stochastic variation to database
+     */
+    addStochasticVariationToDatabase() {
+        if (!this.selectedStochasticVariation) {
+            showNotification('No variation selected', 'warning');
+            return;
+        }
+        
+        try {
+            const performance = this.selectedStochasticVariation;
+            
+            // Create pattern object for database
+            const patternData = {
+                steps: performance.performedPattern,
+                stepCount: performance.performedPattern.length,
+                name: `Stochastic Variation: ${performance.name || 'Generated'}`,
+                isStochasticGenerated: true,
+                originalPattern: this.currentPattern,
+                stochasticParameters: performance.parameters,
+                complexity: performance.complexity
+            };
+            
+            // Generate analyses for the new pattern
+            const analyses = this.generateComprehensiveAnalysis(patternData);
+            
+            // Create database pattern
+            const dbPattern = createDatabasePattern(patternData, {
+                perfectBalance: analyses.balanceAnalysis,
+                syncopation: analyses.syncopationAnalysis
+            });
+            
+            // Add to database
+            const patternId = this.database.add(dbPattern);
+            if (patternId) {
+                showNotification('Stochastic variation added to database!', 'success');
+                this.updatePatternList();
+                this.updateDatabaseStats();
+                
+                // Reset selection
+                this.resetStochasticControls();
+            } else {
+                showNotification('Pattern already exists in database', 'info');
+            }
+            
+        } catch (error) {
+            console.error('❌ Error adding stochastic variation:', error);
+            showNotification('Error adding variation to database: ' + error.message, 'error');
         }
     }
 }
