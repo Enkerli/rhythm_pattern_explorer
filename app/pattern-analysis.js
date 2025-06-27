@@ -1192,6 +1192,317 @@ class StochasticRhythmGenerator {
     }
 }
 
+/**
+ * Intuitive Rhythm Generators
+ * Simple, powerful generators for creating funky rhythms
+ */
+class IntuitiveRhythmGenerators {
+    
+    /**
+     * Groove-based rhythm generator
+     * Creates funky patterns using musical groove templates
+     */
+    static generateGrooveRhythm(stepCount, parameters = {}) {
+        if (!stepCount || stepCount <= 0) {
+            throw new Error('Invalid stepCount for groove rhythm generation');
+        }
+        
+        const {
+            density = 0.6,           // 0-1: how many hits
+            swing = 0.0,             // 0-1: swing feel (emphasize off-beats)
+            syncopation = 0.3,       // 0-1: amount of syncopation
+            accentPattern = 'funk',   // 'funk', 'latin', 'afro', 'house'
+            ghost = 0.2              // 0-1: probability of ghost notes
+        } = parameters;
+        
+        const pattern = new Array(stepCount).fill(false);
+        const grooveTemplate = this.getGrooveTemplate(accentPattern, stepCount);
+        
+        // Apply density and groove template
+        for (let i = 0; i < stepCount; i++) {
+            const grooveWeight = grooveTemplate[i];
+            const swingBoost = this.getSwingBoost(i, stepCount, swing);
+            const probability = grooveWeight * density + swingBoost;
+            
+            if (Math.random() < probability) {
+                pattern[i] = true;
+            }
+        }
+        
+        // Add syncopation
+        this.addSyncopation(pattern, stepCount, syncopation);
+        
+        // Add ghost notes
+        this.addGhostNotes(pattern, stepCount, ghost);
+        
+        return {
+            pattern: pattern,
+            type: 'groove',
+            parameters: parameters,
+            description: `${accentPattern} groove (${Math.round(density*100)}% density)`
+        };
+    }
+    
+    /**
+     * Euclidean-based funky generator
+     * Uses Euclidean rhythms as a base and adds funk elements
+     */
+    static generateFunkyEuclidean(stepCount, parameters = {}) {
+        if (!stepCount || stepCount <= 0) {
+            throw new Error('Invalid stepCount for funky Euclidean generation');
+        }
+        
+        const {
+            hits = Math.floor(stepCount * 0.4),  // number of hits
+            rotation = 0,                        // rotation offset
+            funkiness = 0.5,                     // 0-1: how much to deviate from pure Euclidean
+            backbeat = 0.3,                      // 0-1: emphasis on backbeats
+            shuffle = 0.2                        // 0-1: shuffle feel
+        } = parameters;
+        
+        // Start with Euclidean rhythm
+        const euclidean = EuclideanGenerator.generate(hits, stepCount, rotation);
+        const pattern = euclidean && euclidean.steps ? [...euclidean.steps] : new Array(stepCount).fill(false);
+        
+        // Add funkiness by randomly moving some hits
+        for (let i = 0; i < stepCount; i++) {
+            if (pattern[i] && Math.random() < funkiness) {
+                const moveDirection = Math.random() < 0.5 ? -1 : 1;
+                const newPos = (i + moveDirection + stepCount) % stepCount;
+                if (!pattern[newPos]) {
+                    pattern[i] = false;
+                    pattern[newPos] = true;
+                }
+            }
+        }
+        
+        // Emphasize backbeats (2 and 4 in 4/4)
+        this.emphasizeBackbeats(pattern, stepCount, backbeat);
+        
+        // Add shuffle feel
+        this.addShuffle(pattern, stepCount, shuffle);
+        
+        return {
+            pattern: pattern,
+            type: 'funky-euclidean',
+            parameters: parameters,
+            description: `Funky E(${hits},${stepCount}) with ${Math.round(funkiness*100)}% deviation`
+        };
+    }
+    
+    /**
+     * Probabilistic rhythm generator
+     * Simple but effective for creating varied patterns
+     */
+    static generateProbabilisticRhythm(stepCount, parameters = {}) {
+        if (!stepCount || stepCount <= 0) {
+            throw new Error('Invalid stepCount for probabilistic rhythm generation');
+        }
+        
+        const {
+            density = 0.5,           // 0-1: overall density
+            beatEmphasis = 0.7,      // 0-1: how much to emphasize strong beats
+            randomness = 0.3,        // 0-1: amount of randomness
+            groove = 'straight'       // 'straight', 'swing', 'shuffle'
+        } = parameters;
+        
+        const pattern = new Array(stepCount).fill(false);
+        
+        for (let i = 0; i < stepCount; i++) {
+            const beatStrength = this.getBeatStrength(i, stepCount);
+            const grooveBoost = this.getGrooveBoost(i, stepCount, groove);
+            
+            let probability = density;
+            probability += beatStrength * beatEmphasis * 0.4;
+            probability += grooveBoost;
+            probability += (Math.random() - 0.5) * randomness;
+            
+            // Clamp to 0-1
+            probability = Math.max(0, Math.min(1, probability));
+            
+            if (Math.random() < probability) {
+                pattern[i] = true;
+            }
+        }
+        
+        return {
+            pattern: pattern,
+            type: 'probabilistic',
+            parameters: parameters,
+            description: `${groove} feel (${Math.round(density*100)}% density, ${Math.round(beatEmphasis*100)}% beat emphasis)`
+        };
+    }
+    
+    /**
+     * Polyrhythm generator
+     * Creates interesting patterns by layering simple rhythms
+     */
+    static generatePolyrhythm(stepCount, parameters = {}) {
+        if (!stepCount || stepCount <= 0) {
+            throw new Error('Invalid stepCount for polyrhythm generation');
+        }
+        
+        const {
+            layers = [3, 4, 5],      // array of layer periods
+            density = 0.6,           // 0-1: overall density
+            interaction = 0.3,       // 0-1: how much layers interact
+            offset = 0               // rotation offset
+        } = parameters;
+        
+        const pattern = new Array(stepCount).fill(false);
+        const layerPatterns = [];
+        
+        // Generate each layer
+        for (const period of layers) {
+            const layer = new Array(stepCount).fill(false);
+            for (let i = 0; i < stepCount; i++) {
+                if ((i + offset) % period === 0) {
+                    layer[i] = Math.random() < density;
+                }
+            }
+            layerPatterns.push(layer);
+        }
+        
+        // Combine layers
+        for (let i = 0; i < stepCount; i++) {
+            const activeLayers = layerPatterns.filter(layer => layer[i]).length;
+            
+            if (activeLayers > 0) {
+                // Higher interaction = more likely to trigger when multiple layers align
+                const interactionBoost = (activeLayers - 1) * interaction;
+                const probability = Math.min(1, density + interactionBoost);
+                
+                if (Math.random() < probability) {
+                    pattern[i] = true;
+                }
+            }
+        }
+        
+        return {
+            pattern: pattern,
+            type: 'polyrhythm',
+            parameters: parameters,
+            description: `Polyrhythm [${layers.join(',')}] with ${Math.round(interaction*100)}% interaction`
+        };
+    }
+    
+    // Helper methods
+    static getGrooveTemplate(type, stepCount) {
+        if (!stepCount || stepCount <= 0) return [0.5]; // Fallback for invalid stepCount
+        
+        const template = new Array(stepCount).fill(0.2);
+        const quarter = Math.floor(stepCount / 4);
+        
+        switch (type) {
+            case 'funk':
+                template[0] = 0.9;  // Strong downbeat
+                template[quarter] = 0.4;  // Weak 2
+                template[quarter * 2] = 0.6;  // Medium 3
+                template[quarter * 3] = 0.8;  // Strong 4
+                // Add 16th note funk emphasis
+                for (let i = 0; i < stepCount; i += quarter/2) {
+                    if (template[i] < 0.5) template[i] += 0.3;
+                }
+                break;
+                
+            case 'latin':
+                template[0] = 0.8;
+                template[Math.floor(stepCount * 0.375)] = 0.7;  // 3+ beat
+                template[quarter * 2] = 0.6;
+                template[Math.floor(stepCount * 0.75)] = 0.7;   // 4 beat
+                break;
+                
+            case 'afro':
+                for (let i = 0; i < stepCount; i += Math.floor(stepCount/3)) {
+                    template[i] = 0.8;
+                }
+                break;
+                
+            case 'house':
+                for (let i = 0; i < stepCount; i += quarter) {
+                    template[i] = 0.8;
+                }
+                break;
+        }
+        
+        return template;
+    }
+    
+    static getSwingBoost(position, stepCount, swing) {
+        const eighth = stepCount / 8;
+        const isOffBeat = (position % eighth) > (eighth / 2);
+        return isOffBeat ? swing * 0.3 : 0;
+    }
+    
+    static addSyncopation(pattern, stepCount, amount) {
+        const quarter = Math.floor(stepCount / 4);
+        for (let i = 0; i < stepCount; i++) {
+            if (!pattern[i] && Math.random() < amount * 0.3) {
+                const nextBeat = Math.floor(i / quarter) * quarter + quarter;
+                if (nextBeat < stepCount && pattern[nextBeat]) {
+                    pattern[i] = true;
+                    if (Math.random() < 0.5) pattern[nextBeat] = false; // Sometimes remove the strong beat
+                }
+            }
+        }
+    }
+    
+    static addGhostNotes(pattern, stepCount, amount) {
+        for (let i = 0; i < stepCount; i++) {
+            if (!pattern[i] && Math.random() < amount * 0.4) {
+                pattern[i] = true;
+            }
+        }
+    }
+    
+    static emphasizeBackbeats(pattern, stepCount, amount) {
+        const quarter = Math.floor(stepCount / 4);
+        const backbeats = [quarter, quarter * 3]; // 2 and 4
+        
+        for (const beat of backbeats) {
+            if (beat < stepCount && Math.random() < amount) {
+                pattern[beat] = true;
+            }
+        }
+    }
+    
+    static addShuffle(pattern, stepCount, amount) {
+        const eighth = Math.floor(stepCount / 8);
+        for (let i = eighth; i < stepCount; i += eighth * 2) {
+            if (pattern[i] && Math.random() < amount) {
+                const newPos = i + Math.floor(eighth * 0.3);
+                if (newPos < stepCount && !pattern[newPos]) {
+                    pattern[i] = false;
+                    pattern[newPos] = true;
+                }
+            }
+        }
+    }
+    
+    static getBeatStrength(position, stepCount) {
+        const quarter = stepCount / 4;
+        const eighth = stepCount / 8;
+        
+        if (position % quarter === 0) return 1.0;      // Quarter notes
+        if (position % eighth === 0) return 0.6;       // Eighth notes
+        if (position % (eighth/2) === 0) return 0.3;   // Sixteenth notes
+        return 0.1;
+    }
+    
+    static getGrooveBoost(position, stepCount, groove) {
+        const eighth = stepCount / 8;
+        
+        switch (groove) {
+            case 'swing':
+                return (position % eighth) > (eighth * 0.6) ? 0.2 : 0;
+            case 'shuffle':
+                return (position % eighth) > (eighth * 0.7) ? 0.3 : 0;
+            default:
+                return 0;
+        }
+    }
+}
+
 // Export to global scope for browser compatibility
 if (typeof window !== 'undefined') {
     window.PerfectBalanceAnalyzer = PerfectBalanceAnalyzer;
@@ -1200,4 +1511,5 @@ if (typeof window !== 'undefined') {
     window.LongShortAnalyzer = LongShortAnalyzer;
     window.SyncopationAnalyzer = SyncopationAnalyzer;
     window.StochasticRhythmGenerator = StochasticRhythmGenerator;
+    window.IntuitiveRhythmGenerators = IntuitiveRhythmGenerators;
 }
