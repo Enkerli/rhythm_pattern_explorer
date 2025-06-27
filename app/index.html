@@ -114,38 +114,44 @@
                     </div>
                 </div>
 
-                <!-- STOCHASTIC RHYTHM GENERATOR SECTION (COMPACT) -->
+                <!-- FUNKY RHYTHM GENERATOR SECTION (COMPACT) -->
                 <div class="stochastic-section-compact" id="stochasticSection" style="display: none;">
                     <div class="stochastic-compact-box">
                         <div class="stochastic-header">
-                            <span class="stochastic-title">🎲 Stochastic Generator</span>
-                            <button class="info-btn-small" onclick="toggleInfoBox('stochastic-info')" title="Algorithm info">ℹ️</button>
+                            <span class="stochastic-title">🎶 Funky Rhythm Generator</span>
+                            <button class="info-btn-small" onclick="toggleInfoBox('stochastic-info')" title="Generator info">ℹ️</button>
                         </div>
                         <div class="stochastic-compact-controls">
                             <div class="param-row-compact">
                                 <div class="param-compact">
-                                    <label>Density:</label>
-                                    <input type="range" id="densitySlider" class="slider-compact" min="0" max="100" step="5" value="50">
-                                    <span id="densityValue" class="value-compact">50%</span>
+                                    <label>Type:</label>
+                                    <select id="generatorType" class="select-compact">
+                                        <option value="groove">Groove</option>
+                                        <option value="funky-euclidean">Funky Euclidean</option>
+                                        <option value="probabilistic">Probabilistic</option>
+                                        <option value="polyrhythm">Polyrhythm</option>
+                                    </select>
                                 </div>
                                 <div class="param-compact">
-                                    <label>Beat Focus:</label>
-                                    <input type="range" id="metricStrengthSlider" class="slider-compact" min="0" max="100" step="10" value="70">
-                                    <span id="metricStrengthValue" class="value-compact">70%</span>
+                                    <label>Density:</label>
+                                    <input type="range" id="densitySlider" class="slider-compact" min="0" max="100" step="5" value="60">
+                                    <span id="densityValue" class="value-compact">60%</span>
                                 </div>
                             </div>
                             <div class="param-row-compact">
                                 <div class="param-compact">
-                                    <label>Syncopation:</label>
-                                    <input type="range" id="syncopationSlider" class="slider-compact" min="0" max="100" step="10" value="20">
-                                    <span id="syncopationValue" class="value-compact">20%</span>
+                                    <label>Style:</label>
+                                    <select id="styleSelect" class="select-compact">
+                                        <option value="funk">Funk</option>
+                                        <option value="latin">Latin</option>
+                                        <option value="afro">Afro</option>
+                                        <option value="house">House</option>
+                                    </select>
                                 </div>
                                 <div class="param-compact">
-                                    <label>Variation:</label>
-                                    <select id="variationMode" class="select-compact">
-                                        <option value="stable">Stable</option>
-                                        <option value="unstable">Random</option>
-                                    </select>
+                                    <label>Funkiness:</label>
+                                    <input type="range" id="funkinessSlider" class="slider-compact" min="0" max="100" step="10" value="50">
+                                    <span id="funkinessValue" class="value-compact">50%</span>
                                 </div>
                             </div>
                             <div class="buttons-compact">
@@ -158,16 +164,16 @@
                             <!-- Generated patterns will appear here -->
                         </div>
                         
-                        <!-- STOCHASTIC ALGORITHM INFO BOX -->
+                        <!-- FUNKY GENERATOR INFO BOX -->
                         <div class="info-box" id="stochastic-info" style="display: none;">
-                            <strong>Stochastic Rhythm Generation:</strong><br>
-                            Barlow's indispensability + stratified meter decomposition.<br><br>
-                            • <strong>Density:</strong> 0%=sparse, 100%=dense patterns<br>
-                            • <strong>Beat Focus:</strong> 0%=scattered, 100%=emphasize strong beats<br>
-                            • <strong>Syncopation:</strong> Anticipation before strong beats<br>
-                            • <strong>Variation:</strong> Stable (consistent) vs Random (chaotic)<br><br>
-                            <strong>Recommended:</strong> Density 40-70%, Beat Focus 60-80%<br>
-                            <em>Algorithm uses complex musicological principles for natural rhythms.</em>
+                            <strong>Funky Rhythm Generators:</strong><br>
+                            Simple, intuitive generators for groovy patterns.<br><br>
+                            • <strong>Groove:</strong> Template-based (funk, latin, afro, house)<br>
+                            • <strong>Funky Euclidean:</strong> Euclidean + groove deviations<br>
+                            • <strong>Probabilistic:</strong> Beat-strength based generation<br>
+                            • <strong>Polyrhythm:</strong> Layered rhythmic cycles<br><br>
+                            <strong>Try:</strong> Funk style, 60% density, 70% funkiness<br>
+                            <em>Designed for immediate musical results!</em>
                         </div>
                     </div>
                 </div>

@@ -60,7 +60,8 @@ class EnhancedPatternApp {
             'PerfectBalanceAnalyzer', 'PatternAnalyzer', 'CenterOfGravityCalculator',
             'AdvancedPatternCombiner', 'UnifiedPatternParser', 'PatternConverter',
             'SystematicExplorer', 'PatternDatabase', 'UIComponents', 'AppConfig',
-            'SequencerController', 'SequencerIntegration', 'SyncopationAnalyzer'
+            'SequencerController', 'SequencerIntegration', 'SyncopationAnalyzer',
+            'IntuitiveRhythmGenerators'
         ];
         
         const missingClasses = requiredClasses.filter(className => 
@@ -1823,16 +1824,14 @@ ${perfectBalancePatterns.map((pattern, index) => {
     }
     
     /**
-     * Setup stochastic rhythm generator event listeners
+     * Setup funky rhythm generator event listeners
      */
     setupStochasticEvents() {
         // Parameter slider events
         const densitySlider = document.getElementById('densitySlider');
-        const metricStrengthSlider = document.getElementById('metricStrengthSlider');
-        const syncopationSlider = document.getElementById('syncopationSlider');
+        const funkinessSlider = document.getElementById('funkinessSlider');
         const densityValue = document.getElementById('densityValue');
-        const metricStrengthValue = document.getElementById('metricStrengthValue');
-        const syncopationValue = document.getElementById('syncopationValue');
+        const funkinessValue = document.getElementById('funkinessValue');
         
         if (densitySlider && densityValue) {
             densitySlider.addEventListener('input', (e) => {
@@ -1840,15 +1839,9 @@ ${perfectBalancePatterns.map((pattern, index) => {
             });
         }
         
-        if (metricStrengthSlider && metricStrengthValue) {
-            metricStrengthSlider.addEventListener('input', (e) => {
-                metricStrengthValue.textContent = e.target.value + '%';
-            });
-        }
-        
-        if (syncopationSlider && syncopationValue) {
-            syncopationSlider.addEventListener('input', (e) => {
-                syncopationValue.textContent = e.target.value + '%';
+        if (funkinessSlider && funkinessValue) {
+            funkinessSlider.addEventListener('input', (e) => {
+                funkinessValue.textContent = e.target.value + '%';
             });
         }
         
@@ -1889,40 +1882,19 @@ ${perfectBalancePatterns.map((pattern, index) => {
     }
     
     /**
-     * Get current stochastic parameters from UI and map to algorithm values
+     * Get current funky generator parameters from UI
      */
     getStochasticParameters() {
-        // Get percentage values from UI
-        const densityPercent = parseFloat(document.getElementById('densitySlider')?.value || 50);
-        const beatFocusPercent = parseFloat(document.getElementById('metricStrengthSlider')?.value || 70);
-        const syncopationPercent = parseFloat(document.getElementById('syncopationSlider')?.value || 20);
-        
-        // Map intuitive percentages to algorithm parameters
-        // Density: 0-100% maps to different probability scaling
-        const baseProbability = densityPercent / 100; // 0.0 to 1.0
-        
-        // Beat Focus: 0-100% maps to R parameter (inverted for intuitive control)
-        // Higher beat focus = lower R = more emphasis on strong beats
-        const density = 1 - (beatFocusPercent / 100); // 1.0 to 0.0
-        
-        // Metrical strength: derived from density to create musical results
-        // Lower values = higher probability = denser patterns
-        const metricalStrength = (1 - baseProbability) * 2 + 0.1; // 0.1 to 2.1
-        
         return {
-            density: density,
-            metricalStrength: metricalStrength,
-            syncopationAmount: syncopationPercent / 100,
-            variationMode: document.getElementById('variationMode')?.value || 'stable',
-            // Store original UI values for display
-            uiDensity: densityPercent,
-            uiBeatFocus: beatFocusPercent,
-            uiSyncopation: syncopationPercent
+            type: document.getElementById('generatorType')?.value || 'groove',
+            density: parseFloat(document.getElementById('densitySlider')?.value || 60) / 100,
+            style: document.getElementById('styleSelect')?.value || 'funk',
+            funkiness: parseFloat(document.getElementById('funkinessSlider')?.value || 50) / 100
         };
     }
     
     /**
-     * Generate a single stochastic variation
+     * Generate a single funky rhythm variation
      */
     generateSingleStochasticVariation() {
         if (!this.currentPattern) {
@@ -1932,22 +1904,98 @@ ${perfectBalancePatterns.map((pattern, index) => {
         
         try {
             const params = this.getStochasticParameters();
-            const performance = StochasticRhythmGenerator.generatePerformance(
-                this.currentPattern.steps,
-                this.currentPattern.stepCount,
-                params
-            );
+            const stepCount = this.currentPattern.stepCount;
+            let result;
             
-            this.displayStochasticResults([performance], 'Single Variation');
+            // Use the appropriate generator based on type
+            switch (params.type) {
+                case 'groove':
+                    result = IntuitiveRhythmGenerators.generateGrooveRhythm(stepCount, {
+                        density: params.density,
+                        accentPattern: params.style,
+                        syncopation: params.funkiness * 0.6,
+                        swing: params.funkiness * 0.4,
+                        ghost: params.funkiness * 0.3
+                    });
+                    break;
+                    
+                case 'funky-euclidean':
+                    const hits = Math.floor(stepCount * params.density);
+                    result = IntuitiveRhythmGenerators.generateFunkyEuclidean(stepCount, {
+                        hits: hits,
+                        funkiness: params.funkiness,
+                        backbeat: 0.6,
+                        shuffle: params.funkiness * 0.4
+                    });
+                    break;
+                    
+                case 'probabilistic':
+                    result = IntuitiveRhythmGenerators.generateProbabilisticRhythm(stepCount, {
+                        density: params.density,
+                        beatEmphasis: 1 - params.funkiness,
+                        randomness: params.funkiness * 0.8,
+                        groove: params.style === 'funk' ? 'swing' : 'straight'
+                    });
+                    break;
+                    
+                case 'polyrhythm':
+                    const layers = params.style === 'afro' ? [3, 4, 5] : 
+                                  params.style === 'latin' ? [3, 4] : [4, 5, 6];
+                    result = IntuitiveRhythmGenerators.generatePolyrhythm(stepCount, {
+                        layers: layers,
+                        density: params.density,
+                        interaction: params.funkiness
+                    });
+                    break;
+                    
+                default:
+                    throw new Error('Unknown generator type: ' + params.type);
+            }
+            
+            // Convert to expected format
+            const performance = {
+                performedPattern: result.pattern,
+                originalPattern: this.currentPattern.steps,
+                parameters: params,
+                name: result.description,
+                type: result.type,
+                complexity: this.calculateSimpleComplexity(result.pattern)
+            };
+            
+            this.displayStochasticResults([performance], 'Funky Variation');
             
         } catch (error) {
-            console.error('❌ Stochastic generation error:', error);
-            showNotification('Error generating stochastic variation: ' + error.message, 'error');
+            console.error('❌ Funky generation error:', error);
+            showNotification('Error generating funky rhythm: ' + error.message, 'error');
         }
     }
     
     /**
-     * Generate multiple stochastic variations with different parameters
+     * Calculate simple complexity metrics for a pattern
+     */
+    calculateSimpleComplexity(pattern) {
+        const density = pattern.filter(step => step).length / pattern.length;
+        const syncopation = this.calculateSimpleSyncopation(pattern);
+        const overall = Math.sqrt(Math.pow(density - 0.5, 2) + Math.pow(syncopation - 0.5, 2));
+        
+        return { density, syncopation, overall };
+    }
+    
+    /**
+     * Calculate simple syncopation level
+     */
+    calculateSimpleSyncopation(pattern) {
+        const quarter = Math.floor(pattern.length / 4);
+        const strongBeats = [0, quarter, quarter * 2, quarter * 3];
+        const onsetPositions = pattern.map((step, index) => step ? index : -1)
+                                     .filter(index => index !== -1);
+        
+        const syncopatedOnsets = onsetPositions.filter(pos => !strongBeats.includes(pos));
+        return syncopatedOnsets.length / Math.max(onsetPositions.length, 1);
+    }
+    
+    /**
+     * Generate multiple funky variations with different parameters
      */
     generateMultipleStochasticVariations() {
         if (!this.currentPattern) {
@@ -1957,29 +2005,77 @@ ${perfectBalancePatterns.map((pattern, index) => {
         
         try {
             const baseParams = this.getStochasticParameters();
+            const stepCount = this.currentPattern.stepCount;
             const variations = [];
             
-            // Generate 3 variations with different parameter combinations
+            // Generate 3 variations with different characteristics
             const parameterSets = [
-                { ...baseParams, density: Math.max(0, baseParams.density - 0.2), name: 'Sparse' },
-                { ...baseParams, name: 'Current Settings' },
-                { ...baseParams, syncopationAmount: Math.min(1, baseParams.syncopationAmount + 0.3), name: 'High Syncopation' }
+                { ...baseParams, density: Math.max(0.2, baseParams.density - 0.2), funkiness: 0.3, name: 'Subtle' },
+                { ...baseParams, name: 'Current' },
+                { ...baseParams, funkiness: Math.min(1, baseParams.funkiness + 0.3), name: 'Funky' }
             ];
             
             for (const params of parameterSets) {
-                const performance = StochasticRhythmGenerator.generatePerformance(
-                    this.currentPattern.steps,
-                    this.currentPattern.stepCount,
-                    params
-                );
-                performance.name = params.name;
+                let result;
+                
+                // Use the same generation logic as single variation
+                switch (params.type) {
+                    case 'groove':
+                        result = IntuitiveRhythmGenerators.generateGrooveRhythm(stepCount, {
+                            density: params.density,
+                            accentPattern: params.style,
+                            syncopation: params.funkiness * 0.6,
+                            swing: params.funkiness * 0.4,
+                            ghost: params.funkiness * 0.3
+                        });
+                        break;
+                        
+                    case 'funky-euclidean':
+                        const hits = Math.floor(stepCount * params.density);
+                        result = IntuitiveRhythmGenerators.generateFunkyEuclidean(stepCount, {
+                            hits: hits,
+                            funkiness: params.funkiness,
+                            backbeat: 0.6,
+                            shuffle: params.funkiness * 0.4
+                        });
+                        break;
+                        
+                    case 'probabilistic':
+                        result = IntuitiveRhythmGenerators.generateProbabilisticRhythm(stepCount, {
+                            density: params.density,
+                            beatEmphasis: 1 - params.funkiness,
+                            randomness: params.funkiness * 0.8,
+                            groove: params.style === 'funk' ? 'swing' : 'straight'
+                        });
+                        break;
+                        
+                    case 'polyrhythm':
+                        const layers = params.style === 'afro' ? [3, 4, 5] : 
+                                      params.style === 'latin' ? [3, 4] : [4, 5, 6];
+                        result = IntuitiveRhythmGenerators.generatePolyrhythm(stepCount, {
+                            layers: layers,
+                            density: params.density,
+                            interaction: params.funkiness
+                        });
+                        break;
+                }
+                
+                const performance = {
+                    performedPattern: result.pattern,
+                    originalPattern: this.currentPattern.steps,
+                    parameters: params,
+                    name: params.name,
+                    type: result.type,
+                    complexity: this.calculateSimpleComplexity(result.pattern)
+                };
+                
                 variations.push(performance);
             }
             
             this.displayStochasticResults(variations, 'Multiple Variations');
             
         } catch (error) {
-            console.error('❌ Multiple stochastic generation error:', error);
+            console.error('❌ Multiple funky generation error:', error);
             showNotification('Error generating variations: ' + error.message, 'error');
         }
     }
