@@ -1836,19 +1836,19 @@ ${perfectBalancePatterns.map((pattern, index) => {
         
         if (densitySlider && densityValue) {
             densitySlider.addEventListener('input', (e) => {
-                densityValue.textContent = e.target.value;
+                densityValue.textContent = e.target.value + '%';
             });
         }
         
         if (metricStrengthSlider && metricStrengthValue) {
             metricStrengthSlider.addEventListener('input', (e) => {
-                metricStrengthValue.textContent = e.target.value;
+                metricStrengthValue.textContent = e.target.value + '%';
             });
         }
         
         if (syncopationSlider && syncopationValue) {
             syncopationSlider.addEventListener('input', (e) => {
-                syncopationValue.textContent = e.target.value;
+                syncopationValue.textContent = e.target.value + '%';
             });
         }
         
@@ -1889,14 +1889,35 @@ ${perfectBalancePatterns.map((pattern, index) => {
     }
     
     /**
-     * Get current stochastic parameters from UI
+     * Get current stochastic parameters from UI and map to algorithm values
      */
     getStochasticParameters() {
+        // Get percentage values from UI
+        const densityPercent = parseFloat(document.getElementById('densitySlider')?.value || 50);
+        const beatFocusPercent = parseFloat(document.getElementById('metricStrengthSlider')?.value || 70);
+        const syncopationPercent = parseFloat(document.getElementById('syncopationSlider')?.value || 20);
+        
+        // Map intuitive percentages to algorithm parameters
+        // Density: 0-100% maps to different probability scaling
+        const baseProbability = densityPercent / 100; // 0.0 to 1.0
+        
+        // Beat Focus: 0-100% maps to R parameter (inverted for intuitive control)
+        // Higher beat focus = lower R = more emphasis on strong beats
+        const density = 1 - (beatFocusPercent / 100); // 1.0 to 0.0
+        
+        // Metrical strength: derived from density to create musical results
+        // Lower values = higher probability = denser patterns
+        const metricalStrength = (1 - baseProbability) * 2 + 0.1; // 0.1 to 2.1
+        
         return {
-            density: parseFloat(document.getElementById('densitySlider')?.value || 0.5),
-            metricalStrength: parseFloat(document.getElementById('metricStrengthSlider')?.value || 1.0),
-            syncopationAmount: parseFloat(document.getElementById('syncopationSlider')?.value || 0.2),
-            variationMode: document.getElementById('variationMode')?.value || 'stable'
+            density: density,
+            metricalStrength: metricalStrength,
+            syncopationAmount: syncopationPercent / 100,
+            variationMode: document.getElementById('variationMode')?.value || 'stable',
+            // Store original UI values for display
+            uiDensity: densityPercent,
+            uiBeatFocus: beatFocusPercent,
+            uiSyncopation: syncopationPercent
         };
     }
     

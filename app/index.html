@@ -124,27 +124,27 @@
                         <div class="stochastic-compact-controls">
                             <div class="param-row-compact">
                                 <div class="param-compact">
-                                    <label>Focus (R):</label>
-                                    <input type="range" id="densitySlider" class="slider-compact" min="0" max="1" step="0.05" value="0.3">
-                                    <span id="densityValue" class="value-compact">0.3</span>
+                                    <label>Density:</label>
+                                    <input type="range" id="densitySlider" class="slider-compact" min="0" max="100" step="5" value="50">
+                                    <span id="densityValue" class="value-compact">50%</span>
                                 </div>
                                 <div class="param-compact">
-                                    <label>Sparsity (M):</label>
-                                    <input type="range" id="metricStrengthSlider" class="slider-compact" min="0.1" max="5" step="0.1" value="0.8">
-                                    <span id="metricStrengthValue" class="value-compact">0.8</span>
+                                    <label>Beat Focus:</label>
+                                    <input type="range" id="metricStrengthSlider" class="slider-compact" min="0" max="100" step="10" value="70">
+                                    <span id="metricStrengthValue" class="value-compact">70%</span>
                                 </div>
                             </div>
                             <div class="param-row-compact">
                                 <div class="param-compact">
                                     <label>Syncopation:</label>
-                                    <input type="range" id="syncopationSlider" class="slider-compact" min="0" max="1" step="0.1" value="0.2">
-                                    <span id="syncopationValue" class="value-compact">0.2</span>
+                                    <input type="range" id="syncopationSlider" class="slider-compact" min="0" max="100" step="10" value="20">
+                                    <span id="syncopationValue" class="value-compact">20%</span>
                                 </div>
                                 <div class="param-compact">
-                                    <label>Mode:</label>
+                                    <label>Variation:</label>
                                     <select id="variationMode" class="select-compact">
                                         <option value="stable">Stable</option>
-                                        <option value="unstable">Unstable</option>
+                                        <option value="unstable">Random</option>
                                     </select>
                                 </div>
                             </div>
@@ -162,12 +162,12 @@
                         <div class="info-box" id="stochastic-info" style="display: none;">
                             <strong>Stochastic Rhythm Generation:</strong><br>
                             Barlow's indispensability + stratified meter decomposition.<br><br>
-                            • <strong>Focus (R):</strong> 0=strong beats only, 1=all beats equal<br>
-                            • <strong>Sparsity (M):</strong> Lower=denser patterns, Higher=sparser<br>
+                            • <strong>Density:</strong> 0%=sparse, 100%=dense patterns<br>
+                            • <strong>Beat Focus:</strong> 0%=scattered, 100%=emphasize strong beats<br>
                             • <strong>Syncopation:</strong> Anticipation before strong beats<br>
-                            • <strong>Mode:</strong> Stable (small) vs Unstable (random) variation<br><br>
-                            <strong>For dense patterns:</strong> Focus=0.2-0.4, Sparsity=0.5-1.0<br>
-                            <em>Parameters interact - experiment for desired results!</em>
+                            • <strong>Variation:</strong> Stable (consistent) vs Random (chaotic)<br><br>
+                            <strong>Recommended:</strong> Density 40-70%, Beat Focus 60-80%<br>
+                            <em>Algorithm uses complex musicological principles for natural rhythms.</em>
                         </div>
                     </div>
                 </div>
