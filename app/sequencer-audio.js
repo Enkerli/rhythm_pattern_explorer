@@ -193,6 +193,72 @@ class SequencerAudioEngine {
     }
     
     /**
+     * Play a sound at a specific Web Audio context time
+     * @param {number} startTime - When to start the sound (in audio context time)
+     * @param {number} duration - Optional duration override
+     * @returns {boolean} Success status
+     */
+    playSoundAtTime(startTime, duration = null) {
+        if (!this.isSupported || !this.isInitialized) {
+            return false;
+        }
+        
+        // Ensure context is running
+        if (this.context.state !== 'running') {
+            console.warn('⚠️ Audio context not running, cannot schedule sound');
+            return false;
+        }
+        
+        try {
+            const params = this.settings;
+            
+            // Create oscillator and gain nodes
+            const oscillator = this.context.createOscillator();
+            const gainNode = this.context.createGain();
+            
+            // Configure oscillator
+            oscillator.type = params.waveform;
+            oscillator.frequency.setValueAtTime(params.frequency, startTime);
+            
+            // Configure envelope with precise timing
+            const soundDuration = duration || params.releaseTime + params.attackTime;
+            const maxGain = Math.min(params.volume, params.maxGain);
+            
+            // ADSR envelope scheduled for precise start time
+            gainNode.gain.setValueAtTime(0, startTime);
+            gainNode.gain.linearRampToValueAtTime(maxGain, startTime + params.attackTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + soundDuration);
+            
+            // Connect audio graph
+            oscillator.connect(gainNode);
+            gainNode.connect(this.context.destination);
+            
+            // Schedule playback at precise time
+            oscillator.start(startTime);
+            oscillator.stop(startTime + soundDuration);
+            
+            // Clean up when done
+            oscillator.addEventListener('ended', () => {
+                try {
+                    oscillator.disconnect();
+                    gainNode.disconnect();
+                } catch (e) {
+                    // Node may already be disconnected
+                }
+            });
+            
+            this.stats.soundsPlayed++;
+            return true;
+            
+        } catch (error) {
+            this.stats.errors++;
+            this.stats.lastError = error.message;
+            console.error('❌ Error scheduling sound:', error);
+            return false;
+        }
+    }
+    
+    /**
      * Update audio settings
      * @param {object} newSettings - Settings to update
      */

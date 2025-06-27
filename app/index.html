@@ -114,12 +114,69 @@
                     </div>
                 </div>
 
-                <!-- FUNKY RHYTHM GENERATOR SECTION (COMPACT) -->
+                <!-- RHYTHM MORPHER SECTION (COMPACT) -->
                 <div class="stochastic-section-compact" id="stochasticSection" style="display: none;">
                     <div class="stochastic-compact-box">
                         <div class="stochastic-header">
-                            <span class="stochastic-title">🎶 Funky Rhythm Generator</span>
-                            <button class="info-btn-small" onclick="toggleInfoBox('stochastic-info')" title="Generator info">ℹ️</button>
+                            <span class="stochastic-title">🎭 Rhythm Morpher</span>
+                            <button class="info-btn-small" onclick="toggleInfoBox('stochastic-info')" title="Morpher info">ℹ️</button>
+                        </div>
+                        <div class="stochastic-compact-controls">
+                            <div class="param-row-compact">
+                                <div class="param-compact">
+                                    <label>Style:</label>
+                                    <select id="morphStyle" class="select-compact">
+                                        <option value="balanced">Balanced</option>
+                                        <option value="syncopate">Syncopate</option>
+                                        <option value="straighten">Straighten</option>
+                                        <option value="groove">Groove</option>
+                                        <option value="swing">Swing</option>
+                                        <option value="shuffle">Shuffle</option>
+                                    </select>
+                                </div>
+                                <div class="param-compact">
+                                    <label>Amount:</label>
+                                    <input type="range" id="morphAmount" class="slider-compact" min="0" max="100" step="5" value="30">
+                                    <span id="morphValue" class="value-compact">30%</span>
+                                </div>
+                            </div>
+                            <div class="param-row-compact">
+                                <div class="param-compact">
+                                    <label>Original:</label>
+                                    <span id="originalPattern" class="pattern-display">Parse pattern first</span>
+                                </div>
+                            </div>
+                            <div class="buttons-compact">
+                                <button class="btn-compact primary" id="generateStochasticBtn">Morph</button>
+                                <button class="btn-compact secondary" id="generateMultipleBtn">3 Morphs</button>
+                                <button class="btn-compact success" id="addVariationBtn" disabled>Add to DB</button>
+                            </div>
+                        </div>
+                        <div class="stochastic-results-compact" id="stochasticResults" style="display: none;">
+                            <!-- Morphed patterns will appear here -->
+                        </div>
+                        
+                        <!-- RHYTHM MORPHER INFO BOX -->
+                        <div class="info-box" id="stochastic-info" style="display: none;">
+                            <strong>Rhythm Morphing:</strong><br>
+                            Transform rhythms by displacing onsets while preserving character.<br><br>
+                            • <strong>Balanced:</strong> Random displacement in both directions<br>
+                            • <strong>Syncopate:</strong> Move toward off-beat positions<br>
+                            • <strong>Straighten:</strong> Move toward strong beats<br>
+                            • <strong>Groove:</strong> Bias toward groove positions<br>
+                            • <strong>Swing/Shuffle:</strong> Create swing or shuffle feel<br><br>
+                            <strong>Amount:</strong> 0% = original, 100% = maximum displacement<br>
+                            <em>Preserves onset count and rhythm character!</em>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FUNKY RHYTHM GENERATOR SECTION (COMPACT) -->
+                <div class="stochastic-section-compact" id="generatorSection" style="display: none;">
+                    <div class="stochastic-compact-box">
+                        <div class="stochastic-header">
+                            <span class="stochastic-title">🎶 Funky Generator</span>
+                            <button class="info-btn-small" onclick="toggleInfoBox('generator-info')" title="Generator info">ℹ️</button>
                         </div>
                         <div class="stochastic-compact-controls">
                             <div class="param-row-compact">
@@ -133,47 +190,53 @@
                                     </select>
                                 </div>
                                 <div class="param-compact">
-                                    <label>Density:</label>
-                                    <input type="range" id="densitySlider" class="slider-compact" min="0" max="100" step="5" value="60">
-                                    <span id="densityValue" class="value-compact">60%</span>
+                                    <label>Steps:</label>
+                                    <input type="number" id="stepCountInput" class="input-compact" min="4" max="32" value="16">
                                 </div>
                             </div>
                             <div class="param-row-compact">
                                 <div class="param-compact">
+                                    <label>Density:</label>
+                                    <input type="range" id="genDensitySlider" class="slider-compact" min="0" max="100" step="5" value="60">
+                                    <span id="genDensityValue" class="value-compact">60%</span>
+                                </div>
+                                <div class="param-compact">
                                     <label>Style:</label>
-                                    <select id="styleSelect" class="select-compact">
+                                    <select id="genStyleSelect" class="select-compact">
                                         <option value="funk">Funk</option>
                                         <option value="latin">Latin</option>
                                         <option value="afro">Afro</option>
                                         <option value="house">House</option>
                                     </select>
                                 </div>
+                            </div>
+                            <div class="param-row-compact">
                                 <div class="param-compact">
                                     <label>Funkiness:</label>
-                                    <input type="range" id="funkinessSlider" class="slider-compact" min="0" max="100" step="10" value="50">
-                                    <span id="funkinessValue" class="value-compact">50%</span>
+                                    <input type="range" id="genFunkinessSlider" class="slider-compact" min="0" max="100" step="10" value="50">
+                                    <span id="genFunkinessValue" class="value-compact">50%</span>
                                 </div>
                             </div>
                             <div class="buttons-compact">
-                                <button class="btn-compact primary" id="generateStochasticBtn">Generate</button>
-                                <button class="btn-compact secondary" id="generateMultipleBtn">3 Variations</button>
-                                <button class="btn-compact success" id="addVariationBtn" disabled>Add to DB</button>
+                                <button class="btn-compact primary" id="generateFunkyBtn">Generate</button>
+                                <button class="btn-compact secondary" id="generateMultipleFunkyBtn">3 Variations</button>
+                                <button class="btn-compact success" id="addGeneratedBtn" disabled>Add to DB</button>
                             </div>
                         </div>
-                        <div class="stochastic-results-compact" id="stochasticResults" style="display: none;">
+                        <div class="stochastic-results-compact" id="generatorResults" style="display: none;">
                             <!-- Generated patterns will appear here -->
                         </div>
                         
                         <!-- FUNKY GENERATOR INFO BOX -->
-                        <div class="info-box" id="stochastic-info" style="display: none;">
+                        <div class="info-box" id="generator-info" style="display: none;">
                             <strong>Funky Rhythm Generators:</strong><br>
-                            Simple, intuitive generators for groovy patterns.<br><br>
+                            Create new rhythms from scratch using musical algorithms.<br><br>
                             • <strong>Groove:</strong> Template-based (funk, latin, afro, house)<br>
                             • <strong>Funky Euclidean:</strong> Euclidean + groove deviations<br>
                             • <strong>Probabilistic:</strong> Beat-strength based generation<br>
                             • <strong>Polyrhythm:</strong> Layered rhythmic cycles<br><br>
                             <strong>Try:</strong> Funk style, 60% density, 70% funkiness<br>
-                            <em>Designed for immediate musical results!</em>
+                            <em>Generates completely new patterns from algorithmic rules!</em>
                         </div>
                     </div>
                 </div>
@@ -277,6 +340,8 @@
                             <option value="polygons">Regular Polygons</option>
                             <option value="euclidean">Euclidean Rhythms</option>
                             <option value="combined">Combined Patterns</option>
+                            <option value="morphed">Morphed Patterns</option>
+                            <option value="generated">Generated Patterns</option>
                             <option value="subtraction">With Subtraction</option>
                             <option value="repetitive">Repetitive</option>
                             <option value="non_repetitive">Non-Repetitive</option>

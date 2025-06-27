@@ -1503,6 +1503,329 @@ class IntuitiveRhythmGenerators {
     }
 }
 
+/**
+ * Rhythm Morphing System
+ * Transforms existing rhythms by displacing onsets while preserving character
+ */
+class RhythmMorpher {
+    
+    /**
+     * Morph a rhythm pattern by displacing onsets
+     * @param {Array} originalPattern - Original rhythm pattern
+     * @param {number} morphAmount - 0-1: amount of morphing (0=original, 1=maximum displacement)
+     * @param {Object} options - Morphing options
+     * @returns {Object} Morphed pattern with original reference
+     */
+    static morphPattern(originalPattern, morphAmount = 0.5, options = {}) {
+        const {
+            preserveOnsetCount = true,    // Keep same number of hits
+            allowMicroTiming = false,     // Allow sub-step displacement (future feature)
+            morphStyle = 'balanced',      // 'balanced', 'groove', 'syncopate', 'straighten'
+            constrainToGrid = true,       // Keep onsets on grid positions
+            respectMeter = true           // Bias toward metrically strong positions
+        } = options;
+        
+        if (!Array.isArray(originalPattern) || originalPattern.length === 0) {
+            throw new Error('Invalid original pattern for morphing');
+        }
+        
+        const stepCount = originalPattern.length;
+        const originalOnsets = this.getOnsetPositions(originalPattern);
+        
+        if (originalOnsets.length === 0) {
+            return {
+                pattern: [...originalPattern],
+                morphed: [...originalPattern],
+                originalOnsets: [],
+                morphedOnsets: [],
+                morphAmount: 0,
+                displacement: 0
+            };
+        }
+        
+        // Generate morphed onset positions
+        const morphedOnsets = this.generateMorphedOnsets(
+            originalOnsets, 
+            stepCount, 
+            morphAmount, 
+            morphStyle,
+            options
+        );
+        
+        // Create new pattern from morphed onsets
+        const morphedPattern = new Array(stepCount).fill(false);
+        morphedOnsets.forEach(pos => {
+            if (pos >= 0 && pos < stepCount) {
+                morphedPattern[pos] = true;
+            }
+        });
+        
+        // Calculate displacement metrics
+        const displacement = this.calculateDisplacement(originalOnsets, morphedOnsets, stepCount);
+        
+        return {
+            pattern: [...originalPattern],
+            morphed: morphedPattern,
+            originalOnsets: originalOnsets,
+            morphedOnsets: morphedOnsets,
+            morphAmount: morphAmount,
+            displacement: displacement,
+            morphStyle: morphStyle,
+            description: `${morphStyle} morph (${Math.round(morphAmount*100)}% displacement)`
+        };
+    }
+    
+    /**
+     * Generate morphed onset positions
+     */
+    static generateMorphedOnsets(originalOnsets, stepCount, morphAmount, morphStyle, options) {
+        const morphedOnsets = [];
+        
+        for (const originalPos of originalOnsets) {
+            let newPos = originalPos;
+            
+            switch (morphStyle) {
+                case 'balanced':
+                    newPos = this.morphBalanced(originalPos, stepCount, morphAmount);
+                    break;
+                    
+                case 'groove':
+                    newPos = this.morphToGroove(originalPos, stepCount, morphAmount);
+                    break;
+                    
+                case 'syncopate':
+                    newPos = this.morphSyncopate(originalPos, stepCount, morphAmount);
+                    break;
+                    
+                case 'straighten':
+                    newPos = this.morphStraighten(originalPos, stepCount, morphAmount);
+                    break;
+                    
+                case 'swing':
+                    newPos = this.morphSwing(originalPos, stepCount, morphAmount);
+                    break;
+                    
+                case 'shuffle':
+                    newPos = this.morphShuffle(originalPos, stepCount, morphAmount);
+                    break;
+            }
+            
+            // Ensure position is within bounds and not duplicate
+            newPos = Math.round(newPos) % stepCount;
+            if (newPos < 0) newPos += stepCount;
+            
+            // Avoid duplicates at same position
+            if (!morphedOnsets.includes(newPos)) {
+                morphedOnsets.push(newPos);
+            } else {
+                // Find nearest available position
+                const nearestPos = this.findNearestAvailable(newPos, morphedOnsets, stepCount);
+                if (nearestPos !== -1) {
+                    morphedOnsets.push(nearestPos);
+                }
+            }
+        }
+        
+        return morphedOnsets.sort((a, b) => a - b);
+    }
+    
+    /**
+     * Balanced morphing - random displacement in both directions
+     */
+    static morphBalanced(position, stepCount, amount) {
+        const maxDisplacement = Math.floor(stepCount * 0.25); // Max 25% of pattern length
+        const displacement = (Math.random() - 0.5) * 2 * maxDisplacement * amount;
+        return position + displacement;
+    }
+    
+    /**
+     * Groove morphing - bias toward groove positions
+     */
+    static morphToGroove(position, stepCount, amount) {
+        const groovePositions = this.getGroovePositions(stepCount);
+        const nearestGroove = this.findNearestGroovePosition(position, groovePositions);
+        const displacement = (nearestGroove - position) * amount;
+        return position + displacement;
+    }
+    
+    /**
+     * Syncopation morphing - move toward off-beat positions
+     */
+    static morphSyncopate(position, stepCount, amount) {
+        const strongBeats = this.getStrongBeats(stepCount);
+        
+        // If on strong beat, move to nearby off-beat
+        if (strongBeats.includes(position)) {
+            const offBeatTargets = this.getNearbyOffBeats(position, stepCount);
+            const target = offBeatTargets[Math.floor(Math.random() * offBeatTargets.length)];
+            return position + (target - position) * amount;
+        }
+        
+        // If already off-beat, add some randomness
+        return this.morphBalanced(position, stepCount, amount * 0.5);
+    }
+    
+    /**
+     * Straightening morphing - move toward strong beats
+     */
+    static morphStraighten(position, stepCount, amount) {
+        const strongBeats = this.getStrongBeats(stepCount);
+        const nearestStrong = strongBeats.reduce((nearest, beat) => {
+            const currentDistance = Math.abs(position - beat);
+            const nearestDistance = Math.abs(position - nearest);
+            return currentDistance < nearestDistance ? beat : nearest;
+        });
+        
+        const displacement = (nearestStrong - position) * amount;
+        return position + displacement;
+    }
+    
+    /**
+     * Swing morphing - create swing feel
+     */
+    static morphSwing(position, stepCount, amount) {
+        const eighth = stepCount / 8;
+        const beatPosition = position % eighth;
+        
+        // Move off-beats later for swing feel
+        if (beatPosition > eighth / 2) {
+            const swingDelay = eighth * 0.15 * amount; // Typical swing ratio
+            return position + swingDelay;
+        }
+        
+        return position;
+    }
+    
+    /**
+     * Shuffle morphing - create shuffle rhythm
+     */
+    static morphShuffle(position, stepCount, amount) {
+        const sixteenth = stepCount / 16;
+        const beatPosition = position % (sixteenth * 2);
+        
+        // Shuffle the second sixteenth note of each eighth note pair
+        if (beatPosition >= sixteenth && beatPosition < sixteenth * 2) {
+            const shuffleDelay = sixteenth * 0.2 * amount;
+            return position + shuffleDelay;
+        }
+        
+        return position;
+    }
+    
+    // Helper methods
+    static getOnsetPositions(pattern) {
+        return pattern.map((step, index) => step ? index : -1)
+                     .filter(index => index !== -1);
+    }
+    
+    static getStrongBeats(stepCount) {
+        const quarter = Math.floor(stepCount / 4);
+        return [0, quarter, quarter * 2, quarter * 3].filter(pos => pos < stepCount);
+    }
+    
+    static getGroovePositions(stepCount) {
+        const positions = [];
+        const sixteenth = stepCount / 16;
+        
+        // Add groove positions (1, 1+, 2, 2+, 3, 3+, 4, 4+)
+        for (let i = 0; i < 16; i++) {
+            const pos = Math.floor(i * sixteenth);
+            if (pos < stepCount && !positions.includes(pos)) {
+                positions.push(pos);
+            }
+        }
+        
+        return positions;
+    }
+    
+    static findNearestGroovePosition(position, groovePositions) {
+        return groovePositions.reduce((nearest, groove) => {
+            const currentDistance = Math.abs(position - groove);
+            const nearestDistance = Math.abs(position - nearest);
+            return currentDistance < nearestDistance ? groove : nearest;
+        });
+    }
+    
+    static getNearbyOffBeats(position, stepCount) {
+        const strongBeats = this.getStrongBeats(stepCount);
+        const quarter = Math.floor(stepCount / 4);
+        const eighth = Math.floor(stepCount / 8);
+        
+        // Return positions that are not on strong beats
+        const offBeats = [];
+        for (let i = -eighth; i <= eighth; i++) {
+            const pos = (position + i + stepCount) % stepCount;
+            if (!strongBeats.includes(pos) && pos !== position) {
+                offBeats.push(pos);
+            }
+        }
+        
+        return offBeats;
+    }
+    
+    static findNearestAvailable(targetPos, usedPositions, stepCount) {
+        for (let distance = 1; distance < stepCount / 2; distance++) {
+            const pos1 = (targetPos + distance) % stepCount;
+            const pos2 = (targetPos - distance + stepCount) % stepCount;
+            
+            if (!usedPositions.includes(pos1)) return pos1;
+            if (!usedPositions.includes(pos2)) return pos2;
+        }
+        return -1; // No available position found
+    }
+    
+    static calculateDisplacement(originalOnsets, morphedOnsets, stepCount) {
+        if (originalOnsets.length !== morphedOnsets.length) {
+            return { average: 0, total: 0, normalized: 0 };
+        }
+        
+        let totalDisplacement = 0;
+        for (let i = 0; i < originalOnsets.length; i++) {
+            const original = originalOnsets[i];
+            const morphed = morphedOnsets[i];
+            
+            // Calculate circular distance
+            const directDistance = Math.abs(morphed - original);
+            const wrapDistance = stepCount - directDistance;
+            const displacement = Math.min(directDistance, wrapDistance);
+            
+            totalDisplacement += displacement;
+        }
+        
+        const averageDisplacement = totalDisplacement / originalOnsets.length;
+        const normalizedDisplacement = averageDisplacement / (stepCount / 4); // Normalize to quarter note
+        
+        return {
+            total: totalDisplacement,
+            average: averageDisplacement,
+            normalized: Math.min(1, normalizedDisplacement)
+        };
+    }
+    
+    /**
+     * Create a morph sequence - interpolate between original and target
+     */
+    static createMorphSequence(originalPattern, targetPattern, steps = 5) {
+        const sequence = [];
+        
+        for (let i = 0; i <= steps; i++) {
+            const morphAmount = i / steps;
+            const result = this.morphPattern(originalPattern, morphAmount, {
+                morphStyle: 'balanced'
+            });
+            
+            sequence.push({
+                pattern: result.morphed,
+                morphAmount: morphAmount,
+                step: i,
+                description: `Morph step ${i}/${steps} (${Math.round(morphAmount*100)}%)`
+            });
+        }
+        
+        return sequence;
+    }
+}
+
 // Export to global scope for browser compatibility
 if (typeof window !== 'undefined') {
     window.PerfectBalanceAnalyzer = PerfectBalanceAnalyzer;
@@ -1512,4 +1835,5 @@ if (typeof window !== 'undefined') {
     window.SyncopationAnalyzer = SyncopationAnalyzer;
     window.StochasticRhythmGenerator = StochasticRhythmGenerator;
     window.IntuitiveRhythmGenerators = IntuitiveRhythmGenerators;
+    window.RhythmMorpher = RhythmMorpher;
 }

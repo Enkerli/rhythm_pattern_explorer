@@ -61,7 +61,7 @@ class EnhancedPatternApp {
             'AdvancedPatternCombiner', 'UnifiedPatternParser', 'PatternConverter',
             'SystematicExplorer', 'PatternDatabase', 'UIComponents', 'AppConfig',
             'SequencerController', 'SequencerIntegration', 'SyncopationAnalyzer',
-            'IntuitiveRhythmGenerators'
+            'IntuitiveRhythmGenerators', 'RhythmMorpher'
         ];
         
         const missingClasses = requiredClasses.filter(className => 
@@ -606,12 +606,21 @@ ${(() => {
                 }
             }
             
-            // Show and populate stochastic section
+            // Show and populate morpher section
             const stochasticSection = document.getElementById('stochasticSection');
             if (stochasticSection) {
                 stochasticSection.style.display = 'block';
-                // Reset any previous generation state
+                // Reset any previous morphing state and update original pattern display
                 this.resetStochasticControls();
+                this.updateOriginalPatternDisplay(pattern);
+            }
+            
+            // Show generator section
+            const generatorSection = document.getElementById('generatorSection');
+            if (generatorSection) {
+                generatorSection.style.display = 'block';
+                // Reset any previous generation state
+                this.resetGeneratorControls();
             }
             
             // Load pattern into sequencer
@@ -1824,28 +1833,20 @@ ${perfectBalancePatterns.map((pattern, index) => {
     }
     
     /**
-     * Setup funky rhythm generator event listeners
+     * Setup rhythm morpher event listeners
      */
     setupStochasticEvents() {
-        // Parameter slider events
-        const densitySlider = document.getElementById('densitySlider');
-        const funkinessSlider = document.getElementById('funkinessSlider');
-        const densityValue = document.getElementById('densityValue');
-        const funkinessValue = document.getElementById('funkinessValue');
+        // Morpher parameter slider events
+        const morphAmountSlider = document.getElementById('morphAmount');
+        const morphValue = document.getElementById('morphValue');
         
-        if (densitySlider && densityValue) {
-            densitySlider.addEventListener('input', (e) => {
-                densityValue.textContent = e.target.value + '%';
+        if (morphAmountSlider && morphValue) {
+            morphAmountSlider.addEventListener('input', (e) => {
+                morphValue.textContent = e.target.value + '%';
             });
         }
         
-        if (funkinessSlider && funkinessValue) {
-            funkinessSlider.addEventListener('input', (e) => {
-                funkinessValue.textContent = e.target.value + '%';
-            });
-        }
-        
-        // Generation button events
+        // Morpher button events
         const generateBtn = document.getElementById('generateStochasticBtn');
         const generateMultipleBtn = document.getElementById('generateMultipleBtn');
         const addVariationBtn = document.getElementById('addVariationBtn');
@@ -1860,6 +1861,41 @@ ${perfectBalancePatterns.map((pattern, index) => {
         
         if (addVariationBtn) {
             addVariationBtn.addEventListener('click', () => this.addStochasticVariationToDatabase());
+        }
+        
+        // Generator parameter slider events
+        const genDensitySlider = document.getElementById('genDensitySlider');
+        const genDensityValue = document.getElementById('genDensityValue');
+        const genFunkinessSlider = document.getElementById('genFunkinessSlider');
+        const genFunkinessValue = document.getElementById('genFunkinessValue');
+        
+        if (genDensitySlider && genDensityValue) {
+            genDensitySlider.addEventListener('input', (e) => {
+                genDensityValue.textContent = e.target.value + '%';
+            });
+        }
+        
+        if (genFunkinessSlider && genFunkinessValue) {
+            genFunkinessSlider.addEventListener('input', (e) => {
+                genFunkinessValue.textContent = e.target.value + '%';
+            });
+        }
+        
+        // Generator button events
+        const generateFunkyBtn = document.getElementById('generateFunkyBtn');
+        const generateMultipleFunkyBtn = document.getElementById('generateMultipleFunkyBtn');
+        const addGeneratedBtn = document.getElementById('addGeneratedBtn');
+        
+        if (generateFunkyBtn) {
+            generateFunkyBtn.addEventListener('click', () => this.generateSingleFunkyPattern());
+        }
+        
+        if (generateMultipleFunkyBtn) {
+            generateMultipleFunkyBtn.addEventListener('click', () => this.generateMultipleFunkyPatterns());
+        }
+        
+        if (addGeneratedBtn) {
+            addGeneratedBtn.addEventListener('click', () => this.addGeneratedPatternToDatabase());
         }
     }
     
@@ -1882,19 +1918,30 @@ ${perfectBalancePatterns.map((pattern, index) => {
     }
     
     /**
-     * Get current funky generator parameters from UI
+     * Get current morpher parameters from UI
      */
     getStochasticParameters() {
         return {
-            type: document.getElementById('generatorType')?.value || 'groove',
-            density: parseFloat(document.getElementById('densitySlider')?.value || 60) / 100,
-            style: document.getElementById('styleSelect')?.value || 'funk',
-            funkiness: parseFloat(document.getElementById('funkinessSlider')?.value || 50) / 100
+            morphStyle: document.getElementById('morphStyle')?.value || 'balanced',
+            morphAmount: parseFloat(document.getElementById('morphAmount')?.value || 30) / 100
         };
     }
     
     /**
-     * Generate a single funky rhythm variation
+     * Update the original pattern display
+     */
+    updateOriginalPatternDisplay(pattern) {
+        const originalDisplay = document.getElementById('originalPattern');
+        if (originalDisplay && pattern && pattern.steps) {
+            const binary = PatternConverter.toBinary(pattern.steps, pattern.stepCount);
+            const onsetCount = pattern.steps.filter(step => step).length;
+            originalDisplay.textContent = `${binary} (${onsetCount} onsets)`;
+            originalDisplay.classList.add('pattern-loaded');
+        }
+    }
+    
+    /**
+     * Generate a single morphed rhythm variation
      */
     generateSingleStochasticVariation() {
         if (!this.currentPattern) {
@@ -1904,69 +1951,33 @@ ${perfectBalancePatterns.map((pattern, index) => {
         
         try {
             const params = this.getStochasticParameters();
-            const stepCount = this.currentPattern.stepCount;
-            let result;
             
-            // Use the appropriate generator based on type
-            switch (params.type) {
-                case 'groove':
-                    result = IntuitiveRhythmGenerators.generateGrooveRhythm(stepCount, {
-                        density: params.density,
-                        accentPattern: params.style,
-                        syncopation: params.funkiness * 0.6,
-                        swing: params.funkiness * 0.4,
-                        ghost: params.funkiness * 0.3
-                    });
-                    break;
-                    
-                case 'funky-euclidean':
-                    const hits = Math.floor(stepCount * params.density);
-                    result = IntuitiveRhythmGenerators.generateFunkyEuclidean(stepCount, {
-                        hits: hits,
-                        funkiness: params.funkiness,
-                        backbeat: 0.6,
-                        shuffle: params.funkiness * 0.4
-                    });
-                    break;
-                    
-                case 'probabilistic':
-                    result = IntuitiveRhythmGenerators.generateProbabilisticRhythm(stepCount, {
-                        density: params.density,
-                        beatEmphasis: 1 - params.funkiness,
-                        randomness: params.funkiness * 0.8,
-                        groove: params.style === 'funk' ? 'swing' : 'straight'
-                    });
-                    break;
-                    
-                case 'polyrhythm':
-                    const layers = params.style === 'afro' ? [3, 4, 5] : 
-                                  params.style === 'latin' ? [3, 4] : [4, 5, 6];
-                    result = IntuitiveRhythmGenerators.generatePolyrhythm(stepCount, {
-                        layers: layers,
-                        density: params.density,
-                        interaction: params.funkiness
-                    });
-                    break;
-                    
-                default:
-                    throw new Error('Unknown generator type: ' + params.type);
-            }
+            // Morph the current pattern
+            const result = RhythmMorpher.morphPattern(
+                this.currentPattern.steps,
+                params.morphAmount,
+                {
+                    morphStyle: params.morphStyle,
+                    preserveOnsetCount: true
+                }
+            );
             
             // Convert to expected format
             const performance = {
-                performedPattern: result.pattern,
-                originalPattern: this.currentPattern.steps,
+                performedPattern: result.morphed,
+                originalPattern: result.pattern,
                 parameters: params,
                 name: result.description,
-                type: result.type,
-                complexity: this.calculateSimpleComplexity(result.pattern)
+                type: 'morphed',
+                displacement: result.displacement,
+                complexity: this.calculateSimpleComplexity(result.morphed)
             };
             
-            this.displayStochasticResults([performance], 'Funky Variation');
+            this.displayStochasticResults([performance], 'Morphed Pattern');
             
         } catch (error) {
-            console.error('❌ Funky generation error:', error);
-            showNotification('Error generating funky rhythm: ' + error.message, 'error');
+            console.error('❌ Morphing error:', error);
+            showNotification('Error morphing rhythm: ' + error.message, 'error');
         }
     }
     
@@ -1995,7 +2006,7 @@ ${perfectBalancePatterns.map((pattern, index) => {
     }
     
     /**
-     * Generate multiple funky variations with different parameters
+     * Generate multiple morphed variations with different amounts
      */
     generateMultipleStochasticVariations() {
         if (!this.currentPattern) {
@@ -2005,78 +2016,43 @@ ${perfectBalancePatterns.map((pattern, index) => {
         
         try {
             const baseParams = this.getStochasticParameters();
-            const stepCount = this.currentPattern.stepCount;
             const variations = [];
             
-            // Generate 3 variations with different characteristics
-            const parameterSets = [
-                { ...baseParams, density: Math.max(0.2, baseParams.density - 0.2), funkiness: 0.3, name: 'Subtle' },
-                { ...baseParams, name: 'Current' },
-                { ...baseParams, funkiness: Math.min(1, baseParams.funkiness + 0.3), name: 'Funky' }
+            // Generate 3 variations with different morph amounts
+            const morphAmounts = [
+                { amount: Math.max(0.1, baseParams.morphAmount - 0.2), name: 'Subtle' },
+                { amount: baseParams.morphAmount, name: 'Current' },
+                { amount: Math.min(1, baseParams.morphAmount + 0.3), name: 'Heavy' }
             ];
             
-            for (const params of parameterSets) {
-                let result;
-                
-                // Use the same generation logic as single variation
-                switch (params.type) {
-                    case 'groove':
-                        result = IntuitiveRhythmGenerators.generateGrooveRhythm(stepCount, {
-                            density: params.density,
-                            accentPattern: params.style,
-                            syncopation: params.funkiness * 0.6,
-                            swing: params.funkiness * 0.4,
-                            ghost: params.funkiness * 0.3
-                        });
-                        break;
-                        
-                    case 'funky-euclidean':
-                        const hits = Math.floor(stepCount * params.density);
-                        result = IntuitiveRhythmGenerators.generateFunkyEuclidean(stepCount, {
-                            hits: hits,
-                            funkiness: params.funkiness,
-                            backbeat: 0.6,
-                            shuffle: params.funkiness * 0.4
-                        });
-                        break;
-                        
-                    case 'probabilistic':
-                        result = IntuitiveRhythmGenerators.generateProbabilisticRhythm(stepCount, {
-                            density: params.density,
-                            beatEmphasis: 1 - params.funkiness,
-                            randomness: params.funkiness * 0.8,
-                            groove: params.style === 'funk' ? 'swing' : 'straight'
-                        });
-                        break;
-                        
-                    case 'polyrhythm':
-                        const layers = params.style === 'afro' ? [3, 4, 5] : 
-                                      params.style === 'latin' ? [3, 4] : [4, 5, 6];
-                        result = IntuitiveRhythmGenerators.generatePolyrhythm(stepCount, {
-                            layers: layers,
-                            density: params.density,
-                            interaction: params.funkiness
-                        });
-                        break;
-                }
+            for (const morphConfig of morphAmounts) {
+                const result = RhythmMorpher.morphPattern(
+                    this.currentPattern.steps,
+                    morphConfig.amount,
+                    {
+                        morphStyle: baseParams.morphStyle,
+                        preserveOnsetCount: true
+                    }
+                );
                 
                 const performance = {
-                    performedPattern: result.pattern,
-                    originalPattern: this.currentPattern.steps,
-                    parameters: params,
-                    name: params.name,
-                    type: result.type,
-                    complexity: this.calculateSimpleComplexity(result.pattern)
+                    performedPattern: result.morphed,
+                    originalPattern: result.pattern,
+                    parameters: { ...baseParams, morphAmount: morphConfig.amount },
+                    name: morphConfig.name,
+                    type: 'morphed',
+                    displacement: result.displacement,
+                    complexity: this.calculateSimpleComplexity(result.morphed)
                 };
                 
                 variations.push(performance);
             }
             
-            this.displayStochasticResults(variations, 'Multiple Variations');
+            this.displayStochasticResults(variations, 'Multiple Morphs');
             
         } catch (error) {
-            console.error('❌ Multiple funky generation error:', error);
-            showNotification('Error generating variations: ' + error.message, 'error');
+            console.error('❌ Multiple morphing error:', error);
+            showNotification('Error generating morph variations: ' + error.message, 'error');
         }
     }
     
@@ -2121,6 +2097,13 @@ ${perfectBalancePatterns.map((pattern, index) => {
         const binary = PatternConverter.toBinary(performance.performedPattern, performance.performedPattern.length);
         const complexity = performance.complexity;
         
+        // Show displacement info for morphed patterns
+        let displacementInfo = '';
+        if (performance.displacement && performance.displacement.normalized) {
+            const displacementPercent = Math.round(performance.displacement.normalized * 100);
+            displacementInfo = `<span>Disp:${displacementPercent}%</span>`;
+        }
+        
         return `
             <div class="stochastic-variation" data-variation-index="${index}">
                 <div class="variation-header">
@@ -2133,6 +2116,7 @@ ${perfectBalancePatterns.map((pattern, index) => {
                 <div class="variation-stats">
                     <span>D:${(complexity.density * 100).toFixed(0)}%</span>
                     <span>S:${(complexity.syncopation * 100).toFixed(0)}%</span>
+                    ${displacementInfo}
                 </div>
             </div>
         `;
@@ -2198,7 +2182,7 @@ ${perfectBalancePatterns.map((pattern, index) => {
     }
     
     /**
-     * Add selected stochastic variation to database
+     * Add selected morphed variation to database
      */
     addStochasticVariationToDatabase() {
         if (!this.selectedStochasticVariation) {
@@ -2209,14 +2193,20 @@ ${perfectBalancePatterns.map((pattern, index) => {
         try {
             const performance = this.selectedStochasticVariation;
             
-            // Create pattern object for database
+            // Create pattern object for database with proper morphing metadata
             const patternData = {
                 steps: performance.performedPattern,
                 stepCount: performance.performedPattern.length,
-                name: `Stochastic Variation: ${performance.name || 'Generated'}`,
-                isStochasticGenerated: true,
-                originalPattern: this.currentPattern,
-                stochasticParameters: performance.parameters,
+                name: `Morphed: ${performance.name || 'Variation'}`,
+                isMorphed: true,
+                originalPattern: {
+                    steps: performance.originalPattern,
+                    stepCount: performance.originalPattern.length,
+                    binary: PatternConverter.toBinary(performance.originalPattern, performance.originalPattern.length),
+                    name: this.currentPattern.name || 'Source Pattern'
+                },
+                morphingParameters: performance.parameters,
+                displacement: performance.displacement,
                 complexity: performance.complexity
             };
             
@@ -2229,10 +2219,16 @@ ${perfectBalancePatterns.map((pattern, index) => {
                 syncopation: analyses.syncopationAnalysis
             });
             
+            // Add morphing-specific metadata to database pattern
+            dbPattern.isMorphed = true;
+            dbPattern.originalPattern = patternData.originalPattern;
+            dbPattern.morphingParameters = patternData.morphingParameters;
+            dbPattern.displacement = patternData.displacement;
+            
             // Add to database
             const patternId = this.database.add(dbPattern);
             if (patternId) {
-                showNotification('Stochastic variation added to database!', 'success');
+                showNotification('Morphed pattern added to database!', 'success');
                 this.updatePatternList();
                 this.updateDatabaseStats();
                 
@@ -2243,9 +2239,265 @@ ${perfectBalancePatterns.map((pattern, index) => {
             }
             
         } catch (error) {
-            console.error('❌ Error adding stochastic variation:', error);
-            showNotification('Error adding variation to database: ' + error.message, 'error');
+            console.error('❌ Error adding morphed pattern:', error);
+            showNotification('Error adding morphed pattern to database: ' + error.message, 'error');
         }
+    }
+    
+    /**
+     * Get current generator parameters from UI
+     */
+    getGeneratorParameters() {
+        return {
+            generatorType: document.getElementById('generatorType')?.value || 'groove',
+            stepCount: parseInt(document.getElementById('stepCountInput')?.value || 16),
+            density: parseFloat(document.getElementById('genDensitySlider')?.value || 60) / 100,
+            style: document.getElementById('genStyleSelect')?.value || 'funk',
+            funkiness: parseFloat(document.getElementById('genFunkinessSlider')?.value || 50) / 100
+        };
+    }
+    
+    /**
+     * Generate a single funky pattern
+     */
+    generateSingleFunkyPattern() {
+        try {
+            const params = this.getGeneratorParameters();
+            
+            // Generate the pattern using IntuitiveRhythmGenerators
+            const result = IntuitiveRhythmGenerators.generate(
+                params.generatorType,
+                params.stepCount,
+                {
+                    density: params.density,
+                    style: params.style,
+                    funkiness: params.funkiness
+                }
+            );
+            
+            if (!result || !result.steps) {
+                throw new Error('Generator failed to create pattern');
+            }
+            
+            // Convert to expected format
+            const performance = {
+                performedPattern: result.steps,
+                originalPattern: null, // Generated patterns have no original
+                parameters: params,
+                name: result.description || `${params.generatorType} pattern`,
+                type: 'generated',
+                complexity: this.calculateSimpleComplexity(result.steps)
+            };
+            
+            this.displayGeneratorResults([performance], 'Generated Pattern');
+            
+        } catch (error) {
+            console.error('❌ Generation error:', error);
+            showNotification('Error generating pattern: ' + error.message, 'error');
+        }
+    }
+    
+    /**
+     * Generate multiple funky patterns with variations
+     */
+    generateMultipleFunkyPatterns() {
+        try {
+            const baseParams = this.getGeneratorParameters();
+            const variations = [];
+            
+            // Generate 3 variations with different parameters
+            const paramVariations = [
+                { ...baseParams, density: Math.max(0.1, baseParams.density - 0.2), name: 'Sparse' },
+                { ...baseParams, name: 'Current' },
+                { ...baseParams, density: Math.min(1, baseParams.density + 0.2), name: 'Dense' }
+            ];
+            
+            for (const params of paramVariations) {
+                const result = IntuitiveRhythmGenerators.generate(
+                    params.generatorType,
+                    params.stepCount,
+                    {
+                        density: params.density,
+                        style: params.style,
+                        funkiness: params.funkiness
+                    }
+                );
+                
+                if (result && result.steps) {
+                    const performance = {
+                        performedPattern: result.steps,
+                        originalPattern: null,
+                        parameters: params,
+                        name: params.name,
+                        type: 'generated',
+                        complexity: this.calculateSimpleComplexity(result.steps)
+                    };
+                    
+                    variations.push(performance);
+                }
+            }
+            
+            this.displayGeneratorResults(variations, 'Generated Variations');
+            
+        } catch (error) {
+            console.error('❌ Multiple generation error:', error);
+            showNotification('Error generating pattern variations: ' + error.message, 'error');
+        }
+    }
+    
+    /**
+     * Display generator results
+     */
+    displayGeneratorResults(performances, title) {
+        const resultsDiv = document.getElementById('generatorResults');
+        if (!resultsDiv) return;
+        
+        resultsDiv.style.display = 'block';
+        
+        const html = `
+            <div class="stochastic-results-header">
+                <h4>${title}</h4>
+            </div>
+            <div class="stochastic-variations">
+                ${performances.map((performance, index) => 
+                    this.renderGeneratorVariationCompact(performance, index)
+                ).join('')}
+            </div>
+        `;
+        
+        resultsDiv.innerHTML = html;
+        
+        // Add click event listeners for selection
+        resultsDiv.querySelectorAll('.stochastic-variation').forEach((div, index) => {
+            div.addEventListener('click', () => this.selectGeneratedVariation(performances[index], index));
+        });
+        
+        // Auto-select first variation
+        if (performances.length > 0) {
+            this.selectGeneratedVariation(performances[0], 0);
+        }
+    }
+    
+    /**
+     * Render a generator variation in compact format
+     */
+    renderGeneratorVariationCompact(performance, index) {
+        const binary = PatternConverter.toBinary(performance.performedPattern, performance.performedPattern.length);
+        const complexity = performance.complexity;
+        const onsetCount = performance.performedPattern.filter(step => step).length;
+        
+        return `
+            <div class="stochastic-variation" data-variation-index="${index}">
+                <div class="variation-header">
+                    <span class="variation-name">${performance.name || `Gen ${index + 1}`}</span>
+                    <span class="variation-complexity">${(complexity.overall * 100).toFixed(0)}%</span>
+                </div>
+                <div class="variation-pattern">
+                    <span class="pattern-binary">${binary}</span>
+                </div>
+                <div class="variation-stats">
+                    <span>D:${(complexity.density * 100).toFixed(0)}%</span>
+                    <span>S:${(complexity.syncopation * 100).toFixed(0)}%</span>
+                    <span>O:${onsetCount}</span>
+                </div>
+            </div>
+        `;
+    }
+    
+    /**
+     * Select a generated variation
+     */
+    selectGeneratedVariation(performance, index) {
+        // Update UI selection
+        const resultsDiv = document.getElementById('generatorResults');
+        if (resultsDiv) {
+            resultsDiv.querySelectorAll('.stochastic-variation').forEach(div => {
+                div.classList.remove('selected');
+            });
+            
+            const selectedDiv = resultsDiv.querySelector(`[data-variation-index="${index}"]`);
+            if (selectedDiv) {
+                selectedDiv.classList.add('selected');
+            }
+        }
+        
+        // Store selection
+        this.selectedGeneratedPattern = performance;
+        
+        // Enable add to database button
+        const addBtn = document.getElementById('addGeneratedBtn');
+        if (addBtn) {
+            addBtn.disabled = false;
+        }
+        
+        showNotification(`Selected generated pattern: ${performance.name}`, 'info');
+    }
+    
+    /**
+     * Add selected generated pattern to database
+     */
+    addGeneratedPatternToDatabase() {
+        if (!this.selectedGeneratedPattern) {
+            showNotification('No generated pattern selected', 'warning');
+            return;
+        }
+        
+        try {
+            const performance = this.selectedGeneratedPattern;
+            
+            // Create pattern object for database
+            const patternData = {
+                steps: performance.performedPattern,
+                stepCount: performance.performedPattern.length,
+                name: `Generated: ${performance.name || 'Funky Pattern'}`,
+                isGenerated: true,
+                generatorType: performance.parameters.generatorType,
+                generatorParameters: performance.parameters,
+                complexity: performance.complexity
+            };
+            
+            // Generate analyses for the new pattern
+            const analyses = this.generateComprehensiveAnalysis(patternData);
+            
+            // Create database pattern
+            const dbPattern = createDatabasePattern(patternData, analyses);
+            
+            // Add to database
+            const patternId = this.database.add(dbPattern);
+            
+            if (patternId) {
+                showNotification(`Generated pattern added to database!`, 'success');
+                this.updatePatternList();
+                this.updateDatabaseStats();
+                
+                // Reset generator controls
+                this.resetGeneratorControls();
+            } else {
+                showNotification('Pattern already exists in database', 'info');
+            }
+            
+        } catch (error) {
+            console.error('❌ Error adding generated pattern to database:', error);
+            showNotification('Error adding pattern to database: ' + error.message, 'error');
+        }
+    }
+    
+    /**
+     * Reset generator controls to default state
+     */
+    resetGeneratorControls() {
+        const resultsDiv = document.getElementById('generatorResults');
+        if (resultsDiv) {
+            resultsDiv.style.display = 'none';
+            resultsDiv.innerHTML = '';
+        }
+        
+        const addBtn = document.getElementById('addGeneratedBtn');
+        if (addBtn) {
+            addBtn.disabled = true;
+        }
+        
+        this.selectedGeneratedPattern = null;
     }
 }
 
