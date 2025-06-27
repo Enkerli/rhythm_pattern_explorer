@@ -331,11 +331,118 @@ class SequencerController {
     }
     
     /**
-     * Start the playback timing loop
+     * Start the playback timing loop with precise Web Audio scheduling
      */
     startPlaybackLoop() {
         this.stopPlaybackLoop(); // Ensure no existing loop
         
+        if (!this.audioEngine || !this.audioEngine.context) {
+            console.warn('Audio context not available for precise timing');
+            this.startFallbackPlaybackLoop();
+            return;
+        }
+        
+        // Initialize precise timing variables
+        this.schedulerState = {
+            nextStepTime: this.audioEngine.context.currentTime,
+            stepDurationSeconds: this.state.stepDuration / 1000,
+            lookaheadTime: 0.1, // 100ms lookahead
+            scheduleAheadTime: 0.025, // 25ms schedule precision
+            currentVisualStep: this.state.currentStep,
+            lastScheduledStep: -1
+        };
+        
+        // Start the scheduler with precise timing
+        this.startPreciseScheduler();
+        
+        // Start visual update loop separately
+        this.startVisualUpdateLoop();
+    }
+    
+    /**
+     * Precise Web Audio API scheduler
+     */
+    startPreciseScheduler() {
+        const scheduler = () => {
+            if (!this.state.isPlaying) return;
+            
+            // Schedule audio events ahead of time
+            while (this.schedulerState.nextStepTime < 
+                   this.audioEngine.context.currentTime + this.schedulerState.lookaheadTime) {
+                
+                this.scheduleStep(this.schedulerState.nextStepTime);
+                this.schedulerState.nextStepTime += this.schedulerState.stepDurationSeconds;
+            }
+            
+            // Continue scheduling
+            this.state.schedulerTimeout = setTimeout(scheduler, this.schedulerState.scheduleAheadTime * 1000);
+        };
+        
+        scheduler();
+    }
+    
+    /**
+     * Schedule a single step with precise timing
+     */
+    scheduleStep(audioTime) {
+        const stepIndex = (this.schedulerState.lastScheduledStep + 1) % this.state.pattern.stepCount;
+        this.schedulerState.lastScheduledStep = stepIndex;
+        
+        // Schedule audio if step is active
+        if (this.state.pattern.steps[stepIndex] && this.audioEngine) {
+            this.audioEngine.playSoundAtTime(audioTime);
+        }
+        
+        // Schedule visual update to happen at the right time
+        const visualDelay = Math.max(0, (audioTime - this.audioEngine.context.currentTime) * 1000);
+        setTimeout(() => {
+            if (this.state.isPlaying) {
+                this.updateVisualStep(stepIndex, audioTime);
+            }
+        }, visualDelay);
+    }
+    
+    /**
+     * Visual update loop using requestAnimationFrame
+     */
+    startVisualUpdateLoop() {
+        const updateVisuals = () => {
+            if (!this.state.isPlaying) return;
+            
+            // Update visual rendering
+            this.updatePlaybackState();
+            
+            // Continue visual updates
+            this.state.visualUpdateId = requestAnimationFrame(updateVisuals);
+        };
+        
+        updateVisuals();
+    }
+    
+    /**
+     * Update visual step position with timing sync
+     */
+    updateVisualStep(stepIndex, audioTime) {
+        this.schedulerState.currentVisualStep = stepIndex;
+        this.state.currentStep = stepIndex;
+        
+        // Emit step change event with precise timing
+        this.emitEvent('onStepChange', {
+            currentStep: stepIndex,
+            isActive: this.state.pattern.steps[stepIndex],
+            audioTime: audioTime,
+            stepTime: performance.now()
+        });
+        
+        // Update stats
+        this.stats.stepsPlayed++;
+        this.updateStepTiming(performance.now());
+    }
+    
+    /**
+     * Fallback playback loop for when Web Audio context is not available
+     */
+    startFallbackPlaybackLoop() {
         const playStep = () => {
             if (!this.state.isPlaying) return;
             
@@ -375,10 +482,26 @@ class SequencerController {
      * Stop the playback timing loop
      */
     stopPlaybackLoop() {
+        // Stop old interval-based timer
         if (this.state.playbackInterval) {
             clearInterval(this.state.playbackInterval);
             this.state.playbackInterval = null;
         }
+        
+        // Stop precise scheduler
+        if (this.state.schedulerTimeout) {
+            clearTimeout(this.state.schedulerTimeout);
+            this.state.schedulerTimeout = null;
+        }
+        
+        // Stop visual updates
+        if (this.state.visualUpdateId) {
+            cancelAnimationFrame(this.state.visualUpdateId);
+            this.state.visualUpdateId = null;
+        }
+        
+        // Clear scheduler state
+        this.schedulerState = null;
     }
     
     /**
@@ -426,8 +549,16 @@ class SequencerController {
         this.state.tempo = newTempo;
         this.state.stepDuration = this.calculateStepDuration(newTempo);
         
-        // Restart playback loop if playing to apply new timing
-        if (this.state.isPlaying) {
+        // Update scheduler state if using precise timing
+        if (this.schedulerState) {
+            this.schedulerState.stepDurationSeconds = this.state.stepDuration / 1000;
+            
+            // If playing, restart scheduler to apply new timing immediately
+            if (this.state.isPlaying) {
+                this.startPlaybackLoop();
+            }
+        } else if (this.state.isPlaying) {
+            // Fallback: restart old interval-based loop
             this.startPlaybackLoop();
         }
         
@@ -437,7 +568,7 @@ class SequencerController {
             newValue: newTempo
         });
         
-        console.log(`🎵 Tempo changed: ${oldTempo} → ${newTempo} BPM`);
+        console.log(`🎵 Tempo changed: ${oldTempo} → ${newTempo} BPM (${this.schedulerState ? 'precise' : 'fallback'} timing)`);
     }
     
     /**

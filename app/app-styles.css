@@ -3582,6 +3582,35 @@ html {
     color: var(--text-secondary);
 }
 
+/* === PATTERN DISPLAY === */
+.pattern-display {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-secondary);
+    padding: 2px 4px;
+    background: var(--bg-primary);
+    border-radius: 2px;
+    flex: 1;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+.pattern-display.pattern-loaded {
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+.input-compact {
+    flex: 1;
+    padding: 2px 4px;
+    border: 1px solid var(--border-light);
+    border-radius: 3px;
+    background: white;
+    font-size: 11px;
+    color: var(--text-primary);
+    min-width: 40px;
+}
+
 /* === RESPONSIVE === */
 @media (max-width: 768px) {
     .param-row-compact {

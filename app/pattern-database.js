@@ -292,6 +292,10 @@ class PatternDatabase {
                 });
             case 'combined':
                 return this.patterns.filter(p => p.combined || p.isCombined);
+            case 'morphed':
+                return this.patterns.filter(p => p.isMorphed);
+            case 'generated':
+                return this.patterns.filter(p => p.isGenerated);
             case 'subtraction':
                 return this.patterns.filter(p => p.hasSubtraction);
             case 'repetitive':
@@ -851,6 +855,17 @@ function createDatabasePattern(patternData, analyses = {}) {
         pattern.quantizationDirection = patternData.quantizationDirection;
         pattern.originalStepCount = patternData.originalStepCount;
         pattern.quantizationRatio = patternData.quantizationRatio;
+    }
+    
+    if (patternData.isGenerated) {
+        pattern.generation = {
+            generatorType: patternData.generatorType,
+            parameters: patternData.generatorParameters,
+            complexity: patternData.complexity
+        };
+        pattern.isGenerated = true;
+        pattern.generatorType = patternData.generatorType;
+        pattern.generatorParameters = patternData.generatorParameters;
     }
     
     return pattern;
