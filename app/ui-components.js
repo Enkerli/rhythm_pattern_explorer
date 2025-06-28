@@ -2,16 +2,54 @@
 
 /**
  * UI Components and Visualization Helpers
- * Provides visualization helpers, modal management, clipboard utilities, and DOM manipulation
+ * 
+ * Provides comprehensive user interface utilities for the Rhythm Pattern Explorer,
+ * including interactive visualizations, modal dialogs, clipboard operations,
+ * and DOM manipulation helpers. Focuses on responsive design and accessibility.
+ * 
+ * Component Categories:
+ * - Visualization: Center of gravity displays, pattern representations
+ * - Modal System: Dialog boxes, alerts, confirmations
+ * - Clipboard: Copy operations with user feedback
+ * - DOM Utilities: Element creation, manipulation, event handling
+ * - Progress Indicators: Loading states, operation feedback
+ * - Responsive Design: Mobile-friendly layouts and interactions
+ * 
+ * Design Philosophy:
+ * Components are designed to be modular, reusable, and accessible.
+ * All visualizations use mathematical precision for accurate representation
+ * of rhythm pattern properties while maintaining intuitive user interaction.
  */
 
 // === VISUALIZATION HELPERS ===
 
 /**
  * Render center of gravity visualization with onset points and CoG indicator
+ * 
+ * Creates an interactive circular visualization showing rhythm pattern onsets
+ * positioned around a circle with the calculated center of gravity indicated.
+ * Uses precise mathematical positioning for accurate geometric representation.
+ * 
  * @param {Object} cogAnalysis - Center of gravity analysis results
  * @param {number} stepCount - Number of steps in the pattern
  * @returns {string} HTML string for CoG visualization
+ * 
+ * @example
+ * const cogViz = renderCogVisualization(analysis, 8);
+ * // Returns HTML with circular pattern display and CoG indicator
+ * 
+ * Visualization Elements:
+ * - Circular boundary representing the full pattern cycle
+ * - Onset points positioned at mathematically precise angles
+ * - Center of gravity indicator at calculated coordinates
+ * - Visual scaling for optimal display clarity
+ * - Color coding for different pattern characteristics
+ * 
+ * Mathematical Precision:
+ * - Onset angles: (position / stepCount) × 2π - π/2 (top-aligned)
+ * - CoG coordinates: Scaled complex number representation
+ * - Floating-point cleanup: Values < 1e-10 treated as zero
+ * - Responsive scaling: Coordinates scaled to fit display area
  */
 function renderCogVisualization(cogAnalysis, stepCount) {
     if (!cogAnalysis || !cogAnalysis.coordinates) {
