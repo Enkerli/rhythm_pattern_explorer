@@ -22,9 +22,52 @@
 
 /**
  * Enhanced Pattern Application Controller
- * Main orchestrator class that coordinates all modules and manages application state
+ * 
+ * Main orchestrator class that coordinates all modules and manages application state.
+ * Acts as the central hub for the Rhythm Pattern Explorer, handling user interactions,
+ * coordinating between modules, and maintaining application state.
+ * 
+ * Key Responsibilities:
+ * - Initialize and coordinate all application modules
+ * - Handle user interface events and interactions
+ * - Manage pattern parsing, analysis, and transformations
+ * - Control database operations and pattern storage
+ * - Integrate audio sequencer for pattern playback
+ * - Coordinate Barlow transformations and progressive sequences
+ * - Manage UI state and provide user feedback
+ * 
+ * Architecture:
+ * This class follows the coordinator pattern, delegating specific tasks to
+ * specialized modules while maintaining overall application flow and state.
+ * It serves as the bridge between the user interface and the mathematical
+ * analysis engines.
  */
 class EnhancedPatternApp {
+    /**
+     * Initialize the Enhanced Pattern Application
+     * 
+     * Sets up all application components, verifies dependencies, initializes
+     * core modules, and establishes event listeners for user interactions.
+     * 
+     * Initialization Process:
+     * 1. Verify all required dependencies are available
+     * 2. Initialize core components (database, explorer, sequencer)
+     * 3. Set up application state variables
+     * 4. Configure event listeners for UI interactions
+     * 5. Initialize application with existing data
+     * 6. Set up audio sequencer for pattern playback
+     * 
+     * @throws {Error} If required dependencies are missing
+     * 
+     * Dependencies Verified:
+     * - Mathematical utilities (MathUtils)
+     * - Pattern generators (RegularPolygonGenerator, EuclideanGenerator)
+     * - Analysis engines (PerfectBalanceAnalyzer, PatternAnalyzer, etc.)
+     * - Processing utilities (UnifiedPatternParser, PatternConverter)
+     * - Database and UI components
+     * - Sequencer and integration modules
+     * - Rhythm morphing and Barlow transformation tools
+     */
     constructor() {
         console.log('🎼 Initializing Enhanced Pattern Application...');
         

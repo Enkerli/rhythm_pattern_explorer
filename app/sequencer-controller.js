@@ -18,10 +18,70 @@
  */
 
 /**
- * Main Sequencer Controller
- * Coordinates audio and visual engines for rhythm pattern playback
+ * Sequencer Controller - Advanced rhythm pattern playback system
+ * 
+ * Provides high-precision audio and visual sequencer capabilities for rhythm
+ * pattern playback with perfect synchronization. Integrates Web Audio API
+ * for sub-millisecond timing accuracy with real-time visual feedback.
+ * 
+ * Core Features:
+ * - Precision timing using Web Audio API with lookahead scheduling
+ * - Perfect audio-visual synchronization
+ * - Real-time tempo and volume control
+ * - Multiple waveform support (sine, square, triangle, sawtooth)
+ * - Circular pattern visualization with center of gravity display
+ * - Pattern loading from any source (parsed, database, generated)
+ * - Comprehensive playback state management
+ * - Performance monitoring and optimization
+ * 
+ * Technical Architecture:
+ * - Audio Engine: Web Audio API with precise scheduling
+ * - Visual Engine: Canvas-based circular sequencer display
+ * - Controller Layer: Coordinates engines and manages state
+ * - Integration Layer: Connects with main application workflow
+ * 
+ * Timing System:
+ * Uses Web Audio's currentTime for scheduling with lookahead buffering
+ * to eliminate JavaScript timing jitter. Audio events are scheduled
+ * precisely in the audio thread while visual updates sync to the
+ * audio timeline for perfect coordination.
+ * 
+ * Musical Applications:
+ * - Pattern composition and experimentation
+ * - Rhythm analysis and comparison
+ * - Live performance with mathematical patterns
+ * - Educational demonstration of algorithmic rhythms
  */
 class SequencerController {
+    /**
+     * Initialize the Sequencer Controller
+     * 
+     * @param {string} canvasId - ID of canvas element for visual display
+     * @param {string} containerId - ID of container element for UI controls
+     * @param {Object} options - Configuration options
+     * @param {boolean} options.autoPlay - Auto-start playback when pattern loaded
+     * @param {number} options.defaultTempo - Initial tempo in BPM (default: 120)
+     * @param {number} options.defaultVolume - Initial volume 0-1 (default: 0.5)
+     * @param {string} options.defaultWaveform - Initial waveform type (default: 'sine')
+     * @param {number} options.stepDivision - Steps per beat (default: 4 for 16th notes)
+     * @param {number} options.maxPatternLength - Maximum pattern length (default: 64)
+     * @param {boolean} options.enableAudio - Enable audio engine (default: true)
+     * @param {boolean} options.enableVisual - Enable visual engine (default: true)
+     * 
+     * Initialization Process:
+     * 1. Configure sequencer parameters and options
+     * 2. Initialize playback state variables
+     * 3. Create audio and visual engine instances
+     * 4. Set up timing and synchronization systems
+     * 5. Configure default pattern and settings
+     * 6. Establish event system for main app integration
+     * 
+     * Performance Considerations:
+     * - Audio context initialization requires user gesture
+     * - Visual updates optimized for 60fps
+     * - Memory efficient pattern storage
+     * - Graceful degradation if audio unavailable
+     */
     constructor(canvasId, containerId, options = {}) {
         // Configuration
         this.config = {
