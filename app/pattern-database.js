@@ -4,10 +4,54 @@
 const DATABASE_STORAGE_KEY = 'enhancedPerfectBalancePatternDatabase';
 
 /**
- * Database Manager for Pattern Storage and Retrieval
- * Handles pattern persistence, search, filtering, import/export
+ * Pattern Database Manager - Comprehensive rhythm pattern storage system
+ * 
+ * Provides full CRUD operations for rhythm patterns with advanced search,
+ * filtering, and data management capabilities. Handles both in-memory and
+ * persistent storage using browser localStorage with graceful fallbacks.
+ * 
+ * Key Features:
+ * - Persistent storage with localStorage integration
+ * - Duplicate detection based on binary representation
+ * - Advanced search with text and filter combinations
+ * - Category-based filtering (Euclidean, Polygons, Perfect Balance, etc.)
+ * - Step count range filtering for pattern length constraints
+ * - Import/export functionality for data portability
+ * - Comprehensive statistics and analytics
+ * - Automatic pattern analysis integration
+ * - Graceful degradation when localStorage unavailable
+ * 
+ * Data Structure:
+ * Each pattern stored with complete metadata including:
+ * - Pattern data (steps, stepCount, binary representation)
+ * - Analysis results (balance, syncopation, geometry)
+ * - Classification (type, category, characteristics)
+ * - User data (name, favorite status, timestamp)
+ * - Derivation info (original patterns, transformations)
+ * 
+ * Storage Strategy:
+ * - Primary: Browser localStorage for persistence
+ * - Fallback: In-memory storage for compatibility
+ * - Automatic data validation and repair
+ * - Efficient serialization/deserialization
  */
 class PatternDatabase {
+    /**
+     * Initialize the Pattern Database
+     * 
+     * @param {boolean} autoLoad - Whether to automatically load existing patterns (default: true)
+     * 
+     * Initialization Process:
+     * 1. Test localStorage availability and functionality
+     * 2. Initialize in-memory pattern array
+     * 3. Automatically load existing patterns if requested
+     * 4. Set up storage preferences based on capabilities
+     * 
+     * Storage Testing:
+     * Tests localStorage by attempting a write/read/delete cycle to ensure
+     * the storage is both available and functional. Falls back to in-memory
+     * storage if localStorage is blocked, full, or unavailable.
+     */
     constructor(autoLoad = true) {
         this.patterns = [];
         this.useLocalStorage = this.testLocalStorage();
