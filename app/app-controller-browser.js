@@ -627,8 +627,10 @@ ${(() => {
             const barlowSection = document.getElementById('barlowSection');
             if (barlowSection) {
                 barlowSection.style.display = 'block';
-                // Reset any previous transformation state and update current onsets display
-                this.resetBarlowControls();
+                // Only reset controls if we're not in the middle of a Barlow transformation
+                if (!pattern.isBarlowTransformed || !this.selectedBarlowTransformation) {
+                    this.resetBarlowControls();
+                }
                 this.updateCurrentOnsetsDisplay(pattern);
             }
             
@@ -2181,8 +2183,23 @@ ${perfectBalancePatterns.map((pattern, index) => {
             addBtn.disabled = false;
         }
         
-        // Load into sequencer for preview
-        this.loadStochasticVariationIntoSequencer(performance);
+        // Handle different types of variations
+        if (performance.type === 'barlow_transform') {
+            // For Barlow transformations, load as input pattern
+            const transformationData = {
+                transformedPattern: performance.performedPattern,
+                originalPattern: performance.originalPattern,
+                parameters: performance.parameters,
+                name: performance.name,
+                type: performance.type,
+                transformation: performance.transformation,
+                metadata: performance.metadata
+            };
+            this.loadTransformedPatternAsInput(transformationData);
+        } else {
+            // For regular morphs/generations, load into sequencer for preview
+            this.loadStochasticVariationIntoSequencer(performance);
+        }
     }
     
     /**
@@ -2218,6 +2235,13 @@ ${perfectBalancePatterns.map((pattern, index) => {
         
         try {
             const performance = this.selectedStochasticVariation;
+            
+            // Handle different types of variations
+            if (performance.type === 'barlow_transform') {
+                // Use the dedicated Barlow database method
+                this.addBarlowPatternToDatabase();
+                return;
+            }
             
             // Create pattern object for database with proper morphing metadata
             const patternData = {
@@ -2633,7 +2657,7 @@ ${perfectBalancePatterns.map((pattern, index) => {
                 complexity: this.calculateSimpleComplexity(transformation.transformedPattern)
             };
             
-            this.displayStochasticResults([variation], 'Barlow Transform');
+            this.displayBarlowResults([transformation], 'Barlow Transform');
             
         } catch (error) {
             console.error('❌ Barlow transformation error:', error);
@@ -2729,7 +2753,7 @@ ${perfectBalancePatterns.map((pattern, index) => {
                 complexity: this.calculateSimpleComplexity(transformation.transformedPattern)
             }));
             
-            this.displayStochasticResults(variations, `Progressive: ${currentOnsets} → ${targetOnsets} onsets`);
+            this.displayBarlowResults(transformations, `Progressive: ${currentOnsets} → ${targetOnsets} onsets`);
             
         } catch (error) {
             console.error('❌ Progressive Barlow error:', error);
@@ -2749,9 +2773,6 @@ ${perfectBalancePatterns.map((pattern, index) => {
             return;
         }
         
-        console.log('📦 Results div found, displaying...');
-        resultsDiv.style.display = 'block';
-        
         const html = `
             <div class="stochastic-results-header">
                 <h4>${title}</h4>
@@ -2765,6 +2786,10 @@ ${perfectBalancePatterns.map((pattern, index) => {
         
         resultsDiv.innerHTML = html;
         
+        // Force display after setting HTML
+        resultsDiv.style.display = 'block';
+        resultsDiv.style.visibility = 'visible';
+        
         // Add click event listeners for selection
         resultsDiv.querySelectorAll('.stochastic-variation').forEach((div, index) => {
             div.addEventListener('click', () => this.selectBarlowVariation(transformations[index], index));
@@ -2772,7 +2797,10 @@ ${perfectBalancePatterns.map((pattern, index) => {
         
         // Auto-select first transformation
         if (transformations.length > 0) {
-            this.selectBarlowVariation(transformations[0], 0);
+            // Use setTimeout to ensure DOM has been updated
+            setTimeout(() => {
+                this.selectBarlowVariation(transformations[0], 0);
+            }, 100);
         }
     }
     
@@ -2798,8 +2826,8 @@ ${perfectBalancePatterns.map((pattern, index) => {
                 <div class="variation-stats">
                     <span>O:${onsetCount}</span>
                     <span>T:${transformation.transformation}</span>
-                    ${transformation.metadata.onsetsRemoved > 0 ? `<span>R:${transformation.metadata.onsetsRemoved}</span>` : ''}
-                    ${transformation.metadata.onsetsAdded > 0 ? `<span>A:${transformation.metadata.onsetsAdded}</span>` : ''}
+                    ${transformation.metadata && transformation.metadata.onsetsRemoved > 0 ? `<span>R:${transformation.metadata.onsetsRemoved}</span>` : ''}
+                    ${transformation.metadata && transformation.metadata.onsetsAdded > 0 ? `<span>A:${transformation.metadata.onsetsAdded}</span>` : ''}
                 </div>
             </div>
         `;
@@ -2829,40 +2857,34 @@ ${perfectBalancePatterns.map((pattern, index) => {
         const addBtn = document.getElementById('addBarlowBtn');
         if (addBtn) {
             addBtn.disabled = false;
+            addBtn.style.opacity = '1';
         }
         
         // Load the transformed pattern as the new current pattern  
-        // Convert from stochastic format back to transformation format
-        const transformationData = {
-            transformedPattern: performance.performedPattern,
-            originalPattern: performance.originalPattern,
-            parameters: performance.parameters,
-            name: performance.name,
-            type: performance.type,
-            transformation: performance.transformation,
-            metadata: performance.metadata
-        };
-        this.loadTransformedPatternAsInput(transformationData);
+        this.loadTransformedPatternAsInput(transformation);
         
-        showNotification(`Selected transformation: ${performance.name}`, 'info');
+        showNotification(`Selected transformation: ${transformation.name}`, 'info');
     }
     
     /**
      * Add selected Barlow transformation to database
      */
     addBarlowPatternToDatabase() {
-        if (!this.selectedBarlowTransformation) {
+        const transformation = this.selectedBarlowTransformation;
+        
+        if (!transformation) {
             showNotification('No transformation selected', 'warning');
             return;
         }
         
         try {
-            const transformation = this.selectedBarlowTransformation;
+            const transformedPattern = transformation.transformedPattern;
+            const originalPattern = transformation.originalPattern;
             
             // Create descriptive name for database
-            const onsetCount = transformation.transformedPattern.filter(step => step).length;
-            const stepCount = transformation.transformedPattern.length;
-            const originalOnsets = transformation.originalPattern.filter(step => step).length;
+            const onsetCount = transformedPattern.filter(step => step).length;
+            const stepCount = transformedPattern.length;
+            const originalOnsets = originalPattern.filter(step => step).length;
             
             let descriptiveName = '';
             if (transformation.transformation === 'dilution') {
@@ -2875,8 +2897,8 @@ ${perfectBalancePatterns.map((pattern, index) => {
             
             // Create pattern object for database
             const patternData = {
-                steps: transformation.transformedPattern,
-                stepCount: transformation.transformedPattern.length,
+                steps: transformedPattern,
+                stepCount: transformedPattern.length,
                 name: descriptiveName,
                 isBarlowTransformed: true,
                 originalPattern: {
