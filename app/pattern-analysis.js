@@ -1027,13 +1027,59 @@ class SyncopationAnalyzer {
  * - Respects metrical hierarchy and maintains rhythmic coherence
  * - Preserves downbeat and strong beats according to indispensability ranking
  */
+/**
+ * Barlow Transformer - Advanced rhythm pattern transformation using indispensability theory
+ * 
+ * Implements Clarence Barlow's indispensability-based pattern transformation algorithms.
+ * Provides intelligent dilution (onset removal) and concentration (onset addition) based
+ * on the rhythmic importance of each metric position.
+ * 
+ * Key Features:
+ * - Dilution: Removes least indispensable onsets while preserving rhythmic coherence
+ * - Concentration: Adds onsets to most indispensable positions to strengthen meter
+ * - Wolrab Mode: Reverses indispensability logic for anti-metrical patterns
+ * - Progressive transformations: Step-by-step sequences between onset densities
+ * - Pickup beat recognition: Special handling for anacrustic positions
+ * 
+ * Theoretical Foundation:
+ * Based on Clarence Barlow's "Two Essays on Theory" (1987), this implements
+ * stratified meter decomposition and prime factorization-based indispensability
+ * scoring to make musically intelligent decisions about rhythm transformation.
+ */
 class BarlowTransformer {
     /**
-     * Transform a pattern by diluting (reducing onsets) or concentrating (adding onsets)
-     * @param {Array<boolean>} pattern - Original pattern
-     * @param {number} targetOnsets - Desired number of onsets
+     * Transform a rhythm pattern using Barlow indispensability logic
+     * 
+     * @param {Array<boolean>} pattern - Original pattern as boolean array
+     * @param {number} targetOnsets - Desired number of onsets after transformation
      * @param {Object} options - Transformation options
-     * @returns {Object} Transformed pattern with metadata
+     * @param {boolean} options.wolrabMode - Reverse indispensability logic (default: false)
+     * @param {boolean} options.preserveDownbeat - Keep position 0 onset (default: true)
+     * @param {number} options.minimumIndispensability - Minimum threshold for onset removal (default: 0.0)
+     * @returns {Object} Transformation result containing:
+     *   - pattern: Transformed pattern array
+     *   - originalPattern: Original pattern for reference
+     *   - transformation: Type of transformation ('dilute', 'concentrate', 'none')
+     *   - targetOnsets: Target onset count
+     *   - currentOnsets: Actual onset count achieved
+     *   - description: Human-readable description
+     *   - removedPositions/addedPositions: Positions modified with indispensability scores
+     * 
+     * @example
+     * // Dilute 5-onset pattern to 3 onsets
+     * const result = BarlowTransformer.transformPattern(
+     *     [true, false, true, false, true, false, true, false], 3
+     * );
+     * 
+     * // Concentrate 3-onset pattern to 5 onsets
+     * const result = BarlowTransformer.transformPattern(
+     *     [true, false, false, true, false, false, true, false], 5
+     * );
+     * 
+     * // Anti-metrical transformation with Wolrab mode
+     * const result = BarlowTransformer.transformPattern(
+     *     pattern, 4, { wolrabMode: true }
+     * );
      */
     static transformPattern(pattern, targetOnsets, options = {}) {
         const stepCount = pattern.length;
