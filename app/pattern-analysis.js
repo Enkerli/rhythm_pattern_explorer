@@ -130,6 +130,27 @@ class CenterOfGravityCalculator {
         };
     }
     
+    /**
+     * Calculate center of gravity for multiple patterns simultaneously
+     * 
+     * @param {Array<Object|Array>} patterns - Array of pattern objects or step arrays
+     * @returns {Array<Object>} Array of CoG results with pattern references
+     * @throws {Error} If patterns is not an array
+     * 
+     * @example
+     * const patterns = [
+     *     {steps: [true, false, true, false], stepCount: 4},
+     *     {steps: [true, true, false, false], stepCount: 4}
+     * ];
+     * const results = CenterOfGravityCalculator.calculateMultipleCoG(patterns);
+     * // Returns array of CoG analyses for comparison
+     * 
+     * Applications:
+     * - Comparative pattern analysis
+     * - Batch processing for pattern databases
+     * - Visual comparison of geometric properties
+     * - Statistical analysis of pattern collections
+     */
     static calculateMultipleCoG(patterns) {
         if (!Array.isArray(patterns)) {
             throw new Error('Patterns must be an array');
@@ -148,7 +169,65 @@ class CenterOfGravityCalculator {
     }
 }
 
+/**
+ * Pattern Analyzer - Advanced rhythm pattern structure analysis
+ * 
+ * Provides sophisticated analysis of rhythm pattern characteristics including
+ * repetition detection, Euclidean pattern recognition, structural analysis,
+ * and prosodic classification. Uses mathematical pattern recognition
+ * algorithms to identify fundamental rhythmic properties.
+ * 
+ * Analysis Categories:
+ * - Repetition Analysis: Detect cyclical subpatterns
+ * - Euclidean Recognition: Identify maximally even distributions
+ * - Structural Analysis: Analyze pattern complexity and regularity
+ * - Prosodic Classification: Map to poetic meter categories
+ * - Morse Code Detection: Recognize dot-dash rhythm patterns
+ * 
+ * Mathematical Approach:
+ * Uses computational pattern matching, divisibility analysis, and
+ * statistical distribution tests to classify rhythm patterns according
+ * to their fundamental mathematical and musical properties.
+ */
 class PatternAnalyzer {
+    /**
+     * Detect repetitive subpatterns within a rhythm pattern
+     * 
+     * @param {Array<boolean>} steps - Pattern as boolean array
+     * @param {number} stepCount - Total number of steps
+     * @returns {Object|null} Repetition analysis or null if no repetition found
+     * 
+     * @example
+     * PatternAnalyzer.detectRepetition([true, false, true, false, true, false], 6)
+     * // Returns: {
+     * //   unitLength: 2,
+     * //   repetitions: 3,
+     * //   unit: [true, false],
+     * //   unitBinary: "10",
+     * //   unitDecimal: 2,
+     * //   unitHex: "0x2",
+     * //   isRepetitive: true
+     * // }
+     * 
+     * Algorithm:
+     * 1. Test all possible unit lengths from 1 to stepCount/2
+     * 2. For each length that divides stepCount evenly:
+     *    - Extract potential unit pattern
+     *    - Check if pattern repeats exactly across all cycles
+     *    - Return first (shortest) repetitive unit found
+     * 3. Return null if no repetition detected
+     * 
+     * Musical Applications:
+     * - Identify ostinato patterns in composition
+     * - Detect cyclical structures in traditional rhythms
+     * - Analyze pattern complexity vs. repetition
+     * - Optimize pattern storage and representation
+     * 
+     * Mathematical Significance:
+     * Repetitive patterns have reduced informational complexity and often
+     * correspond to fundamental rhythmic cycles in traditional music.
+     * The shortest repetitive unit represents the pattern's fundamental cycle.
+     */
     static detectRepetition(steps, stepCount) {
         if (stepCount < 2) return null;
         

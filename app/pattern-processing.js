@@ -1,11 +1,74 @@
 // === MODULE 4: PATTERN PROCESSING ===
+/**
+ * Pattern Converter - Universal format conversion utilities
+ * 
+ * Provides comprehensive conversion between all supported rhythm pattern formats.
+ * Handles binary, hexadecimal, octal, decimal, and onset array representations
+ * with proper parsing, validation, and error handling.
+ * 
+ * Supported Formats:
+ * - Binary: "10010010" or "b10010010" 
+ * - Hexadecimal: "0x92" or "0x92:8" (with step count)
+ * - Octal: "0o111" or "0o111:9" (with step count)
+ * - Decimal: "146" or "146:8" (with step count)
+ * - Onset Arrays: "[0,3,6]" or "[0,3,6]:8" (with step count)
+ * 
+ * Mathematical Considerations:
+ * - Handles bit ordering for rhythmic interpretation
+ * - Preserves pattern length information
+ * - Maintains onset position accuracy
+ * - Supports both standard and enhanced notation
+ * 
+ * Design Philosophy:
+ * Rhythm patterns are fundamentally sequences of onsets and rests that can be
+ * represented in multiple equivalent mathematical formats. This class provides
+ * lossless conversion between formats while preserving musical meaning.
+ */
 class PatternConverter {
+    /**
+     * Convert boolean pattern array to binary string representation
+     * 
+     * @param {Array<boolean>} steps - Pattern as boolean array
+     * @param {number} stepCount - Total number of steps
+     * @returns {string} Binary string representation
+     * 
+     * @example
+     * PatternConverter.toBinary([true, false, true, false], 4)
+     * // Returns: "1010"
+     * 
+     * PatternConverter.toBinary([true, false, false, true, false, false, true, false], 8)
+     * // Returns: "10010010" (Tresillo pattern)
+     * 
+     * Algorithm:
+     * Maps each boolean value to '1' (onset) or '0' (rest) in left-to-right order,
+     * preserving the temporal sequence of the rhythm pattern.
+     */
     static toBinary(steps, stepCount) {
         return Array(stepCount).fill(0)
             .map((_, i) => steps[i] ? '1' : '0')
             .join('');
     }
     
+    /**
+     * Parse binary string to pattern object
+     * 
+     * @param {string} binaryString - Binary representation (e.g., "10010010")
+     * @returns {Object} Pattern object with steps array and metadata
+     * 
+     * @example
+     * PatternConverter.fromBinary("1010")
+     * // Returns: {
+     * //   steps: [true, false, true, false],
+     * //   stepCount: 4,
+     * //   isBinaryInput: true
+     * // }
+     * 
+     * Musical Context:
+     * Binary representation is the most direct format for rhythm patterns,
+     * with each bit representing a discrete time step that either contains
+     * an onset (1) or rest (0). This format is used internally throughout
+     * the application for pattern manipulation and analysis.
+     */
     static fromBinary(binaryString) {
         return {
             steps: binaryString.split('').map(bit => bit === '1'),
@@ -14,6 +77,30 @@ class PatternConverter {
         };
     }
     
+    /**
+     * Convert binary string to decimal representation
+     * 
+     * @param {string} binaryString - Binary pattern string
+     * @param {boolean} shouldReverse - Whether to reverse for rhythmic interpretation (default: true)
+     * @returns {number} Decimal representation of the pattern
+     * 
+     * @example
+     * PatternConverter.toDecimal("10010010", true)  // Rhythmic interpretation
+     * // Returns: 73 (reversed: 01001001 = 73)
+     * 
+     * PatternConverter.toDecimal("10010010", false) // Standard binary
+     * // Returns: 146 (standard: 10010010 = 146)
+     * 
+     * Bit Ordering Philosophy:
+     * - shouldReverse=true: Musical interpretation where leftmost position 
+     *   (downbeat) gets lowest bit value for natural onset weighting
+     * - shouldReverse=false: Standard binary interpretation for computational use
+     * 
+     * Musical Significance:
+     * The reversed interpretation makes musical sense because it gives the
+     * downbeat (first position) the least significant bit, making patterns
+     * with strong downbeats have predictable low-order bit patterns.
+     */
     static toDecimal(binaryString, shouldReverse = true) {
         if (shouldReverse) {
             // Reverse the binary string so leftmost position (first downbeat) gets bit value 1
@@ -151,7 +238,63 @@ class PatternConverter {
     }
 }
 
+/**
+ * Advanced Pattern Combiner - Sophisticated pattern combination algorithms
+ * 
+ * Handles complex mathematical combination of multiple rhythm patterns using
+ * Least Common Multiple (LCM) expansion and intelligent pattern extension.
+ * Supports polygon-aware combination and geometric distribution methods.
+ * 
+ * Mathematical Foundation:
+ * When combining patterns of different lengths, the LCM of all pattern lengths
+ * determines the minimum cycle length needed to represent all patterns together.
+ * Each pattern is then extended to this LCM length using appropriate algorithms.
+ * 
+ * Combination Strategies:
+ * - Polygon Patterns: Extended using vertex geometry to LCM length
+ * - Euclidean Patterns: Extended using geometric distribution
+ * - General Patterns: Extended using proportional mapping
+ * - Logical OR: Combined using union of all onset positions
+ * 
+ * Musical Applications:
+ * - Polyrhythmic composition: Combine different meter patterns
+ * - Complex time signatures: Create compound meters
+ * - Cross-rhythmic patterns: Layer competing rhythmic cycles
+ * - Mathematical music: Explore LCM-based rhythm relationships
+ */
 class AdvancedPatternCombiner {
+    /**
+     * Combine multiple rhythm patterns using LCM expansion and logical OR
+     * 
+     * @param {Array<Object>} patterns - Array of pattern objects to combine
+     * @returns {Object} Combined pattern with comprehensive metadata
+     * @throws {Error} If fewer than 2 patterns provided
+     * 
+     * @example
+     * const triangle = RegularPolygonGenerator.generate(3, 1);
+     * const pentagon = RegularPolygonGenerator.generate(5, 0);
+     * const combined = AdvancedPatternCombiner.combineMultiplePatterns([triangle, pentagon]);
+     * // Creates LCM(3,5) = 15-step pattern combining both geometries
+     * 
+     * Algorithm:
+     * 1. Calculate LCM of all pattern step counts
+     * 2. Extend each pattern to LCM length using appropriate method:
+     *    - Polygons: Geometric vertex distribution
+     *    - Others: Proportional position mapping
+     * 3. Combine using logical OR (any pattern has onset = combined has onset)
+     * 4. Preserve metadata from all original patterns
+     * 
+     * Mathematical Properties:
+     * - Preserves the periodicity of all input patterns
+     * - Maintains geometric relationships for polygon patterns
+     * - Creates minimal cycle length for complete representation
+     * - Results in mathematically precise polyrhythmic combinations
+     * 
+     * Musical Significance:
+     * This creates true polyrhythmic patterns where multiple rhythm cycles
+     * of different lengths interact in their natural mathematical relationship,
+     * similar to how African polyrhythms layer different percussion patterns.
+     */
     static combineMultiplePatterns(patterns) {
         if (patterns.length < 2) {
             throw new Error('Need at least 2 patterns to combine');

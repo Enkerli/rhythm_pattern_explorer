@@ -14,10 +14,59 @@
  */
 
 /**
- * Audio Engine for the Circular Sequencer
- * Handles all Web Audio API operations for rhythm pattern playback
+ * Sequencer Audio Engine - High-precision Web Audio API implementation
+ * 
+ * Provides professional-grade audio synthesis for rhythm pattern playback using
+ * the Web Audio API. Features sub-millisecond timing accuracy, configurable
+ * waveforms, and comprehensive envelope control for musical expression.
+ * 
+ * Technical Features:
+ * - Sub-millisecond timing precision using Web Audio's currentTime
+ * - Multiple waveform support (sine, square, triangle, sawtooth)
+ * - ADSR envelope control with configurable attack and release
+ * - Real-time parameter adjustment without audio dropouts
+ * - Cross-browser compatibility with graceful degradation
+ * - Performance monitoring and error handling
+ * 
+ * Audio Architecture:
+ * - AudioContext for precise timing and synthesis
+ * - OscillatorNode for waveform generation
+ * - GainNode for volume and envelope control
+ * - AnalyserNode for potential visualization (future)
+ * - Optimized node creation and cleanup
+ * 
+ * Browser Compatibility:
+ * - Chrome: Full support with WebKit prefixes handled
+ * - Firefox: Full support with Mozilla prefixes handled  
+ * - Safari: Full support with user gesture requirements
+ * - Edge: Full support with legacy AudioContext fallbacks
+ * 
+ * Performance Considerations:
+ * - Efficient oscillator node creation and disposal
+ * - Memory-conscious audio buffer management
+ * - CPU-optimized synthesis parameter updates
+ * - Automatic cleanup of completed audio nodes
  */
 class SequencerAudioEngine {
+    /**
+     * Initialize the Sequencer Audio Engine
+     * 
+     * Sets up Web Audio API context, configures default audio parameters,
+     * and initializes performance tracking. Audio context creation is
+     * deferred until user interaction due to browser autoplay policies.
+     * 
+     * Default Audio Settings:
+     * - Frequency: 440 Hz (A4 note)
+     * - Volume: 50% (0.5 normalized)
+     * - Waveform: Sine wave (most harmonically pure)
+     * - Attack: 10ms (quick onset)
+     * - Release: 150ms (natural decay)
+     * - Max Gain: 30% (prevents digital clipping)
+     * 
+     * Browser Support Detection:
+     * Tests for Web Audio API availability and handles vendor prefixes
+     * for maximum compatibility across browsers and versions.
+     */
     constructor() {
         this.context = null;
         this.isInitialized = false;
