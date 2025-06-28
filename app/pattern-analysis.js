@@ -794,6 +794,7 @@ class SyncopationAnalyzer {
             table[i] = this.calculatePositionIndispensability(i, length);
         }
         
+        
         return table;
     }
     
@@ -803,6 +804,14 @@ class SyncopationAnalyzer {
      */
     static calculatePositionIndispensability(position, length) {
         if (position === 0) return 1; // Downbeat is most indispensable
+        
+        // Special case: pickup beat (last position) has high indispensability
+        // due to its anacrustic function leading to the downbeat
+        if (position === length - 1) {
+            // Give it high indispensability - not as high as downbeat, but higher than most other positions
+            // Make it roughly equivalent to a strong quarter note position
+            return 0.75;
+        }
         
         // Enhanced approach: Stratified meter decomposition
         const stratification = this.getStratifiedMeter(length);
@@ -1029,6 +1038,7 @@ class BarlowTransformer {
     static transformPattern(pattern, targetOnsets, options = {}) {
         const stepCount = pattern.length;
         const currentOnsets = pattern.filter(step => step).length;
+        const { wolrabMode = false } = options;
         
         if (targetOnsets === currentOnsets) {
             return {
@@ -1045,21 +1055,22 @@ class BarlowTransformer {
         const indispensabilityTable = SyncopationAnalyzer.generateBarlowIndispensabilityTable(stepCount);
         
         if (targetOnsets < currentOnsets) {
-            // Dilution: remove least indispensable onsets
+            // Dilution: remove onsets
             return this.dilute(pattern, targetOnsets, indispensabilityTable, options);
         } else {
-            // Concentration: add most indispensable positions
+            // Concentration: add onsets
             return this.concentrate(pattern, targetOnsets, indispensabilityTable, options);
         }
     }
     
     /**
-     * Dilute pattern by removing least indispensable onsets
+     * Dilute pattern by removing least indispensable onsets (or most indispensable in Wolrab mode)
      */
     static dilute(pattern, targetOnsets, indispensabilityTable, options = {}) {
         const {
             preserveDownbeat = true,
-            minimumIndispensability = 0.0
+            minimumIndispensability = 0.0,
+            wolrabMode = false
         } = options;
         
         const stepCount = pattern.length;
@@ -1078,25 +1089,36 @@ class BarlowTransformer {
             }
         }
         
-        // Sort by indispensability (ascending - least indispensable first)
+        // Sort by indispensability (ascending for normal mode, descending for Wolrab mode)
         onsetPositions.sort((a, b) => {
-            // Preserve downbeat if requested
-            if (preserveDownbeat) {
+            // In Wolrab mode, we DON'T preserve downbeat - we want to remove most indispensable
+            // Only preserve downbeat in normal mode if requested
+            if (preserveDownbeat && !wolrabMode) {
                 if (a.isDownbeat && !b.isDownbeat) return 1;
                 if (!a.isDownbeat && b.isDownbeat) return -1;
             }
-            return a.indispensability - b.indispensability;
+            
+            // In Wolrab mode, reverse the sorting order
+            if (wolrabMode) {
+                return b.indispensability - a.indispensability; // Most indispensable first
+            } else {
+                return a.indispensability - b.indispensability; // Least indispensable first
+            }
         });
         
         // Create new pattern
         const newPattern = [...pattern];
         const removedPositions = [];
         
-        // Remove least indispensable onsets
+        // Remove onsets (least indispensable in normal mode, most indispensable in Wolrab mode)
         for (let i = 0; i < Math.min(onsetsToRemove, onsetPositions.length); i++) {
             const position = onsetPositions[i].position;
-            if (onsetPositions[i].indispensability >= minimumIndispensability || 
-                (!preserveDownbeat || !onsetPositions[i].isDownbeat)) {
+            
+            // In Wolrab mode, remove any onset without preserving downbeat
+            // In normal mode, check minimum indispensability and preserve downbeat if requested
+            if (wolrabMode || 
+                (onsetPositions[i].indispensability >= minimumIndispensability || 
+                 (!preserveDownbeat || !onsetPositions[i].isDownbeat))) {
                 newPattern[position] = false;
                 removedPositions.push({
                     position,
@@ -1107,26 +1129,31 @@ class BarlowTransformer {
         
         const finalOnsets = newPattern.filter(step => step).length;
         
+        const transformationName = wolrabMode ? 'wolrab-dilution' : 'dilution';
+        const modeDescription = wolrabMode ? 'Wolrab-diluted' : 'Diluted';
+        const methodDescription = wolrabMode ? 'removing most indispensable onsets' : 'removing least indispensable onsets';
+        
         return {
             pattern: newPattern,
             originalPattern: [...pattern],
-            transformation: 'dilution',
+            transformation: transformationName,
             targetOnsets,
             currentOnsets: finalOnsets,
             onsetsRemoved: removedPositions.length,
             removedPositions,
             indispensabilityRanking: this.getRanking(indispensabilityTable),
-            description: `Diluted from ${currentOnsets} to ${finalOnsets} onsets by indispensability`
+            description: `${modeDescription} from ${currentOnsets} to ${finalOnsets} onsets by ${methodDescription}`
         };
     }
     
     /**
-     * Concentrate pattern by adding most indispensable positions
+     * Concentrate pattern by adding most indispensable positions (or least indispensable in Wolrab mode)
      */
     static concentrate(pattern, targetOnsets, indispensabilityTable, options = {}) {
         const {
             avoidWeakBeats = false,
-            minimumIndispensability = 0.1
+            minimumIndispensability = 0.1,
+            wolrabMode = false
         } = options;
         
         const stepCount = pattern.length;
@@ -1145,14 +1172,20 @@ class BarlowTransformer {
             }
         }
         
-        // Sort by indispensability (descending - most indispensable first)
+        // Sort by indispensability (descending for normal mode, ascending for Wolrab mode)
         emptyPositions.sort((a, b) => {
             // Avoid weak beats if requested
             if (avoidWeakBeats) {
                 if (a.isWeakBeat && !b.isWeakBeat) return 1;
                 if (!a.isWeakBeat && b.isWeakBeat) return -1;
             }
-            return b.indispensability - a.indispensability;
+            
+            // In Wolrab mode, reverse the sorting order
+            if (wolrabMode) {
+                return a.indispensability - b.indispensability; // Least indispensable first
+            } else {
+                return b.indispensability - a.indispensability; // Most indispensable first
+            }
         });
         
         // Create new pattern
@@ -1195,16 +1228,20 @@ class BarlowTransformer {
         
         const finalOnsets = newPattern.filter(step => step).length;
         
+        const transformationName = wolrabMode ? 'wolrab-concentration' : 'concentration';
+        const modeDescription = wolrabMode ? 'Wolrab-concentrated' : 'Concentrated';
+        const methodDescription = wolrabMode ? 'adding least indispensable positions' : 'adding most indispensable positions';
+        
         return {
             pattern: newPattern,
             originalPattern: [...pattern],
-            transformation: 'concentration',
+            transformation: transformationName,
             targetOnsets,
             currentOnsets: finalOnsets,
             onsetsAdded: addedPositions.length,
             addedPositions,
             indispensabilityRanking: this.getRanking(indispensabilityTable),
-            description: `Concentrated from ${currentOnsets} to ${finalOnsets} onsets by indispensability`
+            description: `${modeDescription} from ${currentOnsets} to ${finalOnsets} onsets by ${methodDescription}`
         };
     }
     
