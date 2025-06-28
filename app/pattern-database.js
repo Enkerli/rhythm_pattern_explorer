@@ -296,6 +296,8 @@ class PatternDatabase {
                 return this.patterns.filter(p => p.isMorphed);
             case 'generated':
                 return this.patterns.filter(p => p.isGenerated);
+            case 'barlow_transformed':
+                return this.patterns.filter(p => p.isBarlowTransformed);
             case 'subtraction':
                 return this.patterns.filter(p => p.hasSubtraction);
             case 'repetitive':
@@ -866,6 +868,19 @@ function createDatabasePattern(patternData, analyses = {}) {
         pattern.isGenerated = true;
         pattern.generatorType = patternData.generatorType;
         pattern.generatorParameters = patternData.generatorParameters;
+    }
+    
+    if (patternData.isBarlowTransformed) {
+        pattern.barlowTransformation = {
+            transformation: patternData.transformation,
+            parameters: patternData.barlowParameters,
+            metadata: patternData.barlowMetadata,
+            originalPattern: patternData.originalPattern
+        };
+        pattern.isBarlowTransformed = true;
+        pattern.barlowParameters = patternData.barlowParameters;
+        pattern.barlowMetadata = patternData.barlowMetadata;
+        pattern.transformation = patternData.transformation;
     }
     
     return pattern;
