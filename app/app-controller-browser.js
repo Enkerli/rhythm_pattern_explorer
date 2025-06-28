@@ -61,7 +61,7 @@ class EnhancedPatternApp {
             'AdvancedPatternCombiner', 'UnifiedPatternParser', 'PatternConverter',
             'SystematicExplorer', 'PatternDatabase', 'UIComponents', 'AppConfig',
             'SequencerController', 'SequencerIntegration', 'SyncopationAnalyzer',
-            'IntuitiveRhythmGenerators', 'RhythmMorpher'
+            'IntuitiveRhythmGenerators', 'RhythmMorpher', 'BarlowTransformer'
         ];
         
         const missingClasses = requiredClasses.filter(className => 
@@ -621,6 +621,15 @@ ${(() => {
                 generatorSection.style.display = 'block';
                 // Reset any previous generation state
                 this.resetGeneratorControls();
+            }
+            
+            // Show Barlow transformer section
+            const barlowSection = document.getElementById('barlowSection');
+            if (barlowSection) {
+                barlowSection.style.display = 'block';
+                // Reset any previous transformation state and update current onsets display
+                this.resetBarlowControls();
+                this.updateCurrentOnsetsDisplay(pattern);
             }
             
             // Load pattern into sequencer
@@ -1897,6 +1906,23 @@ ${perfectBalancePatterns.map((pattern, index) => {
         if (addGeneratedBtn) {
             addGeneratedBtn.addEventListener('click', () => this.addGeneratedPatternToDatabase());
         }
+        
+        // Barlow transformer button events
+        const transformBarlowBtn = document.getElementById('transformBarlowBtn');
+        const progressiveBarlowBtn = document.getElementById('progressiveBarlowBtn');
+        const addBarlowBtn = document.getElementById('addBarlowBtn');
+        
+        if (transformBarlowBtn) {
+            transformBarlowBtn.addEventListener('click', () => this.transformBarlowPattern());
+        }
+        
+        if (progressiveBarlowBtn) {
+            progressiveBarlowBtn.addEventListener('click', () => this.progressiveBarlowTransform());
+        }
+        
+        if (addBarlowBtn) {
+            addBarlowBtn.addEventListener('click', () => this.addBarlowPatternToDatabase());
+        }
     }
     
     /**
@@ -2430,6 +2456,9 @@ ${perfectBalancePatterns.map((pattern, index) => {
             addBtn.disabled = false;
         }
         
+        // Load the generated pattern as the new current pattern
+        this.loadGeneratedPatternAsInput(performance);
+        
         showNotification(`Selected generated pattern: ${performance.name}`, 'info');
     }
     
@@ -2445,11 +2474,34 @@ ${perfectBalancePatterns.map((pattern, index) => {
         try {
             const performance = this.selectedGeneratedPattern;
             
+            // Create descriptive name for database
+            const onsetCount = performance.performedPattern.filter(step => step).length;
+            const stepCount = performance.performedPattern.length;
+            const params = performance.parameters;
+            
+            let descriptiveName = '';
+            switch (params.generatorType) {
+                case 'groove':
+                    descriptiveName = `Generated-Groove(${params.style}, ${Math.round(params.density*100)}%, ${stepCount})`;
+                    break;
+                case 'funky-euclidean':
+                    descriptiveName = `Generated-FunkyEuclidean(${Math.round(params.density*100)}%, ${Math.round(params.funkiness*100)}%, ${stepCount})`;
+                    break;
+                case 'probabilistic':
+                    descriptiveName = `Generated-Probabilistic(${Math.round(params.density*100)}%, ${stepCount})`;
+                    break;
+                case 'polyrhythm':
+                    descriptiveName = `Generated-Polyrhythm(${Math.round(params.density*100)}%, ${stepCount})`;
+                    break;
+                default:
+                    descriptiveName = `Generated-${params.generatorType}(${onsetCount}, ${stepCount})`;
+            }
+            
             // Create pattern object for database
             const patternData = {
                 steps: performance.performedPattern,
                 stepCount: performance.performedPattern.length,
-                name: `Generated: ${performance.name || 'Funky Pattern'}`,
+                name: descriptiveName,
                 isGenerated: true,
                 generatorType: performance.parameters.generatorType,
                 generatorParameters: performance.parameters,
@@ -2498,6 +2550,494 @@ ${perfectBalancePatterns.map((pattern, index) => {
         }
         
         this.selectedGeneratedPattern = null;
+    }
+    
+    /**
+     * Update current onsets display for Barlow transformer
+     */
+    updateCurrentOnsetsDisplay(pattern) {
+        const currentOnsetsDisplay = document.getElementById('currentOnsets');
+        if (currentOnsetsDisplay && pattern && pattern.steps) {
+            const onsetCount = pattern.steps.filter(step => step).length;
+            currentOnsetsDisplay.textContent = `${onsetCount} onsets`;
+            currentOnsetsDisplay.classList.add('pattern-loaded');
+            
+            // Update target onsets input max value only
+            const targetOnsetsInput = document.getElementById('targetOnsets');
+            if (targetOnsetsInput) {
+                targetOnsetsInput.max = pattern.stepCount;
+                // Don't change the user's target value at all - let them set it
+            }
+        }
+    }
+    
+    /**
+     * Get current Barlow transformer parameters from UI
+     */
+    getBarlowParameters() {
+        return {
+            targetOnsets: parseInt(document.getElementById('targetOnsets')?.value || 4),
+            operation: document.getElementById('barlowOperation')?.value || 'auto'
+        };
+    }
+    
+    /**
+     * Transform pattern using Barlow indispensability
+     */
+    transformBarlowPattern() {
+        if (!this.currentPattern) {
+            showNotification('No pattern loaded. Parse a pattern first.', 'warning');
+            return;
+        }
+        
+        try {
+            const params = this.getBarlowParameters();
+            
+            // Apply transformation
+            const result = BarlowTransformer.transformPattern(
+                this.currentPattern.steps,
+                params.targetOnsets,
+                {
+                    preserveDownbeat: true, // Always preserve downbeat
+                    avoidWeakBeats: false,
+                    minimumIndispensability: 0.0 // Allow all positions for concentration
+                }
+            );
+            
+            // Convert to expected format
+            const transformation = {
+                transformedPattern: result.pattern,
+                originalPattern: result.originalPattern,
+                parameters: params,
+                name: result.description,
+                type: 'barlow_transform',
+                transformation: result.transformation,
+                metadata: {
+                    onsetsRemoved: result.onsetsRemoved || 0,
+                    onsetsAdded: result.onsetsAdded || 0,
+                    removedPositions: result.removedPositions || [],
+                    addedPositions: result.addedPositions || [],
+                    indispensabilityRanking: result.indispensabilityRanking
+                }
+            };
+            
+            // Convert to the same format as stochastic variations for consistent display
+            const variation = {
+                performedPattern: transformation.transformedPattern,
+                originalPattern: transformation.originalPattern,
+                parameters: transformation.parameters,
+                name: transformation.name,
+                type: transformation.type,
+                transformation: transformation.transformation,
+                metadata: transformation.metadata,
+                complexity: this.calculateSimpleComplexity(transformation.transformedPattern)
+            };
+            
+            this.displayStochasticResults([variation], 'Barlow Transform');
+            
+        } catch (error) {
+            console.error('❌ Barlow transformation error:', error);
+            showNotification('Error transforming pattern: ' + error.message, 'error');
+        }
+    }
+    
+    /**
+     * Generate progressive Barlow transformations from current to target
+     */
+    progressiveBarlowTransform() {
+        if (!this.currentPattern) {
+            showNotification('No pattern loaded. Parse a pattern first.', 'warning');
+            return;
+        }
+        
+        try {
+            const params = this.getBarlowParameters();
+            const currentOnsets = this.currentPattern.steps.filter(step => step).length;
+            const targetOnsets = params.targetOnsets;
+            
+            console.log(`📊 Current onsets: ${currentOnsets}, Target onsets: ${targetOnsets}`);
+            
+            if (currentOnsets === targetOnsets) {
+                showNotification('Current and target onset counts are the same', 'info');
+                return;
+            }
+            
+            // Generate sequence from current to target
+            const transformations = [];
+            const direction = targetOnsets > currentOnsets ? 1 : -1; // 1 for concentration, -1 for dilution
+            
+            console.log(`🎯 Progressive: ${currentOnsets} → ${targetOnsets} (direction: ${direction})`);
+            
+            let currentPattern = [...this.currentPattern.steps];
+            
+            // Generate each step in the sequence
+            for (let onsets = currentOnsets + direction; 
+                 direction > 0 ? onsets <= targetOnsets : onsets >= targetOnsets; 
+                 onsets += direction) {
+                
+                console.log(`🔄 Generating step: ${onsets} onsets`);
+                
+                const result = BarlowTransformer.transformPattern(
+                    currentPattern,
+                    onsets,
+                    {
+                        preserveDownbeat: true,
+                        avoidWeakBeats: false,
+                        minimumIndispensability: 0.0
+                    }
+                );
+                
+                const transformation = {
+                    transformedPattern: result.pattern,
+                    originalPattern: [...this.currentPattern.steps], // Always reference original
+                    parameters: params,
+                    name: `Step ${onsets} onsets`,
+                    type: 'barlow_transform',
+                    transformation: result.transformation,
+                    stepNumber: onsets,
+                    metadata: {
+                        onsetsRemoved: result.onsetsRemoved || 0,
+                        onsetsAdded: result.onsetsAdded || 0,
+                        removedPositions: result.removedPositions || [],
+                        addedPositions: result.addedPositions || [],
+                        indispensabilityRanking: result.indispensabilityRanking
+                    }
+                };
+                
+                transformations.push(transformation);
+                
+                // Update current pattern for next iteration
+                currentPattern = [...result.pattern];
+            }
+            
+            console.log(`✅ Generated ${transformations.length} progressive transformations`);
+            
+            if (transformations.length === 0) {
+                showNotification('No transformations generated. Check target onsets value.', 'warning');
+                return;
+            }
+            
+            // Convert to the same format as stochastic variations for consistent display
+            const variations = transformations.map(transformation => ({
+                performedPattern: transformation.transformedPattern,
+                originalPattern: transformation.originalPattern,
+                parameters: transformation.parameters,
+                name: transformation.name,
+                type: transformation.type,
+                transformation: transformation.transformation,
+                metadata: transformation.metadata,
+                complexity: this.calculateSimpleComplexity(transformation.transformedPattern)
+            }));
+            
+            this.displayStochasticResults(variations, `Progressive: ${currentOnsets} → ${targetOnsets} onsets`);
+            
+        } catch (error) {
+            console.error('❌ Progressive Barlow error:', error);
+            showNotification('Error generating progressive transformations: ' + error.message, 'error');
+        }
+    }
+    
+    /**
+     * Display Barlow transformation results
+     */
+    displayBarlowResults(transformations, title) {
+        console.log(`🖼️ Displaying ${transformations.length} Barlow results with title: ${title}`);
+        
+        const resultsDiv = document.getElementById('barlowResults');
+        if (!resultsDiv) {
+            console.error('❌ barlowResults div not found!');
+            return;
+        }
+        
+        console.log('📦 Results div found, displaying...');
+        resultsDiv.style.display = 'block';
+        
+        const html = `
+            <div class="stochastic-results-header">
+                <h4>${title}</h4>
+            </div>
+            <div class="stochastic-variations">
+                ${transformations.map((transformation, index) => 
+                    this.renderBarlowVariationCompact(transformation, index)
+                ).join('')}
+            </div>
+        `;
+        
+        resultsDiv.innerHTML = html;
+        
+        // Add click event listeners for selection
+        resultsDiv.querySelectorAll('.stochastic-variation').forEach((div, index) => {
+            div.addEventListener('click', () => this.selectBarlowVariation(transformations[index], index));
+        });
+        
+        // Auto-select first transformation
+        if (transformations.length > 0) {
+            this.selectBarlowVariation(transformations[0], 0);
+        }
+    }
+    
+    /**
+     * Render a Barlow transformation variation in compact format
+     */
+    renderBarlowVariationCompact(transformation, index) {
+        const binary = PatternConverter.toBinary(transformation.transformedPattern, transformation.transformedPattern.length);
+        const onsetCount = transformation.transformedPattern.filter(step => step).length;
+        const originalOnsets = transformation.originalPattern.filter(step => step).length;
+        const changeType = onsetCount > originalOnsets ? '+' : onsetCount < originalOnsets ? '-' : '=';
+        const changeAmount = Math.abs(onsetCount - originalOnsets);
+        
+        return `
+            <div class="stochastic-variation" data-variation-index="${index}">
+                <div class="variation-header">
+                    <span class="variation-name">${transformation.name || `Transform ${index + 1}`}</span>
+                    <span class="variation-complexity">${changeType}${changeAmount}</span>
+                </div>
+                <div class="variation-pattern">
+                    <span class="pattern-binary">${binary}</span>
+                </div>
+                <div class="variation-stats">
+                    <span>O:${onsetCount}</span>
+                    <span>T:${transformation.transformation}</span>
+                    ${transformation.metadata.onsetsRemoved > 0 ? `<span>R:${transformation.metadata.onsetsRemoved}</span>` : ''}
+                    ${transformation.metadata.onsetsAdded > 0 ? `<span>A:${transformation.metadata.onsetsAdded}</span>` : ''}
+                </div>
+            </div>
+        `;
+    }
+    
+    /**
+     * Select a Barlow transformation variation
+     */
+    selectBarlowVariation(transformation, index) {
+        // Update UI selection
+        const resultsDiv = document.getElementById('barlowResults');
+        if (resultsDiv) {
+            resultsDiv.querySelectorAll('.stochastic-variation').forEach(div => {
+                div.classList.remove('selected');
+            });
+            
+            const selectedDiv = resultsDiv.querySelector(`[data-variation-index="${index}"]`);
+            if (selectedDiv) {
+                selectedDiv.classList.add('selected');
+            }
+        }
+        
+        // Store selection
+        this.selectedBarlowTransformation = transformation;
+        
+        // Enable add to database button
+        const addBtn = document.getElementById('addBarlowBtn');
+        if (addBtn) {
+            addBtn.disabled = false;
+        }
+        
+        // Load the transformed pattern as the new current pattern  
+        // Convert from stochastic format back to transformation format
+        const transformationData = {
+            transformedPattern: performance.performedPattern,
+            originalPattern: performance.originalPattern,
+            parameters: performance.parameters,
+            name: performance.name,
+            type: performance.type,
+            transformation: performance.transformation,
+            metadata: performance.metadata
+        };
+        this.loadTransformedPatternAsInput(transformationData);
+        
+        showNotification(`Selected transformation: ${performance.name}`, 'info');
+    }
+    
+    /**
+     * Add selected Barlow transformation to database
+     */
+    addBarlowPatternToDatabase() {
+        if (!this.selectedBarlowTransformation) {
+            showNotification('No transformation selected', 'warning');
+            return;
+        }
+        
+        try {
+            const transformation = this.selectedBarlowTransformation;
+            
+            // Create descriptive name for database
+            const onsetCount = transformation.transformedPattern.filter(step => step).length;
+            const stepCount = transformation.transformedPattern.length;
+            const originalOnsets = transformation.originalPattern.filter(step => step).length;
+            
+            let descriptiveName = '';
+            if (transformation.transformation === 'dilution') {
+                descriptiveName = `Barlow-Diluted(${originalOnsets}→${onsetCount}, ${stepCount})`;
+            } else if (transformation.transformation === 'concentration') {
+                descriptiveName = `Barlow-Concentrated(${originalOnsets}→${onsetCount}, ${stepCount})`;
+            } else {
+                descriptiveName = `Barlow-Transform(${onsetCount}, ${stepCount})`;
+            }
+            
+            // Create pattern object for database
+            const patternData = {
+                steps: transformation.transformedPattern,
+                stepCount: transformation.transformedPattern.length,
+                name: descriptiveName,
+                isBarlowTransformed: true,
+                originalPattern: {
+                    steps: transformation.originalPattern,
+                    stepCount: transformation.originalPattern.length,
+                    binary: PatternConverter.toBinary(transformation.originalPattern, transformation.originalPattern.length),
+                    name: this.currentPattern.name || 'Source Pattern'
+                },
+                barlowParameters: transformation.parameters,
+                barlowMetadata: transformation.metadata,
+                transformation: transformation.transformation
+            };
+            
+            // Generate analyses for the new pattern
+            const analyses = this.generateComprehensiveAnalysis(patternData);
+            
+            // Create database pattern
+            const dbPattern = createDatabasePattern(patternData, analyses);
+            
+            // Add to database
+            const patternId = this.database.add(dbPattern);
+            
+            if (patternId) {
+                showNotification(`Barlow transformation added to database!`, 'success');
+                this.updatePatternList();
+                this.updateDatabaseStats();
+                
+                // Reset Barlow controls
+                this.resetBarlowControls();
+            } else {
+                showNotification('Pattern already exists in database', 'info');
+            }
+            
+        } catch (error) {
+            console.error('❌ Error adding Barlow pattern to database:', error);
+            showNotification('Error adding pattern to database: ' + error.message, 'error');
+        }
+    }
+    
+    /**
+     * Reset Barlow controls to default state
+     */
+    resetBarlowControls() {
+        const resultsDiv = document.getElementById('barlowResults');
+        if (resultsDiv) {
+            resultsDiv.style.display = 'none';
+            resultsDiv.innerHTML = '';
+        }
+        
+        const addBtn = document.getElementById('addBarlowBtn');
+        if (addBtn) {
+            addBtn.disabled = true;
+        }
+        
+        this.selectedBarlowTransformation = null;
+    }
+    
+    /**
+     * Load a transformed pattern as the new input pattern
+     */
+    loadTransformedPatternAsInput(transformation) {
+        try {
+            // Create pattern data for the transformed pattern
+            const transformedPatternData = {
+                steps: transformation.transformedPattern,
+                stepCount: transformation.transformedPattern.length,
+                name: transformation.name || 'Transformed Pattern',
+                expression: this.generateTransformationExpression(transformation),
+                isBarlowTransformed: true,
+                originalPattern: transformation.originalPattern,
+                transformation: transformation.transformation,
+                metadata: transformation.metadata
+            };
+            
+            // Update the universal input field
+            const universalInput = document.getElementById('universalInput');
+            if (universalInput) {
+                universalInput.value = transformedPatternData.expression;
+            }
+            
+            // Set as current pattern and trigger full analysis
+            this.currentPattern = transformedPatternData;
+            
+            // Generate comprehensive analysis
+            const analysis = this.generateComprehensiveAnalysis(transformedPatternData);
+            
+            // Display the new pattern analysis
+            this.displayPatternAnalysis(transformedPatternData);
+            
+            // Update all UI components
+            this.updateOriginalPatternDisplay(transformedPatternData);
+            this.updateCurrentOnsetsDisplay(transformedPatternData);
+            
+        } catch (error) {
+            console.error('❌ Error loading transformed pattern as input:', error);
+            showNotification('Error loading transformed pattern: ' + error.message, 'error');
+        }
+    }
+    
+    /**
+     * Generate a parsable expression for a transformation
+     */
+    generateTransformationExpression(transformation) {
+        const stepCount = transformation.transformedPattern.length;
+        
+        // Convert to parsable format (binary with step count)
+        const binary = PatternConverter.toBinary(transformation.transformedPattern, stepCount);
+        return `b${binary}:${stepCount}`;
+    }
+    
+    /**
+     * Load a generated pattern as the new input pattern
+     */
+    loadGeneratedPatternAsInput(performance) {
+        try {
+            // Create pattern data for the generated pattern
+            const generatedPatternData = {
+                steps: performance.performedPattern,
+                stepCount: performance.performedPattern.length,
+                name: performance.name || 'Generated Pattern',
+                expression: this.generateGenerationExpression(performance),
+                isGenerated: true,
+                generatorType: performance.parameters.generatorType,
+                generatorParameters: performance.parameters,
+                complexity: performance.complexity
+            };
+            
+            // Update the universal input field
+            const universalInput = document.getElementById('universalInput');
+            if (universalInput) {
+                universalInput.value = generatedPatternData.expression;
+            }
+            
+            // Set as current pattern and trigger full analysis
+            this.currentPattern = generatedPatternData;
+            
+            // Generate comprehensive analysis
+            const analysis = this.generateComprehensiveAnalysis(generatedPatternData);
+            
+            // Display the new pattern analysis
+            this.displayPatternAnalysis(generatedPatternData);
+            
+            // Update all UI components
+            this.updateOriginalPatternDisplay(generatedPatternData);
+            this.updateCurrentOnsetsDisplay(generatedPatternData);
+            
+        } catch (error) {
+            console.error('❌ Error loading generated pattern as input:', error);
+            showNotification('Error loading generated pattern: ' + error.message, 'error');
+        }
+    }
+    
+    /**
+     * Generate a parsable expression for a generated pattern
+     */
+    generateGenerationExpression(performance) {
+        const stepCount = performance.performedPattern.length;
+        
+        // Convert to parsable format (binary with step count)
+        const binary = PatternConverter.toBinary(performance.performedPattern, stepCount);
+        return `b${binary}:${stepCount}`;
     }
 }
 

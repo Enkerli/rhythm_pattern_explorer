@@ -1009,6 +1009,313 @@ class SyncopationAnalyzer {
 }
 
 /**
+ * Barlow Indispensability Pattern Transformer
+ * Implements dilution/concentration based on Clarence Barlow's rhythmic indispensability theory
+ * 
+ * Features:
+ * - Intelligent onset reduction (dilution) by removing least indispensable positions
+ * - Intelligent onset addition (concentration) by adding most indispensable positions
+ * - Respects metrical hierarchy and maintains rhythmic coherence
+ * - Preserves downbeat and strong beats according to indispensability ranking
+ */
+class BarlowTransformer {
+    /**
+     * Transform a pattern by diluting (reducing onsets) or concentrating (adding onsets)
+     * @param {Array<boolean>} pattern - Original pattern
+     * @param {number} targetOnsets - Desired number of onsets
+     * @param {Object} options - Transformation options
+     * @returns {Object} Transformed pattern with metadata
+     */
+    static transformPattern(pattern, targetOnsets, options = {}) {
+        const stepCount = pattern.length;
+        const currentOnsets = pattern.filter(step => step).length;
+        
+        if (targetOnsets === currentOnsets) {
+            return {
+                pattern: [...pattern],
+                originalPattern: [...pattern],
+                transformation: 'none',
+                targetOnsets,
+                currentOnsets,
+                description: 'No transformation needed'
+            };
+        }
+        
+        // Generate indispensability table for this meter
+        const indispensabilityTable = SyncopationAnalyzer.generateBarlowIndispensabilityTable(stepCount);
+        
+        if (targetOnsets < currentOnsets) {
+            // Dilution: remove least indispensable onsets
+            return this.dilute(pattern, targetOnsets, indispensabilityTable, options);
+        } else {
+            // Concentration: add most indispensable positions
+            return this.concentrate(pattern, targetOnsets, indispensabilityTable, options);
+        }
+    }
+    
+    /**
+     * Dilute pattern by removing least indispensable onsets
+     */
+    static dilute(pattern, targetOnsets, indispensabilityTable, options = {}) {
+        const {
+            preserveDownbeat = true,
+            minimumIndispensability = 0.0
+        } = options;
+        
+        const stepCount = pattern.length;
+        const currentOnsets = pattern.filter(step => step).length;
+        const onsetsToRemove = currentOnsets - targetOnsets;
+        
+        // Get all current onset positions with their indispensability
+        const onsetPositions = [];
+        for (let i = 0; i < stepCount; i++) {
+            if (pattern[i]) {
+                onsetPositions.push({
+                    position: i,
+                    indispensability: indispensabilityTable[i],
+                    isDownbeat: i === 0
+                });
+            }
+        }
+        
+        // Sort by indispensability (ascending - least indispensable first)
+        onsetPositions.sort((a, b) => {
+            // Preserve downbeat if requested
+            if (preserveDownbeat) {
+                if (a.isDownbeat && !b.isDownbeat) return 1;
+                if (!a.isDownbeat && b.isDownbeat) return -1;
+            }
+            return a.indispensability - b.indispensability;
+        });
+        
+        // Create new pattern
+        const newPattern = [...pattern];
+        const removedPositions = [];
+        
+        // Remove least indispensable onsets
+        for (let i = 0; i < Math.min(onsetsToRemove, onsetPositions.length); i++) {
+            const position = onsetPositions[i].position;
+            if (onsetPositions[i].indispensability >= minimumIndispensability || 
+                (!preserveDownbeat || !onsetPositions[i].isDownbeat)) {
+                newPattern[position] = false;
+                removedPositions.push({
+                    position,
+                    indispensability: onsetPositions[i].indispensability
+                });
+            }
+        }
+        
+        const finalOnsets = newPattern.filter(step => step).length;
+        
+        return {
+            pattern: newPattern,
+            originalPattern: [...pattern],
+            transformation: 'dilution',
+            targetOnsets,
+            currentOnsets: finalOnsets,
+            onsetsRemoved: removedPositions.length,
+            removedPositions,
+            indispensabilityRanking: this.getRanking(indispensabilityTable),
+            description: `Diluted from ${currentOnsets} to ${finalOnsets} onsets by indispensability`
+        };
+    }
+    
+    /**
+     * Concentrate pattern by adding most indispensable positions
+     */
+    static concentrate(pattern, targetOnsets, indispensabilityTable, options = {}) {
+        const {
+            avoidWeakBeats = false,
+            minimumIndispensability = 0.1
+        } = options;
+        
+        const stepCount = pattern.length;
+        const currentOnsets = pattern.filter(step => step).length;
+        const onsetsToAdd = targetOnsets - currentOnsets;
+        
+        // Get all empty positions with their indispensability
+        const emptyPositions = [];
+        for (let i = 0; i < stepCount; i++) {
+            if (!pattern[i]) {
+                emptyPositions.push({
+                    position: i,
+                    indispensability: indispensabilityTable[i],
+                    isWeakBeat: this.isWeakBeat(i, stepCount)
+                });
+            }
+        }
+        
+        // Sort by indispensability (descending - most indispensable first)
+        emptyPositions.sort((a, b) => {
+            // Avoid weak beats if requested
+            if (avoidWeakBeats) {
+                if (a.isWeakBeat && !b.isWeakBeat) return 1;
+                if (!a.isWeakBeat && b.isWeakBeat) return -1;
+            }
+            return b.indispensability - a.indispensability;
+        });
+        
+        // Create new pattern
+        const newPattern = [...pattern];
+        const addedPositions = [];
+        
+        // Add most indispensable positions
+        let addedCount = 0;
+        for (let i = 0; i < emptyPositions.length && addedCount < onsetsToAdd; i++) {
+            const position = emptyPositions[i].position;
+            
+            // First try to add positions above the minimum threshold
+            if (emptyPositions[i].indispensability >= minimumIndispensability) {
+                newPattern[position] = true;
+                addedPositions.push({
+                    position,
+                    indispensability: emptyPositions[i].indispensability
+                });
+                addedCount++;
+            }
+        }
+        
+        // If we haven't added enough onsets, add the remaining highest-ranked positions
+        // even if they're below the minimum threshold
+        if (addedCount < onsetsToAdd) {
+            for (let i = 0; i < emptyPositions.length && addedCount < onsetsToAdd; i++) {
+                const position = emptyPositions[i].position;
+                
+                // Skip positions already added
+                if (newPattern[position]) continue;
+                
+                newPattern[position] = true;
+                addedPositions.push({
+                    position,
+                    indispensability: emptyPositions[i].indispensability
+                });
+                addedCount++;
+            }
+        }
+        
+        const finalOnsets = newPattern.filter(step => step).length;
+        
+        return {
+            pattern: newPattern,
+            originalPattern: [...pattern],
+            transformation: 'concentration',
+            targetOnsets,
+            currentOnsets: finalOnsets,
+            onsetsAdded: addedPositions.length,
+            addedPositions,
+            indispensabilityRanking: this.getRanking(indispensabilityTable),
+            description: `Concentrated from ${currentOnsets} to ${finalOnsets} onsets by indispensability`
+        };
+    }
+    
+    /**
+     * Get indispensability ranking for all positions
+     */
+    static getRanking(indispensabilityTable) {
+        return indispensabilityTable
+            .map((value, position) => ({ position, indispensability: value }))
+            .sort((a, b) => b.indispensability - a.indispensability)
+            .map((item, rank) => ({ ...item, rank: rank + 1 }));
+    }
+    
+    /**
+     * Check if a position is considered a weak beat
+     */
+    static isWeakBeat(position, stepCount) {
+        // Simple heuristic: positions that are not on strong divisions
+        const quarter = stepCount / 4;
+        const eighth = stepCount / 8;
+        
+        // Strong beats: 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5 (in 4/4)
+        return !(position % quarter === 0 || position % eighth === 0);
+    }
+    
+    /**
+     * Progressive dilution/concentration with multiple steps
+     * Useful for creating variations with gradual onset changes
+     */
+    static progressiveTransform(pattern, steps, options = {}) {
+        const {
+            minOnsets = 1,
+            maxOnsets = pattern.length,
+            direction = 'both' // 'dilute', 'concentrate', 'both'
+        } = options;
+        
+        const currentOnsets = pattern.filter(step => step).length;
+        const variations = [];
+        
+        // Generate step values
+        const stepValues = [];
+        if (direction === 'dilute' || direction === 'both') {
+            for (let i = Math.max(minOnsets, 1); i < currentOnsets; i++) {
+                stepValues.push(i);
+            }
+        }
+        if (direction === 'concentrate' || direction === 'both') {
+            for (let i = currentOnsets + 1; i <= Math.min(maxOnsets, pattern.length); i++) {
+                stepValues.push(i);
+            }
+        }
+        
+        // Limit to requested number of steps
+        stepValues.sort((a, b) => Math.abs(a - currentOnsets) - Math.abs(b - currentOnsets));
+        const selectedSteps = stepValues.slice(0, steps);
+        
+        // Generate transformations
+        for (const targetOnsets of selectedSteps) {
+            const result = this.transformPattern(pattern, targetOnsets, options);
+            variations.push(result);
+        }
+        
+        return {
+            originalPattern: [...pattern],
+            variations,
+            currentOnsets,
+            description: `Generated ${variations.length} progressive transformations`
+        };
+    }
+    
+    /**
+     * Analyze indispensability distribution of a pattern
+     */
+    static analyzeIndispensability(pattern) {
+        const stepCount = pattern.length;
+        const indispensabilityTable = SyncopationAnalyzer.generateBarlowIndispensabilityTable(stepCount);
+        
+        const onsetIndispensabilities = [];
+        const emptyIndispensabilities = [];
+        
+        for (let i = 0; i < stepCount; i++) {
+            if (pattern[i]) {
+                onsetIndispensabilities.push(indispensabilityTable[i]);
+            } else {
+                emptyIndispensabilities.push(indispensabilityTable[i]);
+            }
+        }
+        
+        const avgOnsetIndispensability = onsetIndispensabilities.length > 0 ? 
+            onsetIndispensabilities.reduce((a, b) => a + b, 0) / onsetIndispensabilities.length : 0;
+        
+        const avgEmptyIndispensability = emptyIndispensabilities.length > 0 ? 
+            emptyIndispensabilities.reduce((a, b) => a + b, 0) / emptyIndispensabilities.length : 0;
+        
+        return {
+            totalPositions: stepCount,
+            onsetCount: onsetIndispensabilities.length,
+            emptyCount: emptyIndispensabilities.length,
+            onsetIndispensabilities,
+            emptyIndispensabilities,
+            avgOnsetIndispensability,
+            avgEmptyIndispensability,
+            indispensabilityEfficiency: avgOnsetIndispensability / (avgOnsetIndispensability + avgEmptyIndispensability),
+            ranking: this.getRanking(indispensabilityTable),
+            mostIndispensableOnset: Math.max(...onsetIndispensabilities),
+            leastIndispensableOnset: Math.min(...onsetIndispensabilities)
+        };
+    }
+}
+
+/**
  * Stochastic Rhythm Performance Generator
  * Based on the Core Algorithm from the rhythmicator document
  * Implements density, metrical strength, and syncopation parameters
@@ -1833,6 +2140,7 @@ if (typeof window !== 'undefined') {
     window.PatternAnalyzer = PatternAnalyzer;
     window.LongShortAnalyzer = LongShortAnalyzer;
     window.SyncopationAnalyzer = SyncopationAnalyzer;
+    window.BarlowTransformer = BarlowTransformer;
     window.StochasticRhythmGenerator = StochasticRhythmGenerator;
     window.IntuitiveRhythmGenerators = IntuitiveRhythmGenerators;
     window.RhythmMorpher = RhythmMorpher;
