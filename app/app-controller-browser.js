@@ -2612,7 +2612,8 @@ ${perfectBalancePatterns.map((pattern, index) => {
     getBarlowParameters() {
         return {
             targetOnsets: parseInt(document.getElementById('targetOnsets')?.value || 4),
-            operation: document.getElementById('barlowOperation')?.value || 'auto'
+            operation: document.getElementById('barlowOperation')?.value || 'auto',
+            wolrabMode: document.getElementById('wolrabMode')?.checked || false
         };
     }
     
@@ -2635,7 +2636,8 @@ ${perfectBalancePatterns.map((pattern, index) => {
                 {
                     preserveDownbeat: true, // Always preserve downbeat
                     avoidWeakBeats: false,
-                    minimumIndispensability: 0.0 // Allow all positions for concentration
+                    minimumIndispensability: 0.0, // Allow all positions for concentration
+                    wolrabMode: params.wolrabMode
                 }
             );
             
@@ -2718,7 +2720,8 @@ ${perfectBalancePatterns.map((pattern, index) => {
                     {
                         preserveDownbeat: true,
                         avoidWeakBeats: false,
-                        minimumIndispensability: 0.0
+                        minimumIndispensability: 0.0,
+                        wolrabMode: params.wolrabMode
                     }
                 );
                 
@@ -2902,6 +2905,10 @@ ${perfectBalancePatterns.map((pattern, index) => {
                 descriptiveName = `Barlow-Diluted(${originalOnsets}→${onsetCount}, ${stepCount})`;
             } else if (transformation.transformation === 'concentration') {
                 descriptiveName = `Barlow-Concentrated(${originalOnsets}→${onsetCount}, ${stepCount})`;
+            } else if (transformation.transformation === 'wolrab-dilution') {
+                descriptiveName = `Wolrab-Diluted(${originalOnsets}→${onsetCount}, ${stepCount})`;
+            } else if (transformation.transformation === 'wolrab-concentration') {
+                descriptiveName = `Wolrab-Concentrated(${originalOnsets}→${onsetCount}, ${stepCount})`;
             } else {
                 descriptiveName = `Barlow-Transform(${onsetCount}, ${stepCount})`;
             }
