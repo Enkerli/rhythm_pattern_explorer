@@ -1925,6 +1925,17 @@ ${perfectBalancePatterns.map((pattern, index) => {
         if (addBarlowBtn) {
             addBarlowBtn.addEventListener('click', () => this.addBarlowPatternToDatabase());
         }
+        
+        // Target onsets input Enter key event
+        const targetOnsetsInput = document.getElementById('targetOnsets');
+        if (targetOnsetsInput) {
+            targetOnsetsInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.progressiveBarlowTransform();
+                }
+            });
+        }
     }
     
     /**
