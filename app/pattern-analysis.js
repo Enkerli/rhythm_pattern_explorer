@@ -2040,7 +2040,7 @@ class RhythmMorpher {
             morphAmount: morphAmount,
             displacement: displacement,
             morphStyle: morphStyle,
-            description: `${morphStyle} morph (${Math.round(morphAmount*100)}% displacement)`
+            description: `${morphStyle} mutation (${Math.round(morphAmount*100)}% displacement)`
         };
     }
     
@@ -2287,7 +2287,7 @@ class RhythmMorpher {
                 pattern: result.morphed,
                 morphAmount: morphAmount,
                 step: i,
-                description: `Morph step ${i}/${steps} (${Math.round(morphAmount*100)}%)`
+                description: `Mutation step ${i}/${steps} (${Math.round(morphAmount*100)}%)`
             });
         }
         

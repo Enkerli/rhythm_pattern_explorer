@@ -203,11 +203,11 @@ This checklist provides comprehensive manual testing procedures for the Rhythm P
 
 ## 🎭 Pattern Generator Tests
 
-### ✅ Test 14: Rhythm Morpher
+### ✅ Test 14: Rhythm Mutator
 **Steps:**
 1. Parse `E(3,8)`
-2. Set Morpher to "Syncopate" style, 50% amount
-3. Click "Morph"
+2. Set Mutator to "Syncopate" style, 50% amount
+3. Click "Mutate"
 
 **Expected Results:**
 - ✅ Generated pattern maintains 3 onsets
@@ -219,13 +219,13 @@ This checklist provides comprehensive manual testing procedures for the Rhythm P
 
 ---
 
-### ✅ Test 15: Multiple Morphs
+### ✅ Test 15: Multiple Mutations
 **Steps:**
 1. Parse `E(3,8)`
-2. Click "3 Morphs" button
+2. Click "3 Mutations" button
 
 **Expected Results:**
-- ✅ Three different morphed patterns generated
+- ✅ Three different mutated patterns generated
 - ✅ All maintain same onset count
 - ✅ Each shows variation from original
 - ✅ Patterns can be selected and loaded
@@ -615,7 +615,7 @@ This checklist provides comprehensive manual testing procedures for the Rhythm P
 
 **Expected Results:**
 - ✅ "Add to Database" enabled only when pattern parsed
-- ✅ Morpher/Generator buttons enabled when appropriate
+- ✅ Mutator/Generator buttons enabled when appropriate
 - ✅ Button states update correctly throughout workflow
 - ✅ No buttons stuck in wrong state
 

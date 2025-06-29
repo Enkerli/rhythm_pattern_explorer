@@ -124,8 +124,8 @@
                 <div class="stochastic-section-compact" id="stochasticSection" style="display: none;">
                     <div class="stochastic-compact-box">
                         <div class="stochastic-header">
-                            <span class="stochastic-title">🎭 Rhythm Morpher</span>
-                            <button class="info-btn-small" onclick="toggleInfoBox('stochastic-info')" title="Morpher info">ℹ️</button>
+                            <span class="stochastic-title">🎭 Rhythm Mutator</span>
+                            <button class="info-btn-small" onclick="toggleInfoBox('stochastic-info')" title="Mutator info">ℹ️</button>
                         </div>
                         <div class="stochastic-compact-controls">
                             <div class="param-row-compact">
@@ -153,18 +153,18 @@
                                 </div>
                             </div>
                             <div class="buttons-compact">
-                                <button class="btn-compact primary" id="generateStochasticBtn">Morph</button>
-                                <button class="btn-compact secondary" id="generateMultipleBtn">3 Morphs</button>
+                                <button class="btn-compact primary" id="generateStochasticBtn">Mutate</button>
+                                <button class="btn-compact secondary" id="generateMultipleBtn">3 Mutations</button>
                                 <button class="btn-compact success" id="addVariationBtn" disabled>Add to DB</button>
                             </div>
                         </div>
                         <div class="stochastic-results-compact" id="stochasticResults" style="display: none;">
-                            <!-- Morphed patterns will appear here -->
+                            <!-- Mutated patterns will appear here -->
                         </div>
                         
                         <!-- RHYTHM MORPHER INFO BOX -->
                         <div class="info-box" id="stochastic-info" style="display: none;">
-                            <strong>Rhythm Morphing:</strong><br>
+                            <strong>Rhythm Mutation:</strong><br>
                             Transform rhythms by displacing onsets while preserving character.<br><br>
                             • <strong>Balanced:</strong> Random displacement in both directions<br>
                             • <strong>Syncopate:</strong> Move toward off-beat positions<br>
@@ -408,7 +408,7 @@
                             <option value="polygons">Regular Polygons</option>
                             <option value="euclidean">Euclidean Rhythms</option>
                             <option value="combined">Combined Patterns</option>
-                            <option value="morphed">Morphed Patterns</option>
+                            <option value="morphed">Mutated Patterns</option>
                             <option value="generated">Generated Patterns</option>
                             <option value="barlow_transformed">Barlow Transformed</option>
                             <option value="subtraction">With Subtraction</option>
