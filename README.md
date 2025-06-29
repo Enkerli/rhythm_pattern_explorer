@@ -85,9 +85,14 @@ The app supports an extensive range of rhythm notation formats:
 - **Stretch/Squeeze**: `S:2 pattern`, `Q:0.5 pattern`
 - **Quantization**: `pattern;12` (clockwise), `pattern;-6` (counterclockwise)
 - **Pattern Rotation**: `pattern@3` - Rotate by 3 steps
-- **Pattern Concatenation**: `pattern1, pattern2, pattern3`
+- **Pattern Stringing**: `pattern1 pattern2 pattern3` (space-separated concatenation)
 - **Named Patterns**: `tresillo=E(3,8)`, `mypattern=P(3,1)+P(5,0)`
 - **Custom Durations**: `D:1,5 pattern` (short=1, long=5)
+
+#### Pattern Combinations vs Stringing
+- **Combinations**: `P(3,1)+P(5,0)` - Mathematical LCM combination using logical OR
+- **Stringing**: `P(3,1) P(5,0)` - Sequential concatenation, patterns play one after another
+- **Combinations create polyrhythms**, **Stringing creates sequences**
 
 ### 2. Mathematical Analysis Engine
 
@@ -179,6 +184,39 @@ Revolutionary "anti-Barlow" transformation that inverts indispensability logic:
 - Challenges rhythmic expectations
 - Useful for avant-garde compositions
 - Generates "wrong" rhythms that feel right
+
+#### Progressive Offsets
+Universal pattern rotation transformer that works with any rhythm pattern:
+
+**Progressive Forward Stepping**:
+- Press Enter in Forward Step box for cumulative offsets: +1, +2, +3...
+- Customizable increment (e.g., set to 2 for +2, +4, +6...)
+- Systematic exploration of pattern rotations
+
+**Progressive Backward Stepping**:
+- Press Enter in Backward Step box for negative offsets: -1, -2, -3...
+- Independent increment control for backward direction
+- Reverse pattern exploration
+
+**Key Features**:
+- **Universal Compatibility**: Works with Euclidean, polygons, custom patterns
+- **Real-time Preview**: Immediate audio and visual feedback
+- **Offset Tracking**: Current offset display from original pattern
+- **Reset Function**: Return to original pattern anytime
+- **Manual Mode**: One-time offset using step value differences
+
+**Musical Applications**:
+- Groove displacement and timing variations
+- Rhythmic phrase development
+- Pattern evolution through systematic rotation
+- Polyrhythmic exploration with offset patterns
+
+**Usage Examples**:
+```
+E(3,8) → Forward Step +1 → E(3,8) rotated by 1, 2, 3... steps
+P(5,2) → Backward Step -2 → Pentagon pattern offset by -2, -4, -6...
+Custom pattern → Mixed forward/backward → Complex offset sequences
+```
 
 ### 5. Interactive Sequencer
 

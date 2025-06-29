@@ -701,9 +701,16 @@ class UnifiedPatternParser {
             return this.complementPattern(basePattern);
         }
         
-        // Check for comma-separated pattern stringing: pattern1, pattern2, pattern3
+        // Check for space-separated pattern stringing: pattern1 pattern2 pattern3
+        // Only at top level - check if we have multiple space-separated patterns
+        if (this.hasSpaceSeparatedPatterns(cleaned)) {
+            return this.parseSpaceStringedPatterns(cleaned);
+        }
+        
+        // DEPRECATED: Check for comma-separated pattern stringing (for backward compatibility)
         // Only at top level - not for individual patterns that contain commas (like E(3,8))
         if (cleaned.includes(',') && this.hasPatternSeparatorCommas(cleaned)) {
+            console.log('⚠️ Comma-separated stringing is deprecated. Use space separation: pattern1 pattern2 pattern3');
             return this.parseStringedPatterns(cleaned);
         }
         
@@ -1490,7 +1497,19 @@ class UnifiedPatternParser {
             /^D:\d+,\d+/.test(cleaned) ||                // Duration: D:1,5
             /^[SQ]:\d*\.?\d+/.test(cleaned) ||           // Stretch/Squeeze: S:2, Q:0.5
             /^(tri|pent|hex|oct|quad|hept|dec|dod)(@\d+)?$/i.test(cleaned) || // Shorthand
-            /^\[\d+(,\d+)*\]:\d+$/.test(cleaned)         // Onset array: [0,3,6]:8
+            /^\[\d+(,\d+)*\]:\d+$/.test(cleaned) ||      // Onset array: [0,3,6]:8
+            /^[01]+:\d+$/i.test(cleaned) ||              // Binary with step count: 1011:8
+            /^b[01]+:\d+$/i.test(cleaned) ||             // Binary with prefix and step count: b1011:8
+            /^0x[0-9a-f]+:\d+$/i.test(cleaned) ||        // Hex with step count: 0x92:8
+            /^0o[0-7]+:\d+$/i.test(cleaned) ||           // Octal with step count: 0o111:8
+            /^\d+:\d+$/.test(cleaned) ||                 // Decimal with step count: 73:8
+            /^[~]/.test(cleaned) ||                      // Inversion: ~pattern
+            /^rev\s/.test(cleaned) ||                    // Reversal: rev pattern
+            /^inv\s/.test(cleaned) ||                    // Inversion: inv pattern
+            /^comp\s/.test(cleaned) ||                   // Complement: comp pattern
+            cleaned.includes('+') ||                     // Combinations: P(3,1)+P(5,0)
+            cleaned.includes('-') ||                     // Subtractions: P(3,1)-P(2,0)
+            cleaned.includes('@')                        // Rotations: pattern@3
         );
     }
 
@@ -1588,6 +1607,96 @@ class UnifiedPatternParser {
             originalString: patternString
         };
         
+        return result;
+    }
+    
+    /**
+     * Check if input contains space-separated patterns
+     * @param {string} input - Input string to check
+     * @returns {boolean} True if input has multiple space-separated patterns
+     */
+    static hasSpaceSeparatedPatterns(input) {
+        // Split by spaces and check if we get multiple valid pattern parts
+        const parts = input.trim().split(/\s+/);
+        if (parts.length < 2) return false;
+        
+        // Check if each part looks like a standalone pattern
+        let validPatternParts = 0;
+        for (const part of parts) {
+            if (!part) continue;
+            
+            // Check if this looks like a recognizable pattern format
+            if (this.looksLikePattern(part)) {
+                validPatternParts++;
+            }
+        }
+        
+        // If we have 2+ parts that each look like valid patterns, it's space stringing
+        return validPatternParts >= 2;
+    }
+    
+    /**
+     * Parse space-separated patterns: pattern1 pattern2 pattern3
+     * @param {string} patternString - Space-separated pattern string
+     * @returns {Object} Stringed pattern result
+     */
+    static parseSpaceStringedPatterns(patternString) {
+        // Split by spaces
+        const parts = patternString.trim().split(/\s+/);
+        if (parts.length < 2) return null;
+        
+        const parsedPatterns = [];
+        const dividerPositions = [];
+        let totalSteps = 0;
+        
+        // Parse each pattern part
+        for (const part of parts) {
+            if (!part) continue;
+            
+            console.log(`🔍 Parsing space-separated pattern part: "${part}"`);
+            try {
+                const parsed = this.parsePattern(part);
+                if (parsed) {
+                    // Mark divider position before adding this pattern
+                    if (totalSteps > 0) {
+                        dividerPositions.push(totalSteps);
+                    }
+                    
+                    parsedPatterns.push(parsed);
+                    totalSteps += parsed.stepCount;
+                    console.log(`✅ Parsed space-separated part "${part}":`, parsed);
+                } else {
+                    console.log(`❌ Failed to parse space-separated part: "${part}"`);
+                    return null;
+                }
+            } catch (error) {
+                console.error(`❌ Error parsing space-separated part "${part}":`, error);
+                return null;
+            }
+        }
+        
+        if (parsedPatterns.length < 2) {
+            console.log(`❌ Need at least 2 patterns for space stringing, got ${parsedPatterns.length}`);
+            return null;
+        }
+        
+        // Concatenate all patterns
+        const steps = [];
+        for (const pattern of parsedPatterns) {
+            steps.push(...pattern.steps);
+        }
+        
+        const result = {
+            steps: steps,
+            stepCount: totalSteps,
+            isStringed: true,
+            stringedPatterns: parsedPatterns,
+            dividerPositions: dividerPositions,
+            formula: patternString,
+            originalString: patternString
+        };
+        
+        console.log(`✅ Space stringing result:`, result);
         return result;
     }
     
