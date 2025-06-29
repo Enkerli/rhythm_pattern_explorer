@@ -337,7 +337,7 @@ class PatternDatabase {
             case 'combined':
                 return this.patterns.filter(p => p.combined || p.isCombined);
             case 'morphed':
-                return this.patterns.filter(p => p.isMorphed);
+                return this.patterns.filter(p => p.isMutated || p.isMorphed); // Support both old and new property names
             case 'generated':
                 return this.patterns.filter(p => p.isGenerated);
             case 'barlow_transformed':

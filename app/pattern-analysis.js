@@ -1973,29 +1973,29 @@ class IntuitiveRhythmGenerators {
 }
 
 /**
- * Rhythm Morphing System
+ * Rhythm Mutation System
  * Transforms existing rhythms by displacing onsets while preserving character
  */
-class RhythmMorpher {
+class RhythmMutator {
     
     /**
-     * Morph a rhythm pattern by displacing onsets
+     * Mutate a rhythm pattern by displacing onsets
      * @param {Array} originalPattern - Original rhythm pattern
-     * @param {number} morphAmount - 0-1: amount of morphing (0=original, 1=maximum displacement)
-     * @param {Object} options - Morphing options
-     * @returns {Object} Morphed pattern with original reference
+     * @param {number} mutationAmount - 0-1: amount of mutation (0=original, 1=maximum displacement)
+     * @param {Object} options - Mutation options
+     * @returns {Object} Mutated pattern with original reference
      */
-    static morphPattern(originalPattern, morphAmount = 0.5, options = {}) {
+    static mutatePattern(originalPattern, mutationAmount = 0.5, options = {}) {
         const {
             preserveOnsetCount = true,    // Keep same number of hits
             allowMicroTiming = false,     // Allow sub-step displacement (future feature)
-            morphStyle = 'balanced',      // 'balanced', 'groove', 'syncopate', 'straighten'
+            mutationStyle = 'balanced',   // 'balanced', 'groove', 'syncopate', 'straighten'
             constrainToGrid = true,       // Keep onsets on grid positions
             respectMeter = true           // Bias toward metrically strong positions
         } = options;
         
         if (!Array.isArray(originalPattern) || originalPattern.length === 0) {
-            throw new Error('Invalid original pattern for morphing');
+            throw new Error('Invalid original pattern for mutation');
         }
         
         const stepCount = originalPattern.length;
@@ -2004,78 +2004,78 @@ class RhythmMorpher {
         if (originalOnsets.length === 0) {
             return {
                 pattern: [...originalPattern],
-                morphed: [...originalPattern],
+                mutated: [...originalPattern],
                 originalOnsets: [],
-                morphedOnsets: [],
-                morphAmount: 0,
+                mutatedOnsets: [],
+                mutationAmount: 0,
                 displacement: 0
             };
         }
         
-        // Generate morphed onset positions
-        const morphedOnsets = this.generateMorphedOnsets(
+        // Generate mutated onset positions
+        const mutatedOnsets = this.generateMutatedOnsets(
             originalOnsets, 
             stepCount, 
-            morphAmount, 
-            morphStyle,
+            mutationAmount, 
+            mutationStyle,
             options
         );
         
-        // Create new pattern from morphed onsets
-        const morphedPattern = new Array(stepCount).fill(false);
-        morphedOnsets.forEach(pos => {
+        // Create new pattern from mutated onsets
+        const mutatedPattern = new Array(stepCount).fill(false);
+        mutatedOnsets.forEach(pos => {
             if (pos >= 0 && pos < stepCount) {
-                morphedPattern[pos] = true;
+                mutatedPattern[pos] = true;
             }
         });
         
         // Calculate displacement metrics
-        const displacement = this.calculateDisplacement(originalOnsets, morphedOnsets, stepCount);
+        const displacement = this.calculateDisplacement(originalOnsets, mutatedOnsets, stepCount);
         
         return {
             pattern: [...originalPattern],
-            morphed: morphedPattern,
+            mutated: mutatedPattern,
             originalOnsets: originalOnsets,
-            morphedOnsets: morphedOnsets,
-            morphAmount: morphAmount,
+            mutatedOnsets: mutatedOnsets,
+            mutationAmount: mutationAmount,
             displacement: displacement,
-            morphStyle: morphStyle,
-            description: `${morphStyle} mutation (${Math.round(morphAmount*100)}% displacement)`
+            mutationStyle: mutationStyle,
+            description: `${mutationStyle} mutation (${Math.round(mutationAmount*100)}% displacement)`
         };
     }
     
     /**
-     * Generate morphed onset positions
+     * Generate mutated onset positions
      */
-    static generateMorphedOnsets(originalOnsets, stepCount, morphAmount, morphStyle, options) {
-        const morphedOnsets = [];
+    static generateMutatedOnsets(originalOnsets, stepCount, mutationAmount, mutationStyle, options) {
+        const mutatedOnsets = [];
         
         for (const originalPos of originalOnsets) {
             let newPos = originalPos;
             
-            switch (morphStyle) {
+            switch (mutationStyle) {
                 case 'balanced':
-                    newPos = this.morphBalanced(originalPos, stepCount, morphAmount);
+                    newPos = this.mutateBalanced(originalPos, stepCount, mutationAmount);
                     break;
                     
                 case 'groove':
-                    newPos = this.morphToGroove(originalPos, stepCount, morphAmount);
+                    newPos = this.mutateToGroove(originalPos, stepCount, mutationAmount);
                     break;
                     
                 case 'syncopate':
-                    newPos = this.morphSyncopate(originalPos, stepCount, morphAmount);
+                    newPos = this.mutateSyncopate(originalPos, stepCount, mutationAmount);
                     break;
                     
                 case 'straighten':
-                    newPos = this.morphStraighten(originalPos, stepCount, morphAmount);
+                    newPos = this.mutateStraighten(originalPos, stepCount, mutationAmount);
                     break;
                     
                 case 'swing':
-                    newPos = this.morphSwing(originalPos, stepCount, morphAmount);
+                    newPos = this.mutateSwing(originalPos, stepCount, mutationAmount);
                     break;
                     
                 case 'shuffle':
-                    newPos = this.morphShuffle(originalPos, stepCount, morphAmount);
+                    newPos = this.mutateShuffle(originalPos, stepCount, mutationAmount);
                     break;
             }
             
@@ -2084,33 +2084,33 @@ class RhythmMorpher {
             if (newPos < 0) newPos += stepCount;
             
             // Avoid duplicates at same position
-            if (!morphedOnsets.includes(newPos)) {
-                morphedOnsets.push(newPos);
+            if (!mutatedOnsets.includes(newPos)) {
+                mutatedOnsets.push(newPos);
             } else {
                 // Find nearest available position
-                const nearestPos = this.findNearestAvailable(newPos, morphedOnsets, stepCount);
+                const nearestPos = this.findNearestAvailable(newPos, mutatedOnsets, stepCount);
                 if (nearestPos !== -1) {
-                    morphedOnsets.push(nearestPos);
+                    mutatedOnsets.push(nearestPos);
                 }
             }
         }
         
-        return morphedOnsets.sort((a, b) => a - b);
+        return mutatedOnsets.sort((a, b) => a - b);
     }
     
     /**
-     * Balanced morphing - random displacement in both directions
+     * Balanced mutation - random displacement in both directions
      */
-    static morphBalanced(position, stepCount, amount) {
+    static mutateBalanced(position, stepCount, amount) {
         const maxDisplacement = Math.floor(stepCount * 0.25); // Max 25% of pattern length
         const displacement = (Math.random() - 0.5) * 2 * maxDisplacement * amount;
         return position + displacement;
     }
     
     /**
-     * Groove morphing - bias toward groove positions
+     * Groove mutation - bias toward groove positions
      */
-    static morphToGroove(position, stepCount, amount) {
+    static mutateToGroove(position, stepCount, amount) {
         const groovePositions = this.getGroovePositions(stepCount);
         const nearestGroove = this.findNearestGroovePosition(position, groovePositions);
         const displacement = (nearestGroove - position) * amount;
@@ -2118,9 +2118,9 @@ class RhythmMorpher {
     }
     
     /**
-     * Syncopation morphing - move toward off-beat positions
+     * Syncopation mutation - move toward off-beat positions
      */
-    static morphSyncopate(position, stepCount, amount) {
+    static mutateSyncopate(position, stepCount, amount) {
         const strongBeats = this.getStrongBeats(stepCount);
         
         // If on strong beat, move to nearby off-beat
@@ -2131,13 +2131,13 @@ class RhythmMorpher {
         }
         
         // If already off-beat, add some randomness
-        return this.morphBalanced(position, stepCount, amount * 0.5);
+        return this.mutateBalanced(position, stepCount, amount * 0.5);
     }
     
     /**
-     * Straightening morphing - move toward strong beats
+     * Straightening mutation - move toward strong beats
      */
-    static morphStraighten(position, stepCount, amount) {
+    static mutateStraighten(position, stepCount, amount) {
         const strongBeats = this.getStrongBeats(stepCount);
         const nearestStrong = strongBeats.reduce((nearest, beat) => {
             const currentDistance = Math.abs(position - beat);
@@ -2150,9 +2150,9 @@ class RhythmMorpher {
     }
     
     /**
-     * Swing morphing - create swing feel
+     * Swing mutation - create swing feel
      */
-    static morphSwing(position, stepCount, amount) {
+    static mutateSwing(position, stepCount, amount) {
         const eighth = stepCount / 8;
         const beatPosition = position % eighth;
         
@@ -2166,9 +2166,9 @@ class RhythmMorpher {
     }
     
     /**
-     * Shuffle morphing - create shuffle rhythm
+     * Shuffle mutation - create shuffle rhythm
      */
-    static morphShuffle(position, stepCount, amount) {
+    static mutateShuffle(position, stepCount, amount) {
         const sixteenth = stepCount / 16;
         const beatPosition = position % (sixteenth * 2);
         
@@ -2243,18 +2243,18 @@ class RhythmMorpher {
         return -1; // No available position found
     }
     
-    static calculateDisplacement(originalOnsets, morphedOnsets, stepCount) {
-        if (originalOnsets.length !== morphedOnsets.length) {
+    static calculateDisplacement(originalOnsets, mutatedOnsets, stepCount) {
+        if (originalOnsets.length !== mutatedOnsets.length) {
             return { average: 0, total: 0, normalized: 0 };
         }
         
         let totalDisplacement = 0;
         for (let i = 0; i < originalOnsets.length; i++) {
             const original = originalOnsets[i];
-            const morphed = morphedOnsets[i];
+            const mutated = mutatedOnsets[i];
             
             // Calculate circular distance
-            const directDistance = Math.abs(morphed - original);
+            const directDistance = Math.abs(mutated - original);
             const wrapDistance = stepCount - directDistance;
             const displacement = Math.min(directDistance, wrapDistance);
             
@@ -2272,22 +2272,22 @@ class RhythmMorpher {
     }
     
     /**
-     * Create a morph sequence - interpolate between original and target
+     * Create a mutation sequence - interpolate between original and target
      */
-    static createMorphSequence(originalPattern, targetPattern, steps = 5) {
+    static createMutationSequence(originalPattern, targetPattern, steps = 5) {
         const sequence = [];
         
         for (let i = 0; i <= steps; i++) {
-            const morphAmount = i / steps;
-            const result = this.morphPattern(originalPattern, morphAmount, {
-                morphStyle: 'balanced'
+            const mutationAmount = i / steps;
+            const result = this.mutatePattern(originalPattern, mutationAmount, {
+                mutationStyle: 'balanced'
             });
             
             sequence.push({
-                pattern: result.morphed,
-                morphAmount: morphAmount,
+                pattern: result.mutated,
+                mutationAmount: mutationAmount,
                 step: i,
-                description: `Mutation step ${i}/${steps} (${Math.round(morphAmount*100)}%)`
+                description: `Mutation step ${i}/${steps} (${Math.round(mutationAmount*100)}%)`
             });
         }
         
@@ -2305,5 +2305,5 @@ if (typeof window !== 'undefined') {
     window.BarlowTransformer = BarlowTransformer;
     window.StochasticRhythmGenerator = StochasticRhythmGenerator;
     window.IntuitiveRhythmGenerators = IntuitiveRhythmGenerators;
-    window.RhythmMorpher = RhythmMorpher;
+    window.RhythmMutator = RhythmMutator;
 }
