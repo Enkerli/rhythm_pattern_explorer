@@ -88,6 +88,12 @@ class EnhancedPatternApp {
         
         // Progressive transformation state
         this.euclideanProgressiveState = null;
+        this.progressiveOffsetsState = {
+            originalPattern: null,
+            currentOffset: 0,
+            forwardStep: 1,
+            backwardStep: 1
+        };
         
         // Initialize the application
         this.setupEventListeners();
@@ -290,6 +296,9 @@ class EnhancedPatternApp {
         
         // Stochastic generator events
         this.setupStochasticEvents();
+        
+        // Progressive offsets events
+        this.setupProgressiveOffsetsEvents();
         
         console.log('✅ Event listeners configured');
     }
@@ -689,6 +698,17 @@ ${(() => {
                     this.resetEuclideanControls();
                 }
                 this.updateCurrentEuclideanOnsetsDisplay(pattern);
+            }
+            
+            // Show Progressive Offsets section
+            const progressiveOffsetsSection = document.getElementById('progressiveOffsetsSection');
+            if (progressiveOffsetsSection) {
+                progressiveOffsetsSection.style.display = 'block';
+                // Reset controls if we're not in the middle of progressive offsets
+                if (!pattern.isOffset || !this.progressiveOffsetsState.originalPattern) {
+                    this.resetProgressiveOffsetsControls();
+                }
+                this.updateCurrentOffsetsPatternDisplay(pattern);
             }
             
             // Load pattern into sequencer
@@ -3496,6 +3516,41 @@ ${perfectBalancePatterns.map((pattern, index) => {
     }
     
     /**
+     * Reset Progressive Offsets controls to default state
+     */
+    resetProgressiveOffsetsControls() {
+        const resultsDiv = document.getElementById('progressiveOffsetsResults');
+        if (resultsDiv) {
+            resultsDiv.style.display = 'none';
+            resultsDiv.innerHTML = '';
+        }
+        
+        const addBtn = document.getElementById('addOffsetsBtn');
+        if (addBtn) {
+            addBtn.disabled = true;
+        }
+        
+        // Reset input fields to defaults
+        const forwardStepInput = document.getElementById('forwardOffsetStep');
+        const backwardStepInput = document.getElementById('backwardOffsetStep');
+        
+        if (forwardStepInput) forwardStepInput.value = '1';
+        if (backwardStepInput) backwardStepInput.value = '1';
+        
+        // Reset state if no progressive sequence in progress
+        if (!this.progressiveOffsetsState.originalPattern) {
+            this.progressiveOffsetsState = {
+                originalPattern: null,
+                currentOffset: 0,
+                forwardStep: 1,
+                backwardStep: 1
+            };
+        }
+        
+        this.updateCurrentOffsetDisplay();
+    }
+    
+    /**
      * Load a Euclidean transformed pattern as the new input pattern
      */
     loadEuclideanTransformedPatternAsInput(transformation) {
@@ -3558,6 +3613,292 @@ ${perfectBalancePatterns.map((pattern, index) => {
         // Convert to parsable format (binary with step count)
         const binary = PatternConverter.toBinary(performance.performedPattern, stepCount);
         return `b${binary}:${stepCount}`;
+    }
+    
+    /**
+     * Setup progressive offsets event listeners
+     */
+    setupProgressiveOffsetsEvents() {
+        const forwardStepInput = document.getElementById('forwardOffsetStep');
+        const backwardStepInput = document.getElementById('backwardOffsetStep');
+        const resetBtn = document.getElementById('resetOffsetsBtn');
+        const manualBtn = document.getElementById('manualOffsetBtn');
+        const addBtn = document.getElementById('addOffsetsBtn');
+        
+        // Forward step input - Enter key for progressive forward offset
+        if (forwardStepInput) {
+            forwardStepInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.progressiveOffsetsState.forwardStep = parseInt(forwardStepInput.value) || 1;
+                    this.applyProgressiveOffset('forward');
+                }
+            });
+            
+            forwardStepInput.addEventListener('input', (e) => {
+                this.progressiveOffsetsState.forwardStep = parseInt(e.target.value) || 1;
+            });
+        }
+        
+        // Backward step input - Enter key for progressive backward offset
+        if (backwardStepInput) {
+            backwardStepInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.progressiveOffsetsState.backwardStep = parseInt(backwardStepInput.value) || 1;
+                    this.applyProgressiveOffset('backward');
+                }
+            });
+            
+            backwardStepInput.addEventListener('input', (e) => {
+                this.progressiveOffsetsState.backwardStep = parseInt(e.target.value) || 1;
+            });
+        }
+        
+        // Reset button
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => this.resetProgressiveOffsets());
+        }
+        
+        // Manual offset button  
+        if (manualBtn) {
+            manualBtn.addEventListener('click', () => this.applyManualOffset());
+        }
+        
+        // Add to database button
+        if (addBtn) {
+            addBtn.addEventListener('click', () => this.addOffsetPatternToDatabase());
+        }
+    }
+    
+    /**
+     * Apply progressive offset in specified direction
+     */
+    applyProgressiveOffset(direction) {
+        if (!this.currentPattern) {
+            showNotification('No pattern loaded. Parse a pattern first.', 'warning');
+            return;
+        }
+        
+        // Initialize original pattern if not set
+        if (!this.progressiveOffsetsState.originalPattern) {
+            this.progressiveOffsetsState.originalPattern = {
+                steps: [...this.currentPattern.steps],
+                stepCount: this.currentPattern.stepCount,
+                name: this.currentPattern.name || 'Original Pattern'
+            };
+            this.progressiveOffsetsState.currentOffset = 0;
+        }
+        
+        // Calculate new offset
+        const stepSize = direction === 'forward' ? this.progressiveOffsetsState.forwardStep : this.progressiveOffsetsState.backwardStep;
+        const offsetDelta = direction === 'forward' ? stepSize : -stepSize;
+        this.progressiveOffsetsState.currentOffset += offsetDelta;
+        
+        // Apply offset to original pattern
+        const offsetPattern = this.rotatePattern(
+            this.progressiveOffsetsState.originalPattern.steps,
+            this.progressiveOffsetsState.currentOffset
+        );
+        
+        // Create offset pattern data
+        const offsetPatternData = {
+            steps: offsetPattern,
+            stepCount: this.progressiveOffsetsState.originalPattern.stepCount,
+            name: `${this.progressiveOffsetsState.originalPattern.name} (offset ${this.progressiveOffsetsState.currentOffset})`,
+            expression: this.generateOffsetExpression(offsetPattern, this.progressiveOffsetsState.currentOffset),
+            isOffset: true,
+            originalPattern: this.progressiveOffsetsState.originalPattern,
+            offset: this.progressiveOffsetsState.currentOffset
+        };
+        
+        // Update UI and load pattern
+        this.loadOffsetPatternAsInput(offsetPatternData);
+        
+        console.log(`✅ Applied ${direction} offset: ${this.progressiveOffsetsState.currentOffset}`);
+    }
+    
+    /**
+     * Apply manual offset using current step values
+     */
+    applyManualOffset() {
+        if (!this.currentPattern) {
+            showNotification('No pattern loaded. Parse a pattern first.', 'warning');
+            return;
+        }
+        
+        const forwardStep = this.progressiveOffsetsState.forwardStep;
+        const backwardStep = this.progressiveOffsetsState.backwardStep;
+        const netOffset = forwardStep - backwardStep;
+        
+        // Apply offset to current pattern
+        const offsetPattern = this.rotatePattern(this.currentPattern.steps, netOffset);
+        
+        // Create offset pattern data
+        const offsetPatternData = {
+            steps: offsetPattern,
+            stepCount: this.currentPattern.stepCount,
+            name: `${this.currentPattern.name || 'Pattern'} (manual offset ${netOffset})`,
+            expression: this.generateOffsetExpression(offsetPattern, netOffset),
+            isOffset: true,
+            originalPattern: this.currentPattern,
+            offset: netOffset
+        };
+        
+        // Update UI and load pattern
+        this.loadOffsetPatternAsInput(offsetPatternData);
+        
+        console.log(`✅ Applied manual offset: ${netOffset}`);
+    }
+    
+    /**
+     * Reset progressive offsets to original pattern
+     */
+    resetProgressiveOffsets() {
+        if (!this.progressiveOffsetsState.originalPattern) {
+            showNotification('No progressive offsets in progress', 'info');
+            return;
+        }
+        
+        // Reset to original pattern
+        this.progressiveOffsetsState.currentOffset = 0;
+        this.loadOffsetPatternAsInput(this.progressiveOffsetsState.originalPattern);
+        
+        // Update current offset display
+        this.updateCurrentOffsetDisplay();
+        
+        console.log('✅ Reset to original pattern');
+    }
+    
+    /**
+     * Rotate pattern by specified offset
+     */
+    rotatePattern(steps, offset) {
+        if (!steps || steps.length === 0) return [];
+        
+        const stepCount = steps.length;
+        // Normalize offset to be within pattern length
+        const normalizedOffset = ((offset % stepCount) + stepCount) % stepCount;
+        
+        // Rotate the pattern
+        return [...steps.slice(normalizedOffset), ...steps.slice(0, normalizedOffset)];
+    }
+    
+    /**
+     * Load offset pattern as input
+     */
+    loadOffsetPatternAsInput(offsetPatternData) {
+        try {
+            // Update universal input field
+            const universalInput = document.getElementById('universalInput');
+            if (universalInput) {
+                universalInput.value = offsetPatternData.expression;
+            }
+            
+            // Set as current pattern
+            this.currentPattern = offsetPatternData;
+            
+            // Update UI displays
+            this.updateCurrentOffsetsPatternDisplay(offsetPatternData);
+            this.updateCurrentOffsetDisplay();
+            
+            // Load into sequencer for preview
+            if (this.sequencer) {
+                this.sequencer.updatePattern(offsetPatternData);
+            }
+            
+            // Enable add button
+            const addBtn = document.getElementById('addOffsetsBtn');
+            if (addBtn) addBtn.disabled = false;
+            
+            console.log('✅ Offset pattern loaded as input:', offsetPatternData.expression);
+            
+        } catch (error) {
+            console.error('❌ Error loading offset pattern as input:', error);
+            showNotification('Error loading offset pattern: ' + error.message, 'error');
+        }
+    }
+    
+    /**
+     * Update current offsets pattern display
+     */
+    updateCurrentOffsetsPatternDisplay(pattern) {
+        const display = document.getElementById('currentOffsetsPattern');
+        if (display && pattern && pattern.steps) {
+            const binary = PatternConverter.toBinary(pattern.steps, pattern.stepCount);
+            const onsetCount = pattern.steps.filter(step => step).length;
+            display.textContent = `${binary} (${onsetCount} onsets)`;
+            display.classList.add('pattern-loaded');
+        }
+    }
+    
+    /**
+     * Update current offset display
+     */
+    updateCurrentOffsetDisplay() {
+        const display = document.getElementById('currentOffsetValue');
+        if (display) {
+            display.textContent = this.progressiveOffsetsState.currentOffset.toString();
+        }
+    }
+    
+    /**
+     * Generate expression for offset pattern
+     */
+    generateOffsetExpression(steps, offset) {
+        const stepCount = steps.length;
+        const binary = PatternConverter.toBinary(steps, stepCount);
+        return `b${binary}:${stepCount}`;
+    }
+    
+    /**
+     * Add offset pattern to database
+     */
+    addOffsetPatternToDatabase() {
+        if (!this.currentPattern || !this.currentPattern.isOffset) {
+            showNotification('No offset pattern to add', 'warning');
+            return;
+        }
+        
+        try {
+            // Create pattern data for database
+            const patternData = {
+                steps: this.currentPattern.steps,
+                stepCount: this.currentPattern.stepCount,
+                name: this.currentPattern.name,
+                isOffset: true,
+                originalPattern: this.currentPattern.originalPattern,
+                offset: this.currentPattern.offset
+            };
+            
+            // Generate analyses
+            const analyses = this.generateComprehensiveAnalysis(patternData);
+            
+            // Create database pattern
+            const dbPattern = createDatabasePattern(patternData, {
+                perfectBalance: analyses.balanceAnalysis,
+                syncopation: analyses.syncopationAnalysis
+            });
+            
+            // Add offset-specific metadata
+            dbPattern.isOffset = true;
+            dbPattern.originalPattern = patternData.originalPattern;
+            dbPattern.offset = patternData.offset;
+            
+            // Add to database
+            const patternId = this.database.add(dbPattern);
+            if (patternId) {
+                showNotification('Offset pattern added to database!', 'success');
+                this.updatePatternList();
+                this.updateDatabaseStats();
+            } else {
+                showNotification('Pattern already exists in database', 'info');
+            }
+            
+        } catch (error) {
+            console.error('❌ Error adding offset pattern:', error);
+            showNotification('Error adding offset pattern to database: ' + error.message, 'error');
+        }
     }
 }
 
