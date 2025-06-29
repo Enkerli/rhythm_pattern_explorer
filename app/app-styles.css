@@ -3634,3 +3634,93 @@ html {
         gap: 2px;
     }
 }
+
+/* === PLATFORM-SPECIFIC STYLES === */
+
+/* Platform-specific keyboard shortcut display */
+.platform-shortcut {
+    font-weight: 600;
+    color: var(--color-primary);
+    padding: 1px 4px;
+    background: var(--bg-light);
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+}
+
+/* Platform-specific visibility */
+.mac .windows-only,
+.windows .mac-only,
+.linux .mac-only,
+.mobile .desktop-only {
+    display: none !important;
+}
+
+/* Mobile keyboard alternatives */
+.mobile .keyboard-instruction {
+    display: none;
+}
+
+.mobile .mobile-instruction {
+    display: block;
+}
+
+.desktop .mobile-instruction {
+    display: none;
+}
+
+/* Touch-friendly adjustments */
+.touch .input-compact,
+.touch .btn-compact {
+    min-height: 36px;
+    padding: 8px 12px;
+}
+
+.touch .sequencer-controls-compact .btn-sequencer {
+    min-width: 48px;
+    min-height: 48px;
+}
+
+/* Platform-specific modifier key highlighting */
+.mac .ctrl-key,
+.windows .cmd-key,
+.linux .cmd-key {
+    opacity: 0.5;
+    text-decoration: line-through;
+}
+
+.mac .cmd-key,
+.windows .ctrl-key,
+.linux .ctrl-key {
+    font-weight: bold;
+}
+
+/* Cross-platform focus styles */
+.platform-input:focus {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 1px;
+}
+
+/* Mobile-specific info text */
+.mobile-help {
+    font-size: 0.85em;
+    color: var(--text-secondary);
+    font-style: italic;
+    margin-top: 4px;
+}
+
+/* Platform indicator badge */
+.platform-badge {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-family: var(--font-mono);
+    z-index: 1000;
+    opacity: 0.7;
+}
+}

@@ -68,7 +68,7 @@
                     • <strong>Onset Arrays:</strong> [0,3,6]:8 → Onset positions with step count<br>
                     • <strong>Rotation:</strong> pattern@steps → 0x92@3, P(3,1)@2<br>
                     • <strong>Multi-combinations:</strong> P(3,1)+P(5,0)+P(2,5) → Proper LCM(3,5,2)=30<br>
-                    • <strong>Keyboard:</strong> Enter = Parse, Cmd/Ctrl+Enter = Parse & Add to Database<br>
+                    • <strong>Keyboard:</strong> Enter = Parse, <span class="platform-shortcut">Cmd+Enter</span> = Parse & Add to Database<br>
                     • <strong>Buttons:</strong> "Add to Database" button available for any current pattern
                 </div>
             </section>
@@ -583,6 +583,7 @@
     <script>
         // Module loading system - loads all required modules in sequence
         const modules = [
+            'platform-utils.js',
             'math-core.js',
             'app-config.js', 
             'pattern-generators.js',
