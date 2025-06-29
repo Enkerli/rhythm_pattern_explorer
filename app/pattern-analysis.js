@@ -1705,7 +1705,8 @@ class IntuitiveRhythmGenerators {
         this.addGhostNotes(pattern, stepCount, ghost);
         
         return {
-            pattern: pattern,
+            steps: pattern,
+            pattern: pattern, // Keep for backward compatibility
             type: 'groove',
             parameters: parameters,
             description: `${accentPattern} groove (${Math.round(density*100)}% density)`
@@ -1731,7 +1732,7 @@ class IntuitiveRhythmGenerators {
         
         // Start with Euclidean rhythm
         const euclidean = EuclideanGenerator.generate(hits, stepCount, rotation);
-        const pattern = euclidean && euclidean.steps ? [...euclidean.steps] : new Array(stepCount).fill(false);
+        const pattern = euclidean && Array.isArray(euclidean) ? [...euclidean] : new Array(stepCount).fill(false);
         
         // Add funkiness by randomly moving some hits
         for (let i = 0; i < stepCount; i++) {
@@ -1752,7 +1753,8 @@ class IntuitiveRhythmGenerators {
         this.addShuffle(pattern, stepCount, shuffle);
         
         return {
-            pattern: pattern,
+            steps: pattern,
+            pattern: pattern, // Keep for backward compatibility
             type: 'funky-euclidean',
             parameters: parameters,
             description: `Funky E(${hits},${stepCount}) with ${Math.round(funkiness*100)}% deviation`
@@ -1795,7 +1797,8 @@ class IntuitiveRhythmGenerators {
         }
         
         return {
-            pattern: pattern,
+            steps: pattern,
+            pattern: pattern, // Keep for backward compatibility
             type: 'probabilistic',
             parameters: parameters,
             description: `${groove} feel (${Math.round(density*100)}% density, ${Math.round(beatEmphasis*100)}% beat emphasis)`
@@ -1848,7 +1851,8 @@ class IntuitiveRhythmGenerators {
         }
         
         return {
-            pattern: pattern,
+            steps: pattern,
+            pattern: pattern, // Keep for backward compatibility
             type: 'polyrhythm',
             parameters: parameters,
             description: `Polyrhythm [${layers.join(',')}] with ${Math.round(interaction*100)}% interaction`
@@ -1968,6 +1972,31 @@ class IntuitiveRhythmGenerators {
                 return (position % eighth) > (eighth * 0.7) ? 0.3 : 0;
             default:
                 return 0;
+        }
+    }
+    
+    /**
+     * General generate method that dispatches to specific generators
+     * @param {string} generatorType - Type of generator ('groove', 'euclidean', 'probabilistic', 'polyrhythm')
+     * @param {number} stepCount - Number of steps in the pattern
+     * @param {Object} parameters - Generator-specific parameters
+     * @returns {Object} Generated pattern with metadata
+     */
+    static generate(generatorType, stepCount, parameters = {}) {
+        switch (generatorType) {
+            case 'groove':
+                return this.generateGrooveRhythm(stepCount, parameters);
+            case 'euclidean':
+            case 'funky_euclidean':
+            case 'funky-euclidean':
+                return this.generateFunkyEuclidean(stepCount, parameters);
+            case 'probabilistic':
+                return this.generateProbabilisticRhythm(stepCount, parameters);
+            case 'polyrhythm':
+                return this.generatePolyrhythm(stepCount, parameters);
+            default:
+                // Default to groove generator
+                return this.generateGrooveRhythm(stepCount, parameters);
         }
     }
 }
@@ -2295,6 +2324,127 @@ class RhythmMutator {
     }
 }
 
+/**
+ * Euclidean Transformer
+ * Transforms patterns using Euclidean distribution algorithms
+ */
+class EuclideanTransformer {
+    /**
+     * Transform a pattern to a target number of onsets using Euclidean distribution
+     * @param {Array} originalPattern - Original rhythm pattern
+     * @param {number} targetOnsets - Target number of onsets
+     * @param {Object} options - Transformation options
+     * @returns {Object} Transformed pattern with metadata
+     */
+    static transform(originalPattern, targetOnsets, options = {}) {
+        const {
+            mode = 'normal',        // 'normal' or 'anti'
+            operation = 'auto',     // 'auto', 'dilute', 'concentrate'
+            preserveOriginal = true
+        } = options;
+        
+        if (!originalPattern || !Array.isArray(originalPattern)) {
+            throw new Error('Invalid original pattern for Euclidean transformation');
+        }
+        
+        const stepCount = originalPattern.length;
+        const currentOnsets = originalPattern.filter(step => step).length;
+        
+        // Validate target onsets
+        if (targetOnsets < 0 || targetOnsets > stepCount) {
+            throw new Error(`Target onsets must be between 0 and ${stepCount}`);
+        }
+        
+        // Determine operation if auto
+        let actualOperation = operation;
+        if (operation === 'auto') {
+            actualOperation = targetOnsets < currentOnsets ? 'dilute' : 'concentrate';
+        }
+        
+        let transformedPattern;
+        
+        if (targetOnsets === currentOnsets) {
+            // No change needed
+            transformedPattern = [...originalPattern];
+        } else if (targetOnsets === 0) {
+            // Complete silence
+            transformedPattern = new Array(stepCount).fill(false);
+        } else if (targetOnsets === stepCount) {
+            // All onsets
+            transformedPattern = new Array(stepCount).fill(true);
+        } else {
+            // Use Euclidean distribution
+            if (mode === 'anti') {
+                // Anti-Euclidean: use complement pattern
+                const euclideanPattern = EuclideanGenerator.generate(stepCount - targetOnsets, stepCount);
+                transformedPattern = euclideanPattern.map(step => !step);
+            } else {
+                // Normal Euclidean
+                transformedPattern = EuclideanGenerator.generate(targetOnsets, stepCount);
+            }
+        }
+        
+        return {
+            original: [...originalPattern],
+            transformed: transformedPattern,
+            originalOnsets: currentOnsets,
+            targetOnsets: targetOnsets,
+            actualOnsets: transformedPattern.filter(step => step).length,
+            operation: actualOperation,
+            mode: mode,
+            stepCount: stepCount,
+            description: this.generateDescription(currentOnsets, targetOnsets, actualOperation, mode)
+        };
+    }
+    
+    /**
+     * Generate progressive transformations toward target
+     * @param {Array} originalPattern - Original rhythm pattern
+     * @param {number} targetOnsets - Target number of onsets
+     * @param {Object} options - Transformation options
+     * @returns {Object} Object with variations array
+     */
+    static generateProgressive(originalPattern, targetOnsets, options = {}) {
+        const currentOnsets = originalPattern.filter(step => step).length;
+        const transformations = [];
+        
+        if (currentOnsets === targetOnsets) {
+            // No transformation needed
+            const result = this.transform(originalPattern, targetOnsets, options);
+            return { variations: [result] };
+        }
+        
+        const direction = targetOnsets > currentOnsets ? 1 : -1;
+        const steps = Math.abs(targetOnsets - currentOnsets);
+        
+        // Generate intermediate steps
+        for (let i = 1; i <= steps; i++) {
+            const intermediateTarget = currentOnsets + (direction * i);
+            const result = this.transform(originalPattern, intermediateTarget, options);
+            result.step = i;
+            result.totalSteps = steps;
+            transformations.push(result);
+        }
+        
+        return { variations: transformations };
+    }
+    
+    /**
+     * Generate description for transformation
+     */
+    static generateDescription(currentOnsets, targetOnsets, operation, mode) {
+        const modePrefix = mode === 'anti' ? 'Anti-' : '';
+        const change = Math.abs(targetOnsets - currentOnsets);
+        
+        if (currentOnsets === targetOnsets) {
+            return `${modePrefix}Euclidean: No change (${currentOnsets} onsets)`;
+        }
+        
+        const operationName = operation === 'dilute' ? 'Diluted' : 'Concentrated';
+        return `${modePrefix}Euclidean ${operationName}: ${currentOnsets}→${targetOnsets} (${change} ${operation === 'dilute' ? 'removed' : 'added'})`;
+    }
+}
+
 // Export to global scope for browser compatibility
 if (typeof window !== 'undefined') {
     window.PerfectBalanceAnalyzer = PerfectBalanceAnalyzer;
@@ -2303,6 +2453,7 @@ if (typeof window !== 'undefined') {
     window.LongShortAnalyzer = LongShortAnalyzer;
     window.SyncopationAnalyzer = SyncopationAnalyzer;
     window.BarlowTransformer = BarlowTransformer;
+    window.EuclideanTransformer = EuclideanTransformer;
     window.StochasticRhythmGenerator = StochasticRhythmGenerator;
     window.IntuitiveRhythmGenerators = IntuitiveRhythmGenerators;
     window.RhythmMutator = RhythmMutator;

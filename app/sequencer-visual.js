@@ -668,14 +668,6 @@ class SequencerVisualEngine {
      * - Responsive scaling for different display sizes
      */
     render() {
-        console.log('🎨 RENDER DEBUG:', {
-            hasCtx: !!this.ctx,
-            hasCanvas: !!this.canvas,
-            canvasSize: this.config.canvasSize,
-            canvasWidth: this.canvas?.width,
-            canvasHeight: this.canvas?.height,
-            canvasInDOM: document.contains(this.canvas)
-        });
         
         if (!this.ctx) {
             console.warn('⚠️ No canvas context available for rendering');
@@ -707,13 +699,6 @@ class SequencerVisualEngine {
         
         // Clear canvas
         this.ctx.clearRect(0, 0, this.config.canvasSize, this.config.canvasSize);
-        
-        // Test: Draw a visible circle to verify canvas is working
-        this.ctx.beginPath();
-        this.ctx.arc(this.config.centerX, this.config.centerY, 50, 0, Math.PI * 2);
-        this.ctx.fillStyle = 'red';
-        this.ctx.fill();
-        console.log(`🔴 Test circle drawn at ${this.config.centerX}, ${this.config.centerY}`);
         
         // Draw background
         this.drawBackground();

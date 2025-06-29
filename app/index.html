@@ -309,6 +309,68 @@
                     </div>
                 </div>
 
+                <!-- EUCLIDEAN DILUTION/CONCENTRATION SECTION (COMPACT) -->
+                <div class="stochastic-section-compact" id="euclideanSection" style="display: none;">
+                    <div class="stochastic-compact-box">
+                        <div class="stochastic-header">
+                            <span class="stochastic-title">🌀 Euclidean Transformer</span>
+                            <button class="info-btn-small" onclick="toggleInfoBox('euclidean-info')" title="Euclidean transformer info">ℹ️</button>
+                        </div>
+                        <div class="stochastic-compact-controls">
+                            <div class="param-row-compact">
+                                <div class="param-compact">
+                                    <label>Current Onsets:</label>
+                                    <span id="currentEuclideanOnsets" class="pattern-display">Parse pattern first</span>
+                                </div>
+                            </div>
+                            <div class="param-row-compact">
+                                <div class="param-compact">
+                                    <label>Target Onsets:</label>
+                                    <input type="number" id="targetEuclideanOnsets" class="input-compact" min="0" max="32" value="4">
+                                </div>
+                                <div class="param-compact">
+                                    <label>Operation:</label>
+                                    <select id="euclideanOperation" class="select-compact">
+                                        <option value="auto">Auto (Dilute/Concentrate)</option>
+                                        <option value="dilute">Dilute (Remove)</option>
+                                        <option value="concentrate">Concentrate (Add)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="param-row-compact">
+                                <div class="param-compact">
+                                    <label>Mode:</label>
+                                    <select id="euclideanMode" class="select-compact">
+                                        <option value="normal">🌀 Normal Euclidean</option>
+                                        <option value="anti">🙃 Anti-Euclidean</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="buttons-compact">
+                                <button class="btn-compact primary" id="transformEuclideanBtn">Transform</button>
+                                <button class="btn-compact secondary" id="progressiveEuclideanBtn">Progressive</button>
+                                <button class="btn-compact success" id="addEuclideanBtn" disabled>Add to DB</button>
+                            </div>
+                        </div>
+                        <div class="stochastic-results-compact" id="euclideanResults" style="display: none;">
+                            <!-- Transformed patterns will appear here -->
+                        </div>
+                        
+                        <!-- EUCLIDEAN TRANSFORMER INFO BOX -->
+                        <div class="info-box" id="euclidean-info" style="display: none;">
+                            <strong>Euclidean Transformer:</strong><br>
+                            Add or remove onsets using Euclidean distribution principles for mathematically optimal spacing.<br><br>
+                            • <strong>Dilution:</strong> Removes onsets while maintaining Euclidean spacing<br>
+                            • <strong>Concentration:</strong> Adds onsets using Euclidean distribution<br>
+                            • <strong>Progressive:</strong> Multiple variations with gradual changes<br>
+                            • <strong>🙃 Anti-Euclidean:</strong> Uses complement patterns for unexpected rhythms<br><br>
+                            <strong>Theory:</strong> Uses Bjorklund's algorithm for optimal onset distribution<br>
+                            <em>Creates mathematically perfect rhythm spacing!</em><br>
+                            <em>Enter key on target onsets box steps through progressive transformations!</em>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- INITIAL HELP -->
                 <div id="analysisPlaceholder" class="analysis-placeholder">
                     <p>Parse a pattern using the universal input above to see comprehensive mathematical analysis.</p>

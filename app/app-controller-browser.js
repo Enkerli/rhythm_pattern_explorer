@@ -86,6 +86,9 @@ class EnhancedPatternApp {
         this.isExploring = false;
         this.isUpdatingFromSequencer = false;
         
+        // Progressive transformation state
+        this.euclideanProgressiveState = null;
+        
         // Initialize the application
         this.setupEventListeners();
         this.initialize();
@@ -104,7 +107,7 @@ class EnhancedPatternApp {
             'AdvancedPatternCombiner', 'UnifiedPatternParser', 'PatternConverter',
             'SystematicExplorer', 'PatternDatabase', 'UIComponents', 'AppConfig',
             'SequencerController', 'SequencerIntegration', 'SyncopationAnalyzer',
-            'IntuitiveRhythmGenerators', 'RhythmMutator', 'BarlowTransformer'
+            'IntuitiveRhythmGenerators', 'RhythmMutator', 'BarlowTransformer', 'EuclideanTransformer'
         ];
         
         const missingClasses = requiredClasses.filter(className => 
@@ -675,6 +678,17 @@ ${(() => {
                     this.resetBarlowControls();
                 }
                 this.updateCurrentOnsetsDisplay(pattern);
+            }
+            
+            // Show Euclidean transformer section
+            const euclideanSection = document.getElementById('euclideanSection');
+            if (euclideanSection) {
+                euclideanSection.style.display = 'block';
+                // Only reset controls if we're not in the middle of a Euclidean transformation or progressive sequence
+                if (!pattern.isEuclideanTransformed || (!this.selectedEuclideanTransformation && !this.euclideanProgressiveState)) {
+                    this.resetEuclideanControls();
+                }
+                this.updateCurrentEuclideanOnsetsDisplay(pattern);
             }
             
             // Load pattern into sequencer
@@ -1979,6 +1993,34 @@ ${perfectBalancePatterns.map((pattern, index) => {
                 }
             });
         }
+        
+        // Euclidean transformer button events
+        const transformEuclideanBtn = document.getElementById('transformEuclideanBtn');
+        const progressiveEuclideanBtn = document.getElementById('progressiveEuclideanBtn');
+        const addEuclideanBtn = document.getElementById('addEuclideanBtn');
+        
+        if (transformEuclideanBtn) {
+            transformEuclideanBtn.addEventListener('click', () => this.transformEuclideanPattern());
+        }
+        
+        if (progressiveEuclideanBtn) {
+            progressiveEuclideanBtn.addEventListener('click', () => this.generateProgressiveEuclideanTransformations());
+        }
+        
+        if (addEuclideanBtn) {
+            addEuclideanBtn.addEventListener('click', () => this.addEuclideanTransformationToDatabase());
+        }
+        
+        // Target Euclidean onsets input Enter key event
+        const targetEuclideanOnsetsInput = document.getElementById('targetEuclideanOnsets');
+        if (targetEuclideanOnsetsInput) {
+            targetEuclideanOnsetsInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.generateProgressiveEuclideanTransformations();
+                }
+            });
+        }
     }
     
     /**
@@ -2166,8 +2208,8 @@ ${perfectBalancePatterns.map((pattern, index) => {
             }
         });
         
-        // Auto-select first variation
-        if (performances.length > 0) {
+        // Auto-select first variation only if there's just one
+        if (performances.length === 1) {
             this.selectStochasticVariation(performances[0], 0);
         }
     }
@@ -2476,8 +2518,8 @@ ${perfectBalancePatterns.map((pattern, index) => {
             div.addEventListener('click', () => this.selectGeneratedVariation(performances[index], index));
         });
         
-        // Auto-select first variation
-        if (performances.length > 0) {
+        // Auto-select first variation only if there's just one
+        if (performances.length === 1) {
             this.selectGeneratedVariation(performances[0], 0);
         }
     }
@@ -3046,12 +3088,14 @@ ${perfectBalancePatterns.map((pattern, index) => {
             // Generate comprehensive analysis
             const analysis = this.generateComprehensiveAnalysis(transformedPatternData);
             
-            // Display the new pattern analysis
-            this.displayPatternAnalysis(transformedPatternData);
-            
-            // Update all UI components
+            // Update UI components without full analysis (to preserve results display)
             this.updateOriginalPatternDisplay(transformedPatternData);
             this.updateCurrentOnsetsDisplay(transformedPatternData);
+            
+            // Load into sequencer for preview (if available)
+            if (this.sequencer) {
+                this.sequencer.updatePattern(transformedPatternData);
+            }
             
         } catch (error) {
             console.error('❌ Error loading transformed pattern as input:', error);
@@ -3099,17 +3143,410 @@ ${perfectBalancePatterns.map((pattern, index) => {
             // Generate comprehensive analysis
             const analysis = this.generateComprehensiveAnalysis(generatedPatternData);
             
-            // Display the new pattern analysis
-            this.displayPatternAnalysis(generatedPatternData);
-            
-            // Update all UI components
+            // Update UI components without full analysis (to preserve results display)
             this.updateOriginalPatternDisplay(generatedPatternData);
             this.updateCurrentOnsetsDisplay(generatedPatternData);
+            
+            // Load into sequencer for preview (if available)
+            if (this.sequencer) {
+                this.sequencer.updatePattern(generatedPatternData);
+            }
             
         } catch (error) {
             console.error('❌ Error loading generated pattern as input:', error);
             showNotification('Error loading generated pattern: ' + error.message, 'error');
         }
+    }
+    
+    /**
+     * Update the current Euclidean onsets display
+     */
+    updateCurrentEuclideanOnsetsDisplay(pattern) {
+        const currentEuclideanOnsetsDisplay = document.getElementById('currentEuclideanOnsets');
+        if (currentEuclideanOnsetsDisplay && pattern && pattern.steps) {
+            const onsetCount = pattern.steps.filter(step => step).length;
+            currentEuclideanOnsetsDisplay.textContent = `${onsetCount} onsets`;
+            currentEuclideanOnsetsDisplay.classList.add('pattern-loaded');
+            
+            // Update target onsets input max value only
+            const targetEuclideanOnsetsInput = document.getElementById('targetEuclideanOnsets');
+            if (targetEuclideanOnsetsInput) {
+                targetEuclideanOnsetsInput.max = pattern.stepCount;
+                // Don't change the user's target value at all - let them set it
+            }
+        }
+    }
+    
+    /**
+     * Get current Euclidean transformer parameters from UI
+     */
+    getEuclideanParameters() {
+        return {
+            targetOnsets: parseInt(document.getElementById('targetEuclideanOnsets')?.value || 4),
+            operation: document.getElementById('euclideanOperation')?.value || 'auto',
+            mode: document.getElementById('euclideanMode')?.value || 'normal'
+        };
+    }
+    
+    /**
+     * Transform pattern using Euclidean distribution
+     */
+    transformEuclideanPattern() {
+        if (!this.currentPattern) {
+            showNotification('No pattern loaded. Parse a pattern first.', 'warning');
+            return;
+        }
+        
+        try {
+            const params = this.getEuclideanParameters();
+            
+            const result = EuclideanTransformer.transform(
+                this.currentPattern.steps,
+                params.targetOnsets,
+                {
+                    operation: params.operation,
+                    mode: params.mode
+                }
+            );
+            
+            const transformation = {
+                transformedPattern: result.transformed,
+                originalPattern: result.original,
+                parameters: params,
+                name: result.description,
+                type: 'euclidean_transformed',
+                metadata: result.metadata
+            };
+            
+            this.displayEuclideanResults([transformation], 'Euclidean Transformation');
+            
+        } catch (error) {
+            console.error('❌ Euclidean transformation error:', error);
+            showNotification('Error transforming pattern: ' + error.message, 'error');
+        }
+    }
+    
+    /**
+     * Generate progressive Euclidean transformations (step-by-step)
+     */
+    generateProgressiveEuclideanTransformations() {
+        if (!this.currentPattern) {
+            showNotification('No pattern loaded. Parse a pattern first.', 'warning');
+            return;
+        }
+        
+        try {
+            const params = this.getEuclideanParameters();
+            const currentOnsets = this.currentPattern.steps.filter(step => step).length;
+            const targetOnsets = params.targetOnsets;
+            
+            console.log(`🔍 Progressive state check: target=${targetOnsets}, currentStep=${this.euclideanProgressiveState?.currentStep}, current pattern onsets=${currentOnsets}`);
+            
+            // Check if we need to initialize progressive state
+            const hasState = !!this.euclideanProgressiveState;
+            const targetChanged = this.euclideanProgressiveState?.targetOnsets !== targetOnsets;
+            const stepCompleted = this.euclideanProgressiveState?.currentStep >= this.euclideanProgressiveState?.transformations?.length;
+            
+            // Only check pattern change if we're not in the middle of a progressive sequence
+            // (pattern changes during progressive sequences are expected)
+            const inProgressiveSequence = hasState && this.euclideanProgressiveState.currentStep >= 0;
+            const patternChanged = !inProgressiveSequence && 
+                JSON.stringify(this.euclideanProgressiveState?.originalPattern) !== JSON.stringify(this.currentPattern.steps);
+            
+            console.log(`🔍 State checks: hasState=${hasState}, targetChanged=${targetChanged}, stepCompleted=${stepCompleted}, inProgressiveSequence=${inProgressiveSequence}, patternChanged=${patternChanged}`);
+            
+            const needsNewSequence = !hasState || targetChanged || stepCompleted || patternChanged;
+                
+            if (needsNewSequence) {
+                console.log(`🆕 Creating new progressive sequence from ${currentOnsets} to ${targetOnsets} onsets`);
+                
+                // For progressive transformations, use current pattern as starting point
+                const startingPattern = this.currentPattern.steps;
+                const startingOnsets = startingPattern.filter(step => step).length;
+                
+                // Initialize new progressive sequence
+                this.euclideanProgressiveState = {
+                    originalPattern: [...startingPattern],
+                    targetOnsets: targetOnsets,
+                    currentOnsets: startingOnsets,
+                    direction: targetOnsets > startingOnsets ? 1 : -1,
+                    currentStep: -1, // Start at -1 so first press shows full list
+                    transformations: []
+                };
+                
+                // Generate all transformations from the current pattern
+                const result = EuclideanTransformer.generateProgressive(
+                    startingPattern,
+                    params.targetOnsets,
+                    {
+                        operation: params.operation,
+                        mode: params.mode
+                    }
+                );
+                
+                this.euclideanProgressiveState.transformations = result.variations.map((variation, index) => ({
+                    transformedPattern: variation.transformed,
+                    originalPattern: variation.original,
+                    parameters: params,
+                    name: variation.description,
+                    type: 'euclidean_transformed',
+                    metadata: variation.metadata
+                }));
+                
+                if (this.euclideanProgressiveState.transformations.length === 0) {
+                    showNotification('No transformations needed - already at target onsets.', 'info');
+                    return;
+                }
+            }
+            
+            // Handle progressive stepping
+            this.euclideanProgressiveState.currentStep++;
+            console.log(`👆 Step incremented to: ${this.euclideanProgressiveState.currentStep}, total transformations: ${this.euclideanProgressiveState.transformations.length}`);
+            
+            if (this.euclideanProgressiveState.currentStep === 0) {
+                // First press: show full list and immediately apply first transformation
+                console.log(`📋 First press - showing full list of ${this.euclideanProgressiveState.transformations.length} transformations and applying first one`);
+                this.displayEuclideanResults(
+                    this.euclideanProgressiveState.transformations, 
+                    `Progressive: ${this.euclideanProgressiveState.currentOnsets} → ${targetOnsets} onsets`
+                );
+                
+                // Immediately apply the first transformation
+                if (this.euclideanProgressiveState.transformations.length > 0) {
+                    const firstTransformation = this.euclideanProgressiveState.transformations[0];
+                    this.selectEuclideanTransformation(firstTransformation, 0);
+                    this.loadEuclideanTransformedPatternAsInput(firstTransformation);
+                    
+                    // Shorten the list by removing the completed step
+                    const remainingTransformations = this.euclideanProgressiveState.transformations.slice(1);
+                    if (remainingTransformations.length > 0) {
+                        this.displayEuclideanResults(
+                            remainingTransformations, 
+                            `Progressive: ${remainingTransformations.length} steps remaining`
+                        );
+                    }
+                    
+                    showNotification(`Step 1/${this.euclideanProgressiveState.transformations.length}: ${firstTransformation.name}`, 'info');
+                    this.euclideanProgressiveState.currentStep = 1; // Mark that we've applied the first step
+                } else {
+                    showNotification(`Generated ${this.euclideanProgressiveState.transformations.length} progressive transformations. Press Enter again to step through them.`, 'info');
+                }
+            } else if (this.euclideanProgressiveState.currentStep <= this.euclideanProgressiveState.transformations.length) {
+                // Subsequent presses: step through the list
+                const transformationIndex = this.euclideanProgressiveState.currentStep - 1;
+                const transformation = this.euclideanProgressiveState.transformations[transformationIndex];
+                
+                // Auto-select the current transformation
+                this.selectEuclideanTransformation(transformation, transformationIndex);
+                
+                // Load the transformed pattern as the new current pattern (like Barlow does)
+                this.loadEuclideanTransformedPatternAsInput(transformation);
+                
+                showNotification(`Step ${this.euclideanProgressiveState.currentStep}/${this.euclideanProgressiveState.transformations.length}: ${transformation.name}`, 'info');
+                
+                // Shorten the list by removing the completed step and redisplay
+                const remainingTransformations = this.euclideanProgressiveState.transformations.slice(this.euclideanProgressiveState.currentStep);
+                if (remainingTransformations.length > 0) {
+                    this.displayEuclideanResults(
+                        remainingTransformations, 
+                        `Progressive: ${remainingTransformations.length} steps remaining`
+                    );
+                }
+            } else {
+                showNotification('Reached end of progressive sequence. Parse a new pattern to restart.', 'info');
+            }
+            
+        } catch (error) {
+            console.error('❌ Progressive Euclidean error:', error);
+            showNotification('Error generating progressive transformations: ' + error.message, 'error');
+        }
+    }
+    
+    /**
+     * Display Euclidean transformation results
+     */
+    displayEuclideanResults(transformations, title) {
+        const resultsDiv = document.getElementById('euclideanResults');
+        if (!resultsDiv) return;
+        
+        resultsDiv.style.display = 'block';
+        
+        const html = `
+            <div class="stochastic-results-header">
+                <h4>${title}</h4>
+            </div>
+            <div class="stochastic-variations">
+                ${transformations.map((transformation, index) => this.renderEuclideanTransformationCompact(transformation, index)).join('')}
+            </div>
+        `;
+        
+        resultsDiv.innerHTML = html;
+        
+        // Add click handlers for selection
+        transformations.forEach((transformation, index) => {
+            const variationDiv = resultsDiv.querySelector(`[data-euclidean-index="${index}"]`);
+            if (variationDiv) {
+                variationDiv.addEventListener('click', () => this.selectEuclideanTransformation(transformation, index));
+            }
+        });
+        
+        // Auto-select first transformation only if there's just one
+        if (transformations.length === 1) {
+            this.selectEuclideanTransformation(transformations[0], 0);
+        }
+    }
+    
+    /**
+     * Render a single Euclidean transformation (compact version)
+     */
+    renderEuclideanTransformationCompact(transformation, index) {
+        const binary = PatternConverter.toBinary(transformation.transformedPattern, transformation.transformedPattern.length);
+        const onsetCount = transformation.transformedPattern.filter(step => step).length;
+        
+        return `
+            <div class="stochastic-variation" data-euclidean-index="${index}">
+                <div class="variation-header">
+                    <span class="variation-name">${transformation.name || `Transform ${index + 1}`}</span>
+                    <span class="variation-complexity">${onsetCount} onsets</span>
+                </div>
+                <div class="variation-pattern">
+                    <span class="pattern-binary">${binary}</span>
+                </div>
+            </div>
+        `;
+    }
+    
+    /**
+     * Select a specific Euclidean transformation
+     */
+    selectEuclideanTransformation(transformation, index) {
+        this.selectedEuclideanTransformation = transformation;
+        
+        // Update UI to show selection
+        const resultsDiv = document.getElementById('euclideanResults');
+        if (resultsDiv) {
+            resultsDiv.querySelectorAll('.stochastic-variation').forEach((div, i) => {
+                div.classList.toggle('selected', i === index);
+            });
+        }
+        
+        // Enable add to database button
+        const addBtn = document.getElementById('addEuclideanBtn');
+        if (addBtn) {
+            addBtn.disabled = false;
+        }
+        
+        showNotification(`Selected Euclidean transformation: ${transformation.name}`, 'success');
+    }
+    
+    /**
+     * Add selected Euclidean transformation to database
+     */
+    addEuclideanTransformationToDatabase() {
+        if (!this.selectedEuclideanTransformation) {
+            showNotification('No Euclidean transformation selected', 'warning');
+            return;
+        }
+        
+        try {
+            const transformation = this.selectedEuclideanTransformation;
+            
+            const patternData = {
+                steps: transformation.transformedPattern,
+                stepCount: transformation.transformedPattern.length,
+                name: transformation.name || 'Euclidean Transformation',
+                expression: this.generateEuclideanTransformationExpression(transformation),
+                isEuclideanTransformed: true,
+                originalPattern: transformation.originalPattern,
+                transformation: transformation.parameters,
+                metadata: transformation.metadata
+            };
+            
+            if (this.database.addPattern(patternData)) {
+                showNotification('Euclidean transformation added to database!', 'success');
+                this.updateDatabaseDisplay();
+                this.resetEuclideanControls();
+            } else {
+                showNotification('Pattern already exists in database', 'info');
+            }
+            
+        } catch (error) {
+            console.error('❌ Error adding Euclidean pattern to database:', error);
+            showNotification('Error adding pattern to database: ' + error.message, 'error');
+        }
+    }
+    
+    /**
+     * Reset Euclidean controls to default state
+     */
+    resetEuclideanControls() {
+        const resultsDiv = document.getElementById('euclideanResults');
+        if (resultsDiv) {
+            resultsDiv.style.display = 'none';
+            resultsDiv.innerHTML = '';
+        }
+        
+        const addBtn = document.getElementById('addEuclideanBtn');
+        if (addBtn) {
+            addBtn.disabled = true;
+        }
+        
+        this.selectedEuclideanTransformation = null;
+        this.euclideanProgressiveState = null; // Reset progressive state
+    }
+    
+    /**
+     * Load a Euclidean transformed pattern as the new input pattern
+     */
+    loadEuclideanTransformedPatternAsInput(transformation) {
+        try {
+            // Create pattern data for the transformed pattern
+            const transformedPatternData = {
+                steps: transformation.transformedPattern,
+                stepCount: transformation.transformedPattern.length,
+                name: transformation.name || 'Euclidean Transformed Pattern',
+                expression: this.generateEuclideanTransformationExpression(transformation),
+                isEuclideanTransformed: true,
+                originalPattern: transformation.originalPattern,
+                transformation: transformation.parameters,
+                metadata: transformation.metadata
+            };
+            
+            // Update the universal input field
+            const universalInput = document.getElementById('universalInput');
+            if (universalInput) {
+                universalInput.value = transformedPatternData.expression;
+            }
+            
+            // Set as current pattern
+            this.currentPattern = transformedPatternData;
+            
+            // Update UI components without full analysis (to preserve results display)
+            this.updateOriginalPatternDisplay(transformedPatternData);
+            this.updateCurrentEuclideanOnsetsDisplay(transformedPatternData);
+            
+            // Load into sequencer for preview (if available)
+            if (this.sequencer) {
+                this.sequencer.updatePattern(transformedPatternData);
+            }
+            
+            console.log('✅ Euclidean transformed pattern loaded as input:', transformedPatternData.expression);
+            
+        } catch (error) {
+            console.error('❌ Error loading Euclidean transformed pattern as input:', error);
+            showNotification('Error loading transformed pattern: ' + error.message, 'error');
+        }
+    }
+    
+    /**
+     * Generate a parsable expression for a Euclidean transformation
+     */
+    generateEuclideanTransformationExpression(transformation) {
+        const stepCount = transformation.transformedPattern.length;
+        
+        // Convert to parsable format (binary with step count)
+        const binary = PatternConverter.toBinary(transformation.transformedPattern, stepCount);
+        return `b${binary}:${stepCount}`;
     }
     
     /**
