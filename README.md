@@ -101,8 +101,10 @@ Based on Andrew Milne's groundbreaking work on rhythmic balance:
 
 - **Balance Magnitude**: Measures how "centered" a rhythm is geometrically
 - **Perfect Balance**: When the sum of onset vectors equals zero (∑e^(i2πkⱼ/n) = 0)
+- **Mathematical Rendering**: Equations displayed with MathJax for proper mathematical notation
 - **Balance Rating**: Perfect, Excellent, Good, Fair, Poor
 - **Geometric Center**: Visual representation of rhythmic "weight"
+- **Interactive Equations**: Click the 🧮 button next to analysis sections to view mathematical formulas
 
 #### Syncopation Analysis (Barlow's Indispensability)
 Implements Clarence Barlow's indispensability theory:
@@ -482,6 +484,8 @@ Toussaint's research revealed that the Euclidean algorithm for finding the great
 app/
 ├── index.html                    # Main application entry point
 ├── app-styles.css               # Complete UI styling and responsive design
+├── platform-utils.js            # Cross-platform compatibility and keyboard handling
+├── math-renderer.js             # Mathematical equation rendering with MathJax
 ├── math-core.js                 # Mathematical utilities and algorithms
 ├── app-config.js                # Configuration constants and settings
 ├── pattern-generators.js        # Euclidean, polygon, and geometric generators
@@ -496,11 +500,20 @@ app/
 └── app-controller-browser.js    # Main orchestrator and event handling
 ```
 
+#### Mathematical Rendering System
+- **MathJax Integration**: Professional mathematical notation rendering
+- **LaTeX Support**: Full LaTeX equation syntax for complex mathematical expressions
+- **Dynamic Rendering**: Real-time equation rendering for interactive content
+- **Cross-Platform Compatibility**: Consistent mathematical display across all browsers
+- **Responsive Equations**: Adaptive sizing for mobile and desktop displays
+- **Interactive Formulas**: Clickable buttons to show/hide mathematical details
+
 #### Performance Optimizations
 - **Efficient Parsing**: Single-pass pattern recognition
 - **Caching Systems**: Store analysis results
 - **Memory Management**: Prevent leaks in long sessions
 - **Lazy Loading**: Defer non-critical calculations
+- **Equation Rendering**: On-demand MathJax rendering for optimal performance
 
 ### Audio System
 

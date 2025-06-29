@@ -1324,12 +1324,33 @@ function selectFile(accept = '*', multiple = false) {
 }
 
 /**
- * Toggle visibility of info boxes
+ * Toggle visibility of info boxes with MathJax rendering support
  * @param {string} infoBoxId - ID of the info box to toggle
  */
 function toggleInfoBox(infoBoxId) {
     const infoBox = document.getElementById(infoBoxId);
     if (infoBox) {
-        infoBox.style.display = infoBox.style.display === 'none' ? 'block' : 'none';
+        const wasHidden = infoBox.style.display === 'none';
+        infoBox.style.display = wasHidden ? 'block' : 'none';
+        
+        // If the box is now visible and contains mathematical equations, render with MathJax
+        if (wasHidden && typeof mathRenderer !== 'undefined') {
+            const hasMathContent = infoBox.classList.contains('tex2jax_process') || 
+                                 infoBox.querySelector('.MathJax') ||
+                                 infoBox.textContent.includes('$$') ||
+                                 infoBox.textContent.includes('$');
+            
+            if (hasMathContent) {
+                setTimeout(() => {
+                    mathRenderer.renderElement(infoBox, (success) => {
+                        if (success) {
+                            console.log(`📐 Mathematical equations rendered in ${infoBoxId}`);
+                        } else {
+                            console.warn(`📐 Failed to render equations in ${infoBoxId}`);
+                        }
+                    });
+                }, 10); // Small delay to ensure DOM is updated
+            }
+        }
     }
 }
