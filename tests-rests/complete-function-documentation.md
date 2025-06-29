@@ -528,7 +528,7 @@ const sequence = BarlowTransformer.progressiveTransform(
 - AdvancedPatternCombiner, UnifiedPatternParser, PatternConverter
 - SystematicExplorer, PatternDatabase, UIComponents, AppConfig
 - SequencerController, SequencerIntegration, SyncopationAnalyzer
-- IntuitiveRhythmGenerators, RhythmMorpher, BarlowTransformer
+- IntuitiveRhythmGenerators, RhythmMutator, BarlowTransformer
 
 #### `initialize()`
 **Purpose:** Initialize application state and UI

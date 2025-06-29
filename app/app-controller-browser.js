@@ -2055,7 +2055,7 @@ ${perfectBalancePatterns.map((pattern, index) => {
                 complexity: this.calculateSimpleComplexity(result.morphed)
             };
             
-            this.displayStochasticResults([performance], 'Morphed Pattern');
+            this.displayStochasticResults([performance], 'Mutated Pattern');
             
         } catch (error) {
             console.error('❌ Morphing error:', error);
@@ -2130,7 +2130,7 @@ ${perfectBalancePatterns.map((pattern, index) => {
                 variations.push(performance);
             }
             
-            this.displayStochasticResults(variations, 'Multiple Morphs');
+            this.displayStochasticResults(variations, 'Multiple Mutations');
             
         } catch (error) {
             console.error('❌ Multiple morphing error:', error);
@@ -2301,7 +2301,7 @@ ${perfectBalancePatterns.map((pattern, index) => {
             const patternData = {
                 steps: performance.performedPattern,
                 stepCount: performance.performedPattern.length,
-                name: `Morphed: ${performance.name || 'Variation'}`,
+                name: `Mutated: ${performance.name || 'Variation'}`,
                 isMorphed: true,
                 originalPattern: {
                     steps: performance.originalPattern,

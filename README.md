@@ -28,7 +28,7 @@ The Rhythm Pattern Explorer is a sophisticated tool that bridges the gap between
 
 - **Universal Pattern Input**: Parse 20+ different rhythm notation formats
 - **Mathematical Analysis**: Perfect balance, syncopation, geometric center of gravity
-- **Pattern Generation**: Euclidean rhythms, funk generators, stochastic morphing
+- **Pattern Generation**: Euclidean rhythms, funk generators, stochastic mutation
 - **Intelligent Transformation**: Barlow indispensability, Wolrab mode (reversed logic)
 - **Interactive Visualization**: Real-time circular sequencer with geometric analysis
 - **Comprehensive Database**: Store, search, and categorize rhythm patterns
@@ -42,7 +42,7 @@ The Rhythm Pattern Explorer is a sophisticated tool that bridges the gap between
 2. **Parse Your First Pattern**: Enter `E(3,8)` in the Universal Pattern Input
 3. **Explore Analysis**: View the mathematical breakdown and circular visualization
 4. **Try Transformations**: Use the Barlow Transformer to dilute/concentrate onsets
-5. **Generate Variations**: Create morphed patterns with the Rhythm Morpher
+5. **Generate Variations**: Create mutated patterns with the Rhythm Mutator
 6. **Save to Database**: Add interesting patterns for later exploration
 
 ### Basic Workflow
@@ -132,10 +132,10 @@ Creates groove-based patterns using musical intelligence:
 - **Polyrhythmic Layers**: Multiple intersecting rhythmic cycles
 - **Funky Euclidean**: Euclidean rhythms with groove deviations
 
-#### Stochastic Morpher
+#### Stochastic Mutator
 Transforms existing patterns while preserving character:
 
-- **Morphing Styles**: Balanced, Syncopate, Straighten, Groove, Swing, Shuffle
+- **Mutation Styles**: Balanced, Syncopate, Straighten, Groove, Swing, Shuffle
 - **Displacement Logic**: Intelligent onset shifting
 - **Character Preservation**: Maintains rhythmic "feel"
 - **Progressive Generation**: Multiple variations in sequence
@@ -209,7 +209,7 @@ Revolutionary "anti-Barlow" transformation that inverts indispensability logic:
 
 #### Search & Filtering
 - **Text Search**: Find patterns by name or description
-- **Category Filters**: Euclidean, Polygons, Generated, Morphed, Barlow Transformed, etc.
+- **Category Filters**: Euclidean, Polygons, Generated, Mutated, Barlow Transformed, etc.
 - **Step Count Range**: Filter by pattern length
 - **Balance Filters**: Perfect balance, geometric centering
 - **Rhythmic Filters**: Syncopation levels, complexity metrics
@@ -327,8 +327,8 @@ Toussaint's research revealed that the Euclidean algorithm for finding the great
 - Use onset density for melodic activity
 - Generate voice-leading from geometric properties
 
-#### Time Signature Morphing
-- Use quantization feature to morph between meters
+#### Time Signature Mutation
+- Use quantization feature to mutate between meters
 - `E(3,8);12` transforms 4/4 tresillo to 12/8 feel
 - Create metric modulations based on mathematical relationships
 
@@ -402,7 +402,7 @@ Toussaint's research revealed that the Euclidean algorithm for finding the great
 2. **Add Complexity**: Apply Barlow concentration to 5 onsets
 3. **Invert Logic**: Switch to Wolrab mode
 4. **Anti-Develop**: Progressive dilution with reversed indispensability
-5. **Morph Character**: Apply stochastic syncopation morphing
+5. **Mutate Character**: Apply stochastic syncopation mutation
 6. **Analyze Emergence**: Study how anti-patterns develop musical interest
 
 #### Multi-Scale Rhythmic Analysis
@@ -491,7 +491,7 @@ app/
 - **Euclidean Distribution**: Bjorklund's algorithm implementation
 - **Perfect Balance Detection**: Complex vector sum calculations
 - **Syncopation Measurement**: Barlow indispensability scoring
-- **Pattern Transformation**: Mathematical morphing operations
+- **Pattern Transformation**: Mathematical mutation operations
 
 ### Data Structures
 
@@ -556,7 +556,7 @@ Analysis Results:
 3. Progressive Dilution: Reduce to 3 onsets → 1000100000000000
 4. Enable Wolrab Mode: Reverse indispensability logic
 5. Progressive Concentration: Increase to 7 onsets → 0101011010001000
-6. Stochastic Morph: Apply syncopation style, 50% intensity
+6. Stochastic Mutation: Apply syncopation style, 50% intensity
 7. Final Result: 0101010110001000 (anti-metrical groove)
 ```
 

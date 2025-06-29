@@ -606,8 +606,8 @@
                         testFunction: "testFunkyGenerator"
                     },
                     {
-                        name: "Stochastic Morpher",
-                        description: "Morph E(3,8) with syncopation style at 50% intensity",
+                        name: "Stochastic Mutator",
+                        description: "Mutate E(3,8) with syncopation style at 50% intensity",
                         expected: "Modified pattern maintaining 3 onsets, increased syncopation",
                         automated: true,
                         testFunction: "testStochasticMorpher"
@@ -628,7 +628,7 @@
                     },
                     {
                         name: "Multiple Variation Generation",
-                        description: "Generate 3 morphs of a pattern and verify diversity",
+                        description: "Generate 3 mutations of a pattern and verify diversity",
                         expected: "3 different patterns, all with similar character",
                         automated: true,
                         testFunction: "testMultipleVariations"
@@ -1320,7 +1320,7 @@
         }
 
         async function testStochasticMorpher() {
-            return { success: true, message: "Stochastic morpher verified" };
+            return { success: true, message: "Stochastic mutator verified" };
         }
 
         async function testPolygonGenerator() {
