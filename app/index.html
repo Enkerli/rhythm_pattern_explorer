@@ -7,6 +7,30 @@
     
     <!-- Load CSS Styles Module -->
     <link rel="stylesheet" href="app-styles.css">
+    
+    <!-- MathJax Configuration and Loading -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true,
+                processEnvironments: true,
+                packages: ['base', 'ams', 'newcommand', 'configmacros']
+            },
+            options: {
+                ignoreHtmlClass: 'tex2jax_ignore',
+                processHtmlClass: 'tex2jax_process'
+            },
+            startup: {
+                pageReady: () => {
+                    console.log('📐 MathJax loaded and ready for mathematical equation rendering');
+                    return MathJax.startup.defaultPageReady();
+                }
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
     <!-- NOTIFICATION CONTAINER -->
@@ -496,9 +520,13 @@
                             </div>
                             
                             <!-- MILNE THEORY INFO BOX -->
-                            <div class="info-box" id="milne-info" style="display: none;">
+                            <div class="info-box tex2jax_process" id="milne-info" style="display: none;">
                                 <strong>Milne's Perfect Balance Theory:</strong><br>
-                                A pattern is perfectly balanced when <em>∑(e^(i2πkⱼ/n)) = 0</em><br>
+                                A pattern is perfectly balanced when: 
+                                $$\sum_{j=1}^{k} e^{i2\pi k_j/n} = 0$$
+                                <div class="equation-legend">
+                                    Where: $k_j$ are the onset positions, $n$ is the total number of steps, $i$ is the imaginary unit
+                                </div>
                                 Key insights: Coprime polygon sides, strategic offsets, and subtraction operations can achieve perfect balance.
                             </div>
                             
@@ -584,6 +612,7 @@
         // Module loading system - loads all required modules in sequence
         const modules = [
             'platform-utils.js',
+            'math-renderer.js',
             'math-core.js',
             'app-config.js', 
             'pattern-generators.js',

@@ -552,14 +552,15 @@ class EnhancedPatternApp {
                                     ${analysis.balanceAnalysis.isPerfectlyBalanced ? '✨ PERFECTLY BALANCED' : 'Not perfectly balanced'}
                                 </div>
                             </div>
-                            <div class="info-box" id="balance-equation" style="display: none; margin-top: 8px; font-size: 12px; background: #f8f9fa; padding: 6px; border-radius: 4px; border-left: 3px solid #28a745;">
-                                <strong>Milne's Formula:</strong> |∑(e^(i2πkⱼ/n))| / onsets = ${analysis.balanceAnalysis.normalizedMagnitude.toFixed(6)}
+                            <div class="info-box tex2jax_process" id="balance-equation" style="display: none; margin-top: 8px; font-size: 12px; background: #f8f9fa; padding: 6px; border-radius: 4px; border-left: 3px solid #28a745;">
+                                <strong>Milne's Formula:</strong> $$\frac{\left|\sum_{j=1}^{k} e^{i2\pi k_j/n}\right|}{\text{onsets}} = ${analysis.balanceAnalysis.normalizedMagnitude.toFixed(6)}$$
                             </div>
                         </div>
                         <div class="analysis-box cog-box" style="margin-top: 8px;">
                             <div class="analysis-box-header">
                                 <span class="analysis-box-icon">🎯</span>
                                 <span class="analysis-box-title">Center of Gravity</span>
+                                <button class="info-btn-inline" onclick="toggleInfoBox('cog-equation')" title="Show mathematical formula">🧮</button>
                             </div>
                             <div class="analysis-box-content">
                                 <div class="cog-distance-value">
@@ -573,6 +574,10 @@ class EnhancedPatternApp {
                                 <div class="cog-description">
                                     ${(analysis.cogAnalysis?.normalizedMagnitude || analysis.cogAnalysis?.distance || 1) < 0.1 ? '🎯 Geometrically Centered' : 'Off-center pattern'}
                                 </div>
+                            </div>
+                            <div class="info-box tex2jax_process" id="cog-equation" style="display: none; margin-top: 8px; font-size: 12px; background: #f8f9fa; padding: 6px; border-radius: 4px; border-left: 3px solid #17a2b8;">
+                                <strong>Center of Gravity:</strong> $$CoG = \\frac{1}{k}\\sum_{j=1}^{k} e^{i2\\pi k_j/n}$$
+                                <div class="equation-legend">Angle: $\\theta = \\arctan2(y, x) \\times \\frac{180}{\\pi}$</div>
                             </div>
                         </div>
 ${(() => {
