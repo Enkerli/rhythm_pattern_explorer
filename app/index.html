@@ -371,6 +371,63 @@
                     </div>
                 </div>
 
+                <!-- PROGRESSIVE OFFSETS SECTION (COMPACT) -->
+                <div class="stochastic-section-compact" id="progressiveOffsetsSection" style="display: none;">
+                    <div class="stochastic-compact-box">
+                        <div class="stochastic-header">
+                            <span class="stochastic-title">🔄 Progressive Offsets</span>
+                            <button class="info-btn-small" onclick="toggleInfoBox('progressive-offsets-info')" title="Progressive offsets info">ℹ️</button>
+                        </div>
+                        <div class="stochastic-compact-controls">
+                            <div class="param-row-compact">
+                                <div class="param-compact">
+                                    <label>Current Pattern:</label>
+                                    <span id="currentOffsetsPattern" class="pattern-display">Parse pattern first</span>
+                                </div>
+                            </div>
+                            <div class="param-row-compact">
+                                <div class="param-compact">
+                                    <label>Forward Step:</label>
+                                    <input type="number" id="forwardOffsetStep" class="input-compact" min="1" max="16" value="1" title="Press Enter to step forward progressively">
+                                </div>
+                                <div class="param-compact">
+                                    <label>Backward Step:</label>
+                                    <input type="number" id="backwardOffsetStep" class="input-compact" min="1" max="16" value="1" title="Press Enter to step backward progressively">
+                                </div>
+                            </div>
+                            <div class="param-row-compact">
+                                <div class="param-compact">
+                                    <label>Current Offset:</label>
+                                    <span id="currentOffsetValue" class="pattern-display">0</span>
+                                </div>
+                                <div class="param-compact">
+                                    <button class="btn-compact secondary" id="resetOffsetsBtn">Reset to 0</button>
+                                </div>
+                            </div>
+                            <div class="buttons-compact">
+                                <button class="btn-compact primary" id="manualOffsetBtn">Manual Offset</button>
+                                <button class="btn-compact success" id="addOffsetsBtn" disabled>Add to DB</button>
+                            </div>
+                        </div>
+                        <div class="stochastic-results-compact" id="progressiveOffsetsResults" style="display: none;">
+                            <!-- Offset patterns will appear here -->
+                        </div>
+                        
+                        <!-- PROGRESSIVE OFFSETS INFO BOX -->
+                        <div class="info-box" id="progressive-offsets-info" style="display: none;">
+                            <strong>Progressive Offsets:</strong><br>
+                            Rotate patterns progressively by custom step increments in either direction.<br><br>
+                            • <strong>Forward Step:</strong> Press Enter to offset by +1, +2, +3... (or custom increment)<br>
+                            • <strong>Backward Step:</strong> Press Enter to offset by -1, -2, -3... (or custom increment)<br>
+                            • <strong>Reset:</strong> Return to original pattern position (offset 0)<br>
+                            • <strong>Manual:</strong> One-time offset by current values<br><br>
+                            <strong>Use Cases:</strong> Pattern variations, rhythm displacement, groove exploration<br>
+                            <em>Works with any pattern - Euclidean, polygons, custom rhythms!</em><br>
+                            <em>Enter key in number boxes for progressive stepping!</em>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- INITIAL HELP -->
                 <div id="analysisPlaceholder" class="analysis-placeholder">
                     <p>Parse a pattern using the universal input above to see comprehensive mathematical analysis.</p>
