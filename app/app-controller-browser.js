@@ -66,7 +66,7 @@ class EnhancedPatternApp {
      * - Processing utilities (UnifiedPatternParser, PatternConverter)
      * - Database and UI components
      * - Sequencer and integration modules
-     * - Rhythm morphing and Barlow transformation tools
+     * - Rhythm mutation and Barlow transformation tools
      */
     constructor() {
         console.log('🎼 Initializing Enhanced Pattern Application...');
@@ -104,7 +104,7 @@ class EnhancedPatternApp {
             'AdvancedPatternCombiner', 'UnifiedPatternParser', 'PatternConverter',
             'SystematicExplorer', 'PatternDatabase', 'UIComponents', 'AppConfig',
             'SequencerController', 'SequencerIntegration', 'SyncopationAnalyzer',
-            'IntuitiveRhythmGenerators', 'RhythmMorpher', 'BarlowTransformer'
+            'IntuitiveRhythmGenerators', 'RhythmMutator', 'BarlowTransformer'
         ];
         
         const missingClasses = requiredClasses.filter(className => 
@@ -649,11 +649,11 @@ ${(() => {
                 }
             }
             
-            // Show and populate morpher section
+            // Show and populate mutator section
             const stochasticSection = document.getElementById('stochasticSection');
             if (stochasticSection) {
                 stochasticSection.style.display = 'block';
-                // Reset any previous morphing state and update original pattern display
+                // Reset any previous mutation state and update original pattern display
                 this.resetStochasticControls();
                 this.updateOriginalPatternDisplay(pattern);
             }
@@ -1887,20 +1887,20 @@ ${perfectBalancePatterns.map((pattern, index) => {
     }
     
     /**
-     * Setup rhythm morpher event listeners
+     * Setup rhythm mutator event listeners
      */
     setupStochasticEvents() {
-        // Morpher parameter slider events
-        const morphAmountSlider = document.getElementById('morphAmount');
-        const morphValue = document.getElementById('morphValue');
+        // Mutator parameter slider events
+        const mutationAmountSlider = document.getElementById('mutationAmount');
+        const mutationValue = document.getElementById('mutationValue');
         
-        if (morphAmountSlider && morphValue) {
-            morphAmountSlider.addEventListener('input', (e) => {
-                morphValue.textContent = e.target.value + '%';
+        if (mutationAmountSlider && mutationValue) {
+            mutationAmountSlider.addEventListener('input', (e) => {
+                mutationValue.textContent = e.target.value + '%';
             });
         }
         
-        // Morpher button events
+        // Mutator button events
         const generateBtn = document.getElementById('generateStochasticBtn');
         const generateMultipleBtn = document.getElementById('generateMultipleBtn');
         const addVariationBtn = document.getElementById('addVariationBtn');
@@ -2000,12 +2000,12 @@ ${perfectBalancePatterns.map((pattern, index) => {
     }
     
     /**
-     * Get current morpher parameters from UI
+     * Get current mutator parameters from UI
      */
     getStochasticParameters() {
         return {
-            morphStyle: document.getElementById('morphStyle')?.value || 'balanced',
-            morphAmount: parseFloat(document.getElementById('morphAmount')?.value || 30) / 100
+            mutationStyle: document.getElementById('mutationStyle')?.value || 'balanced',
+            mutationAmount: parseFloat(document.getElementById('mutationAmount')?.value || 30) / 100
         };
     }
     
@@ -2034,32 +2034,32 @@ ${perfectBalancePatterns.map((pattern, index) => {
         try {
             const params = this.getStochasticParameters();
             
-            // Morph the current pattern
-            const result = RhythmMorpher.morphPattern(
+            // Mutate the current pattern
+            const result = RhythmMutator.mutatePattern(
                 this.currentPattern.steps,
-                params.morphAmount,
+                params.mutationAmount,
                 {
-                    morphStyle: params.morphStyle,
+                    mutationStyle: params.mutationStyle,
                     preserveOnsetCount: true
                 }
             );
             
             // Convert to expected format
             const performance = {
-                performedPattern: result.morphed,
+                performedPattern: result.mutated,
                 originalPattern: result.pattern,
                 parameters: params,
                 name: result.description,
                 type: 'morphed',
                 displacement: result.displacement,
-                complexity: this.calculateSimpleComplexity(result.morphed)
+                complexity: this.calculateSimpleComplexity(result.mutated)
             };
             
             this.displayStochasticResults([performance], 'Mutated Pattern');
             
         } catch (error) {
-            console.error('❌ Morphing error:', error);
-            showNotification('Error morphing rhythm: ' + error.message, 'error');
+            console.error('❌ Mutation error:', error);
+            showNotification('Error mutating rhythm: ' + error.message, 'error');
         }
     }
     
@@ -2088,7 +2088,7 @@ ${perfectBalancePatterns.map((pattern, index) => {
     }
     
     /**
-     * Generate multiple morphed variations with different amounts
+     * Generate multiple mutated variations with different amounts
      */
     generateMultipleStochasticVariations() {
         if (!this.currentPattern) {
@@ -2100,31 +2100,31 @@ ${perfectBalancePatterns.map((pattern, index) => {
             const baseParams = this.getStochasticParameters();
             const variations = [];
             
-            // Generate 3 variations with different morph amounts
-            const morphAmounts = [
-                { amount: Math.max(0.1, baseParams.morphAmount - 0.2), name: 'Subtle' },
-                { amount: baseParams.morphAmount, name: 'Current' },
-                { amount: Math.min(1, baseParams.morphAmount + 0.3), name: 'Heavy' }
+            // Generate 3 variations with different mutation amounts
+            const mutationAmounts = [
+                { amount: Math.max(0.1, baseParams.mutationAmount - 0.2), name: 'Subtle' },
+                { amount: baseParams.mutationAmount, name: 'Current' },
+                { amount: Math.min(1, baseParams.mutationAmount + 0.3), name: 'Heavy' }
             ];
             
-            for (const morphConfig of morphAmounts) {
-                const result = RhythmMorpher.morphPattern(
+            for (const mutationConfig of mutationAmounts) {
+                const result = RhythmMutator.mutatePattern(
                     this.currentPattern.steps,
-                    morphConfig.amount,
+                    mutationConfig.amount,
                     {
-                        morphStyle: baseParams.morphStyle,
+                        mutationStyle: baseParams.mutationStyle,
                         preserveOnsetCount: true
                     }
                 );
                 
                 const performance = {
-                    performedPattern: result.morphed,
+                    performedPattern: result.mutated,
                     originalPattern: result.pattern,
-                    parameters: { ...baseParams, morphAmount: morphConfig.amount },
-                    name: morphConfig.name,
-                    type: 'morphed',
+                    parameters: { ...baseParams, mutationAmount: mutationConfig.amount },
+                    name: mutationConfig.name,
+                    type: 'mutated',
                     displacement: result.displacement,
-                    complexity: this.calculateSimpleComplexity(result.morphed)
+                    complexity: this.calculateSimpleComplexity(result.mutated)
                 };
                 
                 variations.push(performance);
@@ -2133,8 +2133,8 @@ ${perfectBalancePatterns.map((pattern, index) => {
             this.displayStochasticResults(variations, 'Multiple Mutations');
             
         } catch (error) {
-            console.error('❌ Multiple morphing error:', error);
-            showNotification('Error generating morph variations: ' + error.message, 'error');
+            console.error('❌ Multiple mutation error:', error);
+            showNotification('Error generating mutation variations: ' + error.message, 'error');
         }
     }
     
@@ -2179,7 +2179,7 @@ ${perfectBalancePatterns.map((pattern, index) => {
         const binary = PatternConverter.toBinary(performance.performedPattern, performance.performedPattern.length);
         const complexity = performance.complexity;
         
-        // Show displacement info for morphed patterns
+        // Show displacement info for mutated patterns
         let displacementInfo = '';
         if (performance.displacement && performance.displacement.normalized) {
             const displacementPercent = Math.round(performance.displacement.normalized * 100);
@@ -2251,7 +2251,7 @@ ${perfectBalancePatterns.map((pattern, index) => {
             };
             this.loadTransformedPatternAsInput(transformationData);
         } else {
-            // For regular morphs/generations, load into sequencer for preview
+            // For regular mutations/generations, load into sequencer for preview
             this.loadStochasticVariationIntoSequencer(performance);
         }
     }
@@ -2279,7 +2279,7 @@ ${perfectBalancePatterns.map((pattern, index) => {
     }
     
     /**
-     * Add selected morphed variation to database
+     * Add selected mutated variation to database
      */
     addStochasticVariationToDatabase() {
         if (!this.selectedStochasticVariation) {
@@ -2297,19 +2297,19 @@ ${perfectBalancePatterns.map((pattern, index) => {
                 return;
             }
             
-            // Create pattern object for database with proper morphing metadata
+            // Create pattern object for database with proper mutation metadata
             const patternData = {
                 steps: performance.performedPattern,
                 stepCount: performance.performedPattern.length,
                 name: `Mutated: ${performance.name || 'Variation'}`,
-                isMorphed: true,
+                isMutated: true,
                 originalPattern: {
                     steps: performance.originalPattern,
                     stepCount: performance.originalPattern.length,
                     binary: PatternConverter.toBinary(performance.originalPattern, performance.originalPattern.length),
                     name: this.currentPattern.name || 'Source Pattern'
                 },
-                morphingParameters: performance.parameters,
+                mutationParameters: performance.parameters,
                 displacement: performance.displacement,
                 complexity: performance.complexity
             };
@@ -2323,16 +2323,16 @@ ${perfectBalancePatterns.map((pattern, index) => {
                 syncopation: analyses.syncopationAnalysis
             });
             
-            // Add morphing-specific metadata to database pattern
-            dbPattern.isMorphed = true;
+            // Add mutation-specific metadata to database pattern
+            dbPattern.isMutated = true;
             dbPattern.originalPattern = patternData.originalPattern;
-            dbPattern.morphingParameters = patternData.morphingParameters;
+            dbPattern.mutationParameters = patternData.mutationParameters;
             dbPattern.displacement = patternData.displacement;
             
             // Add to database
             const patternId = this.database.add(dbPattern);
             if (patternId) {
-                showNotification('Morphed pattern added to database!', 'success');
+                showNotification('Mutated pattern added to database!', 'success');
                 this.updatePatternList();
                 this.updateDatabaseStats();
                 
@@ -2343,8 +2343,8 @@ ${perfectBalancePatterns.map((pattern, index) => {
             }
             
         } catch (error) {
-            console.error('❌ Error adding morphed pattern:', error);
-            showNotification('Error adding morphed pattern to database: ' + error.message, 'error');
+            console.error('❌ Error adding mutated pattern:', error);
+            showNotification('Error adding mutated pattern to database: ' + error.message, 'error');
         }
     }
     
