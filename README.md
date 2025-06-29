@@ -652,13 +652,28 @@ Cross-Cultural Synthesis:
 - **Firefox**: Full support with all features
 - **Safari**: Full support (may require user gesture for audio)
 - **Edge**: Full support
-- **Mobile**: Basic functionality on modern mobile browsers
+- **Mobile**: Basic functionality on modern mobile browsers with touch adaptations
+
+### Cross-Platform Support
+- **Mac (macOS/iOS)**: Uses Cmd key for keyboard shortcuts
+- **Windows**: Uses Ctrl key for keyboard shortcuts  
+- **Linux**: Uses Ctrl key for keyboard shortcuts
+- **Mobile/Touch**: Alternative tap-based interactions when keyboard shortcuts unavailable
+- **Automatic Detection**: Platform detected automatically with appropriate UI adaptations
+
+### Keyboard Shortcuts
+- **Universal Input**: Enter = Parse pattern, Cmd+Enter (Mac) / Ctrl+Enter (Windows/Linux) = Parse & Add to Database
+- **Progressive Transformations**: Enter in Target Onsets boxes for step-by-step transformations
+- **Progressive Offsets**: Enter in Forward/Backward Step boxes for progressive offset stepping
+- **Step Count Filters**: Enter to apply filtering
+- **Mobile Alternative**: All keyboard shortcuts have equivalent button-based alternatives
 
 ### Performance Notes
 - Optimized for desktop use with large displays
 - Responsive design adapts to different screen sizes
 - Audio features work best with headphones or good speakers
 - Large databases (1000+ patterns) may impact performance on older devices
+- Touch-friendly interface scaling on mobile devices
 
 ## Contributing
 

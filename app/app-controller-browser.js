@@ -330,22 +330,20 @@ class EnhancedPatternApp {
         }
         
         if (universalInput) {
-            universalInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    if (e.metaKey || e.ctrlKey) {
-                        // Cmd+Enter or Ctrl+Enter: Parse and add to database
-                        this.parseUniversalInput();
-                        setTimeout(() => {
-                            if (this.currentPattern) {
-                                this.addCurrentPatternToDatabase();
-                            }
-                        }, 100);
-                    } else {
-                        // Just Enter: Parse only
-                        this.parseUniversalInput();
+            // Standard Enter key handler
+            platformUtils.addKeyListener(universalInput, () => {
+                this.parseUniversalInput();
+            }, { key: 'Enter', requireModifier: false });
+            
+            // Platform-specific modifier+Enter handler (Cmd+Enter on Mac, Ctrl+Enter elsewhere)
+            platformUtils.addKeyListener(universalInput, () => {
+                this.parseUniversalInput();
+                setTimeout(() => {
+                    if (this.currentPattern) {
+                        this.addCurrentPatternToDatabase();
                     }
-                }
-            });
+                }, 100);
+            }, { key: 'Enter', requireModifier: true });
         }
     }
     
@@ -418,13 +416,12 @@ class EnhancedPatternApp {
             sortBtn.addEventListener('click', () => this.toggleSort());
         }
         
-        // Step count filter event listeners
+        // Step count filter event listeners with cross-platform support
         if (minStepCountInput) {
-            minStepCountInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    this.updatePatternList();
-                }
-            });
+            platformUtils.addKeyListener(minStepCountInput, () => {
+                this.updatePatternList();
+            }, { key: 'Enter' });
+            
             minStepCountInput.addEventListener('input', () => {
                 // Optional: Add debounced filtering on input change
                 clearTimeout(this.stepCountFilterTimeout);
@@ -435,11 +432,10 @@ class EnhancedPatternApp {
         }
         
         if (maxStepCountInput) {
-            maxStepCountInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    this.updatePatternList();
-                }
-            });
+            platformUtils.addKeyListener(maxStepCountInput, () => {
+                this.updatePatternList();
+            }, { key: 'Enter' });
+            
             maxStepCountInput.addEventListener('input', () => {
                 // Optional: Add debounced filtering on input change
                 clearTimeout(this.stepCountFilterTimeout);
@@ -2003,15 +1999,12 @@ ${perfectBalancePatterns.map((pattern, index) => {
             addBarlowBtn.addEventListener('click', () => this.addBarlowPatternToDatabase());
         }
         
-        // Target onsets input Enter key event
+        // Target onsets input Enter key event - Cross-platform support
         const targetOnsetsInput = document.getElementById('targetOnsets');
         if (targetOnsetsInput) {
-            targetOnsetsInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    this.progressiveBarlowTransform();
-                }
-            });
+            platformUtils.addKeyListener(targetOnsetsInput, () => {
+                this.progressiveBarlowTransform();
+            }, { key: 'Enter' });
         }
         
         // Euclidean transformer button events
@@ -2031,15 +2024,12 @@ ${perfectBalancePatterns.map((pattern, index) => {
             addEuclideanBtn.addEventListener('click', () => this.addEuclideanTransformationToDatabase());
         }
         
-        // Target Euclidean onsets input Enter key event
+        // Target Euclidean onsets input Enter key event - Cross-platform support
         const targetEuclideanOnsetsInput = document.getElementById('targetEuclideanOnsets');
         if (targetEuclideanOnsetsInput) {
-            targetEuclideanOnsetsInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    this.generateProgressiveEuclideanTransformations();
-                }
-            });
+            platformUtils.addKeyListener(targetEuclideanOnsetsInput, () => {
+                this.generateProgressiveEuclideanTransformations();
+            }, { key: 'Enter' });
         }
     }
     
@@ -3625,30 +3615,24 @@ ${perfectBalancePatterns.map((pattern, index) => {
         const manualBtn = document.getElementById('manualOffsetBtn');
         const addBtn = document.getElementById('addOffsetsBtn');
         
-        // Forward step input - Enter key for progressive forward offset
+        // Forward step input - Cross-platform Enter key for progressive forward offset
         if (forwardStepInput) {
-            forwardStepInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    this.progressiveOffsetsState.forwardStep = parseInt(forwardStepInput.value) || 1;
-                    this.applyProgressiveOffset('forward');
-                }
-            });
+            platformUtils.addKeyListener(forwardStepInput, () => {
+                this.progressiveOffsetsState.forwardStep = parseInt(forwardStepInput.value) || 1;
+                this.applyProgressiveOffset('forward');
+            }, { key: 'Enter' });
             
             forwardStepInput.addEventListener('input', (e) => {
                 this.progressiveOffsetsState.forwardStep = parseInt(e.target.value) || 1;
             });
         }
         
-        // Backward step input - Enter key for progressive backward offset
+        // Backward step input - Cross-platform Enter key for progressive backward offset
         if (backwardStepInput) {
-            backwardStepInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    this.progressiveOffsetsState.backwardStep = parseInt(backwardStepInput.value) || 1;
-                    this.applyProgressiveOffset('backward');
-                }
-            });
+            platformUtils.addKeyListener(backwardStepInput, () => {
+                this.progressiveOffsetsState.backwardStep = parseInt(backwardStepInput.value) || 1;
+                this.applyProgressiveOffset('backward');
+            }, { key: 'Enter' });
             
             backwardStepInput.addEventListener('input', (e) => {
                 this.progressiveOffsetsState.backwardStep = parseInt(e.target.value) || 1;
