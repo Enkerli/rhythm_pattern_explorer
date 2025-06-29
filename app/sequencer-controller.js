@@ -150,9 +150,14 @@ class SequencerController {
         try {
             // Initialize visual engine if enabled
             if (this.config.enableVisual) {
-                this.visualEngine = new SequencerVisualEngine(this.config.canvasId, this.config.containerId);
-                this.setupVisualEventListeners();
-                console.log('✅ Visual engine initialized');
+                if (typeof SequencerVisualEngine !== 'undefined') {
+                    this.visualEngine = new SequencerVisualEngine(this.config.canvasId, this.config.containerId);
+                    this.setupVisualEventListeners();
+                    console.log('✅ Visual engine initialized');
+                } else {
+                    console.warn('⚠️ SequencerVisualEngine not available, visual disabled');
+                    this.config.enableVisual = false;
+                }
             }
             
             // Initialize audio engine if enabled

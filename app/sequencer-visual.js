@@ -239,7 +239,6 @@ class SequencerVisualEngine {
      * - Implements debounced resize handling for efficiency
      */
     setupResponsiveCanvas() {
-    setupResponsiveCanvas() {
         if (!this.container || !this.canvas) {
             console.warn('⚠️ No container or canvas found for sizing');
             return;
@@ -309,7 +308,6 @@ class SequencerVisualEngine {
      * - Optimized position detection with cached calculations
      * - Memory-conscious event listener registration and cleanup
      */
-    setupEventListeners() {
     setupEventListeners() {
         // Handle window resize
         const resizeHandler = () => {
@@ -383,7 +381,6 @@ class SequencerVisualEngine {
      * - Pattern divider rendering for combined sequence visualization
      * - Responsive element sizing for optimal display clarity
      */
-    updatePattern(patternData) {
     updatePattern(patternData) {
         if (!patternData) return;
         
@@ -491,7 +488,6 @@ class SequencerVisualEngine {
      * - Performance-optimized animation loops
      */
     updatePlayback(playbackState) {
-    updatePlayback(playbackState) {
         if (!playbackState) return;
         
         this.pattern.currentStep = playbackState.currentStep || 0;
@@ -534,7 +530,6 @@ class SequencerVisualEngine {
      * - Efficient distance comparison without square root
      * - Minimal memory allocation during calculation
      */
-    getStepAtPosition(x, y) {
     getStepAtPosition(x, y) {
         const stepRadius = this.config.canvasSize * this.config.stepRadius;
         const stepSize = this.config.stepElementActualSize;
@@ -583,7 +578,6 @@ class SequencerVisualEngine {
      * - Error handling for invalid step indices
      */
     toggleStep(stepIndex) {
-    toggleStep(stepIndex) {
         if (stepIndex >= 0 && stepIndex < this.pattern.stepCount) {
             this.pattern.steps[stepIndex] = !this.pattern.steps[stepIndex];
             
@@ -623,7 +617,6 @@ class SequencerVisualEngine {
      * - Includes mathematical analysis data for real-time updates
      * - Supports event delegation patterns for efficient handling
      */
-    emitPatternChange() {
     emitPatternChange() {
         if (this.canvas) {
             const event = new CustomEvent('patternChanged', {
@@ -674,7 +667,6 @@ class SequencerVisualEngine {
      * - High-contrast colors for accessibility
      * - Responsive scaling for different display sizes
      */
-    render() {
     render() {
         console.log('🎨 RENDER DEBUG:', {
             hasCtx: !!this.ctx,
@@ -767,7 +759,6 @@ class SequencerVisualEngine {
      * - Anti-aliased rendering for smooth appearance
      */
     drawBackground() {
-    drawBackground() {
         const outerRadius = this.config.canvasSize * this.config.donutOuterRadius;
         
         this.ctx.beginPath();
@@ -802,7 +793,6 @@ class SequencerVisualEngine {
      * - Thin line width for minimal visual interference
      * - Color chosen for accessibility and contrast
      */
-    drawGridLines() {
     drawGridLines() {
         const outerRadius = this.config.canvasSize * this.config.donutOuterRadius;
         const innerRadius = this.config.canvasSize * this.config.donutInnerRadius;
@@ -856,7 +846,6 @@ class SequencerVisualEngine {
      * - Performance-optimized animation loops
      * - Configurable pulse intensity and speed
      */
-    drawDonutChart() {
     drawDonutChart() {
         if (this.pattern.stepCount === 0) return;
         
@@ -945,7 +934,6 @@ class SequencerVisualEngine {
      * - Error handling for mathematical edge cases
      */
     drawCenterOfGravity() {
-    drawCenterOfGravity() {
         if (!this.cogData.isCalculated) return;
         
         const cogRadius = this.config.canvasSize * this.config.cogRadius;
@@ -1020,7 +1008,6 @@ class SequencerVisualEngine {
      * - Font size responsive to element size
      * - High contrast text for accessibility
      */
-    drawStepElements() {
     drawStepElements() {
         const stepRadius = this.config.canvasSize * this.config.stepRadius;
         const stepSize = this.config.stepElementActualSize;
@@ -1099,7 +1086,6 @@ class SequencerVisualEngine {
      * - Conditional rendering based on pattern type
      */
     drawPatternDividers() {
-    drawPatternDividers() {
         if (!this.pattern.dividerPositions || this.pattern.dividerPositions.length === 0) {
             return;
         }
@@ -1177,7 +1163,6 @@ class SequencerVisualEngine {
      * - Preserves accessibility while managing complexity
      */
     shouldShowStepNumber(stepIndex) {
-    shouldShowStepNumber(stepIndex) {
         if (this.pattern.stepCount <= 16) {
             // Show all numbers for 16 or fewer steps
             return true;
@@ -1226,7 +1211,6 @@ class SequencerVisualEngine {
      * - Supports debugging of performance regressions
      */
     updateRenderStats(startTime) {
-    updateRenderStats(startTime) {
         const renderTime = performance.now() - startTime;
         this.stats.framesRendered++;
         this.stats.lastRenderTime = renderTime;
@@ -1267,7 +1251,6 @@ class SequencerVisualEngine {
      * - Fallback handling for missing parent elements
      * - Debug logging excluded in production builds
      */
-    forceRepaint() {
     forceRepaint() {
         // Force layout recalculation to fix rendering issues
         const canvas = this.canvas;
@@ -1313,7 +1296,6 @@ class SequencerVisualEngine {
      * - Pattern Data: Step count, CoG availability, mathematical state
      * - System Health: Error rates, memory usage, browser compatibility
      */
-    getStats() {
     getStats() {
         return {
             ...this.stats,
@@ -1361,7 +1343,6 @@ class SequencerVisualEngine {
      * - Accessibility: High contrast and visual accessibility options
      */
     updateConfig(newConfig) {
-    updateConfig(newConfig) {
         Object.assign(this.config, newConfig);
         this.render();
     }
@@ -1405,7 +1386,6 @@ class SequencerVisualEngine {
      * - Validates format parameter for supported types
      */
     exportImage(format = 'png') {
-    exportImage(format = 'png') {
         if (!this.canvas) return null;
         return this.canvas.toDataURL(`image/${format}`);
     }
@@ -1446,7 +1426,6 @@ class SequencerVisualEngine {
      * - Prevents memory accumulation in dynamic interfaces
      * - Ensures clean teardown for component lifecycle
      */
-    destroy() {
     destroy() {
         // Remove event listeners
         window.removeEventListener('resize', this.setupResponsiveCanvas);
