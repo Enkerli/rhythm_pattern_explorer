@@ -2,6 +2,8 @@
 
 A comprehensive web application for mathematical analysis, generation, and transformation of rhythmic patterns using advanced music theory algorithms and geometric visualizations.
 
+**🚀 [Launch the Application](https://enkerli.github.io/rhythm_pattern_explorer/app/)**
+
 ## Table of Contents
 
 1. [Overview](#overview)

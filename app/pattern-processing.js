@@ -490,21 +490,13 @@ class UnifiedPatternParser {
             }
         }
         
-        if (cleaned.includes('+')) {
-            const parts = cleaned.split('+').map(p => p.trim());
-            if (parts.length < 2) {
-                throw new Error('Combination syntax must be: pattern1 + pattern2 [+ pattern3 ...]');
+        // Check for combination with addition and/or subtraction: P(3,0)+P(5,1)-P(2,0)
+        if (cleaned.includes('+') || cleaned.includes('-')) {
+            // Parse combinations with addition and subtraction
+            const combinationResult = this.parseCombinationWithSubtraction(cleaned);
+            if (combinationResult) {
+                return combinationResult;
             }
-            
-            const patterns = parts.map(part => this.parseSingle(part));
-            const combined = AdvancedPatternCombiner.combineMultiplePatterns(patterns);
-            
-            return {
-                type: 'combination',
-                patterns: patterns,
-                combined: combined,
-                multiPattern: true
-            };
         }
         
         return {
@@ -515,6 +507,171 @@ class UnifiedPatternParser {
     
     static parseSingle(input) {
         return this.parsePattern(input.trim());
+    }
+    
+    /**
+     * Parse pattern combinations with addition and subtraction
+     * Handles patterns like: P(3,0)+P(5,1)-P(2,0)
+     * @param {string} input - Pattern combination string
+     * @returns {Object} Combined pattern with subtraction applied
+     */
+    static parseCombinationWithSubtraction(input) {
+        // Split the input into tokens preserving operators
+        const tokens = this.tokenizeCombination(input);
+        if (tokens.length < 3) return null; // Need at least pattern + operator + pattern
+        
+        const addPatterns = [];
+        const subtractPatterns = [];
+        let currentOperator = '+'; // Start with addition (implicit for first pattern)
+        
+        // Process tokens
+        for (let i = 0; i < tokens.length; i++) {
+            const token = tokens[i];
+            
+            if (token === '+' || token === '-') {
+                currentOperator = token;
+            } else {
+                // This is a pattern
+                try {
+                    const pattern = this.parseSingle(token);
+                    if (currentOperator === '+') {
+                        addPatterns.push(pattern);
+                    } else if (currentOperator === '-') {
+                        subtractPatterns.push(pattern);
+                    }
+                } catch (error) {
+                    console.error(`Failed to parse pattern part: ${token}`, error);
+                    return null;
+                }
+            }
+        }
+        
+        if (addPatterns.length === 0) {
+            throw new Error('Combination must have at least one pattern to add');
+        }
+        
+        // Combine addition patterns first
+        let combined;
+        if (addPatterns.length > 1) {
+            combined = AdvancedPatternCombiner.combineMultiplePatterns(addPatterns);
+        } else {
+            combined = addPatterns[0];
+        }
+        
+        // Apply subtraction patterns
+        if (subtractPatterns.length > 0) {
+            combined = this.applySubtractionPatterns(combined, subtractPatterns);
+        }
+        
+        return {
+            type: 'combination',
+            patterns: addPatterns,
+            subtractPatterns: subtractPatterns,
+            combined: combined,
+            hasSubtraction: subtractPatterns.length > 0,
+            multiPattern: true
+        };
+    }
+    
+    /**
+     * Tokenize combination string into patterns and operators
+     * @param {string} input - Input string like "P(3,0)+P(5,1)-P(2,0)"
+     * @returns {Array<string>} Array of tokens
+     */
+    static tokenizeCombination(input) {
+        const tokens = [];
+        let current = '';
+        let parenDepth = 0;
+        
+        for (let i = 0; i < input.length; i++) {
+            const char = input[i];
+            
+            if (char === '(') {
+                parenDepth++;
+                current += char;
+            } else if (char === ')') {
+                parenDepth--;
+                current += char;
+            } else if ((char === '+' || char === '-') && parenDepth === 0) {
+                // This is an operator at the top level
+                if (current.trim()) {
+                    tokens.push(current.trim());
+                    current = '';
+                }
+                tokens.push(char);
+            } else {
+                current += char;
+            }
+        }
+        
+        // Add the last token
+        if (current.trim()) {
+            tokens.push(current.trim());
+        }
+        
+        return tokens;
+    }
+    
+    /**
+     * Apply subtraction patterns to a combined pattern
+     * @param {Object} basePattern - Pattern to subtract from
+     * @param {Array<Object>} subtractPatterns - Patterns to subtract
+     * @returns {Object} Pattern with subtraction applied
+     */
+    static applySubtractionPatterns(basePattern, subtractPatterns) {
+        if (!basePattern || !basePattern.steps || subtractPatterns.length === 0) {
+            return basePattern;
+        }
+        
+        // Create a copy of the base pattern
+        const result = {
+            ...basePattern,
+            steps: [...basePattern.steps]
+        };
+        
+        // Apply each subtraction pattern
+        for (const subtractPattern of subtractPatterns) {
+            if (!subtractPattern || !subtractPattern.steps) continue;
+            
+            // If step counts don't match, extend the subtraction pattern to match using LCM
+            let subtractSteps = subtractPattern.steps;
+            if (subtractPattern.stepCount !== result.stepCount) {
+                // Extend subtract pattern to match the base pattern length
+                subtractSteps = this.extendPatternToLength(subtractPattern, result.stepCount);
+            }
+            
+            // Remove onsets where both patterns have onsets
+            for (let i = 0; i < Math.min(result.stepCount, subtractSteps.length); i++) {
+                if (subtractSteps[i] && result.steps[i]) {
+                    result.steps[i] = false;
+                }
+            }
+        }
+        
+        // Mark as having subtraction applied
+        result.hasSubtraction = true;
+        result.subtractedPatterns = subtractPatterns;
+        
+        return result;
+    }
+    
+    /**
+     * Extend a pattern to a target length using geometric distribution
+     * @param {Object} pattern - Pattern to extend
+     * @param {number} targetLength - Target length
+     * @returns {Array<boolean>} Extended steps array
+     */
+    static extendPatternToLength(pattern, targetLength) {
+        if (pattern.stepCount === targetLength) {
+            return [...pattern.steps];
+        }
+        
+        // Use geometric distribution to extend the pattern
+        return AdvancedPatternCombiner.extendByGeometricDistribution(
+            pattern.steps, 
+            pattern.stepCount, 
+            targetLength
+        );
     }
     
     static parsePattern(input) {
