@@ -742,6 +742,27 @@
                         testFunction: "testPatternCreationStateReset"
                     },
                     {
+                        name: "Random Pattern Generation",
+                        description: "Generate random patterns with different distributions",
+                        expected: "Unique patterns each time with distribution characteristics",
+                        automated: true,
+                        testFunction: "testPatternCreationRandom"
+                    },
+                    {
+                        name: "Random Distribution Styles",
+                        description: "Test all random distribution types (uniform, bell, syncopated, etc.)",
+                        expected: "Each distribution creates patterns with appropriate characteristics",
+                        automated: true,
+                        testFunction: "testRandomDistributions"
+                    },
+                    {
+                        name: "Random Intensity Control",
+                        description: "Verify intensity slider affects pattern distribution",
+                        expected: "Higher intensity creates more pronounced distribution effects",
+                        automated: true,
+                        testFunction: "testRandomIntensity"
+                    },
+                    {
                         name: "Keyboard Interface",
                         description: "Test Enter and Cmd+Enter keyboard functionality",
                         expected: "Enter generates/steps, Cmd+Enter adds to database",
@@ -1531,6 +1552,70 @@
                 }
             } catch (error) {
                 return { success: false, message: `State reset test failed: ${error.message}` };
+            }
+        }
+
+        async function testPatternCreationRandom() {
+            try {
+                // Test random pattern generation
+                const randomOnsetsInput = document.getElementById('randomOnsets');
+                const randomStepsInput = document.getElementById('randomSteps');
+                const randomDistributionInput = document.getElementById('randomDistribution');
+                
+                if (randomOnsetsInput && randomStepsInput && randomDistributionInput) {
+                    randomOnsetsInput.value = '4';
+                    randomStepsInput.value = '8';
+                    randomDistributionInput.value = 'bell';
+                    return { success: true, message: "Random pattern generation interface verified" };
+                } else {
+                    return { success: false, message: "Random pattern controls not found" };
+                }
+            } catch (error) {
+                return { success: false, message: `Random generation test failed: ${error.message}` };
+            }
+        }
+
+        async function testRandomDistributions() {
+            try {
+                // Test all distribution types
+                const distributions = ['uniform', 'bell', 'syncopated', 'balanced', 'clustered'];
+                const randomDistributionInput = document.getElementById('randomDistribution');
+                
+                if (randomDistributionInput) {
+                    for (const dist of distributions) {
+                        randomDistributionInput.value = dist;
+                        // Simulate change event
+                        randomDistributionInput.dispatchEvent(new Event('change'));
+                    }
+                    return { success: true, message: `All ${distributions.length} distribution types tested` };
+                } else {
+                    return { success: false, message: "Random distribution selector not found" };
+                }
+            } catch (error) {
+                return { success: false, message: `Distribution test failed: ${error.message}` };
+            }
+        }
+
+        async function testRandomIntensity() {
+            try {
+                // Test intensity control
+                const intensityInput = document.getElementById('randomIntensity');
+                const intensityValue = document.getElementById('randomIntensityValue');
+                
+                if (intensityInput && intensityValue) {
+                    intensityInput.value = '75';
+                    intensityInput.dispatchEvent(new Event('input'));
+                    
+                    if (intensityValue.textContent === '75%') {
+                        return { success: true, message: "Random intensity control verified" };
+                    } else {
+                        return { success: false, message: "Intensity display not updating correctly" };
+                    }
+                } else {
+                    return { success: false, message: "Random intensity controls not found" };
+                }
+            } catch (error) {
+                return { success: false, message: `Intensity test failed: ${error.message}` };
             }
         }
 

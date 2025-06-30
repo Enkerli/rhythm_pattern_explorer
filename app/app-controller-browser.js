@@ -4518,6 +4518,12 @@ ${perfectBalancePatterns.map((pattern, index) => {
             steps: document.getElementById('transformerSteps'),
             offset: document.getElementById('transformerOffset'),
             target: document.getElementById('transformerTarget'),
+            // Random mode specific elements
+            randomOnsets: document.getElementById('randomOnsets'),
+            randomSteps: document.getElementById('randomSteps'),
+            randomDistribution: document.getElementById('randomDistribution'),
+            randomIntensity: document.getElementById('randomIntensity'),
+            randomIntensityValue: document.getElementById('randomIntensityValue'),
             quickInput: document.getElementById('transformerQuickInput'),
             addBtn: document.getElementById('transformerAddBtn'),
             progress: document.getElementById('transformerProgress'),
@@ -4559,7 +4565,7 @@ ${perfectBalancePatterns.map((pattern, index) => {
             });
         });
         
-        // Input validation
+        // Input validation for standard parameters
         [elements.onsets, elements.steps, elements.offset, elements.target].forEach(input => {
             input.addEventListener('input', () => {
                 this.resetTransformerState();
@@ -4573,6 +4579,24 @@ ${perfectBalancePatterns.map((pattern, index) => {
                 this.updateTransformerButtonStates();
                 this.updateProgressiveMode();
             });
+        });
+        
+        // Input validation for random parameters
+        [elements.randomOnsets, elements.randomSteps, elements.randomDistribution, elements.randomIntensity].forEach(input => {
+            if (input) {
+                input.addEventListener('input', () => {
+                    this.resetTransformerState();
+                    this.validateTransformerInputs();
+                    this.updateTransformerButtonStates();
+                    this.updateRandomIntensityDisplay();
+                });
+                input.addEventListener('change', () => {
+                    this.resetTransformerState();
+                    this.validateTransformerInputs();
+                    this.updateTransformerButtonStates();
+                    this.updateRandomIntensityDisplay();
+                });
+            }
         });
         
         // Quick input field with Enter key support
@@ -4609,27 +4633,43 @@ ${perfectBalancePatterns.map((pattern, index) => {
      */
     validateTransformerInputs() {
         const elements = this.transformerElements;
-        const onsets = parseInt(elements.onsets.value) || 0;
-        const steps = parseInt(elements.steps.value) || 1;
-        const offset = parseInt(elements.offset.value) || 0;
-        const target = parseInt(elements.target.value) || null;
+        const mode = this.transformerState.mode;
         
-        // Validate constraints
-        const isValid = 
-            steps >= 1 && steps <= 32 &&
-            onsets >= 0 && onsets <= steps &&
-            offset >= 0 && offset < steps &&
-            (!target || (target >= 0 && target <= steps));
-        
-        // Update constraints dynamically
-        elements.onsets.max = steps;
-        elements.offset.max = steps - 1;
-        if (elements.target.value) {
-            elements.target.max = steps;
+        if (mode === 'random') {
+            // Validate random mode parameters
+            const randomOnsets = parseInt(elements.randomOnsets.value) || 0;
+            const randomSteps = parseInt(elements.randomSteps.value) || 1;
+            
+            const isValid = 
+                randomSteps >= 1 && randomSteps <= 32 &&
+                randomOnsets >= 0 && randomOnsets <= randomSteps;
+            
+            // Update constraints dynamically for random mode
+            elements.randomOnsets.max = randomSteps;
+            
+            return isValid;
+        } else {
+            // Validate standard mode parameters
+            const onsets = parseInt(elements.onsets.value) || 0;
+            const steps = parseInt(elements.steps.value) || 1;
+            const offset = parseInt(elements.offset.value) || 0;
+            const target = parseInt(elements.target.value) || null;
+            
+            const isValid = 
+                steps >= 1 && steps <= 32 &&
+                onsets >= 0 && onsets <= steps &&
+                offset >= 0 && offset < steps &&
+                (!target || (target >= 0 && target <= steps));
+            
+            // Update constraints dynamically
+            elements.onsets.max = steps;
+            elements.offset.max = steps - 1;
+            if (elements.target.value) {
+                elements.target.max = steps;
+            }
+            
+            return isValid;
         }
-        
-        // DON'T call updateTransformerButtonStates() here to avoid infinite loop
-        return isValid;
     }
     
     /**
@@ -4663,6 +4703,16 @@ ${perfectBalancePatterns.map((pattern, index) => {
     }
     
     /**
+     * Update random intensity display value
+     */
+    updateRandomIntensityDisplay() {
+        const elements = this.transformerElements;
+        if (elements.randomIntensity && elements.randomIntensityValue) {
+            elements.randomIntensityValue.textContent = elements.randomIntensity.value + '%';
+        }
+    }
+    
+    /**
      * Handle transformer generate/step action
      */
     handleTransformerGenerate() {
@@ -4681,12 +4731,19 @@ ${perfectBalancePatterns.map((pattern, index) => {
     generateTransformerPattern() {
         try {
             const elements = this.transformerElements;
+            const mode = this.transformerState.mode;
+            
+            if (mode === 'random') {
+                // Handle random pattern generation
+                return this.generateRandomPattern();
+            }
+            
+            // Handle standard pattern generation
             const onsets = parseInt(elements.onsets.value) || 0;
             const steps = parseInt(elements.steps.value) || 1;
             const offset = parseInt(elements.offset.value) || 0;
             const target = parseInt(elements.target.value) || null;
             const isProgressive = this.transformerState.isProgressive;
-            const mode = this.transformerState.mode;
             
             if (!this.validateTransformerInputs()) {
                 showNotification('Please check your input values', 'warning');
@@ -4737,6 +4794,243 @@ ${perfectBalancePatterns.map((pattern, index) => {
             console.error('Error generating transformer pattern:', error);
             showNotification('Error generating pattern: ' + error.message, 'error');
         }
+    }
+    
+    /**
+     * Generate Random Pattern
+     * 
+     * Creates random patterns using various distribution strategies.
+     * Each generation produces a different pattern, perfect for creative exploration.
+     * 
+     * Distribution Types:
+     * - Uniform: Equal probability for all positions
+     * - Bell Curve: Favors middle positions (musically balanced)
+     * - Syncopated: Emphasizes off-beat positions
+     * - Balanced: Even spacing with controlled randomness
+     * - Clustered: Groups onsets together with varying density
+     */
+    generateRandomPattern() {
+        try {
+            const elements = this.transformerElements;
+            const onsets = parseInt(elements.randomOnsets.value) || 0;
+            const steps = parseInt(elements.randomSteps.value) || 1;
+            const distribution = elements.randomDistribution.value || 'bell';
+            const intensity = parseInt(elements.randomIntensity.value) || 50;
+            
+            if (!this.validateTransformerInputs()) {
+                showNotification('Please check your random parameters', 'warning');
+                return;
+            }
+            
+            // Generate random pattern based on distribution
+            const randomSteps = this.createRandomDistribution(onsets, steps, distribution, intensity);
+            
+            const pattern = {
+                steps: randomSteps,
+                stepCount: steps,
+                name: `Random(${onsets},${steps},${distribution})`,
+                formula: `Random(${onsets},${steps},${distribution},${intensity}%)`,
+                isRandom: true,
+                distribution: distribution,
+                intensity: intensity
+            };
+            
+            // Set as current pattern
+            this.currentPattern = pattern;
+            
+            // Update display
+            this.displayPattern(pattern);
+            this.updateButtonStates();
+            this.updateTransformerButtonStates();
+            
+            showNotification(`Random ${distribution} pattern generated! Press Enter for another variation.`, 'success');
+            
+        } catch (error) {
+            console.error('Error generating random pattern:', error);
+            showNotification('Error generating random pattern: ' + error.message, 'error');
+        }
+    }
+    
+    /**
+     * Create Random Distribution
+     * 
+     * Generates onset patterns using different probability distributions
+     * to create musically interesting and varied rhythmic structures.
+     */
+    createRandomDistribution(onsets, steps, distribution, intensity) {
+        const positions = Array(steps).fill(false);
+        
+        // Convert intensity (0-100) to probability modifier (0.1-2.0)
+        const intensityFactor = 0.1 + (intensity / 100) * 1.9;
+        
+        switch (distribution) {
+            case 'uniform':
+                return this.createUniformRandom(onsets, steps);
+                
+            case 'bell':
+                return this.createBellCurveRandom(onsets, steps, intensityFactor);
+                
+            case 'syncopated':
+                return this.createSyncopatedRandom(onsets, steps, intensityFactor);
+                
+            case 'balanced':
+                return this.createBalancedRandom(onsets, steps, intensityFactor);
+                
+            case 'clustered':
+                return this.createClusteredRandom(onsets, steps, intensityFactor);
+                
+            default:
+                return this.createBellCurveRandom(onsets, steps, intensityFactor);
+        }
+    }
+    
+    /**
+     * Create uniform random distribution
+     */
+    createUniformRandom(onsets, steps) {
+        const positions = Array(steps).fill(false);
+        const availablePositions = [...Array(steps).keys()];
+        
+        for (let i = 0; i < onsets && availablePositions.length > 0; i++) {
+            const randomIndex = Math.floor(Math.random() * availablePositions.length);
+            const position = availablePositions.splice(randomIndex, 1)[0];
+            positions[position] = true;
+        }
+        
+        return positions;
+    }
+    
+    /**
+     * Create bell curve distribution (favors middle positions)
+     */
+    createBellCurveRandom(onsets, steps, intensityFactor) {
+        const positions = Array(steps).fill(false);
+        const center = (steps - 1) / 2;
+        
+        // Create weighted probabilities using bell curve
+        const weights = [];
+        for (let i = 0; i < steps; i++) {
+            const distance = Math.abs(i - center) / (steps / 2);
+            const weight = Math.exp(-Math.pow(distance * intensityFactor, 2));
+            weights.push(weight);
+        }
+        
+        return this.selectWeightedPositions(positions, weights, onsets);
+    }
+    
+    /**
+     * Create syncopated distribution (emphasizes off-beats)
+     */
+    createSyncopatedRandom(onsets, steps, intensityFactor) {
+        const positions = Array(steps).fill(false);
+        const weights = [];
+        
+        for (let i = 0; i < steps; i++) {
+            // Favor off-beat positions (odd indices, positions after strong beats)
+            const isOffBeat = (i % 2 === 1) || (i % 4 === 2) || (i % 4 === 3);
+            const weight = isOffBeat ? intensityFactor : (2 - intensityFactor);
+            weights.push(Math.max(0.1, weight));
+        }
+        
+        return this.selectWeightedPositions(positions, weights, onsets);
+    }
+    
+    /**
+     * Create balanced distribution (even spacing with controlled randomness)
+     */
+    createBalancedRandom(onsets, steps, intensityFactor) {
+        const positions = Array(steps).fill(false);
+        
+        if (onsets === 0) return positions;
+        
+        // Start with even spacing
+        const baseSpacing = steps / onsets;
+        const weights = Array(steps).fill(0.1);
+        
+        // Add probability peaks around ideal positions
+        for (let i = 0; i < onsets; i++) {
+            const idealPos = Math.round(i * baseSpacing);
+            const spread = Math.max(1, Math.round(baseSpacing * (2 - intensityFactor) / 2));
+            
+            for (let j = Math.max(0, idealPos - spread); j <= Math.min(steps - 1, idealPos + spread); j++) {
+                const distance = Math.abs(j - idealPos);
+                weights[j] += intensityFactor * Math.exp(-distance / spread);
+            }
+        }
+        
+        return this.selectWeightedPositions(positions, weights, onsets);
+    }
+    
+    /**
+     * Create clustered distribution (groups onsets together)
+     */
+    createClusteredRandom(onsets, steps, intensityFactor) {
+        const positions = Array(steps).fill(false);
+        
+        if (onsets === 0) return positions;
+        
+        // Determine number of clusters (1-3 based on intensity)
+        const numClusters = Math.max(1, Math.min(3, Math.round(onsets / (4 - intensityFactor))));
+        const onsetsPerCluster = Math.ceil(onsets / numClusters);
+        
+        let remainingOnsets = onsets;
+        
+        for (let cluster = 0; cluster < numClusters && remainingOnsets > 0; cluster++) {
+            // Pick random center for this cluster
+            const clusterCenter = Math.floor(Math.random() * steps);
+            const clusterSize = Math.min(remainingOnsets, onsetsPerCluster);
+            const clusterSpread = Math.max(1, Math.round(steps / (8 * intensityFactor)));
+            
+            // Place onsets around cluster center
+            for (let i = 0; i < clusterSize; i++) {
+                let attempts = 0;
+                let placed = false;
+                
+                while (!placed && attempts < 50) {
+                    const offset = Math.round((Math.random() - 0.5) * clusterSpread * 2);
+                    const pos = (clusterCenter + offset + steps) % steps;
+                    
+                    if (!positions[pos]) {
+                        positions[pos] = true;
+                        placed = true;
+                        remainingOnsets--;
+                    }
+                    attempts++;
+                }
+            }
+        }
+        
+        return positions;
+    }
+    
+    /**
+     * Select positions based on weighted probabilities
+     */
+    selectWeightedPositions(positions, weights, onsets) {
+        const available = weights.map((weight, index) => ({ index, weight }));
+        
+        for (let i = 0; i < onsets && available.length > 0; i++) {
+            // Calculate total weight
+            const totalWeight = available.reduce((sum, item) => sum + item.weight, 0);
+            
+            // Pick random position based on weights
+            let random = Math.random() * totalWeight;
+            let selectedIndex = 0;
+            
+            for (let j = 0; j < available.length; j++) {
+                random -= available[j].weight;
+                if (random <= 0) {
+                    selectedIndex = j;
+                    break;
+                }
+            }
+            
+            // Place onset and remove from available positions
+            const selectedItem = available.splice(selectedIndex, 1)[0];
+            positions[selectedItem.index] = true;
+        }
+        
+        return positions;
     }
     
     /**

@@ -129,24 +129,54 @@
                                 <input type="radio" name="transformerMode" value="wolrab" class="transformer-radio">
                                 Wolrab
                             </label>
+                            <label class="radio-label">
+                                <input type="radio" name="transformerMode" value="random" class="transformer-radio">
+                                Random
+                            </label>
                         </div>
                         
                         <div class="transformer-params-inline">
-                            <div class="input-group-inline">
+                            <!-- Standard Parameters (Euclidean, Dilcue, Barlow, Wolrab) -->
+                            <div class="input-group-inline standard-params">
                                 <label for="transformerOnsets">Onsets:</label>
                                 <input type="number" id="transformerOnsets" min="0" max="32" value="3" class="transformer-input-small">
                             </div>
-                            <div class="input-group-inline">
+                            <div class="input-group-inline standard-params">
                                 <label for="transformerSteps">Steps:</label>
                                 <input type="number" id="transformerSteps" min="1" max="32" value="8" class="transformer-input-small">
                             </div>
-                            <div class="input-group-inline">
+                            <div class="input-group-inline standard-params">
                                 <label for="transformerOffset">Offset:</label>
                                 <input type="number" id="transformerOffset" min="0" max="31" value="0" class="transformer-input-small">
                             </div>
-                            <div class="input-group-inline">
+                            <div class="input-group-inline standard-params">
                                 <label for="transformerTarget">Target:</label>
                                 <input type="number" id="transformerTarget" min="0" max="32" value="" placeholder="Progressive" class="transformer-input-small">
+                            </div>
+                            
+                            <!-- Random Parameters (only for Random mode) -->
+                            <div class="input-group-inline random-params" style="display: none;">
+                                <label for="randomOnsets">Onsets:</label>
+                                <input type="number" id="randomOnsets" min="0" max="32" value="3" class="transformer-input-small">
+                            </div>
+                            <div class="input-group-inline random-params" style="display: none;">
+                                <label for="randomSteps">Steps:</label>
+                                <input type="number" id="randomSteps" min="1" max="32" value="8" class="transformer-input-small">
+                            </div>
+                            <div class="input-group-inline random-params" style="display: none;">
+                                <label for="randomDistribution">Style:</label>
+                                <select id="randomDistribution" class="transformer-select-small">
+                                    <option value="uniform">Uniform</option>
+                                    <option value="bell" selected>Bell Curve</option>
+                                    <option value="syncopated">Syncopated</option>
+                                    <option value="balanced">Balanced</option>
+                                    <option value="clustered">Clustered</option>
+                                </select>
+                            </div>
+                            <div class="input-group-inline random-params" style="display: none;">
+                                <label for="randomIntensity">Intensity:</label>
+                                <input type="range" id="randomIntensity" min="0" max="100" value="50" class="transformer-range-small">
+                                <span id="randomIntensityValue" class="intensity-value">50%</span>
                             </div>
                         </div>
                     </div>
@@ -175,6 +205,7 @@
                     • <strong>Dilcue:</strong> Anti-Euclidean using complement patterns for anti-rhythmic effects<br>
                     • <strong>Barlow:</strong> Uses indispensability theory to generate patterns by onset priority<br>
                     • <strong>Wolrab:</strong> Anti-Barlow with reversed indispensability for syncopated patterns<br>
+                    • <strong>Random:</strong> Creates varied patterns using distribution styles - Bell Curve (balanced), Syncopated (off-beat emphasis), Balanced (even spacing), Clustered (grouped onsets), or Uniform (pure random)<br>
                     • <strong>Progressive Mode:</strong> Fill in Target to step through from current to target onset count<br>
                     • <strong>Keyboard:</strong> Enter = Generate/Step, <span class="platform-shortcut">Cmd+Enter</span> = Add to Database
                 </div>

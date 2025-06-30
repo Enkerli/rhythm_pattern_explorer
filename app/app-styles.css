@@ -3990,6 +3990,46 @@ html {
     cursor: pointer;
 }
 
+.transformer-select-small {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border: 1px solid var(--border-light);
+    border-radius: var(--border-radius-base);
+    font-size: var(--font-size-sm);
+    background: var(--bg-secondary);
+    min-width: 100px;
+    transition: border-color var(--transition-base);
+}
+
+.transformer-select-small:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
+}
+
+.transformer-range-small {
+    width: 80px;
+    height: 20px;
+}
+
+.intensity-value {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    min-width: 35px;
+    text-align: right;
+}
+
+.random-params {
+    display: none !important;
+}
+
+.transformer-input-module[data-mode="random"] .random-params {
+    display: flex !important;
+}
+
+.transformer-input-module[data-mode="random"] .standard-params {
+    display: none !important;
+}
+
 .input-group {
     display: flex;
     flex-direction: column;
