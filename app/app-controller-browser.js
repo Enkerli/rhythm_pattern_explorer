@@ -4455,11 +4455,11 @@ ${perfectBalancePatterns.map((pattern, index) => {
             
             console.log('🔧 Euclidean result:', result);
             
-            if (result && result.steps) {
+            if (result && result.transformed) {
                 console.log('✅ Euclidean transformation successful');
-                return result.steps;
+                return result.transformed;
             } else {
-                console.error('❌ Euclidean transformation failed - no result or steps');
+                console.error('❌ Euclidean transformation failed - no result or transformed property');
                 return null;
             }
             
