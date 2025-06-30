@@ -789,7 +789,7 @@ class UnifiedPatternParser {
                         formula: `${basePatternStr}${transformerType}>${targetOnsets}`,
                         name: `Progressive ${transformerType === 'B' ? 'Barlow' : 
                                            transformerType === 'W' ? 'Wolrab' : 
-                                           transformerType === 'E' ? 'Euclidean' : 'Dilute'} (${basePatternStr} → ${targetOnsets} onsets)`
+                                           transformerType === 'E' ? 'Euclidean' : 'Dilcue'} (${basePatternStr} → ${targetOnsets} onsets)`
                     };
                 }
             }

@@ -399,6 +399,119 @@
             10
         );
 
+        // UPI Progressive Transformer Tests
+        testFramework.addTest(
+            'UPI Progressive Transformers - All Types',
+            'Tests all progressive UPI transformer operators (B>, W>, E>, D>)',
+            async () => {
+                const testCases = [
+                    { input: 'E(1,8)B>4', baseOnsets: 1, targetOnsets: 4, type: 'B', name: 'Barlow' },
+                    { input: 'E(3,8)W>6', baseOnsets: 3, targetOnsets: 6, type: 'W', name: 'Wolrab' },
+                    { input: 'P(3,1)E>5', baseOnsets: 3, targetOnsets: 5, type: 'E', name: 'Euclidean' },
+                    { input: '0x92D>1', baseOnsets: 3, targetOnsets: 1, type: 'D', name: 'Dilcue' }
+                ];
+                
+                let successful = 0;
+                const results = [];
+                
+                for (const testCase of testCases) {
+                    try {
+                        // Test parsing
+                        const result = UnifiedPatternParser.parse(testCase.input);
+                        
+                        if (result.type !== 'single') {
+                            results.push(`❌ ${testCase.input}: Wrong result type`);
+                            continue;
+                        }
+                        
+                        const pattern = result.pattern;
+                        
+                        // Test progressive transformer detection
+                        if (!pattern.isProgressiveTransformer) {
+                            results.push(`❌ ${testCase.input}: Not detected as progressive transformer`);
+                            continue;
+                        }
+                        
+                        // Test transformer type
+                        if (pattern.transformerType !== testCase.type) {
+                            results.push(`❌ ${testCase.input}: Wrong type ${pattern.transformerType}, expected ${testCase.type}`);
+                            continue;
+                        }
+                        
+                        // Test base pattern onsets
+                        const actualBaseOnsets = pattern.basePattern.steps.filter(s => s).length;
+                        if (actualBaseOnsets !== testCase.baseOnsets) {
+                            results.push(`❌ ${testCase.input}: Base onsets ${actualBaseOnsets}, expected ${testCase.baseOnsets}`);
+                            continue;
+                        }
+                        
+                        // Test target onsets
+                        if (pattern.targetOnsets !== testCase.targetOnsets) {
+                            results.push(`❌ ${testCase.input}: Target onsets ${pattern.targetOnsets}, expected ${testCase.targetOnsets}`);
+                            continue;
+                        }
+                        
+                        // Test formula reconstruction
+                        if (pattern.formula !== testCase.input) {
+                            results.push(`❌ ${testCase.input}: Formula mismatch ${pattern.formula}`);
+                            continue;
+                        }
+                        
+                        successful++;
+                        results.push(`✅ ${testCase.input}: ${testCase.name} progressive transformer`);
+                        
+                    } catch (error) {
+                        results.push(`❌ ${testCase.input}: Exception ${error.message}`);
+                    }
+                }
+                
+                return {
+                    success: successful === testCases.length,
+                    message: `${successful}/${testCases.length} UPI progressive transformers working\n${results.join('\n')}`
+                };
+            },
+            5
+        );
+
+        testFramework.addTest(
+            'UPI Progressive Transformers - Edge Cases',
+            'Tests edge cases and error conditions for progressive transformers',
+            async () => {
+                const edgeCases = [
+                    { input: 'E(1,8)B>1', expected: 'same-target', desc: 'Same base and target onsets' },
+                    { input: 'E(8,8)E>0', expected: 'zero-target', desc: 'Zero target onsets' },
+                    { input: 'E(0,8)D>8', expected: 'max-target', desc: 'Maximum target onsets' },
+                    { input: 'P(5,2)W>3', expected: 'reduction', desc: 'Onset reduction' },
+                    { input: '0xFFB>4', expected: 'concentration', desc: 'Complex base pattern' }
+                ];
+                
+                let successful = 0;
+                const results = [];
+                
+                for (const testCase of edgeCases) {
+                    try {
+                        const result = UnifiedPatternParser.parse(testCase.input);
+                        
+                        if (result.type === 'single' && result.pattern.isProgressiveTransformer) {
+                            successful++;
+                            results.push(`✅ ${testCase.input}: ${testCase.desc} - parsed correctly`);
+                        } else {
+                            results.push(`❌ ${testCase.input}: ${testCase.desc} - failed to parse as progressive`);
+                        }
+                        
+                    } catch (error) {
+                        results.push(`❌ ${testCase.input}: ${testCase.desc} - exception: ${error.message}`);
+                    }
+                }
+                
+                return {
+                    success: successful >= edgeCases.length * 0.8, // 80% success rate for edge cases
+                    message: `${successful}/${edgeCases.length} edge cases handled\n${results.join('\n')}`
+                };
+            },
+            3
+        );
+
         // Sequencer Engine Stress Tests
         testFramework.addTest(
             'Sequencer - Pattern Loading Speed',

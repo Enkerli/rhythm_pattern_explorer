@@ -469,15 +469,7 @@ class EnhancedPatternApp {
         
         // Check if we're in UPI progressive mode and should step instead of parse
         const trimmedInputValue = inputValue.trim();
-        console.log('🔧 Checking UPI progressive state:', {
-            hasState: !!this.upiProgressiveState,
-            originalContent: this.upiProgressiveState?.originalUPIContent,
-            inputValue: trimmedInputValue,
-            matches: this.upiProgressiveState?.originalUPIContent === trimmedInputValue
-        });
-        
         if (this.upiProgressiveState && this.upiProgressiveState.originalUPIContent === trimmedInputValue) {
-            console.log('🔄 Stepping through UPI progressive transformation');
             this.stepThroughUPIProgressiveSimple();
             return;
         }
@@ -4296,7 +4288,7 @@ ${perfectBalancePatterns.map((pattern, index) => {
             // Show notification about progressive mode
             const transformerName = pattern.transformerType === 'B' ? 'Barlow' :
                                    pattern.transformerType === 'W' ? 'Wolrab' :
-                                   pattern.transformerType === 'E' ? 'Euclidean' : 'Dilute';
+                                   pattern.transformerType === 'E' ? 'Euclidean' : 'Dilcue';
             
             showNotification(`Progressive ${transformerName} mode active!\nPress Enter repeatedly to step through ${transformations.length} transformations.`, 'success');
         } else {
@@ -4308,8 +4300,6 @@ ${perfectBalancePatterns.map((pattern, index) => {
      * Generate progressive transformation sequence for UPI notation
      */
     generateUPIProgressiveSequence(pattern) {
-        console.log('🔧 Starting UPI progressive sequence generation:', pattern);
-        
         // Check if required transformer classes are available
         if (typeof BarlowTransformer === 'undefined') {
             console.error('❌ BarlowTransformer class not available');
@@ -4323,8 +4313,6 @@ ${perfectBalancePatterns.map((pattern, index) => {
         const baseOnsetCount = pattern.basePattern.steps.filter(s => s).length;
         const targetOnsets = pattern.targetOnsets;
         
-        console.log(`🔧 Base pattern onsets: ${baseOnsetCount}, target: ${targetOnsets}`);
-        
         if (baseOnsetCount === targetOnsets) {
             showNotification('Current and target onset counts are the same', 'info');
             return [];
@@ -4334,32 +4322,24 @@ ${perfectBalancePatterns.map((pattern, index) => {
         const direction = targetOnsets > baseOnsetCount ? 1 : -1;
         let currentPattern = [...pattern.basePattern.steps];
         
-        console.log(`🎯 UPI Progressive: ${baseOnsetCount} → ${targetOnsets} (${pattern.transformerType}), direction: ${direction}`);
-        
         // Generate each step in the sequence
         for (let onsets = baseOnsetCount + direction; 
              direction > 0 ? onsets <= targetOnsets : onsets >= targetOnsets; 
              onsets += direction) {
              
-            console.log(`🔧 Generating transformation step: ${onsets} onsets (step ${Math.abs(onsets - baseOnsetCount)})`);
-            
             let transformedPattern;
             
             switch (pattern.transformerType) {
                 case 'B':
-                    console.log('🔧 Calling Barlow transformation (normal mode)');
                     transformedPattern = this.generateBarlowTransformation(currentPattern, onsets, false);
                     break;
                 case 'W':
-                    console.log('🔧 Calling Barlow transformation (Wolrab mode)');
                     transformedPattern = this.generateBarlowTransformation(currentPattern, onsets, true);
                     break;
                 case 'E':
-                    console.log('🔧 Calling Euclidean transformation (normal mode)');
                     transformedPattern = this.generateEuclideanTransformation(currentPattern, onsets, false);
                     break;
                 case 'D':
-                    console.log('🔧 Calling Euclidean transformation (Dilute mode)');
                     transformedPattern = this.generateEuclideanTransformation(currentPattern, onsets, true);
                     break;
                 default:
@@ -4368,7 +4348,6 @@ ${perfectBalancePatterns.map((pattern, index) => {
             }
             
             if (transformedPattern) {
-                console.log(`✅ Transformation successful, adding to sequence`);
                 transformations.push({
                     pattern: transformedPattern,
                     onsetCount: onsets,
@@ -4382,7 +4361,6 @@ ${perfectBalancePatterns.map((pattern, index) => {
             }
         }
         
-        console.log(`✅ Generated ${transformations.length} UPI progressive transformations`);
         return transformations;
     }
     
@@ -4391,13 +4369,9 @@ ${perfectBalancePatterns.map((pattern, index) => {
      */
     generateBarlowTransformation(currentSteps, targetOnsets, wolrabMode = false) {
         try {
-            const stepCount = currentSteps.length;
             const currentOnsets = currentSteps.filter(s => s).length;
             
-            console.log(`🔧 Barlow transformation: ${currentOnsets} → ${targetOnsets}, wolrab: ${wolrabMode}`);
-            
             if (currentOnsets === targetOnsets) {
-                console.log('✅ Already at target, returning current pattern');
                 return currentSteps;
             }
             
@@ -4412,15 +4386,7 @@ ${perfectBalancePatterns.map((pattern, index) => {
                 }
             );
             
-            console.log('🔧 Barlow result:', result);
-            
-            if (result && result.pattern) {
-                console.log('✅ Barlow transformation successful');
-                return result.pattern;
-            } else {
-                console.error('❌ Barlow transformation failed - no result or pattern');
-                return null;
-            }
+            return result && result.pattern ? result.pattern : null;
             
         } catch (error) {
             console.error('❌ Error in Barlow transformation:', error);
@@ -4433,13 +4399,9 @@ ${perfectBalancePatterns.map((pattern, index) => {
      */
     generateEuclideanTransformation(currentSteps, targetOnsets, antiMode = false) {
         try {
-            const stepCount = currentSteps.length;
             const currentOnsets = currentSteps.filter(s => s).length;
             
-            console.log(`🔧 Euclidean transformation: ${currentOnsets} → ${targetOnsets}, anti: ${antiMode}`);
-            
             if (currentOnsets === targetOnsets) {
-                console.log('✅ Already at target, returning current pattern');
                 return currentSteps;
             }
             
@@ -4453,15 +4415,7 @@ ${perfectBalancePatterns.map((pattern, index) => {
                 }
             );
             
-            console.log('🔧 Euclidean result:', result);
-            
-            if (result && result.transformed) {
-                console.log('✅ Euclidean transformation successful');
-                return result.transformed;
-            } else {
-                console.error('❌ Euclidean transformation failed - no result or transformed property');
-                return null;
-            }
+            return result && result.transformed ? result.transformed : null;
             
         } catch (error) {
             console.error('❌ Error in Euclidean transformation:', error);
@@ -4483,35 +4437,26 @@ ${perfectBalancePatterns.map((pattern, index) => {
             originalUPIContent: upiInput ? upiInput.value.trim() : ''
         };
         
-        console.log('✅ UPI progressive stepping enabled - Press Enter to step through transformations');
-        console.log('🔧 Stored original UPI content:', `"${this.upiProgressiveState.originalUPIContent}"`);
     }
     
     /**
      * Step through UPI progressive transformations (simple version)
      */
     stepThroughUPIProgressiveSimple() {
-        console.log('🔄 stepThroughUPIProgressiveSimple called');
-        
         if (!this.upiProgressiveState || !this.upiProgressiveState.transformations) {
-            console.log('❌ No progressive state or transformations available');
             return;
         }
         
         const state = this.upiProgressiveState;
         state.currentIndex++;
         
-        console.log(`🔄 Stepping to index ${state.currentIndex} of ${state.transformations.length} transformations`);
-        
         if (state.currentIndex >= state.transformations.length) {
             // Reached the end
-            console.log('🏁 Reached end of progressive sequence');
             showNotification('Reached end of progressive sequence', 'info');
             return;
         }
         
         const transformation = state.transformations[state.currentIndex];
-        console.log('🔄 Current transformation:', transformation);
         
         // Update current pattern
         this.currentPattern = {

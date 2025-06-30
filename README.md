@@ -96,13 +96,13 @@ The app supports an extensive range of rhythm notation formats:
 - **Progressive Barlow**: `patternB>target` - Steps through Barlow transformations to target onset count
 - **Progressive Wolrab**: `patternW>target` - Anti-Barlow transformations (reversed indispensability logic)
 - **Progressive Euclidean**: `patternE>target` - Steps through Euclidean transformations
-- **Progressive Dilute**: `patternD>target` - Reverse Euclidean transformations
+- **Progressive Dilcue**: `patternD>target` - Anti-Euclidean transformations
 
 **Examples**:
 - `E(1,8)B>8` - Start with 1 onset, use Barlow to progressively build to 8 onsets (full pattern)
 - `E(5,16)W>3` - Start with 5 onsets, use Wolrab to progressively reduce to 3 onsets
 - `P(3,1)E>12` - Start with triangle pattern, use Euclidean to progressively build to 12 onsets
-- `0x92D>1` - Start with tresillo (hex), use Dilute to progressively reduce to 1 onset
+- `0x92D>1` - Start with tresillo (hex), use Dilcue to progressively reduce to 1 onset
 
 **Usage**: Parse the pattern (e.g., `E(1,8)B>8`) to start progressive mode, then press Enter repeatedly to step through transformations. The UPI content stays unchanged, only the analysis and sequencer update with each step.
 
