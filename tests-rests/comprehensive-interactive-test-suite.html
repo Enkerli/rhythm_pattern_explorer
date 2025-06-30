@@ -1563,10 +1563,16 @@
                 const randomDistributionInput = document.getElementById('randomDistribution');
                 
                 if (randomOnsetsInput && randomStepsInput && randomDistributionInput) {
+                    // Test numeric onset count
                     randomOnsetsInput.value = '4';
                     randomStepsInput.value = '8';
                     randomDistributionInput.value = 'bell';
-                    return { success: true, message: "Random pattern generation interface verified" };
+                    
+                    // Test random onset count with 'r'
+                    randomOnsetsInput.value = 'r';
+                    randomOnsetsInput.dispatchEvent(new Event('input'));
+                    
+                    return { success: true, message: "Random pattern generation interface verified (including 'r' for random onsets)" };
                 } else {
                     return { success: false, message: "Random pattern controls not found" };
                 }

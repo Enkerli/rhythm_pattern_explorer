@@ -4637,15 +4637,19 @@ ${perfectBalancePatterns.map((pattern, index) => {
         
         if (mode === 'random') {
             // Validate random mode parameters
-            const randomOnsets = parseInt(elements.randomOnsets.value) || 0;
+            const randomOnsetsValue = elements.randomOnsets.value.trim().toLowerCase();
             const randomSteps = parseInt(elements.randomSteps.value) || 1;
             
-            const isValid = 
-                randomSteps >= 1 && randomSteps <= 32 &&
-                randomOnsets >= 0 && randomOnsets <= randomSteps;
+            let isValidOnsets = false;
+            if (randomOnsetsValue === 'r') {
+                isValidOnsets = true; // 'r' is always valid
+            } else {
+                const randomOnsets = parseInt(randomOnsetsValue) || 0;
+                isValidOnsets = randomOnsets >= 0 && randomOnsets <= randomSteps;
+            }
             
-            // Update constraints dynamically for random mode
-            elements.randomOnsets.max = randomSteps;
+            const isValid = 
+                randomSteps >= 1 && randomSteps <= 32 && isValidOnsets;
             
             return isValid;
         } else {
@@ -4812,10 +4816,19 @@ ${perfectBalancePatterns.map((pattern, index) => {
     generateRandomPattern() {
         try {
             const elements = this.transformerElements;
-            const onsets = parseInt(elements.randomOnsets.value) || 0;
+            const onsetsValue = elements.randomOnsets.value.trim().toLowerCase();
             const steps = parseInt(elements.randomSteps.value) || 1;
             const distribution = elements.randomDistribution.value || 'bell';
             const intensity = parseInt(elements.randomIntensity.value) || 50;
+            
+            // Handle random onset count
+            let onsets;
+            if (onsetsValue === 'r') {
+                // Generate random onset count using bell curve distribution
+                onsets = this.generateRandomOnsetCount(steps);
+            } else {
+                onsets = parseInt(onsetsValue) || 0;
+            }
             
             if (!this.validateTransformerInputs()) {
                 showNotification('Please check your random parameters', 'warning');
@@ -4828,18 +4841,19 @@ ${perfectBalancePatterns.map((pattern, index) => {
             const pattern = {
                 steps: randomSteps,
                 stepCount: steps,
-                name: `Random(${onsets},${steps},${distribution})`,
-                formula: `Random(${onsets},${steps},${distribution},${intensity}%)`,
+                name: `Random(${onsetsValue === 'r' ? 'r→' + onsets : onsets},${steps},${distribution})`,
+                formula: `Random(${onsetsValue === 'r' ? 'r→' + onsets : onsets},${steps},${distribution},${intensity}%)`,
                 isRandom: true,
                 distribution: distribution,
-                intensity: intensity
+                intensity: intensity,
+                randomOnsets: onsetsValue === 'r'
             };
             
             // Set as current pattern
             this.currentPattern = pattern;
             
             // Update display
-            this.displayPattern(pattern);
+            this.displayPatternAnalysis(pattern);
             this.updateButtonStates();
             this.updateTransformerButtonStates();
             
@@ -4849,6 +4863,31 @@ ${perfectBalancePatterns.map((pattern, index) => {
             console.error('Error generating random pattern:', error);
             showNotification('Error generating random pattern: ' + error.message, 'error');
         }
+    }
+    
+    /**
+     * Generate Random Onset Count
+     * 
+     * Creates a random onset count using bell curve distribution to favor
+     * musically interesting densities (avoiding extremes of 0 or maximum).
+     */
+    generateRandomOnsetCount(steps) {
+        // Use bell curve distribution favoring middle densities
+        const center = steps / 2;
+        const spread = steps / 4;
+        
+        // Generate random value using Box-Muller transform for Gaussian distribution
+        const u1 = Math.random();
+        const u2 = Math.random();
+        const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+        
+        // Scale and shift to desired range
+        let randomOnsets = Math.round(center + spread * z);
+        
+        // Clamp to valid range (1 to steps-1 to avoid empty or full patterns)
+        randomOnsets = Math.max(1, Math.min(steps - 1, randomOnsets));
+        
+        return randomOnsets;
     }
     
     /**
