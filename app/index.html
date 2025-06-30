@@ -105,58 +105,56 @@
             <!-- TRANSFORMER INPUT MODULE -->
             <section class="transformer-input-module">
                 <div class="row-header">
-                    <h2 class="row-title">🔄 Pattern Transformers</h2>
+                    <h2 class="row-title">🎵 Pattern Generators</h2>
                     <button class="info-btn" onclick="toggleInfoBox('transformer-info')">ℹ️</button>
                 </div>
                 
                 <div class="transformer-controls">
-                    <!-- Mode Selection -->
-                    <div class="transformer-mode-selection">
-                        <label for="transformerMode">Mode:</label>
-                        <select id="transformerMode" class="transformer-select">
-                            <option value="euclidean">Euclidean</option>
-                            <option value="dilcue">Dilcue (Anti-Euclidean)</option>
-                            <option value="barlow">Barlow</option>
-                            <option value="wolrab">Wolrab (Anti-Barlow)</option>
-                        </select>
-                    </div>
-                    
-                    <!-- Base Pattern Parameters -->
-                    <div class="transformer-base-params">
-                        <div class="input-group">
-                            <label for="transformerOnsets">Onsets:</label>
-                            <input type="number" id="transformerOnsets" min="0" max="32" value="3" class="transformer-input">
-                        </div>
-                        <div class="input-group">
-                            <label for="transformerSteps">Steps:</label>
-                            <input type="number" id="transformerSteps" min="1" max="32" value="8" class="transformer-input">
-                        </div>
-                        <div class="input-group">
-                            <label for="transformerOffset">Offset:</label>
-                            <input type="number" id="transformerOffset" min="0" max="31" value="0" class="transformer-input">
-                        </div>
-                    </div>
-                    
-                    <!-- Target and Progressive Controls -->
-                    <div class="transformer-target-params">
-                        <div class="input-group">
-                            <label for="transformerTarget">Target Onsets:</label>
-                            <input type="number" id="transformerTarget" min="0" max="32" value="" placeholder="Optional" class="transformer-input">
-                        </div>
-                        <div class="input-group">
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="transformerProgressive" class="transformer-checkbox">
-                                Progressive Mode
+                    <!-- Mode Selection with Parameters in One Row -->
+                    <div class="transformer-main-row">
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="transformerMode" value="euclidean" checked class="transformer-radio">
+                                Euclidean
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="transformerMode" value="dilcue" class="transformer-radio">
+                                Dilcue
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="transformerMode" value="barlow" class="transformer-radio">
+                                Barlow
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="transformerMode" value="wolrab" class="transformer-radio">
+                                Wolrab
                             </label>
                         </div>
+                        
+                        <div class="transformer-params-inline">
+                            <div class="input-group-inline">
+                                <label for="transformerOnsets">Onsets:</label>
+                                <input type="number" id="transformerOnsets" min="0" max="32" value="3" class="transformer-input-small">
+                            </div>
+                            <div class="input-group-inline">
+                                <label for="transformerSteps">Steps:</label>
+                                <input type="number" id="transformerSteps" min="1" max="32" value="8" class="transformer-input-small">
+                            </div>
+                            <div class="input-group-inline">
+                                <label for="transformerOffset">Offset:</label>
+                                <input type="number" id="transformerOffset" min="0" max="31" value="0" class="transformer-input-small">
+                            </div>
+                            <div class="input-group-inline">
+                                <label for="transformerTarget">Target:</label>
+                                <input type="number" id="transformerTarget" min="0" max="32" value="" placeholder="Progressive" class="transformer-input-small">
+                            </div>
+                        </div>
                     </div>
                     
-                    <!-- Action Buttons -->
-                    <div class="transformer-actions">
-                        <button id="transformerGenerateBtn" class="btn primary">Generate Pattern</button>
-                        <button id="transformerStepBtn" class="btn secondary" disabled>Step Through</button>
+                    <!-- Quick Generate Input -->
+                    <div class="transformer-generate-row">
+                        <input type="text" id="transformerQuickInput" placeholder="Press Enter to generate/step, Cmd+Enter to add to database" class="transformer-input-main">
                         <button id="transformerAddBtn" class="btn success" disabled>Add to Database</button>
-                        <button id="transformerResetBtn" class="btn secondary">Reset</button>
                     </div>
                 </div>
                 
@@ -172,12 +170,12 @@
                 
                 <!-- Information Box -->
                 <div class="info-box" id="transformer-info" style="display: none;">
-                    <strong>Pattern Transformers:</strong><br>
+                    <strong>Pattern Generators:</strong><br>
                     • <strong>Euclidean:</strong> Distributes onsets as evenly as possible using Euclidean algorithm<br>
                     • <strong>Dilcue:</strong> Anti-Euclidean using complement patterns for anti-rhythmic effects<br>
-                    • <strong>Barlow:</strong> Uses indispensability theory to add/remove onsets intelligently<br>
-                    • <strong>Wolrab:</strong> Anti-Barlow with reversed indispensability logic for syncopated patterns<br>
-                    • <strong>Progressive Mode:</strong> Steps through transformations from current to target onset count<br>
+                    • <strong>Barlow:</strong> Uses indispensability theory to generate patterns by onset priority<br>
+                    • <strong>Wolrab:</strong> Anti-Barlow with reversed indispensability for syncopated patterns<br>
+                    • <strong>Progressive Mode:</strong> Fill in Target to step through from current to target onset count<br>
                     • <strong>Keyboard:</strong> Enter = Generate/Step, <span class="platform-shortcut">Cmd+Enter</span> = Add to Database
                 </div>
             </section>

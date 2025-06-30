@@ -4488,16 +4488,13 @@ ${perfectBalancePatterns.map((pattern, index) => {
     initializeTransformerModule() {
         // Get transformer elements
         this.transformerElements = {
-            mode: document.getElementById('transformerMode'),
+            modeRadios: document.querySelectorAll('input[name="transformerMode"]'),
             onsets: document.getElementById('transformerOnsets'),
             steps: document.getElementById('transformerSteps'),
             offset: document.getElementById('transformerOffset'),
             target: document.getElementById('transformerTarget'),
-            progressive: document.getElementById('transformerProgressive'),
-            generateBtn: document.getElementById('transformerGenerateBtn'),
-            stepBtn: document.getElementById('transformerStepBtn'),
+            quickInput: document.getElementById('transformerQuickInput'),
             addBtn: document.getElementById('transformerAddBtn'),
-            resetBtn: document.getElementById('transformerResetBtn'),
             progress: document.getElementById('transformerProgress'),
             progressText: document.getElementById('transformerProgressText'),
             progressBar: document.getElementById('transformerProgressBar'),
@@ -4526,11 +4523,15 @@ ${perfectBalancePatterns.map((pattern, index) => {
     setupTransformerEventListeners() {
         const elements = this.transformerElements;
         
-        // Mode change
-        elements.mode.addEventListener('change', () => {
-            this.transformerState.mode = elements.mode.value;
-            this.updateTransformerModeDisplay();
-            this.resetTransformerState();
+        // Mode change (radio buttons)
+        elements.modeRadios.forEach(radio => {
+            radio.addEventListener('change', () => {
+                if (radio.checked) {
+                    this.transformerState.mode = radio.value;
+                    this.updateTransformerModeDisplay();
+                    this.resetTransformerState();
+                }
+            });
         });
         
         // Input validation
@@ -4538,28 +4539,33 @@ ${perfectBalancePatterns.map((pattern, index) => {
             input.addEventListener('input', () => {
                 this.validateTransformerInputs();
                 this.updateTransformerButtonStates();
+                this.updateProgressiveMode();
             });
             input.addEventListener('change', () => {
                 this.validateTransformerInputs();
                 this.updateTransformerButtonStates();
+                this.updateProgressiveMode();
             });
         });
         
-        // Progressive mode toggle
-        elements.progressive.addEventListener('change', () => {
-            this.updateTransformerButtonStates();
-            if (!elements.progressive.checked) {
-                this.resetTransformerState();
+        // Quick input field with Enter key support
+        elements.quickInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                if (event.metaKey || event.ctrlKey) {
+                    // Cmd/Ctrl+Enter: Add to database
+                    this.addTransformerPatternToDatabase();
+                } else {
+                    // Enter: Generate/Step
+                    this.handleTransformerGenerate();
+                }
             }
         });
         
         // Button actions
-        elements.generateBtn.addEventListener('click', () => this.generateTransformerPattern());
-        elements.stepBtn.addEventListener('click', () => this.stepTransformerPattern());
         elements.addBtn.addEventListener('click', () => this.addTransformerPatternToDatabase());
-        elements.resetBtn.addEventListener('click', () => this.resetTransformerModule());
         
-        // Keyboard events
+        // Global keyboard events
         document.addEventListener('keydown', (event) => this.handleTransformerKeyboard(event));
     }
     
@@ -4605,19 +4611,33 @@ ${perfectBalancePatterns.map((pattern, index) => {
     updateTransformerButtonStates() {
         const elements = this.transformerElements;
         const isValid = this.validateTransformerInputs();
-        const isActive = this.transformerState.isActive;
-        const hasTransformations = this.transformerState.transformations.length > 0;
-        const isProgressive = elements.progressive.checked;
+        const hasPattern = !!this.currentPattern;
         
-        elements.generateBtn.disabled = !isValid || (isActive && !isProgressive);
-        elements.stepBtn.disabled = !isActive || !hasTransformations || this.transformerState.currentIndex >= this.transformerState.transformations.length - 1;
-        elements.addBtn.disabled = !this.currentPattern;
+        // Enable add button if we have a current pattern
+        elements.addBtn.disabled = !hasPattern;
+    }
+    
+    /**
+     * Update progressive mode automatically when target is filled
+     */
+    updateProgressiveMode() {
+        const elements = this.transformerElements;
+        const hasTarget = elements.target.value && parseInt(elements.target.value) > 0;
         
-        // Update button text
-        if (isActive && isProgressive) {
-            elements.generateBtn.textContent = hasTransformations ? 'Step Through' : 'Generate Pattern';
+        // Auto-enable progressive mode when target is filled
+        this.transformerState.isProgressive = hasTarget;
+    }
+    
+    /**
+     * Handle transformer generate/step action
+     */
+    handleTransformerGenerate() {
+        if (this.transformerState.isActive && this.transformerState.transformations.length > 0) {
+            // If we're in progressive mode, step to next
+            this.stepTransformerPattern();
         } else {
-            elements.generateBtn.textContent = 'Generate Pattern';
+            // Generate new pattern
+            this.generateTransformerPattern();
         }
     }
     
@@ -4631,7 +4651,7 @@ ${perfectBalancePatterns.map((pattern, index) => {
             const steps = parseInt(elements.steps.value) || 1;
             const offset = parseInt(elements.offset.value) || 0;
             const target = parseInt(elements.target.value) || null;
-            const isProgressive = elements.progressive.checked;
+            const isProgressive = this.transformerState.isProgressive;
             const mode = this.transformerState.mode;
             
             if (!this.validateTransformerInputs()) {
