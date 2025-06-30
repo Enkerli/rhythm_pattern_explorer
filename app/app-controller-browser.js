@@ -4942,8 +4942,10 @@ ${perfectBalancePatterns.map((pattern, index) => {
                     basePattern = this.generateEuclideanBasePattern(onsets, steps, offset, mode === 'dilcue');
                     break;
                 case 'barlow':
-                case 'wolrab':
                     basePattern = this.generateBarlowBasePattern(onsets, steps, offset);
+                    break;
+                case 'wolrab':
+                    basePattern = this.generateWolrabBasePattern(onsets, steps, offset);
                     break;
             }
             
@@ -5376,8 +5378,7 @@ ${perfectBalancePatterns.map((pattern, index) => {
                 const patterns = [];
                 for (const term of polygonTerms) {
                     if (typeof RegularPolygonGenerator !== 'undefined') {
-                        const generator = new RegularPolygonGenerator();
-                        const polygonPattern = generator.generateRegularPolygon(
+                        const polygonPattern = RegularPolygonGenerator.generate(
                             term.vertices, 
                             term.offset || 0, 
                             term.multiplier
@@ -5392,15 +5393,31 @@ ${perfectBalancePatterns.map((pattern, index) => {
                 
                 if (patterns.length === 0) return null;
                 
-                // Combine patterns
-                let result = patterns[0].pattern;
-                for (let i = 1; i < patterns.length; i++) {
-                    const operation = patterns[i].operation;
-                    if (operation === '+') {
-                        result = combiner.addPatterns(result, patterns[i].pattern);
-                    } else if (operation === '-') {
-                        result = combiner.subtractPatterns(result, patterns[i].pattern);
+                // Separate addition and subtraction patterns
+                const addPatterns = [];
+                const subtractPatterns = [];
+                
+                for (const item of patterns) {
+                    if (item.operation === '+' || item.operation === null) {
+                        addPatterns.push(item.pattern);
+                    } else if (item.operation === '-') {
+                        subtractPatterns.push(item.pattern);
                     }
+                }
+                
+                // Combine addition patterns first
+                let result;
+                if (addPatterns.length > 1) {
+                    result = AdvancedPatternCombiner.combineMultiplePatterns(addPatterns);
+                } else if (addPatterns.length === 1) {
+                    result = addPatterns[0];
+                } else {
+                    return null;
+                }
+                
+                // Apply subtraction patterns if any
+                if (subtractPatterns.length > 0) {
+                    result = AdvancedPatternCombiner.applySubtractionPatterns(result, subtractPatterns);
                 }
                 
                 return result;
@@ -5453,11 +5470,28 @@ ${perfectBalancePatterns.map((pattern, index) => {
      */
     generateBarlowBasePattern(onsets, steps, offset) {
         try {
-            // Start with Euclidean distribution
-            const euclideanSteps = EuclideanGenerator.generate(onsets, steps, offset);
+            // Generate proper Barlow pattern using indispensability theory
+            // Start with empty pattern and use concentrate to add onsets by indispensability
+            const emptyPattern = new Array(steps).fill(false);
+            
+            // Generate indispensability table
+            const indispensabilityTable = SyncopationAnalyzer.generateBarlowIndispensabilityTable(steps);
+            
+            // Use BarlowTransformer.concentrate to add onsets by indispensability priority
+            const result = BarlowTransformer.concentrate(emptyPattern, onsets, indispensabilityTable, {
+                avoidWeakBeats: false,
+                minimumIndispensability: 0.0,
+                wolrabMode: false
+            });
+            
+            // Apply offset if specified
+            let finalSteps = result.pattern;
+            if (offset && offset > 0) {
+                finalSteps = this.rotatePattern(finalSteps, offset);
+            }
             
             return {
-                steps: euclideanSteps,
+                steps: finalSteps,
                 stepCount: steps,
                 name: `Barlow(${onsets},${steps}${offset ? `,${offset}` : ''})`,
                 formula: `Barlow(${onsets},${steps}${offset ? `,${offset}` : ''})`,
@@ -5467,6 +5501,46 @@ ${perfectBalancePatterns.map((pattern, index) => {
             };
         } catch (error) {
             console.error('Error generating Barlow pattern:', error);
+            return null;
+        }
+    }
+    
+    /**
+     * Generate Wolrab (Anti-Barlow) base pattern using reversed indispensability
+     */
+    generateWolrabBasePattern(onsets, steps, offset) {
+        try {
+            // Generate proper Wolrab pattern using reversed indispensability theory
+            // Start with empty pattern and use concentrate with wolrabMode=true
+            const emptyPattern = new Array(steps).fill(false);
+            
+            // Generate indispensability table
+            const indispensabilityTable = SyncopationAnalyzer.generateBarlowIndispensabilityTable(steps);
+            
+            // Use BarlowTransformer.concentrate with wolrabMode to reverse indispensability priority
+            const result = BarlowTransformer.concentrate(emptyPattern, onsets, indispensabilityTable, {
+                avoidWeakBeats: false,
+                minimumIndispensability: 0.0,
+                wolrabMode: true
+            });
+            
+            // Apply offset if specified
+            let finalSteps = result.pattern;
+            if (offset && offset > 0) {
+                finalSteps = this.rotatePattern(finalSteps, offset);
+            }
+            
+            return {
+                steps: finalSteps,
+                stepCount: steps,
+                name: `Wolrab(${onsets},${steps}${offset ? `,${offset}` : ''})`,
+                formula: `Wolrab(${onsets},${steps}${offset ? `,${offset}` : ''})`,
+                isWolrab: true,
+                beats: onsets,
+                offset: offset
+            };
+        } catch (error) {
+            console.error('Error generating Wolrab pattern:', error);
             return null;
         }
     }
