@@ -92,6 +92,20 @@ The app supports an extensive range of rhythm notation formats:
 - **Named Patterns**: `tresillo=E(3,8)`, `mypattern=P(3,1)+P(5,0)`
 - **Custom Durations**: `D:1,5 pattern` (short=1, long=5)
 
+#### Progressive Transformers (UPI Notation)
+- **Progressive Barlow**: `patternB>target` - Steps through Barlow transformations to target onset count
+- **Progressive Wolrab**: `patternW>target` - Anti-Barlow transformations (reversed indispensability logic)
+- **Progressive Euclidean**: `patternE>target` - Steps through Euclidean transformations
+- **Progressive Dilute**: `patternD>target` - Reverse Euclidean transformations
+
+**Examples**:
+- `E(1,8)B>8` - Start with 1 onset, use Barlow to progressively build to 8 onsets (full pattern)
+- `E(5,16)W>3` - Start with 5 onsets, use Wolrab to progressively reduce to 3 onsets
+- `P(3,1)E>12` - Start with triangle pattern, use Euclidean to progressively build to 12 onsets
+- `0x92D>1` - Start with tresillo (hex), use Dilute to progressively reduce to 1 onset
+
+**Usage**: Parse the pattern (e.g., `E(1,8)B>8`) to start progressive mode, then press Enter repeatedly to step through transformations. The UPI content stays unchanged, only the analysis and sequencer update with each step.
+
 #### Pattern Combinations vs Stringing
 - **Combinations**: `P(3,1)+P(5,0)` - Mathematical LCM combination using logical OR
 - **Stringing**: `P(3,1) P(5,0)` - Sequential concatenation, patterns play one after another

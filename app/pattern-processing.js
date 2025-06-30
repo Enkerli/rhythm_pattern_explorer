@@ -765,6 +765,36 @@ class UnifiedPatternParser {
             return transformed;
         }
         
+        // Check for progressive transformer notation: patternB>target, patternW>target, patternE>target, patternD>target
+        const progressiveMatch = cleaned.match(/^(.+?)([BWED])>(\d+)$/i);
+        if (progressiveMatch) {
+            const basePatternStr = progressiveMatch[1].trim();
+            const transformerType = progressiveMatch[2].toUpperCase();
+            const targetOnsets = parseInt(progressiveMatch[3]);
+            
+            if (!isNaN(targetOnsets) && targetOnsets >= 0) {
+                // Parse the base pattern first
+                const basePattern = this.parsePattern(basePatternStr);
+                if (basePattern) {
+                    // Return special progressive transformer pattern
+                    return {
+                        steps: basePattern.steps,
+                        stepCount: basePattern.stepCount,
+                        beats: basePattern.beats || basePattern.steps.filter(s => s).length,
+                        offset: basePattern.offset || 0,
+                        isProgressiveTransformer: true,
+                        transformerType: transformerType,
+                        targetOnsets: targetOnsets,
+                        basePattern: basePattern,
+                        formula: `${basePatternStr}${transformerType}>${targetOnsets}`,
+                        name: `Progressive ${transformerType === 'B' ? 'Barlow' : 
+                                           transformerType === 'W' ? 'Wolrab' : 
+                                           transformerType === 'E' ? 'Euclidean' : 'Dilute'} (${basePatternStr} → ${targetOnsets} onsets)`
+                    };
+                }
+            }
+        }
+        
         // Check for rotation notation: pattern@steps (but not shorthand polygons)
         if (cleaned.includes('@')) {
             const parts = cleaned.split('@');

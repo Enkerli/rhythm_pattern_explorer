@@ -3772,6 +3772,93 @@ html {
     visibility: visible;
 }
 
+/* UPI Progressive Results */
+.upi-progressive-results {
+    margin: var(--spacing-lg) 0;
+    padding: var(--spacing-md);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: var(--border-radius-base);
+    box-shadow: var(--shadow-sm);
+}
+
+.progressive-results-header {
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.progressive-results-header h3 {
+    margin: 0 0 var(--spacing-xs) 0;
+    color: var(--primary-color);
+    font-size: 1.1em;
+}
+
+.progressive-results-header p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.9em;
+}
+
+.progressive-results-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.transformation-item {
+    display: grid;
+    grid-template-columns: 80px 1fr 80px;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    background: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: var(--border-radius-sm);
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.transformation-item:hover {
+    background: var(--bg-hover);
+}
+
+.transformation-item.active {
+    background: var(--accent-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+.transformation-item .step-number {
+    font-weight: bold;
+    font-size: 0.9em;
+    color: var(--text-muted);
+}
+
+.transformation-item.active .step-number {
+    color: white;
+}
+
+.transformation-item .pattern-display {
+    font-family: 'Courier New', monospace;
+    font-size: 0.85em;
+    letter-spacing: 1px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.transformation-item .onset-count {
+    text-align: right;
+    font-size: 0.9em;
+    color: var(--text-muted);
+}
+
+.transformation-item.active .onset-count {
+    color: white;
+}
+
 /* Responsive equation sizing */
 @media (max-width: 768px) {
     .MathJax {
@@ -3784,6 +3871,11 @@ html {
     
     .equation-legend {
         font-size: 0.8em;
+    }
+    
+    .transformation-item {
+        grid-template-columns: 60px 1fr 60px;
+        font-size: 0.9em;
     }
 }
 }
