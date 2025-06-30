@@ -468,7 +468,15 @@ class EnhancedPatternApp {
         }
         
         // Check if we're in UPI progressive mode and should step instead of parse
+        console.log('🔧 Checking UPI progressive state:', {
+            hasState: !!this.upiProgressiveState,
+            originalContent: this.upiProgressiveState?.originalUPIContent,
+            inputValue: inputValue,
+            matches: this.upiProgressiveState?.originalUPIContent === inputValue
+        });
+        
         if (this.upiProgressiveState && this.upiProgressiveState.originalUPIContent === inputValue) {
+            console.log('🔄 Stepping through UPI progressive transformation');
             this.stepThroughUPIProgressiveSimple();
             return;
         }
@@ -4480,20 +4488,27 @@ ${perfectBalancePatterns.map((pattern, index) => {
      * Step through UPI progressive transformations (simple version)
      */
     stepThroughUPIProgressiveSimple() {
+        console.log('🔄 stepThroughUPIProgressiveSimple called');
+        
         if (!this.upiProgressiveState || !this.upiProgressiveState.transformations) {
+            console.log('❌ No progressive state or transformations available');
             return;
         }
         
         const state = this.upiProgressiveState;
         state.currentIndex++;
         
+        console.log(`🔄 Stepping to index ${state.currentIndex} of ${state.transformations.length} transformations`);
+        
         if (state.currentIndex >= state.transformations.length) {
             // Reached the end
+            console.log('🏁 Reached end of progressive sequence');
             showNotification('Reached end of progressive sequence', 'info');
             return;
         }
         
         const transformation = state.transformations[state.currentIndex];
+        console.log('🔄 Current transformation:', transformation);
         
         // Update current pattern
         this.currentPattern = {
