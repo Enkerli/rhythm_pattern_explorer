@@ -4,6 +4,8 @@ A comprehensive web application for mathematical analysis, generation, and trans
 
 **🚀 [Launch the Application](https://enkerli.github.io/rhythm_pattern_explorer/app/)**
 
+**📐 [Interactive Documentation with Mathematical Equations](https://enkerli.github.io/rhythm_pattern_explorer/app/documentation.html)**
+
 ## Table of Contents
 
 1. [Overview](#overview)
@@ -680,6 +682,13 @@ Cross-Cultural Synthesis:
 - **Progressive Offsets**: Enter in Forward/Backward Step boxes for progressive offset stepping
 - **Step Count Filters**: Enter to apply filtering
 - **Mobile Alternative**: All keyboard shortcuts have equivalent button-based alternatives
+
+### Documentation System
+- **Dual Format Support**: Both Markdown (GitHub) and HTML (interactive) documentation
+- **Mathematical Equations**: Properly rendered LaTeX equations in HTML documentation using MathJax
+- **Interactive Features**: Clickable navigation, expandable sections, and live equation rendering
+- **Maintenance Tools**: Automated consistency checking between documentation formats
+- **Algorithm Documentation**: Complete mathematical descriptions of all core algorithms
 
 ### Performance Notes
 - Optimized for desktop use with large displays
