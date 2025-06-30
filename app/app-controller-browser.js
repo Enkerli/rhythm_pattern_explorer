@@ -4535,8 +4535,14 @@ ${perfectBalancePatterns.map((pattern, index) => {
         
         // Input validation
         [elements.onsets, elements.steps, elements.offset, elements.target].forEach(input => {
-            input.addEventListener('input', () => this.validateTransformerInputs());
-            input.addEventListener('change', () => this.validateTransformerInputs());
+            input.addEventListener('input', () => {
+                this.validateTransformerInputs();
+                this.updateTransformerButtonStates();
+            });
+            input.addEventListener('change', () => {
+                this.validateTransformerInputs();
+                this.updateTransformerButtonStates();
+            });
         });
         
         // Progressive mode toggle
@@ -4589,7 +4595,7 @@ ${perfectBalancePatterns.map((pattern, index) => {
             elements.target.max = steps;
         }
         
-        this.updateTransformerButtonStates();
+        // DON'T call updateTransformerButtonStates() here to avoid infinite loop
         return isValid;
     }
     
