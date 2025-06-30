@@ -468,14 +468,15 @@ class EnhancedPatternApp {
         }
         
         // Check if we're in UPI progressive mode and should step instead of parse
+        const trimmedInputValue = inputValue.trim();
         console.log('🔧 Checking UPI progressive state:', {
             hasState: !!this.upiProgressiveState,
             originalContent: this.upiProgressiveState?.originalUPIContent,
-            inputValue: inputValue,
-            matches: this.upiProgressiveState?.originalUPIContent === inputValue
+            inputValue: trimmedInputValue,
+            matches: this.upiProgressiveState?.originalUPIContent === trimmedInputValue
         });
         
-        if (this.upiProgressiveState && this.upiProgressiveState.originalUPIContent === inputValue) {
+        if (this.upiProgressiveState && this.upiProgressiveState.originalUPIContent === trimmedInputValue) {
             console.log('🔄 Stepping through UPI progressive transformation');
             this.stepThroughUPIProgressiveSimple();
             return;
@@ -4474,14 +4475,16 @@ ${perfectBalancePatterns.map((pattern, index) => {
      */
     setupUPIProgressiveSteppingSimple(transformations, pattern) {
         // Initialize stepping state
+        const upiInput = document.getElementById('universalInput');
         this.upiProgressiveState = {
             transformations: transformations,
             currentIndex: -1,
             pattern: pattern,
-            originalUPIContent: document.getElementById('universalInput').value
+            originalUPIContent: upiInput ? upiInput.value.trim() : ''
         };
         
         console.log('✅ UPI progressive stepping enabled - Press Enter to step through transformations');
+        console.log('🔧 Stored original UPI content:', `"${this.upiProgressiveState.originalUPIContent}"`);
     }
     
     /**
