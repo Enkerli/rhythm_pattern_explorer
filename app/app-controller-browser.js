@@ -147,6 +147,9 @@ class EnhancedPatternApp {
         this.updateSortButton();
         this.updateButtonStates();
         
+        // Initialize transformer module
+        this.initializeTransformerModule();
+        
         console.log('🎯 Application initialization complete');
     }
     
@@ -4473,6 +4476,483 @@ ${perfectBalancePatterns.map((pattern, index) => {
         this.updateButtonStates();
         
         // console.log(`✅ UPI Progressive Step ${transformation.stepNumber}: ${transformation.onsetCount} onsets`);
+    }
+    
+    // ================================================
+    // TRANSFORMER INPUT MODULE
+    // ================================================
+    
+    /**
+     * Initialize transformer input module
+     */
+    initializeTransformerModule() {
+        // Get transformer elements
+        this.transformerElements = {
+            mode: document.getElementById('transformerMode'),
+            onsets: document.getElementById('transformerOnsets'),
+            steps: document.getElementById('transformerSteps'),
+            offset: document.getElementById('transformerOffset'),
+            target: document.getElementById('transformerTarget'),
+            progressive: document.getElementById('transformerProgressive'),
+            generateBtn: document.getElementById('transformerGenerateBtn'),
+            stepBtn: document.getElementById('transformerStepBtn'),
+            addBtn: document.getElementById('transformerAddBtn'),
+            resetBtn: document.getElementById('transformerResetBtn'),
+            progress: document.getElementById('transformerProgress'),
+            progressText: document.getElementById('transformerProgressText'),
+            progressBar: document.getElementById('transformerProgressBar'),
+            module: document.querySelector('.transformer-input-module')
+        };
+        
+        // Initialize transformer state
+        this.transformerState = {
+            isActive: false,
+            transformations: [],
+            currentIndex: -1,
+            basePattern: null,
+            mode: 'euclidean'
+        };
+        
+        // Set up event listeners
+        this.setupTransformerEventListeners();
+        
+        // Update mode styling
+        this.updateTransformerModeDisplay();
+    }
+    
+    /**
+     * Set up transformer event listeners
+     */
+    setupTransformerEventListeners() {
+        const elements = this.transformerElements;
+        
+        // Mode change
+        elements.mode.addEventListener('change', () => {
+            this.transformerState.mode = elements.mode.value;
+            this.updateTransformerModeDisplay();
+            this.resetTransformerState();
+        });
+        
+        // Input validation
+        [elements.onsets, elements.steps, elements.offset, elements.target].forEach(input => {
+            input.addEventListener('input', () => this.validateTransformerInputs());
+            input.addEventListener('change', () => this.validateTransformerInputs());
+        });
+        
+        // Progressive mode toggle
+        elements.progressive.addEventListener('change', () => {
+            this.updateTransformerButtonStates();
+            if (!elements.progressive.checked) {
+                this.resetTransformerState();
+            }
+        });
+        
+        // Button actions
+        elements.generateBtn.addEventListener('click', () => this.generateTransformerPattern());
+        elements.stepBtn.addEventListener('click', () => this.stepTransformerPattern());
+        elements.addBtn.addEventListener('click', () => this.addTransformerPatternToDatabase());
+        elements.resetBtn.addEventListener('click', () => this.resetTransformerModule());
+        
+        // Keyboard events
+        document.addEventListener('keydown', (event) => this.handleTransformerKeyboard(event));
+    }
+    
+    /**
+     * Update transformer mode display styling
+     */
+    updateTransformerModeDisplay() {
+        const mode = this.transformerState.mode;
+        this.transformerElements.module.setAttribute('data-mode', mode);
+    }
+    
+    /**
+     * Validate transformer inputs
+     */
+    validateTransformerInputs() {
+        const elements = this.transformerElements;
+        const onsets = parseInt(elements.onsets.value) || 0;
+        const steps = parseInt(elements.steps.value) || 1;
+        const offset = parseInt(elements.offset.value) || 0;
+        const target = parseInt(elements.target.value) || null;
+        
+        // Validate constraints
+        const isValid = 
+            steps >= 1 && steps <= 32 &&
+            onsets >= 0 && onsets <= steps &&
+            offset >= 0 && offset < steps &&
+            (!target || (target >= 0 && target <= steps));
+        
+        // Update constraints dynamically
+        elements.onsets.max = steps;
+        elements.offset.max = steps - 1;
+        if (elements.target.value) {
+            elements.target.max = steps;
+        }
+        
+        this.updateTransformerButtonStates();
+        return isValid;
+    }
+    
+    /**
+     * Update transformer button states
+     */
+    updateTransformerButtonStates() {
+        const elements = this.transformerElements;
+        const isValid = this.validateTransformerInputs();
+        const isActive = this.transformerState.isActive;
+        const hasTransformations = this.transformerState.transformations.length > 0;
+        const isProgressive = elements.progressive.checked;
+        
+        elements.generateBtn.disabled = !isValid || (isActive && !isProgressive);
+        elements.stepBtn.disabled = !isActive || !hasTransformations || this.transformerState.currentIndex >= this.transformerState.transformations.length - 1;
+        elements.addBtn.disabled = !this.currentPattern;
+        
+        // Update button text
+        if (isActive && isProgressive) {
+            elements.generateBtn.textContent = hasTransformations ? 'Step Through' : 'Generate Pattern';
+        } else {
+            elements.generateBtn.textContent = 'Generate Pattern';
+        }
+    }
+    
+    /**
+     * Generate transformer pattern
+     */
+    generateTransformerPattern() {
+        try {
+            const elements = this.transformerElements;
+            const onsets = parseInt(elements.onsets.value) || 0;
+            const steps = parseInt(elements.steps.value) || 1;
+            const offset = parseInt(elements.offset.value) || 0;
+            const target = parseInt(elements.target.value) || null;
+            const isProgressive = elements.progressive.checked;
+            const mode = this.transformerState.mode;
+            
+            if (!this.validateTransformerInputs()) {
+                showNotification('Please check your input values', 'warning');
+                return;
+            }
+            
+            // Generate base pattern based on mode
+            let basePattern;
+            switch (mode) {
+                case 'euclidean':
+                case 'dilcue':
+                    basePattern = this.generateEuclideanBasePattern(onsets, steps, offset, mode === 'dilcue');
+                    break;
+                case 'barlow':
+                case 'wolrab':
+                    basePattern = this.generateBarlowBasePattern(onsets, steps, offset);
+                    break;
+            }
+            
+            if (!basePattern) {
+                showNotification('Failed to generate base pattern', 'error');
+                return;
+            }
+            
+            // Set as current pattern
+            this.currentPattern = basePattern;
+            this.transformerState.basePattern = basePattern;
+            
+            // Generate progressive transformations if requested
+            if (isProgressive && target !== null && target !== onsets) {
+                this.generateTransformerSequence(basePattern, target, mode);
+                this.transformerState.isActive = true;
+                this.updateTransformerProgress();
+                showNotification(`Progressive ${mode} mode active! Use Step Through or Enter to continue.`, 'success');
+            } else {
+                this.transformerState.isActive = false;
+                this.resetTransformerState();
+                showNotification(`${mode.charAt(0).toUpperCase() + mode.slice(1)} pattern generated!`, 'success');
+            }
+            
+            // Update display
+            this.displayPatternAnalysis(this.currentPattern);
+            this.showCompactOutput(this.currentPattern);
+            this.updateButtonStates();
+            this.updateTransformerButtonStates();
+            
+        } catch (error) {
+            console.error('Error generating transformer pattern:', error);
+            showNotification('Error generating pattern: ' + error.message, 'error');
+        }
+    }
+    
+    /**
+     * Generate Euclidean base pattern
+     */
+    generateEuclideanBasePattern(onsets, steps, offset, antiMode = false) {
+        try {
+            let euclideanSteps;
+            if (antiMode) {
+                // Dilcue: use complement
+                const normalPattern = EuclideanGenerator.generate(steps - onsets, steps, 0);
+                euclideanSteps = normalPattern.map(step => !step);
+            } else {
+                euclideanSteps = EuclideanGenerator.generate(onsets, steps, offset);
+            }
+            
+            return {
+                steps: euclideanSteps,
+                stepCount: steps,
+                name: `${antiMode ? 'Dilcue' : 'Euclidean'}(${onsets},${steps}${offset ? `,${offset}` : ''})`,
+                formula: `${antiMode ? 'Dilcue' : 'Euclidean'}(${onsets},${steps}${offset ? `,${offset}` : ''})`,
+                isEuclidean: true,
+                isDilcue: antiMode,
+                beats: onsets,
+                offset: offset
+            };
+        } catch (error) {
+            console.error('Error generating Euclidean pattern:', error);
+            return null;
+        }
+    }
+    
+    /**
+     * Generate Barlow base pattern (starts with Euclidean, then applies Barlow logic)
+     */
+    generateBarlowBasePattern(onsets, steps, offset) {
+        try {
+            // Start with Euclidean distribution
+            const euclideanSteps = EuclideanGenerator.generate(onsets, steps, offset);
+            
+            return {
+                steps: euclideanSteps,
+                stepCount: steps,
+                name: `Barlow(${onsets},${steps}${offset ? `,${offset}` : ''})`,
+                formula: `Barlow(${onsets},${steps}${offset ? `,${offset}` : ''})`,
+                isBarlow: true,
+                beats: onsets,
+                offset: offset
+            };
+        } catch (error) {
+            console.error('Error generating Barlow pattern:', error);
+            return null;
+        }
+    }
+    
+    /**
+     * Generate transformer sequence for progressive mode
+     */
+    generateTransformerSequence(basePattern, targetOnsets, mode) {
+        const transformations = [];
+        const baseOnsets = basePattern.steps.filter(s => s).length;
+        const direction = targetOnsets > baseOnsets ? 1 : -1;
+        let currentPattern = [...basePattern.steps];
+        
+        for (let onsets = baseOnsets + direction; 
+             direction > 0 ? onsets <= targetOnsets : onsets >= targetOnsets; 
+             onsets += direction) {
+             
+            let transformedPattern;
+            
+            switch (mode) {
+                case 'euclidean':
+                    transformedPattern = this.generateEuclideanTransformation(currentPattern, onsets, false);
+                    break;
+                case 'dilcue':
+                    transformedPattern = this.generateEuclideanTransformation(currentPattern, onsets, true);
+                    break;
+                case 'barlow':
+                    transformedPattern = this.generateBarlowTransformation(currentPattern, onsets, false);
+                    break;
+                case 'wolrab':
+                    transformedPattern = this.generateBarlowTransformation(currentPattern, onsets, true);
+                    break;
+            }
+            
+            if (transformedPattern) {
+                transformations.push({
+                    pattern: transformedPattern,
+                    onsetCount: onsets,
+                    stepNumber: Math.abs(onsets - baseOnsets),
+                    mode: mode
+                });
+                currentPattern = transformedPattern;
+            }
+        }
+        
+        this.transformerState.transformations = transformations;
+        this.transformerState.currentIndex = -1;
+    }
+    
+    /**
+     * Step through transformer pattern
+     */
+    stepTransformerPattern() {
+        if (!this.transformerState.isActive || !this.transformerState.transformations.length) {
+            return;
+        }
+        
+        this.transformerState.currentIndex++;
+        
+        if (this.transformerState.currentIndex >= this.transformerState.transformations.length) {
+            showNotification('Reached end of transformation sequence', 'info');
+            return;
+        }
+        
+        const transformation = this.transformerState.transformations[this.transformerState.currentIndex];
+        const mode = this.transformerState.mode;
+        
+        // Update current pattern
+        this.currentPattern = {
+            steps: transformation.pattern,
+            stepCount: transformation.pattern.length,
+            name: `${mode.charAt(0).toUpperCase() + mode.slice(1)} Step ${transformation.stepNumber}`,
+            formula: `${mode.charAt(0).toUpperCase() + mode.slice(1)} Step ${transformation.stepNumber}`,
+            isTransformerGenerated: true,
+            transformerMode: mode
+        };
+        
+        // Update display
+        this.displayPatternAnalysis(this.currentPattern);
+        this.showCompactOutput(this.currentPattern);
+        this.updateButtonStates();
+        this.updateTransformerButtonStates();
+        this.updateTransformerProgress();
+        
+        showNotification(`Step ${transformation.stepNumber}: ${transformation.onsetCount} onsets`, 'info');
+    }
+    
+    /**
+     * Add transformer pattern to database
+     */
+    addTransformerPatternToDatabase() {
+        if (!this.currentPattern) {
+            showNotification('No pattern to add to database', 'warning');
+            return;
+        }
+        
+        try {
+            // Create descriptive name
+            const mode = this.transformerState.mode;
+            const onsetCount = this.currentPattern.steps.filter(s => s).length;
+            const stepCount = this.currentPattern.stepCount;
+            
+            let descriptiveName = `${mode.charAt(0).toUpperCase() + mode.slice(1)}-Generated(${onsetCount},${stepCount})`;
+            
+            // Create pattern object for database
+            const patternData = {
+                steps: this.currentPattern.steps,
+                stepCount: this.currentPattern.stepCount,
+                name: descriptiveName,
+                isTransformerGenerated: true,
+                transformerMode: mode,
+                generatedBy: 'transformer-module'
+            };
+            
+            // Generate analyses for the new pattern
+            const analyses = this.generateComprehensiveAnalysis(patternData);
+            
+            // Create database pattern
+            const dbPattern = createDatabasePattern(patternData, analyses);
+            
+            // Add to database
+            const patternId = this.database.add(dbPattern);
+            
+            if (patternId) {
+                showNotification(`${mode.charAt(0).toUpperCase() + mode.slice(1)} pattern added to database!`, 'success');
+                this.updatePatternList();
+                this.updateDatabaseStats();
+            } else {
+                showNotification('Pattern already exists in database', 'info');
+            }
+            
+        } catch (error) {
+            console.error('Error adding transformer pattern to database:', error);
+            showNotification('Error adding pattern to database: ' + error.message, 'error');
+        }
+    }
+    
+    /**
+     * Reset transformer module
+     */
+    resetTransformerModule() {
+        // Reset form values
+        this.transformerElements.onsets.value = '3';
+        this.transformerElements.steps.value = '8';
+        this.transformerElements.offset.value = '0';
+        this.transformerElements.target.value = '';
+        this.transformerElements.progressive.checked = false;
+        this.transformerElements.mode.value = 'euclidean';
+        
+        // Reset state
+        this.resetTransformerState();
+        this.transformerState.mode = 'euclidean';
+        
+        // Update display
+        this.updateTransformerModeDisplay();
+        this.updateTransformerButtonStates();
+        
+        showNotification('Transformer module reset', 'info');
+    }
+    
+    /**
+     * Reset transformer state
+     */
+    resetTransformerState() {
+        this.transformerState.isActive = false;
+        this.transformerState.transformations = [];
+        this.transformerState.currentIndex = -1;
+        this.transformerState.basePattern = null;
+        
+        // Hide progress
+        this.transformerElements.progress.style.display = 'none';
+        
+        this.updateTransformerButtonStates();
+    }
+    
+    /**
+     * Update transformer progress display
+     */
+    updateTransformerProgress() {
+        const elements = this.transformerElements;
+        const state = this.transformerState;
+        
+        if (!state.isActive || !state.transformations.length) {
+            elements.progress.style.display = 'none';
+            return;
+        }
+        
+        const total = state.transformations.length;
+        const current = Math.max(0, state.currentIndex);
+        const progress = total > 0 ? (current / total) * 100 : 0;
+        
+        const currentTransformation = state.transformations[current];
+        const progressText = currentTransformation 
+            ? `Step ${current + 1} of ${total}: ${currentTransformation.onsetCount} onsets`
+            : `Ready to step through ${total} transformations`;
+        
+        elements.progressText.textContent = progressText;
+        elements.progressBar.style.width = `${progress}%`;
+        elements.progress.style.display = 'block';
+    }
+    
+    /**
+     * Handle transformer keyboard events
+     */
+    handleTransformerKeyboard(event) {
+        // Only handle if transformer module is focused or has focus within
+        const isTransformerFocused = this.transformerElements.module.contains(document.activeElement);
+        
+        if (!isTransformerFocused) return;
+        
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            
+            if (event.metaKey || event.ctrlKey) {
+                // Cmd/Ctrl+Enter: Add to database
+                this.addTransformerPatternToDatabase();
+            } else {
+                // Enter: Generate or step
+                if (this.transformerState.isActive && this.transformerState.transformations.length > 0) {
+                    this.stepTransformerPattern();
+                } else {
+                    this.generateTransformerPattern();
+                }
+            }
+        }
     }
 }
 
