@@ -542,7 +542,7 @@ class EnhancedPatternApp {
             if (balanceSection) {
                 balanceSection.style.display = 'grid';
                 
-                const balanceInfo = balanceSection.querySelector('.balance-info-compact');
+                const balanceInfo = balanceSection.querySelector('.balance-analysis-column');
                 const balanceViz = balanceSection.querySelector('.balance-visualization-large');
                 
                 if (balanceInfo) {

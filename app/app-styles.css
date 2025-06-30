@@ -422,21 +422,16 @@ li {
 
 .balance-section {
     display: grid;
-    grid-template-columns: 200px 1fr 180px;
+    grid-template-columns: 1fr 1fr 180px;
     gap: var(--spacing-lg);
     align-items: start;
     min-height: 400px;
 }
 
-.balance-info-compact {
+.balance-analysis-column {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
-    padding: var(--spacing-md);
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-light);
-    border-radius: var(--border-radius-base);
-    box-shadow: var(--shadow-sm);
 }
 
 .balance-visualization-large {
@@ -1196,7 +1191,7 @@ li {
         grid-template-rows: auto auto auto;
     }
     
-    .balance-info-compact {
+    .balance-analysis-column {
         text-align: center;
     }
     
