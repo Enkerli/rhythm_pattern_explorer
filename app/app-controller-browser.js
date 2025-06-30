@@ -4524,6 +4524,24 @@ ${perfectBalancePatterns.map((pattern, index) => {
             randomDistribution: document.getElementById('randomDistribution'),
             randomIntensity: document.getElementById('randomIntensity'),
             randomIntensityValue: document.getElementById('randomIntensityValue'),
+            // Polygon mode specific elements
+            polygonVertices1: document.getElementById('polygonVertices1'),
+            polygonOffset1: document.getElementById('polygonOffset1'),
+            polygonMultiplier1: document.getElementById('polygonMultiplier1'),
+            polygonIcon1: document.getElementById('polygonIcon1'),
+            polygonVertices2: document.getElementById('polygonVertices2'),
+            polygonOffset2: document.getElementById('polygonOffset2'),
+            polygonMultiplier2: document.getElementById('polygonMultiplier2'),
+            polygonOperation2: document.getElementById('polygonOperation2'),
+            polygonIcon2: document.getElementById('polygonIcon2'),
+            polygonVertices3: document.getElementById('polygonVertices3'),
+            polygonOffset3: document.getElementById('polygonOffset3'),
+            polygonMultiplier3: document.getElementById('polygonMultiplier3'),
+            polygonOperation3: document.getElementById('polygonOperation3'),
+            polygonIcon3: document.getElementById('polygonIcon3'),
+            polygonTerm2: document.getElementById('polygonTerm2'),
+            polygonTerm3: document.getElementById('polygonTerm3'),
+            addPolygonBtn: document.getElementById('addPolygonBtn'),
             quickInput: document.getElementById('transformerQuickInput'),
             addBtn: document.getElementById('transformerAddBtn'),
             progress: document.getElementById('transformerProgress'),
@@ -4616,6 +4634,9 @@ ${perfectBalancePatterns.map((pattern, index) => {
         // Button actions
         elements.addBtn.addEventListener('click', () => this.addTransformerPatternToDatabase());
         
+        // Polygon mode event listeners
+        this.setupPolygonEventListeners();
+        
         // Global keyboard events
         document.addEventListener('keydown', (event) => this.handleTransformerKeyboard(event));
     }
@@ -4650,6 +4671,25 @@ ${perfectBalancePatterns.map((pattern, index) => {
             
             const isValid = 
                 randomSteps >= 1 && randomSteps <= 32 && isValidOnsets;
+            
+            return isValid;
+        } else if (mode === 'polygon') {
+            // Validate polygon mode parameters
+            const vertices1 = parseInt(elements.polygonVertices1.value) || 3;
+            
+            let isValid = vertices1 >= 3 && vertices1 <= 32;
+            
+            // Check if second polygon is visible and validate
+            if (elements.polygonTerm2.style.display !== 'none') {
+                const vertices2 = parseInt(elements.polygonVertices2.value) || 3;
+                isValid = isValid && vertices2 >= 3 && vertices2 <= 32;
+            }
+            
+            // Check if third polygon is visible and validate
+            if (elements.polygonTerm3.style.display !== 'none') {
+                const vertices3 = parseInt(elements.polygonVertices3.value) || 3;
+                isValid = isValid && vertices3 >= 3 && vertices3 <= 32;
+            }
             
             return isValid;
         } else {
@@ -4717,6 +4757,143 @@ ${perfectBalancePatterns.map((pattern, index) => {
     }
     
     /**
+     * Setup polygon mode event listeners
+     */
+    setupPolygonEventListeners() {
+        const elements = this.transformerElements;
+        
+        // Vertices change updates polygon icons
+        [1, 2, 3].forEach(i => {
+            const verticesInput = elements[`polygonVertices${i}`];
+            const iconElement = elements[`polygonIcon${i}`];
+            
+            if (verticesInput && iconElement) {
+                verticesInput.addEventListener('input', () => {
+                    this.updatePolygonIcon(i);
+                    this.resetTransformerState();
+                    this.validateTransformerInputs();
+                    this.updateTransformerButtonStates();
+                });
+            }
+        });
+        
+        // Other polygon parameter changes
+        ['polygonOffset1', 'polygonOffset2', 'polygonOffset3', 'polygonMultiplier1', 'polygonMultiplier2', 'polygonMultiplier3', 'polygonOperation2', 'polygonOperation3'].forEach(elementId => {
+            const element = elements[elementId];
+            if (element) {
+                element.addEventListener('input', () => {
+                    this.resetTransformerState();
+                    this.validateTransformerInputs();
+                    this.updateTransformerButtonStates();
+                });
+                element.addEventListener('change', () => {
+                    this.resetTransformerState();
+                    this.validateTransformerInputs();
+                    this.updateTransformerButtonStates();
+                });
+            }
+        });
+        
+        // Add polygon button
+        if (elements.addPolygonBtn) {
+            elements.addPolygonBtn.addEventListener('click', () => this.addPolygonTerm());
+        }
+        
+        // Initialize polygon icons
+        this.updatePolygonIcon(1);
+        this.updatePolygonIcon(2);
+        this.updatePolygonIcon(3);
+    }
+    
+    /**
+     * Update polygon icon based on vertex count
+     */
+    updatePolygonIcon(termIndex) {
+        const elements = this.transformerElements;
+        const verticesInput = elements[`polygonVertices${termIndex}`];
+        const iconElement = elements[`polygonIcon${termIndex}`];
+        
+        if (!verticesInput || !iconElement) return;
+        
+        const vertices = parseInt(verticesInput.value) || 3;
+        
+        const polygonIcons = {
+            3: '△',    // Triangle
+            4: '◇',    // Diamond/Square
+            5: '⬟',    // Pentagon
+            6: '⬢',    // Hexagon
+            7: '⬢',    // Heptagon (use hexagon)
+            8: '⬢',    // Octagon (use hexagon)
+            9: '⬢',    // Nonagon (use hexagon)
+            10: '⬢',   // Decagon (use hexagon)
+            11: '⬢',   // Hendecagon (use hexagon)
+            12: '⬢'    // Dodecagon (use hexagon)
+        };
+        
+        iconElement.textContent = polygonIcons[vertices] || '⬢';
+        
+        // Add polygon name as title
+        const polygonNames = {
+            3: 'Triangle',
+            4: 'Square',
+            5: 'Pentagon',
+            6: 'Hexagon',
+            7: 'Heptagon',
+            8: 'Octagon',
+            9: 'Nonagon',
+            10: 'Decagon',
+            11: 'Hendecagon',
+            12: 'Dodecagon'
+        };
+        
+        iconElement.title = polygonNames[vertices] || `${vertices}-gon`;
+    }
+    
+    /**
+     * Add polygon term (show polygon 2 or 3)
+     */
+    addPolygonTerm() {
+        const elements = this.transformerElements;
+        
+        if (!elements.polygonTerm2.style.display || elements.polygonTerm2.style.display === 'none') {
+            elements.polygonTerm2.style.display = 'flex';
+            this.updatePolygonIcon(2);
+        } else if (!elements.polygonTerm3.style.display || elements.polygonTerm3.style.display === 'none') {
+            elements.polygonTerm3.style.display = 'flex';
+            this.updatePolygonIcon(3);
+            elements.addPolygonBtn.style.display = 'none'; // Hide add button when all 3 are shown
+        }
+    }
+    
+    /**
+     * Remove polygon term
+     */
+    removePolygonTerm(termIndex) {
+        const elements = this.transformerElements;
+        const termElement = elements[`polygonTerm${termIndex}`];
+        
+        if (termElement) {
+            termElement.style.display = 'none';
+            
+            // Reset values
+            const verticesInput = elements[`polygonVertices${termIndex}`];
+            const offsetInput = elements[`polygonOffset${termIndex}`];
+            const multiplierInput = elements[`polygonMultiplier${termIndex}`];
+            
+            if (verticesInput) verticesInput.value = termIndex === 2 ? '5' : '7';
+            if (offsetInput) offsetInput.value = '0';
+            if (multiplierInput) multiplierInput.value = '';
+            
+            // Show add button again
+            elements.addPolygonBtn.style.display = 'block';
+            
+            this.resetTransformerState();
+            this.validateTransformerInputs();
+            this.updateTransformerButtonStates();
+        }
+    }
+    
+    /**
      * Handle transformer generate/step action
      */
     handleTransformerGenerate() {
@@ -4740,6 +4917,9 @@ ${perfectBalancePatterns.map((pattern, index) => {
             if (mode === 'random') {
                 // Handle random pattern generation
                 return this.generateRandomPattern();
+            } else if (mode === 'polygon') {
+                // Handle polygon pattern generation
+                return this.generatePolygonPattern();
             }
             
             // Handle standard pattern generation
@@ -5070,6 +5250,172 @@ ${perfectBalancePatterns.map((pattern, index) => {
         }
         
         return positions;
+    }
+    
+    /**
+     * Generate Polygon Pattern
+     * 
+     * Creates patterns by combining regular polygons using mathematical operations.
+     * Supports up to 3 polygons with addition/subtraction, optional offsets and multipliers.
+     */
+    generatePolygonPattern() {
+        try {
+            const elements = this.transformerElements;
+            
+            // Build polygon expression
+            const polygonTerms = [];
+            let formulaString = '';
+            
+            // First polygon (always present)
+            const term1 = this.getPolygonTerm(1);
+            if (term1) {
+                polygonTerms.push({ ...term1, operation: '+' });
+                formulaString = term1.formula;
+            }
+            
+            // Second polygon (if visible)
+            if (elements.polygonTerm2.style.display !== 'none') {
+                const term2 = this.getPolygonTerm(2);
+                if (term2) {
+                    const operation = elements.polygonOperation2.value || '+';
+                    polygonTerms.push({ ...term2, operation });
+                    formulaString += operation + term2.formula;
+                }
+            }
+            
+            // Third polygon (if visible)
+            if (elements.polygonTerm3.style.display !== 'none') {
+                const term3 = this.getPolygonTerm(3);
+                if (term3) {
+                    const operation = elements.polygonOperation3.value || '+';
+                    polygonTerms.push({ ...term3, operation });
+                    formulaString += operation + term3.formula;
+                }
+            }
+            
+            if (polygonTerms.length === 0) {
+                showNotification('No valid polygon terms found', 'warning');
+                return;
+            }
+            
+            // Generate combined pattern using existing polygon combiner
+            const combinedPattern = this.combinePolygons(polygonTerms);
+            
+            if (!combinedPattern) {
+                showNotification('Failed to generate polygon pattern', 'error');
+                return;
+            }
+            
+            const pattern = {
+                steps: combinedPattern.steps,
+                stepCount: combinedPattern.stepCount,
+                name: formulaString,
+                formula: formulaString,
+                isPolygon: true,
+                isRegularPolygon: polygonTerms.length === 1,
+                isCombined: polygonTerms.length > 1,
+                polygonTerms: polygonTerms
+            };
+            
+            // Set as current pattern
+            this.currentPattern = pattern;
+            
+            // Update display
+            this.displayPatternAnalysis(pattern);
+            this.updateButtonStates();
+            this.updateTransformerButtonStates();
+            
+            const termCount = polygonTerms.length;
+            showNotification(`Polygon pattern generated: ${termCount} term${termCount > 1 ? 's' : ''} combined!`, 'success');
+            
+        } catch (error) {
+            console.error('Error generating polygon pattern:', error);
+            showNotification('Error generating polygon pattern: ' + error.message, 'error');
+        }
+    }
+    
+    /**
+     * Get polygon term data for a specific index
+     */
+    getPolygonTerm(index) {
+        const elements = this.transformerElements;
+        
+        const vertices = parseInt(elements[`polygonVertices${index}`].value) || 3;
+        const offset = parseInt(elements[`polygonOffset${index}`].value) || 0;
+        const multiplier = parseInt(elements[`polygonMultiplier${index}`].value) || null;
+        
+        if (vertices < 3) return null;
+        
+        let formula = `P(${vertices}`;
+        if (offset > 0) {
+            formula += `,${offset}`;
+        }
+        if (multiplier && multiplier > 1) {
+            formula += `,${multiplier}`;
+        }
+        formula += ')';
+        
+        return {
+            vertices,
+            offset,
+            multiplier,
+            formula
+        };
+    }
+    
+    /**
+     * Combine polygons using existing pattern combination logic
+     */
+    combinePolygons(polygonTerms) {
+        try {
+            // Use the existing AdvancedPatternCombiner if available
+            if (typeof AdvancedPatternCombiner !== 'undefined') {
+                const combiner = new AdvancedPatternCombiner();
+                
+                // Build polygon patterns
+                const patterns = [];
+                for (const term of polygonTerms) {
+                    if (typeof RegularPolygonGenerator !== 'undefined') {
+                        const generator = new RegularPolygonGenerator();
+                        const polygonPattern = generator.generateRegularPolygon(
+                            term.vertices, 
+                            term.offset || 0, 
+                            term.multiplier
+                        );
+                        
+                        patterns.push({
+                            pattern: polygonPattern,
+                            operation: term.operation
+                        });
+                    }
+                }
+                
+                if (patterns.length === 0) return null;
+                
+                // Combine patterns
+                let result = patterns[0].pattern;
+                for (let i = 1; i < patterns.length; i++) {
+                    const operation = patterns[i].operation;
+                    if (operation === '+') {
+                        result = combiner.addPatterns(result, patterns[i].pattern);
+                    } else if (operation === '-') {
+                        result = combiner.subtractPatterns(result, patterns[i].pattern);
+                    }
+                }
+                
+                return result;
+            } else {
+                // Fallback: simple polygon generation without combination
+                const term = polygonTerms[0];
+                return {
+                    steps: new Array(term.vertices).fill(false).map((_, i) => i % Math.max(1, Math.floor(term.vertices / (term.vertices - 1))) === 0),
+                    stepCount: term.vertices
+                };
+            }
+        } catch (error) {
+            console.error('Error combining polygons:', error);
+            return null;
+        }
     }
     
     /**

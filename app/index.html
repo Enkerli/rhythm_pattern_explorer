@@ -133,6 +133,10 @@
                                 <input type="radio" name="transformerMode" value="random" class="transformer-radio">
                                 Random
                             </label>
+                            <label class="radio-label">
+                                <input type="radio" name="transformerMode" value="polygon" class="transformer-radio">
+                                Polygon
+                            </label>
                         </div>
                         
                         <div class="transformer-params-inline">
@@ -178,6 +182,90 @@
                                 <input type="range" id="randomIntensity" min="0" max="100" value="50" class="transformer-range-small">
                                 <span id="randomIntensityValue" class="intensity-value">50%</span>
                             </div>
+                            
+                            <!-- Polygon Parameters (only for Polygon mode) -->
+                            <div class="polygon-params" style="display: none;">
+                                <div class="polygon-builder">
+                                    <!-- Polygon 1 -->
+                                    <div class="polygon-term" id="polygonTerm1">
+                                        <div class="polygon-sign-container">
+                                            <span class="polygon-sign" id="polygonSign1"></span>
+                                        </div>
+                                        <div class="polygon-inputs">
+                                            <div class="input-group-inline">
+                                                <label for="polygonVertices1">Vertices:</label>
+                                                <input type="number" id="polygonVertices1" min="3" max="32" value="3" class="transformer-input-small">
+                                                <span class="polygon-icon" id="polygonIcon1">△</span>
+                                            </div>
+                                            <div class="input-group-inline">
+                                                <label for="polygonOffset1">Offset:</label>
+                                                <input type="number" id="polygonOffset1" min="0" max="31" value="0" class="transformer-input-small">
+                                            </div>
+                                            <div class="input-group-inline">
+                                                <label for="polygonMultiplier1">Multiplier:</label>
+                                                <input type="number" id="polygonMultiplier1" min="1" max="8" value="" placeholder="Auto" class="transformer-input-small">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Polygon 2 -->
+                                    <div class="polygon-term" id="polygonTerm2" style="display: none;">
+                                        <div class="polygon-sign-container">
+                                            <select id="polygonOperation2" class="polygon-operation">
+                                                <option value="+">+</option>
+                                                <option value="-">-</option>
+                                            </select>
+                                        </div>
+                                        <div class="polygon-inputs">
+                                            <div class="input-group-inline">
+                                                <label for="polygonVertices2">Vertices:</label>
+                                                <input type="number" id="polygonVertices2" min="3" max="32" value="5" class="transformer-input-small">
+                                                <span class="polygon-icon" id="polygonIcon2">⬟</span>
+                                            </div>
+                                            <div class="input-group-inline">
+                                                <label for="polygonOffset2">Offset:</label>
+                                                <input type="number" id="polygonOffset2" min="0" max="31" value="0" class="transformer-input-small">
+                                            </div>
+                                            <div class="input-group-inline">
+                                                <label for="polygonMultiplier2">Multiplier:</label>
+                                                <input type="number" id="polygonMultiplier2" min="1" max="8" value="" placeholder="Auto" class="transformer-input-small">
+                                            </div>
+                                        </div>
+                                        <button type="button" class="polygon-remove-btn" onclick="window.enhancedPatternApp?.removePolygonTerm(2)">×</button>
+                                    </div>
+                                    
+                                    <!-- Polygon 3 -->
+                                    <div class="polygon-term" id="polygonTerm3" style="display: none;">
+                                        <div class="polygon-sign-container">
+                                            <select id="polygonOperation3" class="polygon-operation">
+                                                <option value="+">+</option>
+                                                <option value="-">-</option>
+                                            </select>
+                                        </div>
+                                        <div class="polygon-inputs">
+                                            <div class="input-group-inline">
+                                                <label for="polygonVertices3">Vertices:</label>
+                                                <input type="number" id="polygonVertices3" min="3" max="32" value="7" class="transformer-input-small">
+                                                <span class="polygon-icon" id="polygonIcon3">⬢</span>
+                                            </div>
+                                            <div class="input-group-inline">
+                                                <label for="polygonOffset3">Offset:</label>
+                                                <input type="number" id="polygonOffset3" min="0" max="31" value="0" class="transformer-input-small">
+                                            </div>
+                                            <div class="input-group-inline">
+                                                <label for="polygonMultiplier3">Multiplier:</label>
+                                                <input type="number" id="polygonMultiplier3" min="1" max="8" value="" placeholder="Auto" class="transformer-input-small">
+                                            </div>
+                                        </div>
+                                        <button type="button" class="polygon-remove-btn" onclick="window.enhancedPatternApp?.removePolygonTerm(3)">×</button>
+                                    </div>
+                                    
+                                    <!-- Add Polygon Button -->
+                                    <div class="polygon-add-container">
+                                        <button type="button" id="addPolygonBtn" class="btn secondary small">+ Add Polygon</button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
@@ -206,6 +294,7 @@
                     • <strong>Barlow:</strong> Uses indispensability theory to generate patterns by onset priority<br>
                     • <strong>Wolrab:</strong> Anti-Barlow with reversed indispensability for syncopated patterns<br>
                     • <strong>Random:</strong> Creates varied patterns using distribution styles - Bell Curve (balanced), Syncopated (off-beat emphasis), Balanced (even spacing), Clustered (grouped onsets), or Uniform (pure random). Use 'r' for random onset count<br>
+                    • <strong>Polygon:</strong> Combines up to 3 regular polygons with +/- operations. Shows polygon icons and names. Optional offset and multiplier parameters for each polygon<br>
                     • <strong>Progressive Mode:</strong> Fill in Target to step through from current to target onset count<br>
                     • <strong>Keyboard:</strong> Enter = Generate/Step, <span class="platform-shortcut">Cmd+Enter</span> = Add to Database
                 </div>

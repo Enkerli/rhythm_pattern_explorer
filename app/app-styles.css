@@ -4030,6 +4030,103 @@ html {
     display: none !important;
 }
 
+.polygon-params {
+    display: none !important;
+}
+
+.transformer-input-module[data-mode="polygon"] .polygon-params {
+    display: flex !important;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.transformer-input-module[data-mode="polygon"] .standard-params,
+.transformer-input-module[data-mode="polygon"] .random-params {
+    display: none !important;
+}
+
+.polygon-builder {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.polygon-term {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    border: 1px solid var(--border-light);
+    border-radius: var(--border-radius-base);
+    background: var(--bg-primary);
+}
+
+.polygon-sign-container {
+    min-width: 30px;
+    text-align: center;
+}
+
+.polygon-sign {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-primary);
+}
+
+.polygon-operation {
+    padding: var(--spacing-xs);
+    border: 1px solid var(--border-light);
+    border-radius: var(--border-radius-base);
+    font-size: var(--font-size-base);
+    background: var(--bg-secondary);
+    min-width: 40px;
+    text-align: center;
+}
+
+.polygon-inputs {
+    display: flex;
+    gap: var(--spacing-md);
+    align-items: center;
+    flex-wrap: wrap;
+    flex: 1;
+}
+
+.polygon-icon {
+    font-size: var(--font-size-lg);
+    margin-left: var(--spacing-xs);
+    color: var(--color-primary);
+    font-weight: bold;
+}
+
+.polygon-remove-btn {
+    background: var(--color-danger);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+}
+
+.polygon-remove-btn:hover {
+    background: #c82333;
+}
+
+.polygon-add-container {
+    display: flex;
+    justify-content: center;
+    margin-top: var(--spacing-sm);
+}
+
+.btn.small {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--font-size-sm);
+}
+
 .input-group {
     display: flex;
     flex-direction: column;
