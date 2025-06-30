@@ -10,7 +10,7 @@
  * - Binary: "10010010" or "b10010010" 
  * - Hexadecimal: "0x92" or "0x92:8" (with step count)
  * - Octal: "0o111" or "0o111:9" (with step count)
- * - Decimal: "146" or "146:8" (with step count)
+ * - Decimal: "146" or "146:8" (with step count) or "d146" or "d146:8" (with prefix)
  * - Onset Arrays: "[0,3,6]" or "[0,3,6]:8" (with step count)
  * 
  * Mathematical Considerations:
@@ -676,10 +676,10 @@ class UnifiedPatternParser {
     
     static parsePattern(input) {
         const cleaned = input.trim();
-        console.log(`🔍 parsePattern called with: "${cleaned}"`);
+        // console.log(`🔍 parsePattern called with: "${cleaned}"`);
         
         // Check for transformation prefixes: ~, rev, inv
-        console.log(`🔍 Checking transformation prefixes for: "${cleaned}"`);
+        // console.log(`🔍 Checking transformation prefixes for: "${cleaned}"`);
         if (cleaned.startsWith('~') || cleaned.startsWith('inv ')) {
             // Inversion (bit flipping)
             const pattern = cleaned.startsWith('~') ? cleaned.substring(1).trim() : cleaned.substring(4).trim();
@@ -827,7 +827,7 @@ class UnifiedPatternParser {
             }
         }
         
-        console.log(`🔍 Starting main pattern matching for: "${cleaned}"`);
+        // console.log(`🔍 Starting main pattern matching for: "${cleaned}"`);
         const polygonMatch2 = cleaned.match(/^P\((\d+),(\d+)\)$/i);
         if (polygonMatch2) {
             const vertices = parseInt(polygonMatch2[1]);
@@ -861,19 +861,19 @@ class UnifiedPatternParser {
         }
         
         // Euclidean without offset: E(beats,steps) - defaults to offset 0
-        console.log(`🔍 Testing Euclidean regex for: "${cleaned}"`);
+        // console.log(`🔍 Testing Euclidean regex for: "${cleaned}"`);
         const euclideanMatch2 = cleaned.match(/^E\((\d+),(\d+)\)$/i);
-        console.log(`🔍 Euclidean regex result:`, euclideanMatch2);
+        // console.log(`🔍 Euclidean regex result:`, euclideanMatch2);
         if (euclideanMatch2) {
-            console.log(`🔍 Euclidean match found: ${cleaned}`);
+            // console.log(`🔍 Euclidean match found: ${cleaned}`);
             const beats = parseInt(euclideanMatch2[1]);
             const steps = parseInt(euclideanMatch2[2]);
             const offset = 0; // Default offset
-            console.log(`🔍 Euclidean params: beats=${beats}, steps=${steps}, offset=${offset}`);
+            // console.log(`🔍 Euclidean params: beats=${beats}, steps=${steps}, offset=${offset}`);
             
             try {
                 const euclideanSteps = EuclideanGenerator.generate(beats, steps, offset);
-                console.log(`🔍 Euclidean steps generated:`, euclideanSteps);
+                // console.log(`🔍 Euclidean steps generated:`, euclideanSteps);
                 
                 const result = {
                     steps: euclideanSteps,
@@ -883,7 +883,7 @@ class UnifiedPatternParser {
                     isEuclidean: true,
                     formula: `E(${beats},${steps})`
                 };
-                console.log(`🔍 Euclidean result:`, result);
+                // console.log(`🔍 Euclidean result:`, result);
                 return result;
             } catch (error) {
                 console.error(`❌ Euclidean generation failed:`, error);
@@ -1164,6 +1164,13 @@ class UnifiedPatternParser {
                 // Handle regular binary (like b1010)
                 return PatternConverter.fromBinary(binaryString);
             }
+        }
+        
+        // Decimal notation with 'd' prefix: d73:8 or d73 - explicit decimal disambiguation 
+        const prefixedDecimalMatch = cleaned.match(/^d(\d+)(?::(\d+))?$/i);
+        if (prefixedDecimalMatch) {
+            const decimalPattern = `${prefixedDecimalMatch[1]}${prefixedDecimalMatch[2] ? ':' + prefixedDecimalMatch[2] : ''}`;
+            return PatternConverter.fromDecimal(decimalPattern);
         }
         
         // Decimal notation: 73:8 (with step count) or 73 (pure numbers) - MUST come before invalid binary check
@@ -1539,6 +1546,7 @@ class UnifiedPatternParser {
             /^b[01]+$/i.test(cleaned) ||                  // Binary with prefix: b1011
             /^0x[0-9a-f]+$/i.test(cleaned) ||            // Hex: 0x92
             /^0o[0-7]+$/i.test(cleaned) ||               // Octal: 0o111
+            /^d\d+$/i.test(cleaned) ||                    // Decimal with prefix: d73
             /^\d+$/.test(cleaned) ||                      // Decimal: 73
             /^P\(\d+,\d+(,\d+)?\)$/i.test(cleaned) ||    // Polygon: P(3,1) or P(3,1,8)
             /^E\(\d+,\d+(,\d+)?\)$/i.test(cleaned) ||    // Euclidean: E(3,8) or E(3,8,0)
@@ -1553,6 +1561,7 @@ class UnifiedPatternParser {
             /^b[01]+:\d+$/i.test(cleaned) ||             // Binary with prefix and step count: b1011:8
             /^0x[0-9a-f]+:\d+$/i.test(cleaned) ||        // Hex with step count: 0x92:8
             /^0o[0-7]+:\d+$/i.test(cleaned) ||           // Octal with step count: 0o111:8
+            /^d\d+:\d+$/i.test(cleaned) ||               // Decimal with prefix and step count: d73:8
             /^\d+:\d+$/.test(cleaned) ||                 // Decimal with step count: 73:8
             /^[~]/.test(cleaned) ||                      // Inversion: ~pattern
             /^rev\s/.test(cleaned) ||                    // Reversal: rev pattern
@@ -1617,10 +1626,10 @@ class UnifiedPatternParser {
         for (const part of parts) {
             if (!part) continue;
             
-            console.log(`🔍 Parsing stringed pattern part: "${part}"`);
+            // console.log(`🔍 Parsing stringed pattern part: "${part}"`);
             try {
                 const parsed = this.parsePattern(part);
-                console.log(`🔍 Parsed result:`, parsed);
+                // console.log(`🔍 Parsed result:`, parsed);
                 if (!parsed) {
                     console.error(`❌ Failed to parse pattern part: "${part}"`);
                     return null; // Invalid pattern part
@@ -1704,7 +1713,7 @@ class UnifiedPatternParser {
         for (const part of parts) {
             if (!part) continue;
             
-            console.log(`🔍 Parsing space-separated pattern part: "${part}"`);
+            // console.log(`🔍 Parsing space-separated pattern part: "${part}"`);
             try {
                 const parsed = this.parsePattern(part);
                 if (parsed) {
@@ -1752,10 +1761,10 @@ class UnifiedPatternParser {
     }
     
     static formatCompact(pattern) {
-        console.log(`🔍 formatCompact called with pattern:`, pattern);
+        // console.log(`🔍 formatCompact called with pattern:`, pattern);
         // Special handling for stringed patterns
         if (pattern.isStringed && pattern.stringedPatterns) {
-            console.log(`🔍 Processing stringed pattern with ${pattern.stringedPatterns.length} parts`);
+            // console.log(`🔍 Processing stringed pattern with ${pattern.stringedPatterns.length} parts`);
             const patternReprs = pattern.stringedPatterns.map(p => {
                 const binary = PatternConverter.toBinary(p.steps, p.stepCount);
                 const decimal = PatternConverter.toDecimal(binary, !p.isBinaryInput);

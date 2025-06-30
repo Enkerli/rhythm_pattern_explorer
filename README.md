@@ -75,7 +75,7 @@ The app supports an extensive range of rhythm notation formats:
 - **Binary**: `b101010` or `101010`
 - **Hexadecimal**: `0x92:8` (with step count)
 - **Octal**: `0o111`
-- **Decimal**: `73`
+- **Decimal**: `73` or `d73` (prefix disambiguates from binary)
 
 #### Musical Patterns
 - **Onset Arrays**: `[0,3,6]:8` - Specific onset positions

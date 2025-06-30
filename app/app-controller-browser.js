@@ -475,7 +475,7 @@ class EnhancedPatternApp {
         }
         
         try {
-            console.log(`🎵 Parsing pattern: ${inputValue}`);
+            // console.log(`🎵 Parsing pattern: ${inputValue}`);
             
             // Clear any existing progressive state when parsing a new pattern
             if (this.upiProgressiveState && this.upiProgressiveState.originalUPIContent !== inputValue) {
@@ -487,16 +487,16 @@ class EnhancedPatternApp {
             
             if (result.type === 'single') {
                 if (result.pattern.isProgressiveTransformer) {
-                    console.log('🔍 Progressive transformer pattern detected:', result.pattern);
+                    // console.log('🔍 Progressive transformer pattern detected:', result.pattern);
                     this.handleProgressiveTransformerPattern(result.pattern);
-                    console.log('✅ Progressive transformer pattern handled successfully');
+                    // console.log('✅ Progressive transformer pattern handled successfully');
                 } else {
                     this.currentPattern = result.pattern;
                     this.displayPatternAnalysis(this.currentPattern);
                     this.showCompactOutput(this.currentPattern);
                     this.updateButtonStates();
                     this.updateUniversalInputFromPattern(this.currentPattern);
-                    console.log('✅ Pattern parsed successfully');
+                    // console.log('✅ Pattern parsed successfully');
                 }
             } else if (result.type === 'combination') {
                 this.currentPattern = result.combined;
@@ -504,25 +504,25 @@ class EnhancedPatternApp {
                 this.showCompactOutput(this.currentPattern);
                 this.updateButtonStates();
                 this.updateUniversalInputFromPattern(this.currentPattern);
-                console.log('✅ Combined pattern parsed successfully');
+                // console.log('✅ Combined pattern parsed successfully');
             } else if (result.type === 'stringed') {
-                console.log('🔍 Stringed pattern result:', result);
+                // console.log('🔍 Stringed pattern result:', result);
                 this.currentPattern = result.pattern;
-                console.log('🔍 Current pattern after assignment:', this.currentPattern);
+                // console.log('🔍 Current pattern after assignment:', this.currentPattern);
                 this.displayPatternAnalysis(this.currentPattern);
                 this.showCompactOutput(this.currentPattern);
                 this.updateButtonStates();
                 this.updateUniversalInputFromPattern(this.currentPattern);
-                console.log('✅ Stringed pattern parsed successfully');
+                // console.log('✅ Stringed pattern parsed successfully');
             } else if (result.type === 'quantized') {
-                console.log('🔍 Quantized pattern result:', result);
+                // console.log('🔍 Quantized pattern result:', result);
                 this.currentPattern = result.pattern;
-                console.log('🔍 Current pattern after assignment:', this.currentPattern);
+                // console.log('🔍 Current pattern after assignment:', this.currentPattern);
                 this.displayPatternAnalysis(this.currentPattern);
                 this.showCompactOutput(this.currentPattern);
                 this.updateButtonStates();
                 this.updateUniversalInputFromPattern(this.currentPattern);
-                console.log('✅ Quantized pattern parsed successfully');
+                // console.log('✅ Quantized pattern parsed successfully');
             } else {
                 showNotification('Failed to parse pattern: Unknown result type', 'error');
                 console.error('❌ Pattern parsing failed: Unknown result type');
@@ -4270,7 +4270,7 @@ ${perfectBalancePatterns.map((pattern, index) => {
      * Handle progressive transformer patterns from UPI notation
      */
     handleProgressiveTransformerPattern(pattern) {
-        console.log('🔄 Handling progressive transformer pattern:', pattern);
+        // console.log('🔄 Handling progressive transformer pattern:', pattern);
         
         // Set current pattern to base pattern for analysis
         this.currentPattern = pattern.basePattern;

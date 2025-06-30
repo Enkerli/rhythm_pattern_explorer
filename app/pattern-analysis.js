@@ -2330,15 +2330,20 @@ class RhythmMutator {
  */
 class EuclideanTransformer {
     /**
-     * Transform a pattern to a target number of onsets using Euclidean distribution
+     * Transform a pattern to a target number of onsets using Euclidean or Dilcue distribution
+     * 
+     * Supports both standard Euclidean transformations and anti-Euclidean "Dilcue" transformations
+     * which use complement patterns for anti-rhythmic effects.
+     * 
      * @param {Array} originalPattern - Original rhythm pattern
      * @param {number} targetOnsets - Target number of onsets
      * @param {Object} options - Transformation options
+     *   - mode: 'normal' for Euclidean, 'anti' for Dilcue transformations
      * @returns {Object} Transformed pattern with metadata
      */
     static transform(originalPattern, targetOnsets, options = {}) {
         const {
-            mode = 'normal',        // 'normal' or 'anti'
+            mode = 'normal',        // 'normal' for Euclidean, 'anti' for Dilcue
             operation = 'auto',     // 'auto', 'dilute', 'concentrate'
             preserveOriginal = true
         } = options;
@@ -2375,7 +2380,7 @@ class EuclideanTransformer {
         } else {
             // Use Euclidean distribution
             if (mode === 'anti') {
-                // Anti-Euclidean: use complement pattern
+                // Dilcue (Anti-Euclidean): use complement pattern
                 const euclideanPattern = EuclideanGenerator.generate(stepCount - targetOnsets, stepCount);
                 transformedPattern = euclideanPattern.map(step => !step);
             } else {
