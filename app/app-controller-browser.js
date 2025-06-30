@@ -786,7 +786,7 @@ ${(() => {
      * Generate comprehensive mathematical analysis
      */
     generateComprehensiveAnalysis(pattern) {
-        console.log('🔍 Generating analysis for pattern:', pattern);
+        // console.log('🔍 Generating analysis for pattern:', pattern);
         
         if (!pattern || !pattern.steps) {
             throw new Error('Invalid pattern: missing steps array');
@@ -1958,7 +1958,7 @@ ${perfectBalancePatterns.map((pattern, index) => {
             // Load pattern into sequencer
             this.sequencer.updatePattern(sequencerPattern);
             
-            console.log(`🎵 Pattern loaded into sequencer: ${sequencerPattern.name}`);
+            // console.log(`🎵 Pattern loaded into sequencer: ${sequencerPattern.name}`);
             
         } catch (error) {
             console.error('❌ Failed to load pattern into sequencer:', error);
@@ -4472,7 +4472,7 @@ ${perfectBalancePatterns.map((pattern, index) => {
         this.showCompactOutput(this.currentPattern);
         this.updateButtonStates();
         
-        console.log(`✅ UPI Progressive Step ${transformation.stepNumber}: ${transformation.onsetCount} onsets`);
+        // console.log(`✅ UPI Progressive Step ${transformation.stepNumber}: ${transformation.onsetCount} onsets`);
     }
 }
 

@@ -251,7 +251,7 @@ class SequencerController {
                 source: 'controller'
             });
             
-            console.log(`🎵 Pattern loaded: ${validatedPattern.name || 'Unnamed'} (${validatedPattern.stepCount} steps)`);
+            // console.log(`🎵 Pattern loaded: ${validatedPattern.name || 'Unnamed'} (${validatedPattern.stepCount} steps)`);
             
         } catch (error) {
             console.error('❌ Failed to update pattern:', error);

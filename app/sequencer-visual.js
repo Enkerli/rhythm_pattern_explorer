@@ -246,13 +246,13 @@ class SequencerVisualEngine {
         
         // Get container dimensions
         const rect = this.container.getBoundingClientRect();
-        console.log('🎨 Container rect:', {
-            width: rect.width,
-            height: rect.height,
-            display: getComputedStyle(this.container).display,
-            visibility: getComputedStyle(this.container).visibility,
-            containerElement: this.container
-        });
+        // console.log('🎨 Container rect:', {
+        //     width: rect.width,
+        //     height: rect.height,
+        //     display: getComputedStyle(this.container).display,
+        //     visibility: getComputedStyle(this.container).visibility,
+        //     containerElement: this.container
+        // });
         
         const size = Math.min(rect.width, rect.height, 500); // Max 500px
         
@@ -276,7 +276,7 @@ class SequencerVisualEngine {
             )
         );
         
-        console.log(`🎨 Canvas sized: ${size}x${size}px, center: ${this.config.centerX}, ${this.config.centerY}`);
+        // console.log(`🎨 Canvas sized: ${size}x${size}px, center: ${this.config.centerX}, ${this.config.centerY}`);
         
         // Trigger re-render now that canvas is properly sized
         if (size > 0) {
@@ -413,7 +413,7 @@ class SequencerVisualEngine {
                         isCalculated: true
                     };
                     
-                    console.log(`🎨 CoG calculated: distance=${distance.toFixed(4)}, angle=${angle.toFixed(1)}°`);
+                    // console.log(`🎨 CoG calculated: distance=${distance.toFixed(4)}, angle=${angle.toFixed(1)}°`);
                 } else {
                     console.warn('⚠️ Invalid CoG result:', cogResult);
                     this.cogData.isCalculated = false;
@@ -440,17 +440,17 @@ class SequencerVisualEngine {
         const rect = this.container.getBoundingClientRect();
         const style = getComputedStyle(this.container);
         
-        console.log('🎨 Checking canvas size:', {
-            containerWidth: rect.width,
-            containerHeight: rect.height,
-            display: style.display,
-            currentCanvasWidth: this.canvas.width,
-            currentCanvasHeight: this.canvas.height
-        });
+        // console.log('🎨 Checking canvas size:', {
+        //     containerWidth: rect.width,
+        //     containerHeight: rect.height,
+        //     display: style.display,
+        //     currentCanvasWidth: this.canvas.width,
+        //     currentCanvasHeight: this.canvas.height
+        // });
         
         // If container has dimensions but canvas doesn't, resize it
         if ((rect.width > 0 || rect.height > 0) && this.canvas.width === 0) {
-            console.log('🎨 Container now visible, resizing canvas');
+            // console.log('🎨 Container now visible, resizing canvas');
             this.setupResponsiveCanvas();
         }
     }
