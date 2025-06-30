@@ -455,6 +455,63 @@
                     </div>
                 </div>
 
+                <!-- PROGRESSIVE PATTERN LENGTHENING SECTION (COMPACT) -->
+                <div class="stochastic-section-compact" id="progressiveLengtheningSection" style="display: none;">
+                    <div class="stochastic-compact-box">
+                        <div class="stochastic-header">
+                            <span class="stochastic-title">📏 Progressive Lengthening</span>
+                            <button class="info-btn-small" onclick="toggleInfoBox('progressive-lengthening-info')" title="Progressive lengthening info">ℹ️</button>
+                        </div>
+                        <div class="stochastic-compact-controls">
+                            <div class="param-row-compact">
+                                <div class="param-compact">
+                                    <label>Current Pattern:</label>
+                                    <span id="currentLengtheningPattern" class="pattern-display">Parse pattern first</span>
+                                </div>
+                            </div>
+                            <div class="param-row-compact">
+                                <div class="param-compact">
+                                    <label>Steps to Add:</label>
+                                    <input type="number" id="stepsToAdd" class="input-compact" min="1" max="16" value="4" title="Press Enter to progressively add this many steps">
+                                </div>
+                                <div class="param-compact">
+                                    <label>Current Length:</label>
+                                    <span id="currentPatternLength" class="pattern-display">0</span>
+                                </div>
+                            </div>
+                            <div class="param-row-compact">
+                                <div class="param-compact">
+                                    <label>Extensions:</label>
+                                    <span id="extensionCount" class="pattern-display">0</span>
+                                </div>
+                                <div class="param-compact">
+                                    <button class="btn-compact secondary" id="resetLengtheningBtn">Reset to Original</button>
+                                </div>
+                            </div>
+                            <div class="buttons-compact">
+                                <button class="btn-compact primary" id="manualLengtheningBtn">Add Once</button>
+                                <button class="btn-compact success" id="addLengtheningBtn" disabled>Add to DB</button>
+                            </div>
+                        </div>
+                        <div class="stochastic-results-compact" id="progressiveLengtheningResults" style="display: none;">
+                            <!-- Lengthened patterns will appear here -->
+                        </div>
+                        
+                        <!-- PROGRESSIVE LENGTHENING INFO BOX -->
+                        <div class="info-box" id="progressive-lengthening-info" style="display: none;">
+                            <strong>Progressive Pattern Lengthening:</strong><br>
+                            Extend patterns by appending random steps with bell curve onset distribution.<br><br>
+                            • <strong>Steps to Add:</strong> Press Enter to progressively append this many steps<br>
+                            • <strong>Bell Curve Distribution:</strong> Uses same logic as R(r,n) - avoids empty or full sections<br>
+                            • <strong>Progressive Mode:</strong> Each Enter press adds another extension<br>
+                            • <strong>Reset:</strong> Return to original pattern length<br><br>
+                            <strong>Musical Use:</strong> Phrase extension, pattern development, compositional expansion<br>
+                            <em>Creates musically intelligent random extensions!</em><br>
+                            <em>Enter key in Steps to Add box for progressive lengthening!</em>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- INITIAL HELP -->
                 <div id="analysisPlaceholder" class="analysis-placeholder">
                     <p>Parse a pattern using the universal input above to see comprehensive mathematical analysis.</p>

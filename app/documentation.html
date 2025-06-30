@@ -506,6 +506,46 @@
                         Where $P_0$ is the original pattern, $i$ is the step number, and $s$ is the step increment.
                     </div>
                 </div>
+                
+                <h3>Progressive Pattern Lengthening</h3>
+                <p>Progressive lengthening extends patterns by appending random steps with intelligent bell curve onset distribution.</p>
+                
+                <div class="algorithm-box">
+                    <h4>Progressive Extension Process</h4>
+                    <ol>
+                        <li>User specifies number of steps to add per extension</li>
+                        <li>Calculate onset count using bell curve distribution (same as R(r,n))</li>
+                        <li>Generate random onset positions within extension section</li>
+                        <li>Append extension to current pattern</li>
+                        <li>Update pattern length and extension count</li>
+                    </ol>
+                </div>
+                
+                <div class="equation-container">
+                    <div class="equation-title">Pattern Extension</div>
+                    $$P_{\text{extended}} = P_{\text{current}} \oplus \text{RandomExtension}(n_{\text{add}}, \text{OnsetCount}_{\text{bell}}(n_{\text{add}}))$$
+                    <div class="equation-description">
+                        Where $\oplus$ represents concatenation, $n_{\text{add}}$ is steps to add, and $\text{OnsetCount}_{\text{bell}}$ uses bell curve distribution.
+                    </div>
+                </div>
+                
+                <div class="equation-container">
+                    <div class="equation-title">Cumulative Extension Length</div>
+                    $$L_i = L_0 + i \cdot n_{\text{add}}$$
+                    <div class="equation-description">
+                        Where $L_0$ is the original length, $i$ is the extension number, and $n_{\text{add}}$ is steps per extension.
+                    </div>
+                </div>
+                
+                <h4>Musical Intelligence Features</h4>
+                <div class="algorithm-box">
+                    <ul>
+                        <li><strong>Bell Curve Distribution:</strong> Uses same logic as R(r,n) to avoid musical extremes</li>
+                        <li><strong>Progressive Building:</strong> Each Enter press adds another extension for live composition</li>
+                        <li><strong>Universal Compatibility:</strong> Works with any pattern type or length</li>
+                        <li><strong>Intelligent Randomness:</strong> Favors musically interesting onset densities</li>
+                    </ul>
+                </div>
             </section>
             
             <!-- Getting Started Section -->

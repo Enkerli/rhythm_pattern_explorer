@@ -223,6 +223,40 @@ P(5,2) → Backward Step -2 → Pentagon pattern offset by -2, -4, -6...
 Custom pattern → Mixed forward/backward → Complex offset sequences
 ```
 
+#### Progressive Pattern Lengthening
+Universal pattern extension transformer that appends random steps using intelligent bell curve distribution:
+
+**Progressive Extension**:
+- Press Enter in Steps to Add box for cumulative extensions: +4, +8, +12... steps
+- Customizable step increment (e.g., set to 6 for +6, +12, +18...)
+- Bell curve onset distribution - avoids empty or full extension sections
+
+**Smart Random Extensions**:
+- Uses same bell curve logic as R(r,n) patterns
+- Automatically determines musically appropriate onset densities
+- Rarely generates empty extensions (0 onsets) or completely filled extensions
+- Favors moderate onset densities for musical interest
+
+**Key Features**:
+- **Universal Compatibility**: Works with Euclidean, polygons, custom patterns, any rhythm
+- **Real-time Preview**: Immediate audio and visual feedback for extensions
+- **Extension Tracking**: Current extension count and total length display
+- **Reset Function**: Return to original pattern length anytime
+- **Manual Mode**: One-time extension using current step value
+
+**Musical Applications**:
+- Phrase development and extension
+- Compositional pattern expansion
+- Live performance with progressive pattern building
+- Algorithmic composition with intelligent randomness
+
+**Usage Examples**:
+```
+E(3,8) → Steps to Add: 4 → E(3,8) + 4 random steps, then +4 more, etc.
+P(5,2) → Steps to Add: 6 → Pentagon + 6 steps (2-4 onsets likely), progressive building
+Custom pattern → Steps to Add: 3 → Minimal extensions for subtle pattern growth
+```
+
 ### 5. Interactive Sequencer
 
 #### Real-Time Playback

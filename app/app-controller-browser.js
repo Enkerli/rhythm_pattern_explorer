@@ -94,6 +94,11 @@ class EnhancedPatternApp {
             forwardStep: 1,
             backwardStep: 1
         };
+        this.progressiveLengtheningState = {
+            originalPattern: null,
+            extensionCount: 0,
+            stepsToAdd: 4
+        };
         
         // Initialize the application
         this.setupEventListeners();
@@ -299,6 +304,9 @@ class EnhancedPatternApp {
         
         // Progressive offsets events
         this.setupProgressiveOffsetsEvents();
+        
+        // Progressive lengthening events
+        this.setupProgressiveLengtheningEvents();
         
         console.log('✅ Event listeners configured');
     }
@@ -557,7 +565,9 @@ class EnhancedPatternApp {
                                 </div>
                             </div>
                             <div class="info-box tex2jax_process" id="balance-equation" style="display: none; margin-top: 8px; font-size: 12px; background: #f8f9fa; padding: 6px; border-radius: 4px; border-left: 3px solid #28a745;">
-                                <strong>Milne's Formula:</strong> $$\frac{\left|\sum_{j=1}^{k} e^{i2\pi k_j/n}\right|}{\text{onsets}} = ${analysis.balanceAnalysis.normalizedMagnitude.toFixed(6)}$$
+                                <strong>Milne's Formula:</strong><br>
+                                $$\\frac{\\left|\\sum_{j=1}^{k} e^{i2\\pi k_j/n}\\right|}{\\text{onsets}}$$
+                                <div style="margin-top: 8px;"><strong>Value:</strong> ${analysis.balanceAnalysis.normalizedMagnitude.toFixed(6)}</div>
                             </div>
                         </div>
                         <div class="analysis-box cog-box" style="margin-top: 8px;">
@@ -714,6 +724,18 @@ ${(() => {
                     this.resetProgressiveOffsetsControls();
                 }
                 this.updateCurrentOffsetsPatternDisplay(pattern);
+            }
+            
+            // Show Progressive Lengthening section
+            const progressiveLengtheningSection = document.getElementById('progressiveLengtheningSection');
+            if (progressiveLengtheningSection) {
+                progressiveLengtheningSection.style.display = 'block';
+                // Reset controls if we're not in the middle of progressive lengthening
+                if (!pattern.isExtended || !this.progressiveLengtheningState.originalPattern) {
+                    this.resetProgressiveLengtheningControls();
+                }
+                this.updateCurrentLengtheningPatternDisplay(pattern);
+                this.updatePatternLengthDisplay();
             }
             
             // Load pattern into sequencer
@@ -3550,6 +3572,37 @@ ${perfectBalancePatterns.map((pattern, index) => {
     }
     
     /**
+     * Reset Progressive Lengthening controls to default state
+     */
+    resetProgressiveLengtheningControls() {
+        const resultsDiv = document.getElementById('progressiveLengtheningResults');
+        if (resultsDiv) {
+            resultsDiv.style.display = 'none';
+            resultsDiv.innerHTML = '';
+        }
+        
+        const addBtn = document.getElementById('addLengtheningBtn');
+        if (addBtn) {
+            addBtn.disabled = true;
+        }
+        
+        // Reset input fields to defaults
+        const stepsToAddInput = document.getElementById('stepsToAdd');
+        if (stepsToAddInput) stepsToAddInput.value = '4';
+        
+        // Reset state if no progressive sequence in progress
+        if (!this.progressiveLengtheningState.originalPattern) {
+            this.progressiveLengtheningState = {
+                originalPattern: null,
+                extensionCount: 0,
+                stepsToAdd: 4
+            };
+        }
+        
+        this.updateExtensionCountDisplay();
+    }
+    
+    /**
      * Load a Euclidean transformed pattern as the new input pattern
      */
     loadEuclideanTransformedPatternAsInput(transformation) {
@@ -3891,6 +3944,307 @@ ${perfectBalancePatterns.map((pattern, index) => {
         } catch (error) {
             console.error('❌ Error adding offset pattern:', error);
             showNotification('Error adding offset pattern to database: ' + error.message, 'error');
+        }
+    }
+    
+    /**
+     * Setup progressive lengthening event listeners
+     */
+    setupProgressiveLengtheningEvents() {
+        const stepsToAddInput = document.getElementById('stepsToAdd');
+        const resetBtn = document.getElementById('resetLengtheningBtn');
+        const manualBtn = document.getElementById('manualLengtheningBtn');
+        const addBtn = document.getElementById('addLengtheningBtn');
+        
+        // Steps to add input - Cross-platform Enter key for progressive lengthening
+        if (stepsToAddInput) {
+            platformUtils.addKeyListener(stepsToAddInput, () => {
+                this.progressiveLengtheningState.stepsToAdd = parseInt(stepsToAddInput.value) || 4;
+                this.applyProgressiveLengthening();
+            }, { key: 'Enter' });
+            
+            stepsToAddInput.addEventListener('input', (e) => {
+                this.progressiveLengtheningState.stepsToAdd = parseInt(e.target.value) || 4;
+            });
+        }
+        
+        // Reset button
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => this.resetProgressiveLengthening());
+        }
+        
+        // Manual lengthening button
+        if (manualBtn) {
+            manualBtn.addEventListener('click', () => this.applyManualLengthening());
+        }
+        
+        // Add to database button
+        if (addBtn) {
+            addBtn.addEventListener('click', () => this.addLengtheningPatternToDatabase());
+        }
+    }
+    
+    /**
+     * Apply progressive lengthening by appending random steps
+     */
+    applyProgressiveLengthening() {
+        if (!this.currentPattern) {
+            showNotification('No pattern loaded. Parse a pattern first.', 'warning');
+            return;
+        }
+        
+        // Initialize original pattern if not set
+        if (!this.progressiveLengtheningState.originalPattern) {
+            this.progressiveLengtheningState.originalPattern = {
+                steps: [...this.currentPattern.steps],
+                stepCount: this.currentPattern.stepCount,
+                name: this.currentPattern.name || 'Original Pattern'
+            };
+            this.progressiveLengtheningState.extensionCount = 0;
+        }
+        
+        // Generate random extension using bell curve distribution
+        const extensionSteps = this.progressiveLengtheningState.stepsToAdd;
+        const randomOnsetCount = MathUtils.randomOnsetCount(extensionSteps);
+        
+        // Create random pattern for extension
+        const extensionPattern = this.generateRandomExtension(extensionSteps, randomOnsetCount);
+        
+        // Get current extended pattern or original if first extension
+        const currentExtended = this.progressiveLengtheningState.extensionCount === 0 
+            ? this.progressiveLengtheningState.originalPattern.steps
+            : this.currentPattern.steps;
+        
+        // Append extension to current pattern
+        const extendedSteps = [...currentExtended, ...extensionPattern];
+        const newStepCount = extendedSteps.length;
+        
+        // Increment extension count
+        this.progressiveLengtheningState.extensionCount++;
+        
+        // Create extended pattern data
+        const extendedPatternData = {
+            steps: extendedSteps,
+            stepCount: newStepCount,
+            name: `${this.progressiveLengtheningState.originalPattern.name} (${this.progressiveLengtheningState.extensionCount}x extended)`,
+            expression: this.generateLengtheningExpression(extendedSteps),
+            isExtended: true,
+            originalPattern: this.progressiveLengtheningState.originalPattern,
+            extensionCount: this.progressiveLengtheningState.extensionCount,
+            lastExtension: extensionPattern
+        };
+        
+        // Update UI and load pattern
+        this.loadLengtheningPatternAsInput(extendedPatternData);
+        
+        console.log(`✅ Applied progressive lengthening: +${extensionSteps} steps (${randomOnsetCount} onsets)`);
+    }
+    
+    /**
+     * Generate random pattern for extension using bell curve distribution
+     */
+    generateRandomExtension(steps, onsetCount) {
+        const extension = new Array(steps).fill(false);
+        const onsetPositions = new Set();
+        
+        // Generate random onset positions
+        while (onsetPositions.size < onsetCount) {
+            const randomPos = Math.floor(Math.random() * steps);
+            onsetPositions.add(randomPos);
+        }
+        
+        // Set onsets in extension
+        onsetPositions.forEach(pos => {
+            extension[pos] = true;
+        });
+        
+        return extension;
+    }
+    
+    /**
+     * Apply manual lengthening (one-time extension)
+     */
+    applyManualLengthening() {
+        if (!this.currentPattern) {
+            showNotification('No pattern loaded. Parse a pattern first.', 'warning');
+            return;
+        }
+        
+        // Set up state for manual lengthening if needed
+        if (!this.progressiveLengtheningState.originalPattern) {
+            this.progressiveLengtheningState.originalPattern = {
+                steps: [...this.currentPattern.steps],
+                stepCount: this.currentPattern.stepCount,
+                name: this.currentPattern.name || 'Original Pattern'
+            };
+            this.progressiveLengtheningState.extensionCount = 0;
+        }
+        
+        this.applyProgressiveLengthening();
+    }
+    
+    /**
+     * Reset progressive lengthening to original pattern
+     */
+    resetProgressiveLengthening() {
+        if (!this.progressiveLengtheningState.originalPattern) {
+            showNotification('No original pattern stored', 'warning');
+            return;
+        }
+        
+        // Reset to original pattern
+        const originalPatternData = {
+            steps: [...this.progressiveLengtheningState.originalPattern.steps],
+            stepCount: this.progressiveLengtheningState.originalPattern.stepCount,
+            name: this.progressiveLengtheningState.originalPattern.name
+        };
+        
+        // Reset state
+        this.progressiveLengtheningState.extensionCount = 0;
+        
+        // Load original pattern
+        this.loadLengtheningPatternAsInput(originalPatternData);
+        
+        console.log('✅ Reset to original pattern length');
+    }
+    
+    /**
+     * Load lengthening pattern as input and update UI
+     */
+    loadLengtheningPatternAsInput(patternData) {
+        try {
+            // Generate comprehensive analysis
+            const analyses = this.generateComprehensiveAnalysis(patternData);
+            
+            // Set all required properties
+            patternData.expression = patternData.expression || this.generateLengtheningExpression(patternData.steps);
+            patternData.metadata = {
+                timestamp: Date.now(),
+                type: patternData.isExtended ? 'extended' : 'original',
+                isGenerated: false
+            };
+            
+            // Add analysis results
+            patternData.analysis = analyses;
+            
+            // Set as current pattern
+            this.currentPattern = patternData;
+            
+            // Update UI displays
+            this.updateCurrentLengtheningPatternDisplay(patternData);
+            this.updateExtensionCountDisplay();
+            this.updatePatternLengthDisplay();
+            
+            // Load into sequencer for preview
+            if (this.sequencer) {
+                this.sequencer.updatePattern(patternData);
+            }
+            
+            // Enable add button
+            const addBtn = document.getElementById('addLengtheningBtn');
+            if (addBtn) addBtn.disabled = false;
+            
+            console.log('✅ Lengthening pattern loaded as input:', patternData.expression);
+            
+        } catch (error) {
+            console.error('❌ Error loading lengthening pattern as input:', error);
+            showNotification('Error loading lengthening pattern: ' + error.message, 'error');
+        }
+    }
+    
+    /**
+     * Update current lengthening pattern display
+     */
+    updateCurrentLengtheningPatternDisplay(pattern) {
+        const display = document.getElementById('currentLengtheningPattern');
+        if (display && pattern && pattern.steps) {
+            const binary = PatternConverter.toBinary(pattern.steps, pattern.stepCount);
+            const onsetCount = pattern.steps.filter(step => step).length;
+            display.textContent = `${binary} (${onsetCount} onsets)`;
+            display.classList.add('pattern-loaded');
+        }
+    }
+    
+    /**
+     * Update extension count display
+     */
+    updateExtensionCountDisplay() {
+        const display = document.getElementById('extensionCount');
+        if (display) {
+            display.textContent = this.progressiveLengtheningState.extensionCount.toString();
+        }
+    }
+    
+    /**
+     * Update pattern length display
+     */
+    updatePatternLengthDisplay() {
+        const display = document.getElementById('currentPatternLength');
+        if (display && this.currentPattern) {
+            display.textContent = this.currentPattern.stepCount.toString();
+        }
+    }
+    
+    /**
+     * Generate expression for lengthening pattern
+     */
+    generateLengtheningExpression(steps) {
+        try {
+            const binary = PatternConverter.toBinary(steps, steps.length);
+            return `b${binary}`;
+        } catch (error) {
+            console.warn('Error generating lengthening expression:', error);
+            return '[Extended Pattern]';
+        }
+    }
+    
+    /**
+     * Add lengthening pattern to database
+     */
+    addLengtheningPatternToDatabase() {
+        if (!this.currentPattern || !this.currentPattern.isExtended) {
+            showNotification('No extended pattern to add', 'warning');
+            return;
+        }
+        
+        try {
+            // Create pattern data for database
+            const patternData = {
+                steps: this.currentPattern.steps,
+                stepCount: this.currentPattern.stepCount,
+                name: this.currentPattern.name,
+                isExtended: true,
+                originalPattern: this.currentPattern.originalPattern,
+                extensionCount: this.currentPattern.extensionCount
+            };
+            
+            // Generate analyses
+            const analyses = this.generateComprehensiveAnalysis(patternData);
+            
+            // Create database pattern
+            const dbPattern = createDatabasePattern(patternData, {
+                perfectBalance: analyses.balanceAnalysis,
+                syncopation: analyses.syncopationAnalysis
+            });
+            
+            // Add extension-specific metadata
+            dbPattern.isExtended = true;
+            dbPattern.originalPattern = patternData.originalPattern;
+            dbPattern.extensionCount = patternData.extensionCount;
+            
+            // Add to database
+            const patternId = this.database.add(dbPattern);
+            if (patternId) {
+                showNotification('Extended pattern added to database!', 'success');
+                this.updatePatternList();
+                this.updateDatabaseStats();
+            } else {
+                showNotification('Pattern already exists in database', 'info');
+            }
+            
+        } catch (error) {
+            console.error('❌ Error adding extended pattern:', error);
+            showNotification('Error adding extended pattern to database: ' + error.message, 'error');
         }
     }
 }
