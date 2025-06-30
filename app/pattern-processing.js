@@ -861,17 +861,36 @@ class UnifiedPatternParser {
             }
         }
         
-        // Random pattern notation: R(onsets,steps)
-        const randomMatch = cleaned.match(/^R\((\d+),(\d+)\)$/i);
+        // Random pattern notation: R(onsets,steps) or R(r,steps) for bell curve distribution
+        const randomMatch = cleaned.match(/^R\(([0-9]+|r),(\d+)\)$/i);
         if (randomMatch) {
-            const onsets = parseInt(randomMatch[1]);
+            const onsetsParam = randomMatch[1].toLowerCase();
             const steps = parseInt(randomMatch[2]);
             
-            if (onsets > steps) {
-                throw new Error(`Random pattern error: cannot have ${onsets} onsets in ${steps} steps`);
+            if (steps < 1) {
+                throw new Error(`Random pattern error: steps must be at least 1, got ${steps}`);
             }
-            if (onsets < 0 || steps < 1) {
-                throw new Error(`Random pattern error: invalid parameters R(${onsets},${steps})`);
+            
+            let onsets;
+            let isBellCurve = false;
+            
+            if (onsetsParam === 'r') {
+                // Use bell curve distribution for random onset count
+                onsets = MathUtils.randomOnsetCount(steps, { 
+                    density: 'normal',
+                    avoidExtremes: true 
+                });
+                isBellCurve = true;
+            } else {
+                // Use specified onset count
+                onsets = parseInt(onsetsParam);
+                
+                if (onsets > steps) {
+                    throw new Error(`Random pattern error: cannot have ${onsets} onsets in ${steps} steps`);
+                }
+                if (onsets < 0) {
+                    throw new Error(`Random pattern error: onsets must be non-negative, got ${onsets}`);
+                }
             }
             
             // Generate random pattern
@@ -896,7 +915,9 @@ class UnifiedPatternParser {
                 stepCount: steps,
                 beats: onsets,
                 isRandom: true,
-                formula: `R(${onsets},${steps})`,
+                isBellCurveRandom: isBellCurve,
+                formula: `R(${onsetsParam},${steps})`,
+                actualOnsets: onsets,
                 randomSeed: Date.now() // For debugging/reproduction
             };
         }

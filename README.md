@@ -81,6 +81,7 @@ The app supports an extensive range of rhythm notation formats:
 - **Onset Arrays**: `[0,3,6]:8` - Specific onset positions
 - **Morse Code**: `M:SOS` or `-.--` - Rhythmic morse patterns
 - **Random**: `R(3,8)` - 3 random onsets in 8 steps
+- **Bell Curve Random**: `R(r,8)` - Bell curve distribution, avoids extremes (rarely 0 or 8 onsets)
 
 #### Advanced Operations
 - **Transformations**: `~pattern` (invert), `rev pattern` (retrograde)

@@ -155,6 +155,102 @@ class MathUtils {
         }
         return factors;
     }
+    
+    /**
+     * Generate a random integer using normal (bell curve) distribution
+     * Used for random pattern generation to avoid extreme values
+     * 
+     * @param {number} min - Minimum value (inclusive)
+     * @param {number} max - Maximum value (inclusive)
+     * @param {number} skew - Skewness factor (1 = normal, >1 skews toward min, <1 skews toward max)
+     * @returns {number} Random integer between min and max with bell curve distribution
+     * 
+     * @example
+     * MathUtils.randomBellCurve(0, 8) // More likely to return 3, 4, 5 than 0, 1, 7, 8
+     * MathUtils.randomBellCurve(0, 16, 0.8) // Slightly skewed toward higher values
+     * 
+     * Musical Application:
+     * For R(r,8), this generates onset counts that favor moderate densities,
+     * making more musically interesting patterns by avoiding empty or completely full patterns.
+     * 
+     * Algorithm:
+     * Uses Box-Muller transformation to generate normal distribution,
+     * then maps to the desired range and applies optional skewness.
+     */
+    static randomBellCurve(min, max, skew = 1) {
+        // Validate inputs
+        if (min > max) [min, max] = [max, min];
+        if (min === max) return min;
+        
+        // Generate normal distribution using Box-Muller transformation
+        let u1 = 0, u2 = 0;
+        while (u1 === 0) u1 = Math.random(); // Converting [0,1) to (0,1)
+        while (u2 === 0) u2 = Math.random();
+        
+        const z0 = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+        
+        // Map from standard normal (mean=0, std=1) to our range
+        // Use 3 standard deviations to cover ~99.7% of distribution
+        const mean = (min + max) / 2;
+        const stdDev = (max - min) / 6; // 3 standard deviations span the range
+        
+        let value = mean + z0 * stdDev;
+        
+        // Apply skewness if specified
+        if (skew !== 1) {
+            const normalized = (value - min) / (max - min);
+            const skewed = Math.pow(normalized, skew);
+            value = min + skewed * (max - min);
+        }
+        
+        // Clamp to range and round to integer
+        value = Math.max(min, Math.min(max, value));
+        return Math.round(value);
+    }
+    
+    /**
+     * Generate optimal random onset count for rhythmic patterns
+     * Specifically tuned for musical applications with bell curve distribution
+     * 
+     * @param {number} steps - Total number of steps in the pattern
+     * @param {Object} options - Configuration options
+     * @returns {number} Random onset count optimized for musical interest
+     * 
+     * @example
+     * MathUtils.randomOnsetCount(8) // Likely returns 3, 4, or 5
+     * MathUtils.randomOnsetCount(16, { density: 'sparse' }) // Favors lower onset counts
+     * MathUtils.randomOnsetCount(8, { density: 'dense' }) // Favors higher onset counts
+     * 
+     * Musical Tuning:
+     * - Avoids completely empty (0 onsets) or full (all onsets) patterns
+     * - Favors moderate densities that create interesting rhythmic relationships
+     * - Provides options for sparse, normal, or dense bias
+     */
+    static randomOnsetCount(steps, options = {}) {
+        const { 
+            density = 'normal',  // 'sparse', 'normal', 'dense'
+            avoidExtremes = true 
+        } = options;
+        
+        // Define range based on whether to avoid extremes
+        const minOnsets = avoidExtremes ? 1 : 0;
+        const maxOnsets = avoidExtremes ? Math.max(1, steps - 1) : steps;
+        
+        // Adjust skewness based on density preference
+        let skew = 1; // Normal distribution
+        switch (density) {
+            case 'sparse':
+                skew = 1.5; // Skew toward lower values
+                break;
+            case 'dense':
+                skew = 0.67; // Skew toward higher values
+                break;
+            default:
+                skew = 1; // Normal bell curve
+        }
+        
+        return this.randomBellCurve(minOnsets, maxOnsets, skew);
+    }
 }
 
 // Export to global scope for browser compatibility

@@ -470,12 +470,14 @@ class EnhancedPatternApp {
                 this.displayPatternAnalysis(this.currentPattern);
                 this.showCompactOutput(this.currentPattern);
                 this.updateButtonStates();
+                this.updateUniversalInputFromPattern(this.currentPattern);
                 console.log('✅ Pattern parsed successfully');
             } else if (result.type === 'combination') {
                 this.currentPattern = result.combined;
                 this.displayPatternAnalysis(this.currentPattern);
                 this.showCompactOutput(this.currentPattern);
                 this.updateButtonStates();
+                this.updateUniversalInputFromPattern(this.currentPattern);
                 console.log('✅ Combined pattern parsed successfully');
             } else if (result.type === 'stringed') {
                 console.log('🔍 Stringed pattern result:', result);
@@ -484,6 +486,7 @@ class EnhancedPatternApp {
                 this.displayPatternAnalysis(this.currentPattern);
                 this.showCompactOutput(this.currentPattern);
                 this.updateButtonStates();
+                this.updateUniversalInputFromPattern(this.currentPattern);
                 console.log('✅ Stringed pattern parsed successfully');
             } else if (result.type === 'quantized') {
                 console.log('🔍 Quantized pattern result:', result);
@@ -492,6 +495,7 @@ class EnhancedPatternApp {
                 this.displayPatternAnalysis(this.currentPattern);
                 this.showCompactOutput(this.currentPattern);
                 this.updateButtonStates();
+                this.updateUniversalInputFromPattern(this.currentPattern);
                 console.log('✅ Quantized pattern parsed successfully');
             } else {
                 showNotification('Failed to parse pattern: Unknown result type', 'error');

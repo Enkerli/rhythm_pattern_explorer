@@ -410,6 +410,46 @@
                         When combining polygons, they are expanded to their least common multiple to ensure proper alignment.
                     </div>
                 </div>
+                
+                <h3>Random Pattern Generator with Bell Curve Distribution</h3>
+                <p>Random patterns provide stochastic rhythm generation with musical intelligence through bell curve distribution, avoiding musically uninteresting extremes.</p>
+                
+                <div class="algorithm-box">
+                    <h4>Bell Curve Distribution Algorithm</h4>
+                    <p>For R(r,n) patterns, onset counts are generated using normal distribution:</p>
+                    <ol>
+                        <li>Apply Box-Muller transformation to generate normal distribution</li>
+                        <li>Map to range [1, n-1] to avoid empty or full patterns</li>
+                        <li>Center distribution around n/2 for optimal musical density</li>
+                        <li>Use 3-sigma rule: 99.7% of values within musical range</li>
+                    </ol>
+                </div>
+                
+                <div class="equation-container">
+                    <div class="equation-title">Box-Muller Transformation</div>
+                    $$Z_0 = \sqrt{-2\ln(U_1)} \cos(2\pi U_2)$$
+                    <div class="equation-description">
+                        Where $U_1, U_2$ are uniform random variables, generating normally distributed $Z_0$.
+                    </div>
+                </div>
+                
+                <div class="equation-container">
+                    <div class="equation-title">Musical Range Mapping</div>
+                    $$\text{OnsetCount} = \text{round}\left(\frac{n}{2} + Z_0 \cdot \frac{n-2}{6}\right)$$
+                    <div class="equation-description">
+                        Maps standard normal distribution to range [1, n-1] with mean at n/2, avoiding musical extremes.
+                    </div>
+                </div>
+                
+                <h4>Musical Benefits</h4>
+                <div class="algorithm-box">
+                    <ul>
+                        <li><strong>Avoids Empty Patterns:</strong> Rarely generates 0 onsets (musically uninteresting)</li>
+                        <li><strong>Avoids Full Patterns:</strong> Rarely generates all onsets (rhythmically static)</li>
+                        <li><strong>Favors Musical Densities:</strong> Most likely to generate moderate onset counts</li>
+                        <li><strong>Maintains Unpredictability:</strong> Still provides sufficient randomness for variation</li>
+                    </ul>
+                </div>
             </section>
             
             <!-- Pattern Transformers Section -->
@@ -507,6 +547,14 @@ E(3,8)           # 3 onsets distributed across 8 steps
 E(3,8,2)         # With offset of 2
 tresillo         # Traditional name for E(3,8)
 comp E(3,8)      # Euclidean complement
+                </div>
+                
+                <h4>Random Patterns</h4>
+                <div class="code-example">
+R(3,8)           # 3 random onsets distributed across 8 steps
+R(5,16)          # 5 random onsets across 16 steps
+R(r,8)           # Bell curve distribution: likely 3-5 onsets, rarely 0-1 or 7-8
+R(r,16)          # Bell curve distribution: likely 6-10 onsets, avoids extremes
                 </div>
                 
                 <h4>Binary and Numeric</h4>
