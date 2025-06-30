@@ -4479,11 +4479,36 @@ ${perfectBalancePatterns.map((pattern, index) => {
     }
     
     // ================================================
-    // TRANSFORMER INPUT MODULE
+    // PATTERN CREATION MODULE
     // ================================================
+    //
+    // This module provides an intuitive interface for creating rhythm patterns
+    // using four different algorithmic approaches:
+    // 
+    // 1. Euclidean: Even distribution of onsets (Godfried Toussaint algorithm)
+    // 2. Dilcue: Anti-Euclidean using complement patterns for syncopation
+    // 3. Barlow: Indispensability theory for intelligent onset placement
+    // 4. Wolrab: Anti-Barlow with reversed indispensability for groove patterns
+    // 
+    // Features:
+    // - Streamlined inline parameter controls (onsets, steps, offset, target)
+    // - Auto-progressive mode when target is specified
+    // - Enter key to generate/step through sequences
+    // - Cmd/Ctrl+Enter to add patterns to database
+    // - Real-time validation and state management
     
     /**
-     * Initialize transformer input module
+     * Initialize Pattern Creation Module
+     * 
+     * Sets up the streamlined interface for creating rhythmic patterns using
+     * algorithmic approaches. Handles DOM element references, event listeners,
+     * and initial state configuration.
+     * 
+     * Key Features:
+     * - Radio button mode selection (Euclidean, Dilcue, Barlow, Wolrab)
+     * - Inline parameter controls with real-time validation
+     * - Auto-progressive mode activation when target is specified
+     * - Unified keyboard interaction (Enter/Cmd+Enter)
      */
     initializeTransformerModule() {
         // Get transformer elements
@@ -4537,11 +4562,13 @@ ${perfectBalancePatterns.map((pattern, index) => {
         // Input validation
         [elements.onsets, elements.steps, elements.offset, elements.target].forEach(input => {
             input.addEventListener('input', () => {
+                this.resetTransformerState();
                 this.validateTransformerInputs();
                 this.updateTransformerButtonStates();
                 this.updateProgressiveMode();
             });
             input.addEventListener('change', () => {
+                this.resetTransformerState();
                 this.validateTransformerInputs();
                 this.updateTransformerButtonStates();
                 this.updateProgressiveMode();
@@ -4618,7 +4645,14 @@ ${perfectBalancePatterns.map((pattern, index) => {
     }
     
     /**
-     * Update progressive mode automatically when target is filled
+     * Update Progressive Mode Automatically
+     * 
+     * Automatically enables progressive mode when a target onset count is specified.
+     * This provides intuitive behavior - when users fill in a target, they expect
+     * to step through a sequence from current to target onset count.
+     * 
+     * Progressive mode allows stepping through transformations with Enter key,
+     * creating smooth transitions between onset densities.
      */
     updateProgressiveMode() {
         const elements = this.transformerElements;

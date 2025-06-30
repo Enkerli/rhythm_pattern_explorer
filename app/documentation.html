@@ -235,6 +235,7 @@
                 <li><a href="#algorithms">Core Algorithms</a></li>
                 <li><a href="#pattern-input">Pattern Input System</a></li>
                 <li><a href="#transformers">Pattern Transformers</a></li>
+                <li><a href="#pattern-creation">Pattern Creation</a></li>
                 <li><a href="#analysis-engine">Analysis Engine</a></li>
                 <li><a href="#generators">Pattern Generators</a></li>
                 <li><a href="#technical-architecture">Technical Architecture</a></li>
@@ -545,6 +546,55 @@
                         <li><strong>Universal Compatibility:</strong> Works with any pattern type or length</li>
                         <li><strong>Intelligent Randomness:</strong> Favors musically interesting onset densities</li>
                     </ul>
+                </div>
+            </section>
+            
+            <!-- Pattern Creation Section -->
+            <section id="pattern-creation" class="docs-section">
+                <h2>🎨 Pattern Creation</h2>
+                
+                <p>The Pattern Creation module provides an intuitive interface for generating rhythmic patterns using four different algorithmic approaches. This streamlined tool allows musicians and researchers to quickly create and explore various rhythmic structures.</p>
+                
+                <h3>Interface Overview</h3>
+                <div class="algorithm-box">
+                    <h4>Mode Selection (Radio Buttons)</h4>
+                    <ul>
+                        <li><strong>Euclidean:</strong> Even distribution using Euclidean algorithm</li>
+                        <li><strong>Dilcue:</strong> Anti-Euclidean patterns for syncopated effects</li>
+                        <li><strong>Barlow:</strong> Indispensability theory for intelligent placement</li>
+                        <li><strong>Wolrab:</strong> Anti-Barlow for groove-oriented patterns</li>
+                    </ul>
+                </div>
+                
+                <div class="algorithm-box">
+                    <h4>Parameters (Inline Controls)</h4>
+                    <ul>
+                        <li><strong>Onsets:</strong> Number of active beats in the pattern</li>
+                        <li><strong>Steps:</strong> Total length of the pattern</li>
+                        <li><strong>Offset:</strong> Rotation offset for pattern start position</li>
+                        <li><strong>Target:</strong> Optional target onset count for progressive mode</li>
+                    </ul>
+                </div>
+                
+                <div class="algorithm-box">
+                    <h4>Progressive Mode</h4>
+                    <p>When a target value is specified, the system automatically enables progressive mode, allowing you to step through transformations from the current onset count to the target count using the Enter key.</p>
+                </div>
+                
+                <h3>Keyboard Interface</h3>
+                <div class="algorithm-box">
+                    <ul>
+                        <li><strong>Enter:</strong> Generate pattern or step to next in progressive sequence</li>
+                        <li><strong>Cmd/Ctrl+Enter:</strong> Add current pattern to database</li>
+                        <li><strong>Parameter Changes:</strong> Automatically reset progressive state</li>
+                    </ul>
+                </div>
+                
+                <h3>Design Philosophy</h3>
+                <p>This module focuses on <em>pattern generation</em> rather than transformation. Unlike the Pattern Transformers that modify existing patterns, Pattern Creation generates new rhythmic structures from algorithmic foundations. The streamlined interface prioritizes quick experimentation and iterative creation.</p>
+                
+                <div class="highlight">
+                    <strong>🎯 Key Difference:</strong> Pattern Creation generates new patterns, while Pattern Transformers modify existing ones.
                 </div>
             </section>
             
