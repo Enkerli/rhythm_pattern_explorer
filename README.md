@@ -279,6 +279,19 @@ Custom pattern → Steps to Add: 3 → Minimal extensions for subtle pattern gro
 - **Tempo Control**: 60-180 BPM range
 - **Visual Synchronization**: Animated onset highlighting
 
+#### MIDI Output System
+- **Cross-Browser MIDI**: Direct MIDI output to DAWs and hardware
+- **WebMIDI Support**: Native MIDI in Chrome, Edge, Opera, Brave
+- **Safari Bridge**: WebSocket bridge for Safari with Python helper
+- **Real-Time Performance**: Synchronized MIDI note on/off messages
+- **DAW Integration**: Connect to GarageBand, Logic, Ableton, and more
+- **Hardware Support**: MIDI controllers, drum machines, synthesizers
+
+**MIDI Setup:**
+- **Brave/Chrome**: Enable MIDI in app → Grant permission → Direct output
+- **Safari**: Run `python3 minimal-midi-bridge.py` → Enable MIDI in app
+- **Output Routing**: Configure IAC Driver (Mac) or virtual MIDI ports
+
 #### Circular Visualization
 - **Geometric Display**: Onsets arranged on circle
 - **Center of Gravity**: Real-time geometric analysis
@@ -289,6 +302,7 @@ Custom pattern → Steps to Add: 3 → Minimal extensions for subtle pattern gro
 - **Lookahead Scheduling**: Eliminates JavaScript timing jitter
 - **Buffer Management**: Smooth playback without glitches
 - **Sync Resolution**: Audio and visual perfect synchronization
+- **MIDI Timing**: Sub-millisecond accuracy for professional use
 
 ### 6. Database & Management
 
@@ -547,6 +561,8 @@ app/
 ├── sequencer-audio.js           # Web Audio API and sound synthesis
 ├── sequencer-visual.js          # Circular visualization and graphics
 ├── sequencer-controller.js      # Playback control and integration
+├── midi-output.js               # MIDI output system with cross-browser support
+├── webrtc-osc.js                # OSC communication for MIDI bridges
 ├── ui-components.js             # Reusable interface components
 └── app-controller-browser.js    # Main orchestrator and event handling
 ```

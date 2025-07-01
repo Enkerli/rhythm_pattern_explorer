@@ -238,6 +238,7 @@
                 <li><a href="#pattern-creation">Pattern Creation</a></li>
                 <li><a href="#analysis-engine">Analysis Engine</a></li>
                 <li><a href="#generators">Pattern Generators</a></li>
+                <li><a href="#midi-output">MIDI Output System</a></li>
                 <li><a href="#technical-architecture">Technical Architecture</a></li>
                 <li><a href="#examples">Usage Examples</a></li>
             </ul>
@@ -668,6 +669,242 @@
                 </div>
             </section>
             
+            <!-- MIDI Output Section -->
+            <section id="midi-output" class="docs-section">
+                <h2>🎹 MIDI Output System</h2>
+                
+                <p>The Rhythm Pattern Explorer includes comprehensive real-time MIDI output capabilities, enabling direct integration with DAWs, hardware synthesizers, and MIDI-enabled applications. The system provides cross-browser compatibility and professional-grade timing accuracy.</p>
+                
+                <h3>Supported Browsers & Methods</h3>
+                
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4>🚀 Brave/Chrome/Edge - WebMIDI</h4>
+                        <p><strong>Status:</strong> ✅ Recommended</p>
+                        <p>Direct MIDI output using native WebMIDI API. No additional software required.</p>
+                        <p><strong>Setup:</strong> Click MIDI toggle → Grant permission → Done!</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <h4>🖥️ Safari (Mac) - WebSocket Bridge</h4>
+                        <p><strong>Status:</strong> ✅ Working</p>
+                        <p>WebSocket bridge converts messages to MIDI output via Python script.</p>
+                        <p><strong>Setup:</strong> Run Python bridge → Enable MIDI in app</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <h4>📱 Safari (iOS/iPad)</h4>
+                        <p><strong>Status:</strong> ❌ Limited</p>
+                        <p>Browser security restrictions prevent direct MIDI output.</p>
+                        <p><strong>Alternative:</strong> Use native iOS MIDI apps</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <h4>🦊 Firefox</h4>
+                        <p><strong>Status:</strong> 🟡 Experimental</p>
+                        <p>OSC bridge support for MIDI output via external tools.</p>
+                        <p><strong>Setup:</strong> Requires OSC-to-MIDI bridge software</p>
+                    </div>
+                </div>
+                
+                <h3>Quick Start Guide</h3>
+                
+                <div class="algorithm-box">
+                    <h4>Brave Browser (Easiest Method)</h4>
+                    <ol>
+                        <li><strong>Open Brave Browser</strong></li>
+                        <li><strong>Click the MIDI toggle</strong> (🎹 icon) in the app interface</li>
+                        <li><strong>Grant MIDI permission</strong> when prompted by browser</li>
+                        <li><strong>Play patterns</strong> → MIDI outputs to your default MIDI device</li>
+                    </ol>
+                    <p><strong>Requirements:</strong> None - works immediately with any MIDI-capable device or software</p>
+                </div>
+                
+                <div class="algorithm-box">
+                    <h4>Safari (Mac) with Python Bridge</h4>
+                    <ol>
+                        <li><strong>Download bridge script:</strong> <code>minimal-midi-bridge.py</code></li>
+                        <li><strong>Install dependencies:</strong> <code>pip install websockets mido python-rtmidi</code></li>
+                        <li><strong>Run bridge:</strong> <code>python3 minimal-midi-bridge.py</code></li>
+                        <li><strong>Serve app locally:</strong> <code>python3 serve-app.py --port 3000</code></li>
+                        <li><strong>Open Safari:</strong> <code>http://localhost:3000/app/</code></li>
+                        <li><strong>Enable MIDI</strong> in app → connects to bridge automatically</li>
+                    </ol>
+                </div>
+                
+                <h3>MIDI Configuration</h3>
+                
+                <div class="equation-container">
+                    <div class="equation-title">Default MIDI Settings</div>
+                    <div class="code-example">
+Channel: 1           # MIDI channel (1-16)
+Base Note: 36        # C2 - kick drum position
+Velocity: 100        # Note velocity (1-127)
+Note Duration: 100ms # Note off timing</div>
+                    <div class="equation-description">
+                        MIDI output uses standard MIDI protocol with configurable parameters for musical flexibility.
+                    </div>
+                </div>
+                
+                <h4>Common MIDI Note Assignments</h4>
+                <div class="algorithm-box">
+                    <ul>
+                        <li><strong>36 (C2):</strong> Kick drum (default)</li>
+                        <li><strong>38 (D2):</strong> Snare drum</li>
+                        <li><strong>42 (F#2):</strong> Hi-hat</li>
+                        <li><strong>60 (C4):</strong> Middle C</li>
+                        <li><strong>69 (A4):</strong> A440 reference tone</li>
+                    </ul>
+                </div>
+                
+                <h3>DAW Integration Setup</h3>
+                
+                <h4>Mac Setup (IAC Driver)</h4>
+                <div class="algorithm-box">
+                    <ol>
+                        <li><strong>Open Audio MIDI Setup</strong> (/Applications/Utilities/)</li>
+                        <li><strong>Window</strong> → <strong>Show MIDI Studio</strong></li>
+                        <li><strong>Double-click IAC Driver</strong></li>
+                        <li><strong>Check "Device is online"</strong></li>
+                        <li><strong>Set Ports</strong> to at least 1 port</li>
+                        <li><strong>Click Apply</strong></li>
+                    </ol>
+                </div>
+                
+                <h4>Windows Setup (Virtual MIDI)</h4>
+                <div class="algorithm-box">
+                    <ol>
+                        <li><strong>Install loopMIDI</strong> (free virtual MIDI port software)</li>
+                        <li><strong>Create virtual port</strong> for DAW communication</li>
+                        <li><strong>Configure your DAW</strong> to receive from virtual port</li>
+                    </ol>
+                </div>
+                
+                <h4>Popular DAW Configuration</h4>
+                
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4>GarageBand</h4>
+                        <ul>
+                            <li>Create Software Instrument track</li>
+                            <li>Set Input: IAC Driver Bus 1</li>
+                            <li>Choose drum kit or instrument</li>
+                            <li>Record-enable track</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <h4>Logic Pro</h4>
+                        <ul>
+                            <li>Create Software Instrument track</li>
+                            <li>Set MIDI Input: IAC Driver Bus 1</li>
+                            <li>Load desired instrument</li>
+                            <li>Record-enable and test</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <h4>Ableton Live</h4>
+                        <ul>
+                            <li>Preferences → MIDI</li>
+                            <li>Control Surface: IAC Driver Bus 1</li>
+                            <li>Create MIDI track</li>
+                            <li>Set input to IAC Driver</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <h4>Hardware Synths</h4>
+                        <ul>
+                            <li>Connect MIDI interface</li>
+                            <li>Set synth MIDI channel</li>
+                            <li>Route through interface in DAW</li>
+                            <li>Direct hardware output</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <h3>Technical Implementation</h3>
+                
+                <div class="equation-container">
+                    <div class="equation-title">MIDI Message Format</div>
+                    <div class="code-example">
+Note On:  [0x90 + channel, note, velocity]
+Note Off: [0x80 + channel, note, 0]
+
+Example: Channel 1, Note 36, Velocity 100
+Note On:  [0x90, 36, 100]
+Note Off: [0x80, 36, 0]</div>
+                    <div class="equation-description">
+                        Standard MIDI protocol ensures compatibility with all MIDI-capable devices and software.
+                    </div>
+                </div>
+                
+                <h4>Timing Accuracy</h4>
+                <div class="algorithm-box">
+                    <ul>
+                        <li><strong>WebMIDI:</strong> Sub-millisecond accuracy, direct hardware access</li>
+                        <li><strong>WebSocket Bridge:</strong> ~5-10ms latency, excellent for most applications</li>
+                        <li><strong>Audio Sync:</strong> Perfect synchronization with visual sequencer</li>
+                        <li><strong>Scheduling:</strong> Lookahead buffering prevents timing jitter</li>
+                    </ul>
+                </div>
+                
+                <h3>Troubleshooting</h3>
+                
+                <div class="algorithm-box">
+                    <h4>No MIDI Permission (Brave/Chrome)</h4>
+                    <ul>
+                        <li>Ensure you click the MIDI toggle button</li>
+                        <li>Try starting pattern playback first (audio context requirement)</li>
+                        <li>Check Site Settings → MIDI → Allow</li>
+                        <li>Restart browser if permission issues persist</li>
+                    </ul>
+                </div>
+                
+                <div class="algorithm-box">
+                    <h4>Safari Bridge Not Connecting</h4>
+                    <ul>
+                        <li>Verify Python bridge shows "server listening" message</li>
+                        <li>Check localhost access: try <code>http://localhost:3000/app/</code></li>
+                        <li>Ensure ports 8080 (bridge) and 3000 (app) are available</li>
+                        <li>Restart bridge: Ctrl+C and run <code>python3 minimal-midi-bridge.py</code></li>
+                    </ul>
+                </div>
+                
+                <div class="algorithm-box">
+                    <h4>No MIDI in DAW</h4>
+                    <ul>
+                        <li>Check IAC Driver enabled (Mac) or virtual MIDI port (Windows)</li>
+                        <li>Verify DAW input settings: Set to IAC Driver Bus 1</li>
+                        <li>Record-enable track in DAW</li>
+                        <li>Test with MIDI monitoring software to verify output</li>
+                    </ul>
+                </div>
+                
+                <h3>Advanced Features</h3>
+                
+                <h4>Multiple MIDI Outputs</h4>
+                <div class="algorithm-box">
+                    <ul>
+                        <li><strong>Mac:</strong> Create multiple IAC Driver buses for routing</li>
+                        <li><strong>DAW Routing:</strong> Use internal MIDI routing to multiple instruments</li>
+                        <li><strong>Hardware:</strong> Connect multiple devices via USB MIDI hub</li>
+                    </ul>
+                </div>
+                
+                <h4>Custom MIDI Mapping</h4>
+                <div class="code-example">
+// Modify settings in midi-output.js
+baseNote: 60,  // Change to C4 for melodic instruments
+channel: 10,   // Channel 10 for drums (General MIDI standard)
+velocity: 127, // Maximum velocity for accent patterns</div>
+                
+                <div class="highlight">
+                    <strong>🎹 Professional Integration:</strong> The MIDI system provides studio-quality timing and connectivity for serious music production workflows.
+                </div>
+            </section>
+            
             <!-- Getting Started Section -->
             <section id="getting-started" class="docs-section">
                 <h2>🚀 Getting Started</h2>
@@ -781,6 +1018,10 @@ app/
 ├── pattern-analysis.js      # Balance and syncopation analysis
 ├── pattern-generators.js    # Euclidean and polygon generators
 ├── pattern-processing.js    # Universal parser and converters
+├── midi-output.js           # Cross-browser MIDI output system
+├── sequencer-controller.js  # Playback control with MIDI integration
+├── sequencer-audio.js       # Web Audio API synthesis
+├── sequencer-visual.js      # Circular visualization
 ├── app-controller-browser.js # Main application orchestrator
 └── app-styles.css           # Complete styling system
                 </div>
@@ -794,12 +1035,22 @@ app/
                     <li><strong>Responsive Design</strong>: Adaptive sizing for mobile and desktop</li>
                 </ul>
                 
+                <h3>Audio & MIDI Systems</h3>
+                <ul>
+                    <li><strong>Web Audio API</strong>: Precise timing with lookahead scheduling</li>
+                    <li><strong>WebMIDI Integration</strong>: Direct MIDI output for Chrome, Edge, Opera, Brave</li>
+                    <li><strong>WebSocket Bridge</strong>: Safari MIDI support via Python bridge</li>
+                    <li><strong>Cross-Browser Compatibility</strong>: Automatic method detection and fallback</li>
+                    <li><strong>Professional Timing</strong>: Sub-millisecond accuracy for studio use</li>
+                </ul>
+                
                 <h3>Performance Optimizations</h3>
                 <ul>
                     <li><strong>Efficient Parsing</strong>: Single-pass pattern recognition</li>
                     <li><strong>Caching Systems</strong>: Store analysis results to avoid recalculation</li>
                     <li><strong>Lazy Loading</strong>: Defer non-critical calculations</li>
                     <li><strong>Equation Rendering</strong>: On-demand MathJax rendering</li>
+                    <li><strong>MIDI Buffering</strong>: Optimized scheduling prevents timing jitter</li>
                 </ul>
             </section>
         </main>

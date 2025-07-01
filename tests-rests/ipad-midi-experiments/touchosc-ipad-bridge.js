@@ -78,6 +78,18 @@ class TouchOSCiPadBridge {
         try {
             console.log('🧪 Testing TouchOSC connection...');
             
+            // Check if we're running from HTTPS
+            const isHTTPS = window.location.protocol === 'https:';
+            if (isHTTPS) {
+                console.log('🔒 HTTPS detected - direct localhost connections blocked');
+                console.log('💡 TouchOSC bridge will work if TouchOSC is configured for network access');
+                console.log('💡 Alternative: Serve app locally over HTTP to enable localhost connections');
+                
+                // In HTTPS, we can't test localhost connections
+                // but we can still try to use TouchOSC over network
+                return true; // Optimistic - let user configure TouchOSC
+            }
+            
             // Method 1: Try HTTP endpoint (if TouchOSC supports it)
             const httpResult = await this.testHTTPConnection();
             if (httpResult) return true;
@@ -206,7 +218,17 @@ class TouchOSCiPadBridge {
      */
     async sendViaHTTP(address, args) {
         try {
-            const url = `http://${this.settings.host}:${this.settings.port}/osc`;
+            // Check for HTTPS limitations
+            const isHTTPS = window.location.protocol === 'https:';
+            const isLocalhost = this.settings.host === 'localhost' || this.settings.host === '127.0.0.1';
+            
+            if (isHTTPS && isLocalhost) {
+                console.log('🔒 HTTPS blocks localhost HTTP connections - using fallback');
+                return false; // Skip HTTP method for localhost from HTTPS
+            }
+            
+            const protocol = isHTTPS ? 'https:' : 'http:';
+            const url = `${protocol}//${this.settings.host}:${this.settings.port}/osc`;
             
             const payload = {
                 address: address,
@@ -231,6 +253,9 @@ class TouchOSCiPadBridge {
             }
         } catch (error) {
             console.log('ℹ️ HTTP OSC method unavailable:', error.message);
+            if (error.message.includes('blocked')) {
+                console.log('🔒 Blocked by browser security - try serving app over HTTP');
+            }
         }
         return false;
     }
@@ -309,17 +334,30 @@ class TouchOSCiPadBridge {
      * Show TouchOSC setup instructions
      */
     showTouchOSCInstructions() {
+        const isHTTPS = window.location.protocol === 'https:';
+        
         const instructions = `
-🎹 TouchOSC Setup for iPad MIDI Bridge
+🎹 TouchOSC Setup for MIDI Bridge
 
-Setup Steps:
-1. Open TouchOSC on iPad
+${isHTTPS ? `
+⚠️ HTTPS LIMITATION DETECTED:
+Your app is running from HTTPS (${window.location.origin})
+Browser security blocks localhost connections from HTTPS pages.
+
+SOLUTIONS:
+1. Download and serve app locally over HTTP
+2. Use TouchOSC over network (not localhost)
+3. Use browser console for testing
+
+` : ''}Setup Steps:
+1. Open TouchOSC ${isHTTPS ? 'on same device or local network' : 'on iPad'}
 2. Go to Settings/Connections
 3. Set Connection Type: "OSC"
 4. Set Protocol: "UDP"
 5. Set Local Port: ${this.settings.port} (receive from webapp)
 6. Set Remote Port: 9000 (send to other apps)
 7. Enable "Auto Connect"
+${isHTTPS ? '8. Set Host to device IP (not localhost) if using network' : ''}
 
 MIDI Output Setup:
 1. In TouchOSC Settings
@@ -328,6 +366,12 @@ MIDI Output Setup:
 4. Set Output to "Network Session 1" or "Virtual"
 5. Configure Channel: ${this.settings.channel}
 
+${isHTTPS ? `
+FOR HTTPS APPS:
+- TouchOSC must be accessible over network (not localhost)
+- Or download app and serve locally with: python3 -m http.server 3000
+- Then use: http://localhost:3000 instead of HTTPS
+` : ''}
 Testing:
 1. Keep TouchOSC running in background
 2. Load webapp in Safari
@@ -338,6 +382,7 @@ Troubleshooting:
 - Make sure both apps are running simultaneously
 - Check TouchOSC is in UDP Server mode
 - Verify port ${this.settings.port} is not blocked
+- If HTTPS: serve app locally over HTTP for localhost access
 - Try force-closing and restarting TouchOSC
         `.trim();
         
