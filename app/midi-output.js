@@ -151,6 +151,8 @@ class MIDIOutputController {
         // Fallback mode
         this.outputMethod = 'fallback';
         console.log('⚠️ No MIDI output available - fallback mode');
+        console.log('💡 On iPad: WebKit may block WebSocket connections to local bridges');
+        console.log('💡 Try: Use iPad MIDI bridge script for Network Session MIDI');
         this.showFallbackInstructions();
         return false;
     }
@@ -244,6 +246,7 @@ class MIDIOutputController {
                     clearTimeout(timeoutId);
                     console.log('❌ OSC WebSocket connection failed:', error);
                     console.log('💡 Is the bridge running on localhost:8080?');
+                    console.log('⚠️ If on iPad: WebKit may block local connections (Error 106)');
                     resolve(false);
                 };
                 
