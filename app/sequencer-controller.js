@@ -94,7 +94,11 @@ class SequencerController {
             stepDivision: options.stepDivision || 4, // 16th notes (4 per beat)
             maxPatternLength: options.maxPatternLength || 64,
             enableAudio: options.enableAudio !== false,
-            enableVisual: options.enableVisual !== false
+            enableVisual: options.enableVisual !== false,
+            enableMIDI: false, // Start disabled but always create controller
+            midiChannel: options.midiChannel || 1,
+            midiNote: options.midiNote || 36, // C2 kick drum
+            midiVelocity: options.midiVelocity || 100
         };
         
         // Playback state
@@ -162,14 +166,53 @@ class SequencerController {
             
             // Initialize audio engine if enabled
             if (this.config.enableAudio) {
-                this.audioEngine = new SequencerAudioEngine();
-                await this.audioEngine.initialize();
-                this.audioEngine.updateSettings({
-                    volume: this.state.volume,
-                    waveform: this.state.waveform
-                });
-                console.log('✅ Audio engine initialized');
+                try {
+                    this.audioEngine = new SequencerAudioEngine();
+                    await this.audioEngine.initialize();
+                    this.audioEngine.updateSettings({
+                        volume: this.state.volume,
+                        waveform: this.state.waveform
+                    });
+                    console.log('✅ Audio engine initialized');
+                } catch (error) {
+                    console.warn('⚠️ Audio engine initialization failed (will initialize on user interaction):', error.message);
+                    // Audio will be initialized later on user interaction
+                }
             }
+            
+            // Always create MIDI output controller, but don't auto-connect
+            // This ensures the controller exists even when MIDI is disabled
+            console.log('🔍 DEBUG: Checking for MIDIOutputController...', typeof MIDIOutputController);
+            if (typeof MIDIOutputController !== 'undefined') {
+                console.log('🔍 DEBUG: Creating MIDI output controller...');
+                this.midiOutput = new MIDIOutputController({
+                    channel: this.config.midiChannel,
+                    baseNote: this.config.midiNote,
+                    velocity: this.config.midiVelocity,
+                    autoConnect: false
+                });
+                
+                // Set up event handlers
+                this.midiOutput.onReady = (info) => {
+                    console.log(`✅ MIDI output ready via ${info.method}`);
+                    if (info.outputs.length > 0) {
+                        console.log('🎹 Available MIDI outputs:', info.outputs.map(o => o.name));
+                    }
+                };
+                
+                this.midiOutput.onError = (error) => {
+                    console.warn('⚠️ MIDI output error:', error.message);
+                };
+                
+                console.log('🎹 MIDI output controller created (not initialized) - v2.0');
+            } else {
+                console.warn('⚠️ MIDIOutputController not available, MIDI disabled');
+                console.log('🔍 DEBUG: MIDIOutputController type:', typeof MIDIOutputController);
+                this.config.enableMIDI = false;
+                this.midiOutput = null;
+            }
+            
+            console.log('🔍 DEBUG: Final midiOutput:', this.midiOutput);
             
             // Load default pattern
             this.updatePattern(this.state.pattern);
@@ -454,8 +497,23 @@ class SequencerController {
         this.schedulerState.lastScheduledStep = stepIndex;
         
         // Schedule audio if step is active
-        if (this.state.pattern.steps[stepIndex] && this.audioEngine) {
-            this.audioEngine.playSoundAtTime(audioTime);
+        if (this.state.pattern.steps[stepIndex]) {
+            if (this.audioEngine) {
+                this.audioEngine.playSoundAtTime(audioTime);
+            }
+            
+            // Schedule MIDI note if step is active
+            if (this.midiOutput && this.midiOutput.isReady) {
+                // For real-time MIDI, send immediately (MIDI timing is handled by the OS)
+                this.midiOutput.noteOn();
+                
+                // Schedule note off after a short duration (100ms)
+                setTimeout(() => {
+                    if (this.midiOutput && this.midiOutput.isReady) {
+                        this.midiOutput.noteOff();
+                    }
+                }, 100);
+            }
         }
         
         // Schedule visual update to happen at the right time
@@ -514,8 +572,22 @@ class SequencerController {
             const stepTime = performance.now();
             
             // Play audio for current step
-            if (this.state.pattern.steps[this.state.currentStep] && this.audioEngine) {
-                this.audioEngine.playSound();
+            if (this.state.pattern.steps[this.state.currentStep]) {
+                if (this.audioEngine) {
+                    this.audioEngine.playSound();
+                }
+                
+                // Send MIDI note if step is active
+                if (this.midiOutput && this.midiOutput.isReady) {
+                    this.midiOutput.noteOn();
+                    
+                    // Schedule note off after a short duration (100ms)
+                    setTimeout(() => {
+                        if (this.midiOutput && this.midiOutput.isReady) {
+                            this.midiOutput.noteOff();
+                        }
+                    }, 100);
+                }
             }
             
             // Update visual state
@@ -815,6 +887,67 @@ class SequencerController {
     }
     
     /**
+     * Get MIDI output status and available devices
+     * @returns {object} MIDI status information
+     */
+    getMIDIStatus() {
+        if (!this.midiOutput) {
+            return {
+                enabled: false,
+                ready: false,
+                method: 'none',
+                message: 'MIDI output not initialized'
+            };
+        }
+        
+        return this.midiOutput.getStatus();
+    }
+    
+    /**
+     * Get available MIDI output devices
+     * @returns {Array} Array of available MIDI outputs
+     */
+    getMIDIOutputs() {
+        return this.midiOutput ? this.midiOutput.getAvailableOutputs() : [];
+    }
+    
+    /**
+     * Select MIDI output device
+     * @param {string} outputId - ID of MIDI output to select
+     * @returns {boolean} Success status
+     */
+    selectMIDIOutput(outputId) {
+        return this.midiOutput ? this.midiOutput.selectOutput(outputId) : false;
+    }
+    
+    /**
+     * Update MIDI settings
+     * @param {object} settings - MIDI settings to update
+     * @param {number} settings.channel - MIDI channel (1-16)
+     * @param {number} settings.baseNote - Base MIDI note (0-127)
+     * @param {number} settings.velocity - Note velocity (1-127)
+     */
+    updateMIDISettings(settings) {
+        if (this.midiOutput) {
+            this.midiOutput.updateSettings(settings);
+            
+            // Update config as well
+            if (settings.channel) this.config.midiChannel = settings.channel;
+            if (settings.baseNote) this.config.midiNote = settings.baseNote;
+            if (settings.velocity) this.config.midiVelocity = settings.velocity;
+        }
+    }
+    
+    /**
+     * Enable or disable MIDI output
+     * @param {boolean} enabled - Whether to enable MIDI output
+     */
+    setMIDIEnabled(enabled) {
+        this.config.enableMIDI = enabled;
+        console.log(`🎹 MIDI output ${enabled ? 'enabled' : 'disabled'}`);
+    }
+    
+    /**
      * Destroy the sequencer and clean up resources
      */
     destroy() {
@@ -827,6 +960,9 @@ class SequencerController {
         }
         if (this.visualEngine) {
             this.visualEngine.destroy();
+        }
+        if (this.midiOutput) {
+            this.midiOutput.destroy();
         }
         
         // Clear callbacks

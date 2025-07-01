@@ -611,6 +611,32 @@ li {
     text-align: right;
 }
 
+.sequencer-select {
+    font-size: var(--font-size-xs);
+    padding: 2px 4px;
+    border: 1px solid var(--border-light);
+    border-radius: 4px;
+    background: white;
+    color: var(--color-text);
+    max-width: 120px;
+}
+
+.sequencer-status-text {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    font-weight: var(--font-weight-normal);
+}
+
+.sequencer-status-text.midi-ready {
+    color: var(--color-success);
+    font-weight: var(--font-weight-medium);
+}
+
+.sequencer-status-text.midi-connecting {
+    color: var(--color-warning);
+    font-style: italic;
+}
+
 /* === RESPONSIVE SEQUENCER === */
 @media (max-width: 768px) {
     .sequencer-canvas-wrapper {

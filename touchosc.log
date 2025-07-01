@@ -1,0 +1,2 @@
+Missing dependencies: cannot import name 'osc' from 'pythonosc' (/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/pythonosc/__init__.py)
+Please install: pip install websockets python-osc mido python-rtmidi

@@ -166,7 +166,11 @@ class EnhancedPatternApp {
                 defaultTempo: 120,
                 defaultVolume: 0.5,
                 enableAudio: true,
-                enableVisual: true
+                enableVisual: true,
+                enableMIDI: false,
+                midiChannel: 1,
+                midiNote: 36, // C2 kick drum
+                midiVelocity: 100
             });
             
             // Setup sequencer event listeners
@@ -224,6 +228,70 @@ class EnhancedPatternApp {
                 volumeDisplay.textContent = `${e.target.value}%`;
             });
         }
+        
+        // MIDI controls
+        const midiToggleBtn = document.getElementById('midiToggleBtn');
+        const midiOutputSelect = document.getElementById('midiOutputSelect');
+        const midiStatus = document.getElementById('midiStatus');
+        
+        if (midiToggleBtn) {
+            midiToggleBtn.addEventListener('click', async () => {
+                const currentlyEnabled = this.sequencer.config.enableMIDI;
+                const isReady = this.sequencer.midiOutput && this.sequencer.midiOutput.isReady;
+                
+                console.log(`🎹 MIDI toggle clicked: currently ${currentlyEnabled ? 'enabled' : 'disabled'}, ready: ${isReady}`);
+                
+                if (!currentlyEnabled || !isReady) {
+                    // Enable MIDI and initialize
+                    this.sequencer.setMIDIEnabled(true);
+                    
+                    // Initialize audio context first (required for WebMIDI in some browsers)
+                    if (this.sequencer.audioEngine) {
+                        try {
+                            await this.sequencer.audioEngine.resume();
+                            console.log('🔊 Audio context activated for MIDI');
+                        } catch (error) {
+                            console.warn('⚠️ Audio context activation failed:', error);
+                        }
+                    }
+                    
+                    // Always try to initialize if not ready (this will trigger browser permission prompt)
+                    if (this.sequencer.midiOutput) {
+                        console.log('🎹 Initializing MIDI output (user interaction)...');
+                        try {
+                            await this.sequencer.midiOutput.initialize();
+                            console.log('🎹 MIDI initialization completed');
+                        } catch (error) {
+                            console.error('🎹 MIDI initialization failed:', error);
+                        }
+                    }
+                } else {
+                    // Disable MIDI
+                    console.log('🎹 Disabling MIDI output');
+                    this.sequencer.setMIDIEnabled(false);
+                }
+                
+                // Update UI after a brief delay to show the new state
+                setTimeout(() => this.updateMIDIUI(), 100);
+            });
+        }
+        
+        if (midiOutputSelect) {
+            midiOutputSelect.addEventListener('change', (e) => {
+                if (e.target.value) {
+                    this.sequencer.selectMIDIOutput(e.target.value);
+                    this.updateMIDIUI();
+                }
+            });
+        }
+        
+        // Update MIDI UI periodically
+        this.midiUIUpdateInterval = setInterval(() => {
+            this.updateMIDIUI();
+        }, 2000);
+        
+        // Initial MIDI UI update
+        setTimeout(() => this.updateMIDIUI(), 1000);
         
         // Listen for sequencer events
         this.sequencer.on('onPlaybackChange', (data) => {
@@ -1019,6 +1087,74 @@ ${(() => {
         if (copyBtn) {
             copyBtn.disabled = !hasPattern;
             copyBtn.style.opacity = hasPattern ? '1' : '0.5';
+        }
+    }
+    
+    /**
+     * Update MIDI UI elements based on current MIDI status
+     */
+    updateMIDIUI() {
+        if (!this.sequencer) return;
+        
+        const midiToggleBtn = document.getElementById('midiToggleBtn');
+        const midiOutputSelect = document.getElementById('midiOutputSelect');
+        const midiStatus = document.getElementById('midiStatus');
+        
+        const status = this.sequencer.getMIDIStatus();
+        const outputs = this.sequencer.getMIDIOutputs();
+        
+        // Update toggle button
+        if (midiToggleBtn) {
+            const enabled = this.sequencer.config.enableMIDI;
+            midiToggleBtn.textContent = enabled ? '🎹 ON' : '🎹 OFF';
+            midiToggleBtn.className = enabled ? 'btn primary small' : 'btn secondary small';
+        }
+        
+        // Update output select
+        if (midiOutputSelect) {
+            // Clear existing options
+            midiOutputSelect.innerHTML = '<option value="">Select MIDI Output...</option>';
+            
+            // Add available outputs
+            outputs.forEach(output => {
+                const option = document.createElement('option');
+                option.value = output.id;
+                option.textContent = output.name;
+                midiOutputSelect.appendChild(option);
+            });
+            
+            // Show/hide based on status
+            if (status.ready && outputs.length > 0) {
+                midiOutputSelect.style.display = 'inline-block';
+            } else {
+                midiOutputSelect.style.display = 'none';
+            }
+        }
+        
+        // Update status text
+        if (midiStatus) {
+            if (!this.sequencer.config.enableMIDI) {
+                midiStatus.textContent = 'Disabled';
+                midiStatus.className = 'sequencer-status-text';
+            } else if (status.ready) {
+                if (status.method === 'webmidi') {
+                    midiStatus.textContent = `WebMIDI (${outputs.length} devices)`;
+                    midiStatus.className = 'sequencer-status-text midi-ready';
+                } else if (status.method === 'osc') {
+                    midiStatus.textContent = 'OSC Bridge';
+                    midiStatus.className = 'sequencer-status-text midi-ready';
+                } else {
+                    midiStatus.textContent = 'Ready';
+                    midiStatus.className = 'sequencer-status-text midi-ready';
+                }
+            } else {
+                if (status.method === 'fallback') {
+                    midiStatus.textContent = 'Not supported - see console';
+                } else {
+                    midiStatus.textContent = 'Connecting...';
+                }
+                midiStatus.className = 'sequencer-status-text midi-connecting';
+            }
         }
     }
     

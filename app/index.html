@@ -343,6 +343,14 @@
                                 <input type="range" id="sequencerVolumeSlider" class="sequencer-slider" min="0" max="100" value="50">
                                 <span id="sequencerVolumeDisplay" class="sequencer-value">50%</span>
                             </div>
+                            <div class="sequencer-settings-row">
+                                <label class="sequencer-label">MIDI:</label>
+                                <button class="btn secondary small" id="midiToggleBtn" title="Toggle MIDI output">🎹 OFF</button>
+                                <select id="midiOutputSelect" class="sequencer-select" style="display: none;">
+                                    <option value="">Select MIDI Output...</option>
+                                </select>
+                                <span id="midiStatus" class="sequencer-status-text">Not connected</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -883,6 +891,7 @@
             'pattern-database.js',
             'sequencer-audio.js',
             'sequencer-visual.js',
+            'midi-output.js',
             'sequencer-controller.js',
             'ui-components.js',
             'app-controller-browser.js'
