@@ -92,6 +92,12 @@ class MIDIOutputController {
             gatewayUrl: options.httpOSCGateway || 'http://localhost:8889/osc'
         };
         
+        this.touchOSC = {
+            supported: false,
+            connected: false,
+            controller: null
+        };
+        
         // Current output method
         this.outputMethod = 'none';
         this.isReady = false;
@@ -112,6 +118,23 @@ class MIDIOutputController {
     async initialize() {
         console.log('🎹 Initializing MIDI Output...');
         
+        // Detect if we're on iPad/iOS
+        const isIPad = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        
+        if (isIPad || (isSafari && navigator.maxTouchPoints > 1)) {
+            console.log('📱 iPad detected - prioritizing TouchOSC bridge');
+            
+            // Try TouchOSC iPad bridge first (same device solution)
+            if (await this.initializeTouchOSC()) {
+                this.outputMethod = 'touchosc';
+                this.isReady = true;
+                console.log('✅ TouchOSC iPad bridge initialized successfully');
+                this.notifyReady();
+                return true;
+            }
+        }
+        
         // Try WebMIDI first (Chrome, Edge, Opera)
         if (await this.initializeWebMIDI()) {
             this.outputMethod = 'webmidi';
@@ -121,11 +144,20 @@ class MIDIOutputController {
             return true;
         }
         
-        // Try OSC over WebSocket first (Python bridge - most reliable)
+        // Try OSC over WebSocket (Python bridge - most reliable)
         if (await this.initializeOSC()) {
             this.outputMethod = 'osc';
             this.isReady = true;
             console.log('✅ OSC over WebSocket initialized successfully');
+            this.notifyReady();
+            return true;
+        }
+        
+        // Try TouchOSC (if not iPad or iPad fallback)
+        if (await this.initializeTouchOSC()) {
+            this.outputMethod = 'touchosc';
+            this.isReady = true;
+            console.log('✅ TouchOSC bridge initialized successfully');
             this.notifyReady();
             return true;
         }
@@ -151,8 +183,12 @@ class MIDIOutputController {
         // Fallback mode
         this.outputMethod = 'fallback';
         console.log('⚠️ No MIDI output available - fallback mode');
-        console.log('💡 On iPad: WebKit may block WebSocket connections to local bridges');
-        console.log('💡 Try: Use iPad MIDI bridge script for Network Session MIDI');
+        if (isIPad) {
+            console.log('💡 iPad: Install and configure TouchOSC for MIDI output');
+            console.log('💡 TouchOSC Setup: UDP Server mode, port 8000, MIDI output enabled');
+        } else {
+            console.log('💡 Try: Use local MIDI bridge or install TouchOSC');
+        }
         this.showFallbackInstructions();
         return false;
     }
@@ -263,6 +299,51 @@ class MIDIOutputController {
                 resolve(false);
             }
         });
+    }
+    
+    /**
+     * Initialize TouchOSC iPad Bridge (Same device solution)
+     */
+    async initializeTouchOSC() {
+        if (typeof TouchOSCiPadBridge === 'undefined') {
+            console.log('❌ TouchOSC iPad Bridge not available');
+            console.log('💡 Make sure touchosc-ipad-bridge.js is loaded');
+            return false;
+        }
+        
+        try {
+            console.log('🌐 Initializing TouchOSC iPad Bridge...');
+            console.log('💡 This connects to TouchOSC running on the same iPad');
+            
+            this.touchOSC.controller = new TouchOSCiPadBridge({
+                host: 'localhost',
+                port: 8000,
+                channel: this.settings.channel,
+                baseNote: this.settings.baseNote,
+                velocity: this.settings.velocity
+            });
+            
+            // Set up event handlers
+            this.touchOSC.controller.onReady = (info) => {
+                console.log('✅ TouchOSC iPad Bridge ready');
+                this.touchOSC.connected = true;
+                this.touchOSC.supported = true;
+            };
+            
+            this.touchOSC.controller.onError = (error) => {
+                console.log('❌ TouchOSC iPad Bridge error:', error.message);
+                if (error.instructions) {
+                    console.log('📋 Setup Instructions:\n' + error.instructions);
+                }
+            };
+            
+            const success = await this.touchOSC.controller.initialize();
+            return success;
+            
+        } catch (error) {
+            console.error('❌ TouchOSC iPad Bridge initialization error:', error);
+            return false;
+        }
     }
     
     /**
@@ -382,6 +463,8 @@ class MIDIOutputController {
                 return this.sendWebMIDINote(midiNote, midiVelocity, midiChannel, true);
             case 'osc':
                 return this.sendOSCNote(midiNote, midiVelocity, midiChannel, true);
+            case 'touchosc':
+                return this.sendTouchOSCNote(midiNote, midiVelocity, midiChannel, true);
             case 'webrtc_osc':
                 return this.sendWebRTCOSCNote(midiNote, midiVelocity, midiChannel, true);
             case 'http_osc':
@@ -411,6 +494,8 @@ class MIDIOutputController {
                 return this.sendWebMIDINote(midiNote, 0, midiChannel, false);
             case 'osc':
                 return this.sendOSCNote(midiNote, 0, midiChannel, false);
+            case 'touchosc':
+                return this.sendTouchOSCNote(midiNote, 0, midiChannel, false);
             case 'webrtc_osc':
                 return this.sendWebRTCOSCNote(midiNote, 0, midiChannel, false);
             case 'http_osc':
@@ -437,6 +522,26 @@ class MIDIOutputController {
             return true;
         } catch (error) {
             console.error('❌ WebMIDI send error:', error);
+            return false;
+        }
+    }
+    
+    /**
+     * Send TouchOSC iPad Bridge note message
+     */
+    async sendTouchOSCNote(note, velocity, channel, noteOn) {
+        if (!this.touchOSC.connected || !this.touchOSC.controller) {
+            return false;
+        }
+        
+        try {
+            if (noteOn) {
+                return await this.touchOSC.controller.noteOn(note, velocity, channel);
+            } else {
+                return await this.touchOSC.controller.noteOff(note, channel);
+            }
+        } catch (error) {
+            console.error('❌ TouchOSC send error:', error);
             return false;
         }
     }
