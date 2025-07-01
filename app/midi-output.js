@@ -27,8 +27,10 @@
  * 
  * Protocol Hierarchy:
  * 1. WebMIDI API (Chrome, Edge, Opera)
- * 2. OSC over WebSocket (Safari, Firefox with local bridge)
- * 3. User guidance fallback (unsupported browsers)
+ * 2. HTTP OSC Gateway (Direct TouchOSC connection)
+ * 3. WebRTC OSC (Direct TouchOSC connection, iPad compatible)
+ * 4. OSC over WebSocket (Safari, Firefox with MIDI bridge)
+ * 5. User guidance fallback (unsupported browsers)
  * 
  * MIDI Implementation:
  * - Note On/Off messages (0x90/0x80)
@@ -78,6 +80,18 @@ class MIDIOutputController {
             maxReconnectAttempts: 5
         };
         
+        this.webrtcOSC = {
+            supported: false,
+            connected: false,
+            controller: null
+        };
+        
+        this.httpOSC = {
+            supported: false,
+            connected: false,
+            gatewayUrl: options.httpOSCGateway || 'http://localhost:8889/osc'
+        };
+        
         // Current output method
         this.outputMethod = 'none';
         this.isReady = false;
@@ -107,11 +121,29 @@ class MIDIOutputController {
             return true;
         }
         
-        // Try OSC over WebSocket (Safari, Firefox)
+        // Try OSC over WebSocket first (Python bridge - most reliable)
         if (await this.initializeOSC()) {
             this.outputMethod = 'osc';
             this.isReady = true;
             console.log('✅ OSC over WebSocket initialized successfully');
+            this.notifyReady();
+            return true;
+        }
+        
+        // Try HTTP OSC Gateway (TouchOSC direct connection)
+        if (await this.initializeHTTPOSC()) {
+            this.outputMethod = 'http_osc';
+            this.isReady = true;
+            console.log('✅ HTTP OSC gateway initialized successfully');
+            this.notifyReady();
+            return true;
+        }
+        
+        // Try WebRTC OSC (Direct TouchOSC, iPad compatible)
+        if (await this.initializeWebRTCOSC()) {
+            this.outputMethod = 'webrtc_osc';
+            this.isReady = true;
+            console.log('✅ WebRTC OSC initialized successfully');
             this.notifyReady();
             return true;
         }
@@ -231,6 +263,81 @@ class MIDIOutputController {
     }
     
     /**
+     * Initialize WebRTC OSC (Direct TouchOSC connection)
+     */
+    async initializeWebRTCOSC() {
+        if (typeof WebRTCOSCController === 'undefined') {
+            console.log('❌ WebRTC OSC controller not available');
+            return false;
+        }
+        
+        try {
+            console.log('🌐 Initializing WebRTC OSC for TouchOSC...');
+            console.log('💡 Configure TouchOSC: UDP Server on your device IP:8000');
+            
+            this.webrtcOSC.controller = new WebRTCOSCController({
+                touchOSCHost: this.settings.touchOSCHost || 'localhost',
+                touchOSCPort: this.settings.touchOSCPort || 8000,
+                autoConnect: false
+            });
+            
+            // Set up event handlers
+            this.webrtcOSC.controller.onReady = (info) => {
+                console.log('✅ WebRTC OSC ready for TouchOSC');
+                this.webrtcOSC.connected = true;
+                this.webrtcOSC.supported = true;
+            };
+            
+            this.webrtcOSC.controller.onError = (error) => {
+                console.log('❌ WebRTC OSC error:', error.message);
+            };
+            
+            const success = await this.webrtcOSC.controller.initialize();
+            return success;
+            
+        } catch (error) {
+            console.error('❌ WebRTC OSC initialization error:', error);
+            return false;
+        }
+    }
+    
+    /**
+     * Initialize HTTP OSC Gateway (TouchOSC via HTTP bridge)
+     */
+    async initializeHTTPOSC() {
+        try {
+            console.log('🌐 Testing HTTP OSC gateway...');
+            console.log('💡 Start gateway: python3 touchosc-gateway.py');
+            
+            // Test gateway availability
+            const testResponse = await fetch(this.httpOSC.gatewayUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    address: '/test',
+                    args: []
+                })
+            });
+            
+            if (testResponse.ok) {
+                this.httpOSC.supported = true;
+                this.httpOSC.connected = true;
+                console.log('✅ HTTP OSC gateway is available');
+                return true;
+            } else {
+                console.log('❌ HTTP OSC gateway not responding');
+                return false;
+            }
+            
+        } catch (error) {
+            console.log('❌ HTTP OSC gateway not available:', error.message);
+            return false;
+        }
+    }
+    
+    /**
      * Attempt OSC reconnection with exponential backoff
      */
     attemptOSCReconnect() {
@@ -272,6 +379,10 @@ class MIDIOutputController {
                 return this.sendWebMIDINote(midiNote, midiVelocity, midiChannel, true);
             case 'osc':
                 return this.sendOSCNote(midiNote, midiVelocity, midiChannel, true);
+            case 'webrtc_osc':
+                return this.sendWebRTCOSCNote(midiNote, midiVelocity, midiChannel, true);
+            case 'http_osc':
+                return this.sendHTTPOSCNote(midiNote, midiVelocity, midiChannel, true);
             default:
                 console.log(`🎹 Note On: Ch${midiChannel} Note${midiNote} Vel${midiVelocity}`);
                 return false;
@@ -297,6 +408,10 @@ class MIDIOutputController {
                 return this.sendWebMIDINote(midiNote, 0, midiChannel, false);
             case 'osc':
                 return this.sendOSCNote(midiNote, 0, midiChannel, false);
+            case 'webrtc_osc':
+                return this.sendWebRTCOSCNote(midiNote, 0, midiChannel, false);
+            case 'http_osc':
+                return this.sendHTTPOSCNote(midiNote, 0, midiChannel, false);
             default:
                 console.log(`🎹 Note Off: Ch${midiChannel} Note${midiNote}`);
                 return false;
@@ -319,6 +434,68 @@ class MIDIOutputController {
             return true;
         } catch (error) {
             console.error('❌ WebMIDI send error:', error);
+            return false;
+        }
+    }
+    
+    /**
+     * Send WebRTC OSC note message
+     */
+    sendWebRTCOSCNote(note, velocity, channel, noteOn) {
+        if (!this.webrtcOSC.connected || !this.webrtcOSC.controller) {
+            return false;
+        }
+        
+        try {
+            return this.webrtcOSC.controller.sendOSCNote(channel, note, velocity, noteOn);
+        } catch (error) {
+            console.error('❌ WebRTC OSC send error:', error);
+            return false;
+        }
+    }
+    
+    /**
+     * Send HTTP OSC note message
+     */
+    async sendHTTPOSCNote(note, velocity, channel, noteOn) {
+        if (!this.httpOSC.connected) {
+            return false;
+        }
+        
+        try {
+            const address = noteOn ? '/note/on' : '/note/off';
+            const args = noteOn ? [channel, note, velocity] : [channel, note];
+            
+            const response = await fetch(this.httpOSC.gatewayUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    address: address,
+                    args: args
+                })
+            });
+            
+            if (response.ok) {
+                console.log(`📤 HTTP OSC ${noteOn ? 'Note On' : 'Note Off'}: Ch${channel} Note${note}${noteOn ? ` Vel${velocity}` : ''}`);
+                
+                // Send trigger for TouchOSC visualization
+                if (noteOn) {
+                    fetch(this.httpOSC.gatewayUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ address: '/trigger', args: [note] })
+                    }).catch(() => {}); // Ignore errors for trigger
+                }
+                
+                return true;
+            }
+            
+            return false;
+            
+        } catch (error) {
+            console.error('❌ HTTP OSC send error:', error);
             return false;
         }
     }
@@ -463,6 +640,12 @@ Alternative:
                 connected: this.osc.connected,
                 host: this.settings.oscHost
             },
+            webrtcOSC: {
+                supported: this.webrtcOSC.supported,
+                connected: this.webrtcOSC.connected,
+                host: this.settings.touchOSCHost || 'localhost',
+                port: this.settings.touchOSCPort || 8000
+            },
             settings: { ...this.settings }
         };
     }
@@ -474,6 +657,11 @@ Alternative:
         if (this.osc.socket) {
             this.osc.socket.close();
             this.osc.socket = null;
+        }
+        
+        if (this.webrtcOSC.controller) {
+            this.webrtcOSC.controller.destroy();
+            this.webrtcOSC.controller = null;
         }
         
         this.isReady = false;

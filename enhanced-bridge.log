@@ -1,0 +1,28 @@
+2025-07-01 01:18:22,253 - INFO - Available MIDI outputs: ['IAC Driver Bus 1']
+2025-07-01 01:18:22,253 - INFO - MIDI connected to IAC: IAC Driver Bus 1
+2025-07-01 01:18:22,256 - INFO - OSC client ready for localhost:8000
+2025-07-01 01:18:22,256 - INFO - Enhanced MIDI Bridge initialized
+2025-07-01 01:18:22,256 - INFO - MIDI output: enabled
+2025-07-01 01:18:22,256 - INFO - OSC output: enabled
+2025-07-01 01:18:22,257 - INFO - Starting WebSocket server on port 8080
+2025-07-01 01:18:22,275 - INFO - server listening on [::1]:8080
+2025-07-01 01:18:22,275 - INFO - server listening on 127.0.0.1:8080
+2025-07-01 01:18:22,275 - INFO - WebSocket server ready on ws://localhost:8080
+2025-07-01 01:18:22,275 - INFO - 
+2025-07-01 01:18:22,275 - INFO - Configuration:
+2025-07-01 01:18:22,275 - INFO - ========================================
+2025-07-01 01:18:22,275 - INFO - ✅ MIDI output: Enabled (for DAWs via IAC Driver)
+2025-07-01 01:18:22,275 - INFO - ✅ OSC output: Enabled (TouchOSC at localhost:8000)
+2025-07-01 01:18:22,275 - INFO - 
+2025-07-01 01:18:22,275 - INFO - TouchOSC Setup (if OSC enabled):
+2025-07-01 01:18:22,275 - INFO - - Connection: UDP Server
+2025-07-01 01:18:22,275 - INFO - - Incoming Port: 8000
+2025-07-01 01:18:22,275 - INFO - - Outgoing Port: 9000
+2025-07-01 01:18:22,275 - INFO - - Enable OSC
+2025-07-01 01:18:22,275 - INFO - 
+2025-07-01 01:18:22,275 - INFO - Ready! Press Ctrl+C to stop
+2025-07-01 01:18:22,275 - INFO - ========================================
+2025-07-01 01:19:13,729 - INFO - connection open
+2025-07-01 01:19:13,730 - INFO - WebSocket client connected from ::1
+2025-07-01 01:26:20,186 - INFO - connection open
+2025-07-01 01:26:20,427 - INFO - WebSocket client connected from ::1
