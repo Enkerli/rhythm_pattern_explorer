@@ -5346,7 +5346,7 @@ ${perfectBalancePatterns.map((pattern, index) => {
         const offset = parseInt(elements[`polygonOffset${index}`].value) || 0;
         const multiplier = parseInt(elements[`polygonMultiplier${index}`].value) || null;
         
-        if (vertices < 3) return null;
+        if (vertices < 2) return null;
         
         let formula = `P(${vertices}`;
         if (offset > 0) {

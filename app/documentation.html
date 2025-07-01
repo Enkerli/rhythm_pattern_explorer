@@ -553,7 +553,7 @@
             <section id="pattern-creation" class="docs-section">
                 <h2>🎨 Pattern Creation</h2>
                 
-                <p>The Pattern Creation module provides an intuitive interface for generating rhythmic patterns using four different algorithmic approaches. This streamlined tool allows musicians and researchers to quickly create and explore various rhythmic structures.</p>
+                <p>The Pattern Creation module provides an intuitive interface for generating rhythmic patterns using five different algorithmic approaches. This streamlined tool allows musicians and researchers to quickly create and explore various rhythmic structures.</p>
                 
                 <h3>Interface Overview</h3>
                 <div class="algorithm-box">
@@ -564,6 +564,7 @@
                         <li><strong>Barlow:</strong> Indispensability theory for intelligent placement</li>
                         <li><strong>Wolrab:</strong> Anti-Barlow for groove-oriented patterns</li>
                         <li><strong>Random:</strong> Distribution-based randomness with musical intelligence</li>
+                        <li><strong>Polygon:</strong> Geometric patterns using regular polygons with combination support</li>
                     </ul>
                 </div>
                 
@@ -624,6 +625,41 @@
                         <li><strong>Random Onsets:</strong> Enter 'r' for random onset count using bell curve distribution</li>
                         <li><strong>Progressive Mode:</strong> Not available for random generation</li>
                         <li><strong>Enter Key:</strong> Generates new random variation each time</li>
+                    </ul>
+                </div>
+                
+                <h3>Polygon Mode Interface</h3>
+                <div class="algorithm-box">
+                    <h4>Polygon Builder</h4>
+                    <p>The Polygon mode provides a visual interface for combining up to 3 regular polygons with addition and subtraction operations:</p>
+                    <ul>
+                        <li><strong>Vertices:</strong> 2-32 vertices (bipoint to 32-gon)</li>
+                        <li><strong>Offset:</strong> Optional rotation offset for each polygon</li>
+                        <li><strong>Multiplier:</strong> Optional expansion factor (1-8x)</li>
+                        <li><strong>Operations:</strong> + (addition) or - (subtraction) between polygons</li>
+                        <li><strong>Visual Icons:</strong> Dynamic polygon symbols update based on vertex count</li>
+                    </ul>
+                </div>
+                
+                <div class="algorithm-box">
+                    <h4>Polygon Combination Mathematics</h4>
+                    <p>When combining multiple polygons, the system:</p>
+                    <ul>
+                        <li><strong>LCM Expansion:</strong> Automatically expands all polygons to their least common multiple</li>
+                        <li><strong>Addition:</strong> Combines patterns using logical OR (union of onsets)</li>
+                        <li><strong>Subtraction:</strong> Removes onsets where both patterns have beats</li>
+                        <li><strong>Perfect Balance:</strong> Strategic subtraction can achieve perfect balance patterns</li>
+                    </ul>
+                </div>
+                
+                <div class="algorithm-box">
+                    <h4>Polygon Mode Features</h4>
+                    <ul>
+                        <li><strong>Add/Remove Terms:</strong> + Add Polygon button and × remove buttons</li>
+                        <li><strong>Formula Display:</strong> Shows combined formula like P(3,1)+P(5,0)-P(2,0)</li>
+                        <li><strong>Progressive Mode:</strong> Not available (polygons define their own structure)</li>
+                        <li><strong>Bipoint Support:</strong> 2-vertex patterns create alternating rhythms</li>
+                        <li><strong>Geometric Names:</strong> Visual icons show triangle, pentagon, etc.</li>
                     </ul>
                 </div>
                 
