@@ -1,0 +1,74 @@
+::1 - - [01/Jul/2025 02:00:37] "GET / HTTP/1.1" 200 -
+::1 - - [01/Jul/2025 02:01:41] "GET / HTTP/1.1" 200 -
+::1 - - [01/Jul/2025 02:01:41] "GET /app-styles.css HTTP/1.1" 200 -
+::1 - - [01/Jul/2025 02:01:42] "GET /platform-utils.js HTTP/1.1" 200 -
+::1 - - [01/Jul/2025 02:01:42] "GET /math-renderer.js HTTP/1.1" 200 -
+::1 - - [01/Jul/2025 02:01:42] "GET /docs-manager.js HTTP/1.1" 200 -
+::1 - - [01/Jul/2025 02:01:42] "GET /math-core.js HTTP/1.1" 200 -
+::1 - - [01/Jul/2025 02:01:42] "GET /app-config.js HTTP/1.1" 200 -
+::1 - - [01/Jul/2025 02:01:42] "GET /pattern-generators.js HTTP/1.1" 200 -
+::1 - - [01/Jul/2025 02:01:42] "GET /pattern-analysis.js HTTP/1.1" 200 -
+::1 - - [01/Jul/2025 02:01:42] "GET /pattern-processing.js HTTP/1.1" 200 -
+::1 - - [01/Jul/2025 02:01:42] "GET /pattern-exploration.js HTTP/1.1" 200 -
+::1 - - [01/Jul/2025 02:01:42] "GET /pattern-database.js HTTP/1.1" 200 -
+::1 - - [01/Jul/2025 02:01:42] "GET /sequencer-audio.js HTTP/1.1" 200 -
+::1 - - [01/Jul/2025 02:01:42] "GET /sequencer-visual.js HTTP/1.1" 200 -
+::1 - - [01/Jul/2025 02:01:42] "GET /webrtc-osc.js HTTP/1.1" 200 -
+::1 - - [01/Jul/2025 02:01:42] "GET /midi-output.js HTTP/1.1" 200 -
+::1 - - [01/Jul/2025 02:01:42] "GET /sequencer-controller.js HTTP/1.1" 200 -
+::1 - - [01/Jul/2025 02:01:42] "GET /ui-components.js HTTP/1.1" 200 -
+::1 - - [01/Jul/2025 02:01:42] "GET /app-controller-browser.js HTTP/1.1" 200 -
+::1 - - [01/Jul/2025 02:01:42] code 404, message File not found
+::1 - - [01/Jul/2025 02:01:42] "GET /favicon.ico HTTP/1.1" 404 -
+::ffff:10.0.0.170 - - [01/Jul/2025 02:05:49] "GET / HTTP/1.1" 200 -
+::ffff:10.0.0.170 - - [01/Jul/2025 02:05:49] "GET /app-styles.css HTTP/1.1" 200 -
+::ffff:10.0.0.170 - - [01/Jul/2025 02:05:49] "GET /platform-utils.js HTTP/1.1" 200 -
+::ffff:10.0.0.170 - - [01/Jul/2025 02:05:49] "GET /math-renderer.js HTTP/1.1" 200 -
+::ffff:10.0.0.170 - - [01/Jul/2025 02:05:49] "GET /docs-manager.js HTTP/1.1" 200 -
+::ffff:10.0.0.170 - - [01/Jul/2025 02:05:50] "GET /math-core.js HTTP/1.1" 200 -
+::ffff:10.0.0.170 - - [01/Jul/2025 02:05:50] "GET /app-config.js HTTP/1.1" 200 -
+::ffff:10.0.0.170 - - [01/Jul/2025 02:05:50] "GET /pattern-generators.js HTTP/1.1" 200 -
+::ffff:10.0.0.170 - - [01/Jul/2025 02:05:50] "GET /pattern-analysis.js HTTP/1.1" 200 -
+::ffff:10.0.0.170 - - [01/Jul/2025 02:05:50] "GET /pattern-processing.js HTTP/1.1" 200 -
+::ffff:10.0.0.170 - - [01/Jul/2025 02:05:50] "GET /pattern-exploration.js HTTP/1.1" 200 -
+::ffff:10.0.0.170 - - [01/Jul/2025 02:05:50] "GET /pattern-database.js HTTP/1.1" 200 -
+::ffff:10.0.0.170 - - [01/Jul/2025 02:05:50] "GET /sequencer-audio.js HTTP/1.1" 200 -
+::ffff:10.0.0.170 - - [01/Jul/2025 02:05:50] "GET /sequencer-visual.js HTTP/1.1" 200 -
+::ffff:10.0.0.170 - - [01/Jul/2025 02:05:50] "GET /webrtc-osc.js HTTP/1.1" 200 -
+::ffff:10.0.0.170 - - [01/Jul/2025 02:05:50] "GET /midi-output.js HTTP/1.1" 200 -
+::ffff:10.0.0.170 - - [01/Jul/2025 02:05:50] "GET /sequencer-controller.js HTTP/1.1" 200 -
+::ffff:10.0.0.170 - - [01/Jul/2025 02:05:50] "GET /ui-components.js HTTP/1.1" 200 -
+::ffff:10.0.0.170 - - [01/Jul/2025 02:05:50] "GET /app-controller-browser.js HTTP/1.1" 200 -
+::ffff:10.0.0.170 - - [01/Jul/2025 02:05:50] code 404, message File not found
+::ffff:10.0.0.170 - - [01/Jul/2025 02:05:50] "GET /favicon.ico HTTP/1.1" 404 -
+::ffff:10.0.0.170 - - [01/Jul/2025 02:08:05] "GET / HTTP/1.1" 200 -
+::ffff:10.0.0.170 - - [01/Jul/2025 02:08:05] "GET /midi-output.js HTTP/1.1" 304 -
+::ffff:10.0.0.146 - - [01/Jul/2025 02:15:23] code 404, message File not found
+::ffff:10.0.0.146 - - [01/Jul/2025 02:15:23] code 404, message File not found
+::ffff:10.0.0.146 - - [01/Jul/2025 02:15:23] "GET /apple-touch-icon.png HTTP/1.1" 404 -
+::ffff:10.0.0.146 - - [01/Jul/2025 02:15:23] "GET /apple-touch-icon-precomposed.png HTTP/1.1" 404 -
+::ffff:10.0.0.146 - - [01/Jul/2025 02:15:23] code 404, message File not found
+::ffff:10.0.0.146 - - [01/Jul/2025 02:15:23] "GET /favicon.ico HTTP/1.1" 404 -
+::ffff:10.0.0.146 - - [01/Jul/2025 02:15:23] "GET / HTTP/1.1" 200 -
+::ffff:10.0.0.170 - - [01/Jul/2025 03:18:11] "GET /ipad-midi-test.html HTTP/1.1" 200 -
+::ffff:10.0.0.170 - - [01/Jul/2025 03:18:11] code 404, message File not found
+::ffff:10.0.0.170 - - [01/Jul/2025 03:18:11] "GET /ipad-native-midi-bridge.js HTTP/1.1" 404 -
+::ffff:10.0.0.170 - - [01/Jul/2025 03:19:33] "GET /ipad-midi-test.html HTTP/1.1" 200 -
+::ffff:10.0.0.170 - - [01/Jul/2025 03:19:33] code 404, message File not found
+::ffff:10.0.0.170 - - [01/Jul/2025 03:19:33] "GET /ipad-native-midi-bridge.js HTTP/1.1" 404 -
+::ffff:10.0.0.170 - - [01/Jul/2025 03:19:39] "GET /ipad-midi-test.html HTTP/1.1" 200 -
+::ffff:10.0.0.170 - - [01/Jul/2025 03:19:39] code 404, message File not found
+::ffff:10.0.0.170 - - [01/Jul/2025 03:19:39] "GET /ipad-native-midi-bridge.js HTTP/1.1" 404 -
+::ffff:10.0.0.170 - - [01/Jul/2025 03:19:54] "GET /ipad-midi-test.html HTTP/1.1" 200 -
+::ffff:10.0.0.170 - - [01/Jul/2025 03:19:54] code 404, message File not found
+::ffff:10.0.0.170 - - [01/Jul/2025 03:19:54] "GET /ipad-native-midi-bridge.js HTTP/1.1" 404 -
+::ffff:10.0.0.170 - - [01/Jul/2025 03:20:03] "GET /ipad-midi-test.html HTTP/1.1" 200 -
+::ffff:10.0.0.170 - - [01/Jul/2025 03:20:03] code 404, message File not found
+::ffff:10.0.0.170 - - [01/Jul/2025 03:20:03] "GET /ipad-native-midi-bridge.js HTTP/1.1" 404 -
+::ffff:10.0.0.146 - - [01/Jul/2025 03:20:12] code 404, message File not found
+::ffff:10.0.0.146 - - [01/Jul/2025 03:20:12] "GET /apple-touch-icon-precomposed.png HTTP/1.1" 404 -
+::ffff:10.0.0.146 - - [01/Jul/2025 03:20:12] code 404, message File not found
+::ffff:10.0.0.146 - - [01/Jul/2025 03:20:12] code 404, message File not found
+::ffff:10.0.0.146 - - [01/Jul/2025 03:20:12] "GET /apple-touch-icon.png HTTP/1.1" 404 -
+::ffff:10.0.0.146 - - [01/Jul/2025 03:20:12] "GET /favicon.ico HTTP/1.1" 404 -
+::ffff:10.0.0.146 - - [01/Jul/2025 03:20:12] "GET /ipad-midi-test.html HTTP/1.1" 200 -

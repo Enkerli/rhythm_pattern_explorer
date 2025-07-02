@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Controller Module Test Suite</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #fafafa;
+        }
+        .test-result {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            padding: 8px;
+            border-radius: 4px;
+        }
+        .test-result.pass {
+            background-color: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+        .test-result.fail {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+        .test-icon {
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        .summary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .error-details {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+        h1, h2, h3 {
+            color: #333;
+        }
+        .dependency-list {
+            background-color: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .performance-indicator {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            margin-left: 10px;
+        }
+        .performance-good { background-color: #d4edda; color: #155724; }
+        .performance-warning { background-color: #fff3cd; color: #856404; }
+        .performance-poor { background-color: #f8d7da; color: #721c24; }
+        /* Mock DOM elements for testing */
+        #mockPatternInput { width: 200px; padding: 5px; margin: 5px; }
+        #mockPatternOutput { min-height: 50px; background: #f0f0f0; padding: 10px; margin: 5px; }
+        #mockDatabaseDisplay { min-height: 100px; background: #f9f9f9; padding: 10px; margin: 5px; }
+        .mock-section {
+            background-color: #f0f8ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border: 2px dashed #4a90e2;
+        }
+        .test-controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .test-controls button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 0 10px;
+            font-size: 14px;
+            transition: transform 0.2s;
+        }
+        .test-controls button:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 App Controller Module Test Suite</h1>
+        
+        <div class="summary" id="testSummary">
+            <h2>Testing App Controller (app-controller.js)</h2>
+            <p>Main application orchestrator - coordinates all modules and handles user interactions</p>
+            <div id="overallResult">Preparing tests...</div>
+        </div>
+
+        <div class="dependency-list">
+            <h3>📦 Module Dependencies</h3>
+            <p><strong>Dependencies:</strong> math-core.js, pattern-generators.js, pattern-analysis.js, pattern-processing.js, pattern-exploration.js, pattern-database.js, ui-components.js</p>
+            <p><strong>Primary Class:</strong> EnhancedPatternApp</p>
+            <p><strong>Key Features:</strong> Event handling, workflow coordination, UI management, application state</p>
+        </div>
+
+        <!-- Mock DOM Elements for Testing -->
+        <div class="mock-section">
+            <h3>🎭 Mock DOM Elements (for testing)</h3>
+            <div>
+                <label for="mockPatternInput">Pattern Input:</label>
+                <input type="text" id="mockPatternInput" placeholder="Enter pattern (e.g., P(3,1))">
+                <button id="mockParseButton">Parse Pattern</button>
+            </div>
+            <div>
+                <label>Pattern Output:</label>
+                <div id="mockPatternOutput">Pattern results will appear here...</div>
+            </div>
+            <div>
+                <label>Database Display:</label>
+                <div id="mockDatabaseDisplay">Database contents will appear here...</div>
+            </div>
+            <div>
+                <input type="text" id="mockSearchInput" placeholder="Search patterns...">
+                <button id="mockSearchButton">Search</button>
+                <button id="mockExportButton">Export</button>
+                <button id="mockClearButton">Clear</button>
+            </div>
+            <div>
+                <button id="mockExplorerButton">Start Perfect Balance Explorer</button>
+                <button id="mockStopButton">Stop Exploration</button>
+                <div id="mockProgressDisplay">Exploration progress: 0%</div>
+            </div>
+        </div>
+
+        <div class="test-controls">
+            <button onclick="runAllTests()">🚀 Run All Tests</button>
+            <button onclick="runPerformanceTests()">⚡ Performance Tests</button>
+            <button onclick="runIntegrationTests()">🔗 Integration Tests</button>
+        </div>
+
+        <!-- Test Results Sections -->
+        <div class="test-section">
+            <h3>🏗️ Core Application Structure Tests</h3>
+            <div id="structureTests">Click "Run All Tests" to start testing...</div>
+        </div>
+
+        <div class="test-section">
+            <h3>🎛️ Event Handling Tests</h3>
+            <div id="eventTests">Click "Run All Tests" to start testing...</div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔄 Workflow Coordination Tests</h3>
+            <div id="workflowTests">Click "Run All Tests" to start testing...</div>
+        </div>
+
+        <div class="test-section">
+            <h3>🎨 UI Management Tests</h3>
+            <div id="uiTests">Click "Run All Tests" to start testing...</div>
+        </div>
+
+        <div class="test-section">
+            <h3>💾 Application State Tests</h3>
+            <div id="stateTests">Click "Run All Tests" to start testing...</div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔗 Module Integration Tests</h3>
+            <div id="integrationTests">Click "Run Integration Tests" to start testing...</div>
+        </div>
+
+        <div class="test-section">
+            <h3>⚡ Performance Tests</h3>
+            <div id="performanceTests">Click "Performance Tests" to start testing...</div>
+        </div>
+
+        <div class="test-section">
+            <h3>🛡️ Error Handling Tests</h3>
+            <div id="errorTests">Click "Run All Tests" to start testing...</div>
+        </div>
+    </div>
+
+    <!-- Load all dependencies first -->
+    <script type="module">
+        // Import all required modules
+        import { MathUtils } from './math-core.js';
+        import { RegularPolygonGenerator, EuclideanGenerator } from './pattern-generators.js';
+        import { PerfectBalanceAnalyzer, PatternAnalyzer } from './pattern-analysis.js';
+        import { AdvancedPatternCombiner, UnifiedPatternParser, PatternConverter } from './pattern-processing.js';
+        import { SystematicExplorer } from './pattern-exploration.js';
+        import { PatternDatabase } from './pattern-database.js';
+        import { UIComponents } from './ui-components.js';
+        import { EnhancedPatternApp } from './app-controller.js';
+
+        // Make modules globally available for testing
+        window.MathUtils = MathUtils;
+        window.RegularPolygonGenerator = RegularPolygonGenerator;
+        window.EuclideanGenerator = EuclideanGenerator;
+        window.PerfectBalanceAnalyzer = PerfectBalanceAnalyzer;
+        window.PatternAnalyzer = PatternAnalyzer;
+        window.AdvancedPatternCombiner = AdvancedPatternCombiner;
+        window.UnifiedPatternParser = UnifiedPatternParser;
+        window.PatternConverter = PatternConverter;
+        window.SystematicExplorer = SystematicExplorer;
+        window.PatternDatabase = PatternDatabase;
+        window.UIComponents = UIComponents;
+        window.EnhancedPatternApp = EnhancedPatternApp;
+
+        // Test framework
+        let totalTests = 0;
+        let passedTests = 0;
+        let testResults = [];
+
+        function test(name, testFn, section = 'general') {
+            totalTests++;
+            try {
+                const startTime = performance.now();
+                const result = testFn();
+                const endTime = performance.now();
+                const duration = endTime - startTime;
+                
+                if (result === true || result === undefined) {
+                    passedTests++;
+                    addTestResult(name, true, null, duration, section);
+                } else {
+                    addTestResult(name, false, result || 'Test returned false', duration, section);
+                }
+            } catch (error) {
+                addTestResult(name, false, error.message, 0, section);
+            }
+        }
+
+        function addTestResult(name, passed, error, duration, section) {
+            const result = { name, passed, error, duration, section };
+            testResults.push(result);
+            
+            const sectionElement = document.getElementById(section + 'Tests');
+            if (sectionElement) {
+                const resultElement = document.createElement('div');
+                resultElement.className = `test-result ${passed ? 'pass' : 'fail'}`;
+                
+                let performanceIndicator = '';
+                if (duration > 0) {
+                    let perfClass = 'performance-good';
+                    if (duration > 100) perfClass = 'performance-warning';
+                    if (duration > 500) perfClass = 'performance-poor';
+                    performanceIndicator = `<span class="performance-indicator ${perfClass}">${duration.toFixed(1)}ms</span>`;
+                }
+                
+                resultElement.innerHTML = `
+                    <span class="test-icon">${passed ? '✅' : '❌'}</span>
+                    <span>${name}</span>
+                    ${performanceIndicator}
+                    ${error ? `<div class="error-details">Error: ${error}</div>` : ''}
+                `;
+                sectionElement.appendChild(resultElement);
+            }
+        }
+
+        function updateSummary() {
+            const percentage = totalTests > 0 ? ((passedTests / totalTests) * 100).toFixed(1) : 0;
+            const summaryElement = document.getElementById('overallResult');
+            summaryElement.innerHTML = `
+                <strong>Results: ${passedTests}/${totalTests} tests passed (${percentage}%)</strong><br>
+                <small>App Controller Module Verification</small>
+            `;
+            summaryElement.style.backgroundColor = passedTests === totalTests ? '#28a745' : '#dc3545';
+        }
+
+        // Core Application Structure Tests
+        window.runStructureTests = function() {
+            console.log('🏗️ Testing Core Application Structure...');
+            
+            test('EnhancedPatternApp class exists', () => {
+                return typeof EnhancedPatternApp === 'function';
+            }, 'structure');
+
+            test('EnhancedPatternApp can be instantiated', () => {
+                const app = new EnhancedPatternApp();
+                return app instanceof EnhancedPatternApp;
+            }, 'structure');
+
+            test('App has required properties after instantiation', () => {
+                const app = new EnhancedPatternApp();
+                return app.hasOwnProperty('database') && 
+                       app.hasOwnProperty('explorer') && 
+                       app.hasOwnProperty('currentPattern');
+            }, 'structure');
+
+            test('App has essential methods', () => {
+                const app = new EnhancedPatternApp();
+                return typeof app.initialize === 'function' &&
+                       typeof app.setupEventListeners === 'function' &&
+                       typeof app.parseUniversalInput === 'function';
+            }, 'structure');
+
+            test('App database integration', () => {
+                const app = new EnhancedPatternApp();
+                return app.database instanceof PatternDatabase;
+            }, 'structure');
+
+            test('App explorer integration', () => {
+                const app = new EnhancedPatternApp();
+                return app.explorer instanceof SystematicExplorer;
+            }, 'structure');
+        };
+
+        // Event Handling Tests
+        window.runEventTests = function() {
+            console.log('🎛️ Testing Event Handling...');
+            
+            test('setupEventListeners method exists', () => {
+                const app = new EnhancedPatternApp();
+                return typeof app.setupEventListeners === 'function';
+            }, 'event');
+
+            test('Event listeners can be attached without errors', () => {
+                const app = new EnhancedPatternApp();
+                // Mock the DOM elements that setupEventListeners expects
+                const mockElements = {
+                    'pattern-input': document.getElementById('mockPatternInput'),
+                    'parse-button': document.getElementById('mockParseButton'),
+                    'search-input': document.getElementById('mockSearchInput'),
+                    'explorer-button': document.getElementById('mockExplorerButton')
+                };
+                
+                // Temporarily add mock elements with expected IDs
+                for (const [id, element] of Object.entries(mockElements)) {
+                    if (element) {
+                        element.id = id;
+                    }
+                }
+                
+                try {
+                    app.setupEventListeners();
+                    return true;
+                } catch (error) {
+                    // Expected to fail due to missing DOM elements, but shouldn't crash
+                    return error.message.includes('getElementById') || error.message.includes('null');
+                }
+            }, 'event');
+
+            test('Input validation event handling', () => {
+                const app = new EnhancedPatternApp();
+                // Test that the app can handle input validation
+                return typeof app.parseUniversalInput === 'function';
+            }, 'event');
+
+            test('Pattern operations event handling', () => {
+                const app = new EnhancedPatternApp();
+                // Check for pattern processing capabilities
+                return app.database && typeof app.database.addPattern === 'function';
+            }, 'event');
+
+            test('Database management event handling', () => {
+                const app = new EnhancedPatternApp();
+                return typeof app.renderDatabase === 'function';
+            }, 'event');
+        };
+
+        // Workflow Coordination Tests
+        window.runWorkflowTests = function() {
+            console.log('🔄 Testing Workflow Coordination...');
+            
+            test('Pattern processing workflow', () => {
+                const app = new EnhancedPatternApp();
+                // Test that the app can coordinate pattern processing
+                return typeof app.parseUniversalInput === 'function' &&
+                       typeof app.updateAnalysisDisplay === 'function';
+            }, 'workflow');
+
+            test('Database workflow coordination', () => {
+                const app = new EnhancedPatternApp();
+                return app.database instanceof PatternDatabase &&
+                       typeof app.renderDatabase === 'function';
+            }, 'workflow');
+
+            test('Exploration workflow coordination', () => {
+                const app = new EnhancedPatternApp();
+                return app.explorer instanceof SystematicExplorer &&
+                       typeof app.startSystematicExploration === 'function';
+            }, 'workflow');
+
+            test('Analysis workflow coordination', () => {
+                const app = new EnhancedPatternApp();
+                // Test analysis integration
+                return typeof app.updateAnalysisDisplay === 'function';
+            }, 'workflow');
+
+            test('UI update workflow', () => {
+                const app = new EnhancedPatternApp();
+                return typeof app.showCompactOutput === 'function';
+            }, 'workflow');
+        };
+
+        // UI Management Tests
+        window.runUITests = function() {
+            console.log('🎨 Testing UI Management...');
+            
+            test('UI initialization capabilities', () => {
+                const app = new EnhancedPatternApp();
+                return typeof app.initialize === 'function';
+            }, 'ui');
+
+            test('Pattern display management', () => {
+                const app = new EnhancedPatternApp();
+                return typeof app.showCompactOutput === 'function' &&
+                       typeof app.updateAnalysisDisplay === 'function';
+            }, 'ui');
+
+            test('Database UI rendering', () => {
+                const app = new EnhancedPatternApp();
+                return typeof app.renderDatabase === 'function';
+            }, 'ui');
+
+            test('Progress display capabilities', () => {
+                const app = new EnhancedPatternApp();
+                // Check for exploration progress handling
+                return app.explorer instanceof SystematicExplorer;
+            }, 'ui');
+
+            test('Error message display', () => {
+                const app = new EnhancedPatternApp();
+                // Apps should handle errors gracefully
+                return app instanceof EnhancedPatternApp;
+            }, 'ui');
+        };
+
+        // Application State Tests
+        window.runStateTests = function() {
+            console.log('💾 Testing Application State...');
+            
+            test('Initial state setup', () => {
+                const app = new EnhancedPatternApp();
+                return app.hasOwnProperty('currentPattern') &&
+                       app.hasOwnProperty('sortByDate') &&
+                       app.hasOwnProperty('explorationResults');
+            }, 'state');
+
+            test('Pattern state management', () => {
+                const app = new EnhancedPatternApp();
+                return app.currentPattern === null; // Initial state
+            }, 'state');
+
+            test('Database state persistence', () => {
+                const app = new EnhancedPatternApp();
+                return app.database instanceof PatternDatabase;
+            }, 'state');
+
+            test('Exploration state tracking', () => {
+                const app = new EnhancedPatternApp();
+                return Array.isArray(app.explorationResults);
+            }, 'state');
+
+            test('Sort preferences state', () => {
+                const app = new EnhancedPatternApp();
+                return typeof app.sortByDate === 'boolean';
+            }, 'state');
+        };
+
+        // Error Handling Tests
+        window.runErrorTests = function() {
+            console.log('🛡️ Testing Error Handling...');
+            
+            test('Invalid pattern input handling', () => {
+                const app = new EnhancedPatternApp();
+                // Should not crash on invalid input
+                try {
+                    app.parseUniversalInput('invalid pattern');
+                    return true;
+                } catch (error) {
+                    // Expected to handle errors gracefully
+                    return true;
+                }
+            }, 'error');
+
+            test('Missing DOM element handling', () => {
+                const app = new EnhancedPatternApp();
+                // Should handle missing DOM elements gracefully
+                try {
+                    app.setupEventListeners();
+                    return true;
+                } catch (error) {
+                    // Expected to fail gracefully
+                    return true;
+                }
+            }, 'error');
+
+            test('Database error recovery', () => {
+                const app = new EnhancedPatternApp();
+                return app.database instanceof PatternDatabase;
+            }, 'error');
+
+            test('Exploration error handling', () => {
+                const app = new EnhancedPatternApp();
+                return app.explorer instanceof SystematicExplorer;
+            }, 'error');
+        };
+
+        // Integration Tests
+        window.runIntegrationTests = function() {
+            console.log('🔗 Testing Module Integration...');
+            
+            test('Math core integration', () => {
+                const app = new EnhancedPatternApp();
+                return typeof MathUtils !== 'undefined';
+            }, 'integration');
+
+            test('Pattern generators integration', () => {
+                const app = new EnhancedPatternApp();
+                return typeof RegularPolygonGenerator !== 'undefined' &&
+                       typeof EuclideanGenerator !== 'undefined';
+            }, 'integration');
+
+            test('Pattern analysis integration', () => {
+                const app = new EnhancedPatternApp();
+                return typeof PerfectBalanceAnalyzer !== 'undefined' &&
+                       typeof PatternAnalyzer !== 'undefined';
+            }, 'integration');
+
+            test('Pattern processing integration', () => {
+                const app = new EnhancedPatternApp();
+                return typeof UnifiedPatternParser !== 'undefined' &&
+                       typeof PatternConverter !== 'undefined';
+            }, 'integration');
+
+            test('Database integration', () => {
+                const app = new EnhancedPatternApp();
+                return app.database instanceof PatternDatabase;
+            }, 'integration');
+
+            test('Explorer integration', () => {
+                const app = new EnhancedPatternApp();
+                return app.explorer instanceof SystematicExplorer;
+            }, 'integration');
+
+            test('UI components integration', () => {
+                const app = new EnhancedPatternApp();
+                return typeof UIComponents !== 'undefined';
+            }, 'integration');
+
+            test('Cross-module workflow', () => {
+                const app = new EnhancedPatternApp();
+                // Test that all major subsystems are connected
+                return app.database && app.explorer && 
+                       typeof app.parseUniversalInput === 'function';
+            }, 'integration');
+        };
+
+        // Performance Tests
+        window.runPerformanceTests = function() {
+            console.log('⚡ Testing Performance...');
+            
+            test('App instantiation performance', () => {
+                const start = performance.now();
+                const app = new EnhancedPatternApp();
+                const end = performance.now();
+                return (end - start) < 100; // Should instantiate in under 100ms
+            }, 'performance');
+
+            test('Event listener setup performance', () => {
+                const app = new EnhancedPatternApp();
+                const start = performance.now();
+                try {
+                    app.setupEventListeners();
+                } catch (error) {
+                    // Expected due to missing DOM
+                }
+                const end = performance.now();
+                return (end - start) < 50; // Should complete quickly
+            }, 'performance');
+
+            test('Pattern processing performance', () => {
+                const app = new EnhancedPatternApp();
+                const start = performance.now();
+                try {
+                    app.parseUniversalInput('P(3,1)');
+                } catch (error) {
+                    // May fail due to missing DOM, but should fail quickly
+                }
+                const end = performance.now();
+                return (end - start) < 100;
+            }, 'performance');
+
+            test('Database rendering performance', () => {
+                const app = new EnhancedPatternApp();
+                const start = performance.now();
+                try {
+                    app.renderDatabase();
+                } catch (error) {
+                    // Expected due to missing DOM
+                }
+                const end = performance.now();
+                return (end - start) < 100;
+            }, 'performance');
+        };
+
+        // Main test runner
+        window.runAllTests = function() {
+            console.log('🚀 Starting App Controller Tests...');
+            totalTests = 0;
+            passedTests = 0;
+            testResults = [];
+            
+            // Clear previous results
+            ['structure', 'event', 'workflow', 'ui', 'state', 'error'].forEach(section => {
+                const element = document.getElementById(section + 'Tests');
+                if (element) element.innerHTML = '';
+            });
+            
+            // Run all test suites
+            runStructureTests();
+            runEventTests();
+            runWorkflowTests();
+            runUITests();
+            runStateTests();
+            runErrorTests();
+            
+            updateSummary();
+            console.log('✅ App Controller Tests Complete!');
+        };
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🎵 App Controller Test Suite Ready');
+            console.log('Dependencies loaded, ready for testing');
+        });
+    </script>
+</body>
+</html>

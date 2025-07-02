@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Pattern Database with Perfect Balance Explorer</title>
+    
+    <!-- Load CSS Styles Module -->
+    <link rel="stylesheet" href="app-styles.css">
+    
+    <!-- MathJax Configuration and Loading -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true,
+                processEnvironments: true,
+                packages: ['base', 'ams', 'newcommand', 'configmacros']
+            },
+            options: {
+                ignoreHtmlClass: 'tex2jax_ignore',
+                processHtmlClass: 'tex2jax_process'
+            },
+            startup: {
+                pageReady: () => {
+                    console.log('📐 MathJax loaded and ready for mathematical equation rendering');
+                    return MathJax.startup.defaultPageReady();
+                }
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+    <!-- NOTIFICATION CONTAINER -->
+    <div id="notification-container" class="notification-container"></div>
+
+    <!-- GITHUB FORK RIBBON -->
+    <a href="https://github.com/Enkerli/rhythm_pattern_explorer/" style="position: absolute; top: 0; left: 0; z-index: 1000;">
+        <img loading="lazy" decoding="async" width="149" height="149" src="https://github.blog/wp-content/uploads/2008/12/forkme_left_darkblue_121621.png" class="attachment-full size-full" alt="Fork me on GitHub">
+    </a>
+
+    <!-- MAIN APPLICATION CONTAINER -->
+    <div class="app-container">
+        
+        <!-- APP HEADER -->
+        <header class="app-header">
+            <h1>🎼 Enhanced Pattern Database with Perfect Balance Explorer</h1>
+            <p>Mathematical analysis and exploration of rhythmic patterns using Milne's perfect balance theory</p>
+            <p>
+                <a href="documentation.html" target="_blank">📐 Interactive Documentation</a> | 
+                <a href="https://github.com/Enkerli/rhythm_pattern_explorer#readme" target="_blank">📖 GitHub README</a>
+            </p>
+        </header>
+
+        <!-- MAIN 4-ROW LAYOUT -->
+        <main class="four-row-layout">
+            
+            <!-- ROW 1: UNIVERSAL PATTERN INPUT (THIN) -->
+            <section class="row-1-input">
+                <div class="row-header">
+                    <h2 class="row-title">🎵 Universal Pattern Input</h2>
+                    <button class="info-btn" onclick="toggleInfoBox('format-info')">ℹ️</button>
+                </div>
+                
+                <div class="input-row">
+                    <input type="text" class="input-main" id="universalInput" placeholder="P(3,1)+P(5,0)+P(2,5), P(3,0)+P(5,1)-P(2,0), E(5,8,0), 0x49@3, 0o111, [0,3,6]:8, etc.">
+                    <button class="btn primary" id="parseBtn">Parse & Analyze</button>
+                    <button class="btn success" id="addToDbBtn">Add to Database</button>
+                    <button class="btn secondary" id="copyHexUniversalBtn">Copy Hex</button>
+                </div>
+
+                <!-- FORMAT INFORMATION BOX -->
+                <div class="info-box" id="format-info" style="display: none;">
+                    <strong>Supported Formats:</strong><br>
+                    • <strong>Polygons:</strong> P(vertices,offset) → P(3,1)+P(5,0) = Auto-expansion to LCM<br>
+                    • <strong>Single Polygons:</strong> P(vertices,offset,expansion) → P(3,1,4) = Explicit expansion<br>
+                    • <strong>Euclidean:</strong> E(beats,steps,offset) or E(beats,steps) → E(5,8,0) or E(5,8)<br>
+                    • <strong>Random:</strong> R(onsets,steps) or R(r,steps) → R(3,8) = Random 3 onsets in 8 steps, R(r,8) = Bell curve distribution<br>
+                    • <strong>Morse Intervals:</strong> -.-- (dots=short, dashes=long intervals) → Creates rhythmic patterns based on interval timing<br>
+                    • <strong>Morse Characters:</strong> M:C, M:SOS, M:HELLO → Converts Morse code characters to rhythmic patterns<br>
+                    • <strong>Shorthand:</strong> tri, pent, hept, oct → triangle, pentagon, heptagon, octagon (tri@1 for offset)<br>
+                    • <strong>Subtraction:</strong> P(3,0)+P(5,1)-P(2,0) = Perfect balance via subtraction<br>
+                    • <strong>Transformations:</strong> ~pattern (invert), rev pattern (retrograde), comp pattern (Euclidean complement)<br>
+                    • <strong>Stretch/Squeeze:</strong> S:2 pattern (stretch by 2x), Q:0.5 pattern (squeeze to half size)<br>
+                    • <strong>Custom Durations:</strong> D:1,5 pattern (short=1, long=5), D:3,1 pattern (reverse short/long)<br>
+                    • <strong>Pattern Stringing:</strong> pattern1, pattern2, pattern3 → Concatenates patterns with visual dividers<br>
+                    • <strong>Pattern Quantization:</strong> pattern;newSteps → E(3,8);12 (clockwise), pattern;-newSteps → 0x92;-6 (counterclockwise)<br>
+                    • <strong>Named Patterns:</strong> tresillo=E(3,8), mypattern=P(3,1)+P(5,0)<br>
+                    • <strong>Binary:</strong> b101010 or 101010<br>
+                    • <strong>Hex:</strong> 0x92:8 → Tresillo<br>
+                    • <strong>Octal:</strong> 0o111 → Ternary rhythms<br>
+                    • <strong>Decimal:</strong> 73 or d73 (prefix disambiguates from binary)<br>
+                    • <strong>Onset Arrays:</strong> [0,3,6]:8 → Onset positions with step count<br>
+                    • <strong>Rotation:</strong> pattern@steps → 0x92@3, P(3,1)@2<br>
+                    • <strong>Progressive Transformers:</strong> patternB>target, patternW>target, patternE>target, patternD>target<br>
+                    • <strong>Progressive Examples:</strong> E(1,8)B>8 (Barlow 1→8), E(5,16)W>3 (Wolrab 5→3), P(3,1)E>12 (Euclidean), 0x92D>1 (Dilcue) - Enter repeatedly steps through<br>
+                    • <strong>Multi-combinations:</strong> P(3,1)+P(5,0)+P(2,5) → Proper LCM(3,5,2)=30<br>
+                    • <strong>Keyboard:</strong> Enter = Parse, <span class="platform-shortcut">Cmd+Enter</span> = Parse & Add to Database<br>
+                    • <strong>Buttons:</strong> "Add to Database" button available for any current pattern
+                </div>
+            </section>
+
+            <!-- TRANSFORMER INPUT MODULE -->
+            <section class="transformer-input-module">
+                <div class="row-header">
+                    <h2 class="row-title">🎨 Pattern Creation</h2>
+                    <button class="info-btn" onclick="toggleInfoBox('transformer-info')">ℹ️</button>
+                </div>
+                
+                <div class="transformer-controls">
+                    <!-- Mode Selection with Parameters in One Row -->
+                    <div class="transformer-main-row">
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="transformerMode" value="euclidean" checked class="transformer-radio">
+                                Euclidean
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="transformerMode" value="dilcue" class="transformer-radio">
+                                Dilcue
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="transformerMode" value="barlow" class="transformer-radio">
+                                Barlow
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="transformerMode" value="wolrab" class="transformer-radio">
+                                Wolrab
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="transformerMode" value="random" class="transformer-radio">
+                                Random
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="transformerMode" value="polygon" class="transformer-radio">
+                                Polygon
+                            </label>
+                        </div>
+                        
+                        <div class="transformer-params-inline">
+                            <!-- Standard Parameters (Euclidean, Dilcue, Barlow, Wolrab) -->
+                            <div class="input-group-inline standard-params">
+                                <label for="transformerOnsets">Onsets:</label>
+                                <input type="number" id="transformerOnsets" min="0" max="32" value="3" class="transformer-input-small">
+                            </div>
+                            <div class="input-group-inline standard-params">
+                                <label for="transformerSteps">Steps:</label>
+                                <input type="number" id="transformerSteps" min="1" max="32" value="8" class="transformer-input-small">
+                            </div>
+                            <div class="input-group-inline standard-params">
+                                <label for="transformerOffset">Offset:</label>
+                                <input type="number" id="transformerOffset" min="0" max="31" value="0" class="transformer-input-small">
+                            </div>
+                            <div class="input-group-inline standard-params">
+                                <label for="transformerTarget">Target:</label>
+                                <input type="number" id="transformerTarget" min="0" max="32" value="" placeholder="Progressive" class="transformer-input-small">
+                            </div>
+                            
+                            <!-- Random Parameters (only for Random mode) -->
+                            <div class="input-group-inline random-params" style="display: none;">
+                                <label for="randomOnsets">Onsets:</label>
+                                <input type="text" id="randomOnsets" value="3" placeholder="3 or r" class="transformer-input-small">
+                            </div>
+                            <div class="input-group-inline random-params" style="display: none;">
+                                <label for="randomSteps">Steps:</label>
+                                <input type="number" id="randomSteps" min="1" max="32" value="8" class="transformer-input-small">
+                            </div>
+                            <div class="input-group-inline random-params" style="display: none;">
+                                <label for="randomDistribution">Style:</label>
+                                <select id="randomDistribution" class="transformer-select-small">
+                                    <option value="uniform">Uniform</option>
+                                    <option value="bell" selected>Bell Curve</option>
+                                    <option value="syncopated">Syncopated</option>
+                                    <option value="balanced">Balanced</option>
+                                    <option value="clustered">Clustered</option>
+                                </select>
+                            </div>
+                            <div class="input-group-inline random-params" style="display: none;">
+                                <label for="randomIntensity">Intensity:</label>
+                                <input type="range" id="randomIntensity" min="0" max="100" value="50" class="transformer-range-small">
+                                <span id="randomIntensityValue" class="intensity-value">50%</span>
+                            </div>
+                            
+                            <!-- Polygon Parameters (only for Polygon mode) -->
+                            <div class="polygon-params" style="display: none;">
+                                <div class="polygon-builder">
+                                    <!-- Polygon 1 -->
+                                    <div class="polygon-term" id="polygonTerm1">
+                                        <div class="polygon-sign-container">
+                                            <span class="polygon-sign" id="polygonSign1"></span>
+                                        </div>
+                                        <div class="polygon-inputs">
+                                            <div class="input-group-inline">
+                                                <label for="polygonVertices1">Vertices:</label>
+                                                <input type="number" id="polygonVertices1" min="2" max="32" value="3" class="transformer-input-small">
+                                                <span class="polygon-icon" id="polygonIcon1">△</span>
+                                            </div>
+                                            <div class="input-group-inline">
+                                                <label for="polygonOffset1">Offset:</label>
+                                                <input type="number" id="polygonOffset1" min="0" max="31" value="0" class="transformer-input-small">
+                                            </div>
+                                            <div class="input-group-inline">
+                                                <label for="polygonMultiplier1">Multiplier:</label>
+                                                <input type="number" id="polygonMultiplier1" min="1" max="8" value="" placeholder="Auto" class="transformer-input-small">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Polygon 2 -->
+                                    <div class="polygon-term" id="polygonTerm2" style="display: none;">
+                                        <div class="polygon-sign-container">
+                                            <select id="polygonOperation2" class="polygon-operation">
+                                                <option value="+">+</option>
+                                                <option value="-">-</option>
+                                            </select>
+                                        </div>
+                                        <div class="polygon-inputs">
+                                            <div class="input-group-inline">
+                                                <label for="polygonVertices2">Vertices:</label>
+                                                <input type="number" id="polygonVertices2" min="2" max="32" value="5" class="transformer-input-small">
+                                                <span class="polygon-icon" id="polygonIcon2">⬟</span>
+                                            </div>
+                                            <div class="input-group-inline">
+                                                <label for="polygonOffset2">Offset:</label>
+                                                <input type="number" id="polygonOffset2" min="0" max="31" value="0" class="transformer-input-small">
+                                            </div>
+                                            <div class="input-group-inline">
+                                                <label for="polygonMultiplier2">Multiplier:</label>
+                                                <input type="number" id="polygonMultiplier2" min="1" max="8" value="" placeholder="Auto" class="transformer-input-small">
+                                            </div>
+                                        </div>
+                                        <button type="button" class="polygon-remove-btn" onclick="window.app?.removePolygonTerm(2)">×</button>
+                                    </div>
+                                    
+                                    <!-- Polygon 3 -->
+                                    <div class="polygon-term" id="polygonTerm3" style="display: none;">
+                                        <div class="polygon-sign-container">
+                                            <select id="polygonOperation3" class="polygon-operation">
+                                                <option value="+">+</option>
+                                                <option value="-">-</option>
+                                            </select>
+                                        </div>
+                                        <div class="polygon-inputs">
+                                            <div class="input-group-inline">
+                                                <label for="polygonVertices3">Vertices:</label>
+                                                <input type="number" id="polygonVertices3" min="2" max="32" value="7" class="transformer-input-small">
+                                                <span class="polygon-icon" id="polygonIcon3">⬢</span>
+                                            </div>
+                                            <div class="input-group-inline">
+                                                <label for="polygonOffset3">Offset:</label>
+                                                <input type="number" id="polygonOffset3" min="0" max="31" value="0" class="transformer-input-small">
+                                            </div>
+                                            <div class="input-group-inline">
+                                                <label for="polygonMultiplier3">Multiplier:</label>
+                                                <input type="number" id="polygonMultiplier3" min="1" max="8" value="" placeholder="Auto" class="transformer-input-small">
+                                            </div>
+                                        </div>
+                                        <button type="button" class="polygon-remove-btn" onclick="window.app?.removePolygonTerm(3)">×</button>
+                                    </div>
+                                    
+                                    <!-- Add Polygon Button -->
+                                    <div class="polygon-add-container">
+                                        <button type="button" id="addPolygonBtn" class="btn secondary small">+ Add Polygon</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Generate Input -->
+                    <div class="transformer-generate-row">
+                        <input type="text" id="transformerQuickInput" placeholder="Press Enter to generate/step, Cmd+Enter to add to database" class="transformer-input-main">
+                        <button id="transformerAddBtn" class="btn success" disabled>Add to Database</button>
+                    </div>
+                </div>
+                
+                <!-- Progress Indicator -->
+                <div class="transformer-progress" id="transformerProgress" style="display: none;">
+                    <div class="progress-info">
+                        <span id="transformerProgressText">Step 1 of 5: 3 → 4 onsets</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div id="transformerProgressBar" class="progress-fill"></div>
+                    </div>
+                </div>
+                
+                <!-- Information Box -->
+                <div class="info-box" id="transformer-info" style="display: none;">
+                    <strong>Pattern Creation:</strong><br>
+                    • <strong>Euclidean:</strong> Distributes onsets as evenly as possible using Euclidean algorithm<br>
+                    • <strong>Dilcue:</strong> Anti-Euclidean using complement patterns for anti-rhythmic effects<br>
+                    • <strong>Barlow:</strong> Uses indispensability theory to generate patterns by onset priority<br>
+                    • <strong>Wolrab:</strong> Anti-Barlow with reversed indispensability for syncopated patterns<br>
+                    • <strong>Random:</strong> Creates varied patterns using distribution styles - Bell Curve (balanced), Syncopated (off-beat emphasis), Balanced (even spacing), Clustered (grouped onsets), or Uniform (pure random). Use 'r' for random onset count<br>
+                    • <strong>Polygon:</strong> Combines up to 3 regular polygons with +/- operations. Shows polygon icons and names. Optional offset and multiplier parameters for each polygon<br>
+                    • <strong>Progressive Mode:</strong> Fill in Target to step through from current to target onset count<br>
+                    • <strong>Keyboard:</strong> Enter = Generate/Step, <span class="platform-shortcut">Cmd+Enter</span> = Add to Database
+                </div>
+            </section>
+
+            <!-- ROW 2: ANALYSIS -->
+            <section class="row-2-analysis">
+                <div class="row-header">
+                    <h2 class="row-title">📊 Analysis</h2>
+                </div>
+                
+                <!-- PATTERN OUTPUT LINE -->
+                <div class="pattern-output-line" id="patternOutputLine" style="display: none;">
+                    <!-- Will be dynamically filled -->
+                </div>
+
+                <!-- BALANCE & SEQUENCER SECTION -->
+                <div class="balance-section" id="balanceSection" style="display: none;">
+                    <div class="balance-analysis-column">
+                        <!-- Balance analysis boxes (left column) -->
+                    </div>
+                    <div class="sequencer-visualization-large">
+                        <!-- Interactive circular sequencer with CoG visualization (center) -->
+                        <div class="sequencer-container">
+                            <div class="sequencer-canvas-wrapper">
+                                <canvas id="patternSequencerCanvas"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="sequencer-controls-container">
+                        <!-- Sequencer controls (right column) -->
+                        <div class="sequencer-controls-compact">
+                            <div class="sequencer-playback-row">
+                                <button class="btn-sequencer play" id="sequencerPlayBtn">▶</button>
+                                <button class="btn-sequencer pause" id="sequencerPauseBtn">⏸</button>
+                                <button class="btn-sequencer stop" id="sequencerStopBtn">⏹</button>
+                            </div>
+                            <div class="sequencer-status" id="sequencerStatus">Ready</div>
+                            <div class="sequencer-settings-row">
+                                <label class="sequencer-label">Tempo:</label>
+                                <input type="range" id="sequencerTempoSlider" class="sequencer-slider" min="60" max="180" value="120">
+                                <span id="sequencerTempoDisplay" class="sequencer-value">120</span>
+                            </div>
+                            <div class="sequencer-settings-row">
+                                <label class="sequencer-label">Volume:</label>
+                                <input type="range" id="sequencerVolumeSlider" class="sequencer-slider" min="0" max="100" value="50">
+                                <span id="sequencerVolumeDisplay" class="sequencer-value">50%</span>
+                            </div>
+                            <div class="sequencer-settings-row">
+                                <label class="sequencer-label">MIDI:</label>
+                                <button class="btn secondary small" id="midiToggleBtn" title="Toggle MIDI output">🎹 OFF</button>
+                                <select id="midiOutputSelect" class="sequencer-select" style="display: none;">
+                                    <option value="">Select MIDI Output...</option>
+                                </select>
+                                <span id="midiStatus" class="sequencer-status-text">Not connected</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RHYTHM MORPHER SECTION (COMPACT) -->
+                <div class="stochastic-section-compact" id="stochasticSection" style="display: none;">
+                    <div class="stochastic-compact-box">
+                        <div class="stochastic-header">
+                            <span class="stochastic-title">🎭 Rhythm Mutator</span>
+                            <button class="info-btn-small" onclick="toggleInfoBox('stochastic-info')" title="Mutator info">ℹ️</button>
+                        </div>
+                        <div class="stochastic-compact-controls">
+                            <div class="param-row-compact">
+                                <div class="param-compact">
+                                    <label>Style:</label>
+                                    <select id="mutationStyle" class="select-compact">
+                                        <option value="balanced">Balanced</option>
+                                        <option value="syncopate">Syncopate</option>
+                                        <option value="straighten">Straighten</option>
+                                        <option value="groove">Groove</option>
+                                        <option value="swing">Swing</option>
+                                        <option value="shuffle">Shuffle</option>
+                                    </select>
+                                </div>
+                                <div class="param-compact">
+                                    <label>Amount:</label>
+                                    <input type="range" id="mutationAmount" class="slider-compact" min="0" max="100" step="5" value="30">
+                                    <span id="mutationValue" class="value-compact">30%</span>
+                                </div>
+                            </div>
+                            <div class="param-row-compact">
+                                <div class="param-compact">
+                                    <label>Original:</label>
+                                    <span id="originalPattern" class="pattern-display">Parse pattern first</span>
+                                </div>
+                            </div>
+                            <div class="buttons-compact">
+                                <button class="btn-compact primary" id="generateStochasticBtn">Mutate</button>
+                                <button class="btn-compact secondary" id="generateMultipleBtn">3 Mutations</button>
+                                <button class="btn-compact success" id="addVariationBtn" disabled>Add to DB</button>
+                            </div>
+                        </div>
+                        <div class="stochastic-results-compact" id="stochasticResults" style="display: none;">
+                            <!-- Mutated patterns will appear here -->
+                        </div>
+                        
+                        <!-- RHYTHM MORPHER INFO BOX -->
+                        <div class="info-box" id="stochastic-info" style="display: none;">
+                            <strong>Rhythm Mutation:</strong><br>
+                            Transform rhythms by displacing onsets while preserving character.<br><br>
+                            • <strong>Balanced:</strong> Random displacement in both directions<br>
+                            • <strong>Syncopate:</strong> Move toward off-beat positions<br>
+                            • <strong>Straighten:</strong> Move toward strong beats<br>
+                            • <strong>Groove:</strong> Bias toward groove positions<br>
+                            • <strong>Swing/Shuffle:</strong> Create swing or shuffle feel<br><br>
+                            <strong>Amount:</strong> 0% = original, 100% = maximum displacement<br>
+                            <em>Preserves onset count and rhythm character!</em>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FUNKY RHYTHM GENERATOR SECTION (COMPACT) -->
+                <div class="stochastic-section-compact" id="generatorSection" style="display: none;">
+                    <div class="stochastic-compact-box">
+                        <div class="stochastic-header">
+                            <span class="stochastic-title">🎶 Funky Generator</span>
+                            <button class="info-btn-small" onclick="toggleInfoBox('generator-info')" title="Generator info">ℹ️</button>
+                        </div>
+                        <div class="stochastic-compact-controls">
+                            <div class="param-row-compact">
+                                <div class="param-compact">
+                                    <label>Type:</label>
+                                    <select id="generatorType" class="select-compact">
+                                        <option value="groove">Groove</option>
+                                        <option value="funky-euclidean">Funky Euclidean</option>
+                                        <option value="probabilistic">Probabilistic</option>
+                                        <option value="polyrhythm">Polyrhythm</option>
+                                    </select>
+                                </div>
+                                <div class="param-compact">
+                                    <label>Steps:</label>
+                                    <input type="number" id="stepCountInput" class="input-compact" min="4" max="32" value="16">
+                                </div>
+                            </div>
+                            <div class="param-row-compact">
+                                <div class="param-compact">
+                                    <label>Density:</label>
+                                    <input type="range" id="genDensitySlider" class="slider-compact" min="0" max="100" step="5" value="60">
+                                    <span id="genDensityValue" class="value-compact">60%</span>
+                                </div>
+                                <div class="param-compact">
+                                    <label>Style:</label>
+                                    <select id="genStyleSelect" class="select-compact">
+                                        <option value="funk">Funk</option>
+                                        <option value="latin">Latin</option>
+                                        <option value="afro">Afro</option>
+                                        <option value="house">House</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="param-row-compact">
+                                <div class="param-compact">
+                                    <label>Funkiness:</label>
+                                    <input type="range" id="genFunkinessSlider" class="slider-compact" min="0" max="100" step="10" value="50">
+                                    <span id="genFunkinessValue" class="value-compact">50%</span>
+                                </div>
+                            </div>
+                            <div class="buttons-compact">
+                                <button class="btn-compact primary" id="generateFunkyBtn">Generate</button>
+                                <button class="btn-compact secondary" id="generateMultipleFunkyBtn">3 Variations</button>
+                                <button class="btn-compact success" id="addGeneratedBtn" disabled>Add to DB</button>
+                            </div>
+                        </div>
+                        <div class="stochastic-results-compact" id="generatorResults" style="display: none;">
+                            <!-- Generated patterns will appear here -->
+                        </div>
+                        
+                        <!-- FUNKY GENERATOR INFO BOX -->
+                        <div class="info-box" id="generator-info" style="display: none;">
+                            <strong>Funky Rhythm Generators:</strong><br>
+                            Create new rhythms from scratch using musical algorithms.<br><br>
+                            • <strong>Groove:</strong> Template-based (funk, latin, afro, house)<br>
+                            • <strong>Funky Euclidean:</strong> Euclidean + groove deviations<br>
+                            • <strong>Probabilistic:</strong> Beat-strength based generation<br>
+                            • <strong>Polyrhythm:</strong> Layered rhythmic cycles<br><br>
+                            <strong>Try:</strong> Funk style, 60% density, 70% funkiness<br>
+                            <em>Generates completely new patterns from algorithmic rules!</em>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BARLOW DILUTION/CONCENTRATION SECTION (COMPACT) -->
+                <div class="stochastic-section-compact" id="barlowSection" style="display: none;">
+                    <div class="stochastic-compact-box">
+                        <div class="stochastic-header">
+                            <span class="stochastic-title">🎯 Barlow Transformer</span>
+                            <button class="info-btn-small" onclick="toggleInfoBox('barlow-info')" title="Barlow transformer info">ℹ️</button>
+                        </div>
+                        <div class="stochastic-compact-controls">
+                            <div class="param-row-compact">
+                                <div class="param-compact">
+                                    <label>Current Onsets:</label>
+                                    <span id="currentOnsets" class="pattern-display">Parse pattern first</span>
+                                </div>
+                            </div>
+                            <div class="param-row-compact">
+                                <div class="param-compact">
+                                    <label>Target Onsets:</label>
+                                    <input type="number" id="targetOnsets" class="input-compact" min="1" max="32" value="4">
+                                </div>
+                                <div class="param-compact">
+                                    <label>Operation:</label>
+                                    <select id="barlowOperation" class="select-compact">
+                                        <option value="auto">Auto (Dilute/Concentrate)</option>
+                                        <option value="dilute">Dilute (Remove)</option>
+                                        <option value="concentrate">Concentrate (Add)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="param-row-compact">
+                                <div class="param-compact">
+                                    <label>
+                                        <input type="checkbox" id="wolrabMode" class="checkbox-compact">
+                                        🙃 Wolrab Mode
+                                    </label>
+                                    <span class="param-hint">(Reverse indispensability)</span>
+                                </div>
+                            </div>
+                            <div class="buttons-compact">
+                                <button class="btn-compact primary" id="transformBarlowBtn">Transform</button>
+                                <button class="btn-compact secondary" id="progressiveBarlowBtn">Progressive</button>
+                                <button class="btn-compact success" id="addBarlowBtn" disabled>Add to DB</button>
+                            </div>
+                        </div>
+                        <div class="stochastic-results-compact" id="barlowResults" style="display: none;">
+                            <!-- Transformed patterns will appear here -->
+                        </div>
+                        
+                        <!-- BARLOW TRANSFORMER INFO BOX -->
+                        <div class="info-box" id="barlow-info" style="display: none;">
+                            <strong>Barlow Indispensability Transformer:</strong><br>
+                            Intelligently add or remove onsets based on Clarence Barlow's rhythmic indispensability theory.<br><br>
+                            • <strong>Dilution:</strong> Removes least indispensable onsets<br>
+                            • <strong>Concentration:</strong> Adds most indispensable positions<br>
+                            • <strong>Progressive:</strong> Multiple variations with gradual changes<br>
+                            • <strong>🙃 Wolrab Mode:</strong> Reverses the logic - dilutes by removing MOST indispensable onsets, concentrates by adding LEAST indispensable positions<br><br>
+                            <strong>Theory:</strong> Positions are ranked by their metrical importance<br>
+                            <em>Maintains rhythmic coherence while changing onset density!</em><br>
+                            <em>Wolrab mode creates surprising, anti-metrical patterns!</em>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- EUCLIDEAN DILUTION/CONCENTRATION SECTION (COMPACT) -->
+                <div class="stochastic-section-compact" id="euclideanSection" style="display: none;">
+                    <div class="stochastic-compact-box">
+                        <div class="stochastic-header">
+                            <span class="stochastic-title">🌀 Euclidean Transformer</span>
+                            <button class="info-btn-small" onclick="toggleInfoBox('euclidean-info')" title="Euclidean transformer info">ℹ️</button>
+                        </div>
+                        <div class="stochastic-compact-controls">
+                            <div class="param-row-compact">
+                                <div class="param-compact">
+                                    <label>Current Onsets:</label>
+                                    <span id="currentEuclideanOnsets" class="pattern-display">Parse pattern first</span>
+                                </div>
+                            </div>
+                            <div class="param-row-compact">
+                                <div class="param-compact">
+                                    <label>Target Onsets:</label>
+                                    <input type="number" id="targetEuclideanOnsets" class="input-compact" min="0" max="32" value="4">
+                                </div>
+                                <div class="param-compact">
+                                    <label>Operation:</label>
+                                    <select id="euclideanOperation" class="select-compact">
+                                        <option value="auto">Auto (Dilute/Concentrate)</option>
+                                        <option value="dilute">Dilute (Remove)</option>
+                                        <option value="concentrate">Concentrate (Add)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="param-row-compact">
+                                <div class="param-compact">
+                                    <label>Mode:</label>
+                                    <select id="euclideanMode" class="select-compact">
+                                        <option value="normal">🌀 Normal Euclidean</option>
+                                        <option value="anti">🙃 Dilcue</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="buttons-compact">
+                                <button class="btn-compact primary" id="transformEuclideanBtn">Transform</button>
+                                <button class="btn-compact secondary" id="progressiveEuclideanBtn">Progressive</button>
+                                <button class="btn-compact success" id="addEuclideanBtn" disabled>Add to DB</button>
+                            </div>
+                        </div>
+                        <div class="stochastic-results-compact" id="euclideanResults" style="display: none;">
+                            <!-- Transformed patterns will appear here -->
+                        </div>
+                        
+                        <!-- EUCLIDEAN TRANSFORMER INFO BOX -->
+                        <div class="info-box" id="euclidean-info" style="display: none;">
+                            <strong>Euclidean Transformer:</strong><br>
+                            Add or remove onsets using Euclidean distribution principles for mathematically optimal spacing.<br><br>
+                            • <strong>Dilution:</strong> Removes onsets while maintaining Euclidean spacing<br>
+                            • <strong>Concentration:</strong> Adds onsets using Euclidean distribution<br>
+                            • <strong>Progressive:</strong> Multiple variations with gradual changes<br>
+                            • <strong>🙃 Dilcue:</strong> Uses complement patterns for unexpected rhythms<br><br>
+                            <strong>Theory:</strong> Uses Bjorklund's algorithm for optimal onset distribution<br>
+                            <em>Creates mathematically perfect rhythm spacing!</em><br>
+                            <em>Enter key on target onsets box steps through progressive transformations!</em>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PROGRESSIVE OFFSETS SECTION (COMPACT) -->
+                <div class="stochastic-section-compact" id="progressiveOffsetsSection" style="display: none;">
+                    <div class="stochastic-compact-box">
+                        <div class="stochastic-header">
+                            <span class="stochastic-title">🔄 Progressive Offsets</span>
+                            <button class="info-btn-small" onclick="toggleInfoBox('progressive-offsets-info')" title="Progressive offsets info">ℹ️</button>
+                        </div>
+                        <div class="stochastic-compact-controls">
+                            <div class="param-row-compact">
+                                <div class="param-compact">
+                                    <label>Current Pattern:</label>
+                                    <span id="currentOffsetsPattern" class="pattern-display">Parse pattern first</span>
+                                </div>
+                            </div>
+                            <div class="param-row-compact">
+                                <div class="param-compact">
+                                    <label>Forward Step:</label>
+                                    <input type="number" id="forwardOffsetStep" class="input-compact" min="1" max="16" value="1" title="Press Enter to step forward progressively">
+                                </div>
+                                <div class="param-compact">
+                                    <label>Backward Step:</label>
+                                    <input type="number" id="backwardOffsetStep" class="input-compact" min="1" max="16" value="1" title="Press Enter to step backward progressively">
+                                </div>
+                            </div>
+                            <div class="param-row-compact">
+                                <div class="param-compact">
+                                    <label>Current Offset:</label>
+                                    <span id="currentOffsetValue" class="pattern-display">0</span>
+                                </div>
+                                <div class="param-compact">
+                                    <button class="btn-compact secondary" id="resetOffsetsBtn">Reset to 0</button>
+                                </div>
+                            </div>
+                            <div class="buttons-compact">
+                                <button class="btn-compact primary" id="manualOffsetBtn">Manual Offset</button>
+                                <button class="btn-compact success" id="addOffsetsBtn" disabled>Add to DB</button>
+                            </div>
+                        </div>
+                        <div class="stochastic-results-compact" id="progressiveOffsetsResults" style="display: none;">
+                            <!-- Offset patterns will appear here -->
+                        </div>
+                        
+                        <!-- PROGRESSIVE OFFSETS INFO BOX -->
+                        <div class="info-box" id="progressive-offsets-info" style="display: none;">
+                            <strong>Progressive Offsets:</strong><br>
+                            Rotate patterns progressively by custom step increments in either direction.<br><br>
+                            • <strong>Forward Step:</strong> Press Enter to offset by +1, +2, +3... (or custom increment)<br>
+                            • <strong>Backward Step:</strong> Press Enter to offset by -1, -2, -3... (or custom increment)<br>
+                            • <strong>Reset:</strong> Return to original pattern position (offset 0)<br>
+                            • <strong>Manual:</strong> One-time offset by current values<br><br>
+                            <strong>Use Cases:</strong> Pattern variations, rhythm displacement, groove exploration<br>
+                            <em>Works with any pattern - Euclidean, polygons, custom rhythms!</em><br>
+                            <em>Enter key in number boxes for progressive stepping!</em>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PROGRESSIVE PATTERN LENGTHENING SECTION (COMPACT) -->
+                <div class="stochastic-section-compact" id="progressiveLengtheningSection" style="display: none;">
+                    <div class="stochastic-compact-box">
+                        <div class="stochastic-header">
+                            <span class="stochastic-title">📏 Progressive Lengthening</span>
+                            <button class="info-btn-small" onclick="toggleInfoBox('progressive-lengthening-info')" title="Progressive lengthening info">ℹ️</button>
+                        </div>
+                        <div class="stochastic-compact-controls">
+                            <div class="param-row-compact">
+                                <div class="param-compact">
+                                    <label>Current Pattern:</label>
+                                    <span id="currentLengtheningPattern" class="pattern-display">Parse pattern first</span>
+                                </div>
+                            </div>
+                            <div class="param-row-compact">
+                                <div class="param-compact">
+                                    <label>Steps to Add:</label>
+                                    <input type="number" id="stepsToAdd" class="input-compact" min="1" max="16" value="4" title="Press Enter to progressively add this many steps">
+                                </div>
+                                <div class="param-compact">
+                                    <label>Current Length:</label>
+                                    <span id="currentPatternLength" class="pattern-display">0</span>
+                                </div>
+                            </div>
+                            <div class="param-row-compact">
+                                <div class="param-compact">
+                                    <label>Extensions:</label>
+                                    <span id="extensionCount" class="pattern-display">0</span>
+                                </div>
+                                <div class="param-compact">
+                                    <button class="btn-compact secondary" id="resetLengtheningBtn">Reset to Original</button>
+                                </div>
+                            </div>
+                            <div class="buttons-compact">
+                                <button class="btn-compact primary" id="manualLengtheningBtn">Add Once</button>
+                                <button class="btn-compact success" id="addLengtheningBtn" disabled>Add to DB</button>
+                            </div>
+                        </div>
+                        <div class="stochastic-results-compact" id="progressiveLengtheningResults" style="display: none;">
+                            <!-- Lengthened patterns will appear here -->
+                        </div>
+                        
+                        <!-- PROGRESSIVE LENGTHENING INFO BOX -->
+                        <div class="info-box" id="progressive-lengthening-info" style="display: none;">
+                            <strong>Progressive Pattern Lengthening:</strong><br>
+                            Extend patterns by appending random steps with bell curve onset distribution.<br><br>
+                            • <strong>Steps to Add:</strong> Press Enter to progressively append this many steps<br>
+                            • <strong>Bell Curve Distribution:</strong> Uses same logic as R(r,n) - avoids empty or full sections<br>
+                            • <strong>Progressive Mode:</strong> Each Enter press adds another extension<br>
+                            • <strong>Reset:</strong> Return to original pattern length<br><br>
+                            <strong>Musical Use:</strong> Phrase extension, pattern development, compositional expansion<br>
+                            <em>Creates musically intelligent random extensions!</em><br>
+                            <em>Enter key in Steps to Add box for progressive lengthening!</em>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- INITIAL HELP -->
+                <div id="analysisPlaceholder" class="analysis-placeholder">
+                    <p>Parse a pattern using the universal input above to see comprehensive mathematical analysis.</p>
+                </div>
+            </section>
+
+            <!-- ROW 3: DATABASE CONTROLS & STATISTICS -->
+            <section class="row-3-database-controls">
+                <div class="row-header">
+                    <h2 class="row-title">🎛️ Database Controls & Statistics</h2>
+                </div>
+                
+                <div class="controls-stats-row">
+                    <!-- COLUMN 1: DATABASE CONTROLS -->
+                    <div class="database-controls-col">
+                        <div class="controls-grid">
+                            <button class="btn success" id="exportBtn">Export</button>
+                            <button class="btn primary" id="importBtn">Import</button>
+                            <button class="btn danger" id="clearDbBtn">Clear</button>
+                            <button class="btn secondary" id="sortBtn">Sort by Date</button>
+                        </div>
+                    </div>
+                    
+                    <!-- COLUMN 2: STATISTICS -->
+                    <div class="statistics-col">
+                        <div class="stats-grid-horizontal" id="statsGrid">
+                            <div class="stat-item">
+                                <span class="stat-value" id="totalPatterns">0</span>
+                                <span class="stat-label">Total</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value" id="perfectBalanceCount">0</span>
+                                <span class="stat-label">Perfect</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value" id="favoriteCount">0</span>
+                                <span class="stat-label">Favorites</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value" id="polygonCount">0</span>
+                                <span class="stat-label">Polygons</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value" id="euclideanCount">0</span>
+                                <span class="stat-label">Euclidean</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value" id="combinedCount">0</span>
+                                <span class="stat-label">Combined</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- COLUMN 3: PERFECT BALANCE EXPLORER -->
+                    <div class="pbe-col">
+                        <div class="pbe-compact">
+                            <div class="pbe-header">
+                                <span>🔍 Perfect Balance Explorer</span>
+                                <button class="info-btn" onclick="toggleInfoBox('milne-info')">ℹ️</button>
+                            </div>
+                            
+                            <div class="pbe-controls">
+                                <input type="text" class="input-compact" id="explorerParams" placeholder="3,7,3" value="3,7,3">
+                                <button class="btn compact primary" id="findPerfectBtn">Find Perfect</button>
+                                <button class="btn compact secondary" id="generateReportBtn">Report</button>
+                            </div>
+                            
+                            <!-- MILNE THEORY INFO BOX -->
+                            <div class="info-box tex2jax_process" id="milne-info" style="display: none;">
+                                <strong>Milne's Perfect Balance Theory:</strong><br>
+                                A pattern is perfectly balanced when: 
+                                $$\sum_{j=1}^{k} e^{i2\pi k_j/n} = 0$$
+                                <div class="equation-legend">
+                                    Where: $k_j$ are the onset positions, $n$ is the total number of steps, $i$ is the imaginary unit
+                                </div>
+                                Key insights: Coprime polygon sides, strategic offsets, and subtraction operations can achieve perfect balance.
+                            </div>
+                            
+                            <!-- PROGRESS INDICATOR -->
+                            <div id="progressContainer" style="display: none;">
+                                <div class="progress-bar-compact">
+                                    <div class="progress-fill" id="progressFill"></div>
+                                </div>
+                                <div id="progressText" class="progress-text-compact">Searching...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ROW 4: PATTERN DATABASE (FULL WIDTH) -->
+            <section class="row-4-database">
+                <!-- SEARCH AND FILTER CONTROLS -->
+                <div class="database-search-filters">
+                    <div class="search-row">
+                        <input type="text" class="input search-input" id="searchInput" placeholder="Search patterns...">
+                        <select class="input filter-select" id="filterSelect">
+                            <option value="all">All Patterns</option>
+                            <option value="favorites">Favorites Only</option>
+                            <option value="perfect_balance">Perfect Balance</option>
+                            <option value="polygons">Regular Polygons</option>
+                            <option value="euclidean">Euclidean Rhythms</option>
+                            <option value="combined">Combined Patterns</option>
+                            <option value="morphed">Mutated Patterns</option>
+                            <option value="generated">Generated Patterns</option>
+                            <option value="barlow_transformed">Barlow Transformed</option>
+                            <option value="subtraction">With Subtraction</option>
+                            <option value="repetitive">Repetitive</option>
+                            <option value="non_repetitive">Non-Repetitive</option>
+                            <option value="wellformed">Well-formed</option>
+                            <option value="balanced">Perfectly Balanced (Milne)</option>
+                            <option value="geometric_centered">Geometrically Centered (CoG < 0.1)</option>
+                            <option value="coprime">Coprime Combinations</option>
+                            <option value="iambic">Iambic Rhythm</option>
+                            <option value="trochaic">Trochaic Rhythm</option>
+                            <option value="dactylic">Dactylic Rhythm</option>
+                            <option value="anapestic">Anapestic Rhythm</option>
+                            <option value="spondaic">Spondaic Rhythm</option>
+                            <option value="pyrrhic">Pyrrhic Rhythm</option>
+                            <option value="bacchic">Bacchic Rhythm</option>
+                            <option value="molossic">Molossic Rhythm</option>
+                            <option value="tribrach">Tribrach Rhythm</option>
+                            <option value="ionic_minor">Ionic Minor</option>
+                            <option value="ionic_major">Ionic Major</option>
+                            <option value="choriamb">Choriamb</option>
+                            <option value="antispast">Antispast</option>
+                            <option value="ditrochee">Ditrochee</option>
+                            <option value="diiamb">Diiamb</option>
+                            <option value="primus_paeon">Primus Paeon</option>
+                            <option value="quartus_paeon">Quartus Paeon</option>
+                            <option value="first_epitrite">First Epitrite</option>
+                            <option value="fourth_epitrite">Fourth Epitrite</option>
+                            <option value="morse_patterns">Morse Patterns</option>
+                        </select>
+                    </div>
+                    
+                    <div class="step-count-row">
+                        <label class="step-count-label">Step Count Range:</label>
+                        <input type="number" class="input step-count-input" id="minStepCount" placeholder="Min" min="1" max="64" value="">
+                        <span class="step-count-separator">-</span>
+                        <input type="number" class="input step-count-input" id="maxStepCount" placeholder="Max" min="1" max="64" value="">
+                    </div>
+                </div>
+
+                <!-- PATTERN LIST -->
+                <div id="patternList" class="pattern-list-fullwidth">
+                    <!-- Pattern entries will be dynamically generated here -->
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- ================================================
+         JAVASCRIPT MODULE LOADING SYSTEM
+         ================================================ -->
+    <script>
+        // Module loading system - loads all required modules in sequence
+        const modules = [
+            'platform-utils.js',
+            'math-renderer.js',
+            'docs-manager.js',
+            'math-core.js',
+            'app-config.js', 
+            'pattern-generators.js',
+            'pattern-analysis.js',
+            'pattern-processing.js',
+            'pattern-exploration.js',
+            'pattern-database.js',
+            'sequencer-audio.js',
+            'sequencer-visual.js',
+            'webrtc-osc.js',
+            'midi-output.js',
+            'sequencer-controller.js',
+            'ui-components.js',
+            'app-controller-browser.js'
+        ];
+
+        let loadedModules = 0;
+        let hasError = false;
+
+        function loadModule(index) {
+            if (index >= modules.length) {
+                if (!hasError) {
+                    console.log('✅ All modules loaded successfully');
+                    console.log('🚀 Initializing Enhanced Pattern Application...');
+                    try {
+                        window.app = new EnhancedPatternApp();
+                        console.log('🎼 Application ready!');
+                    } catch (error) {
+                        console.error('❌ Failed to initialize application:', error);
+                    }
+                }
+                return;
+            }
+
+            const script = document.createElement('script');
+            script.src = modules[index];
+            script.onload = () => {
+                loadedModules++;
+                console.log(`✅ Loaded: ${modules[index]} (${loadedModules}/${modules.length})`);
+                loadModule(index + 1);
+            };
+            script.onerror = () => {
+                hasError = true;
+                console.error(`❌ Failed to load: ${modules[index]}`);
+                console.error('🛑 Application initialization aborted');
+            };
+            document.head.appendChild(script);
+        }
+
+        // Start loading modules
+        console.log('📦 Loading Enhanced Pattern Database modules...');
+        loadModule(0);
+    </script>
+</body>
+</html>

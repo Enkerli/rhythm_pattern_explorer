@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<JUCERPROJECT id="RhythmPatternExplorer" name="Rhythm Pattern Explorer" projectType="audioplug"
+              useAppConfig="0" addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1"
+              bundleIdentifier="com.rhythmpatternexplorer.auv3" pluginName="Rhythm Pattern Explorer"
+              pluginDesc="Mathematical rhythm pattern generator and analyzer"
+              pluginManufacturer="Rhythm Pattern Explorer" pluginManufacturerCode="RPE1"
+              pluginCode="Rpe1" pluginChannelConfigs="{0,0}" pluginIsSynth="0"
+              pluginWantsMidiIn="1" pluginProducesMidiOut="1" pluginIsMidiEffectPlugin="1"
+              pluginEditorRequiresKeys="0" pluginAUExportPrefix="RhythmPatternExplorerAU"
+              pluginRTASCategory="2" aaxIdentifier="com.rhythmpatternexplorer.auv3"
+              pluginAAXCategory="2" companyName="Rhythm Pattern Explorer" companyWebsite="https://github.com/enkerli/rhythm_pattern_explorer"
+              companyEmail="support@rhythmpatternexplorer.com" displaySplashScreen="1"
+              reportAppUsage="1" splashScreenColour="Dark" projectLineFeed="&#10;"
+              version="1.0.0" defines="JUCE_DISPLAY_SPLASH_SCREEN=1&#10;JUCE_USE_DARK_SPLASH_SCREEN=1"
+              pluginCharacteristicsValue="pluginWantsMidiIn,pluginProducesMidiOut,pluginIsMidiEffectPlugin"
+              pluginFormats="buildVST3,buildAU,buildAUv3,buildStandalone">
+  <MAINGROUP id="kFhzrE" name="Rhythm Pattern Explorer">
+    <GROUP id="{8E893B9A-7F6D-B7E4-1A89-6E2F8B3E5C84}" name="Source">
+      <FILE id="GJxGhs" name="PluginProcessor.cpp" compile="1" resource="0"
+            file="Source/PluginProcessor.cpp"/>
+      <FILE id="B3AGt7" name="PluginProcessor.h" compile="0" resource="0"
+            file="Source/PluginProcessor.h"/>
+      <FILE id="EZgOkI" name="PluginEditor.cpp" compile="1" resource="0"
+            file="Source/PluginEditor.cpp"/>
+      <FILE id="L7HYWN" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
+      <FILE id="MNko43" name="PatternEngine.cpp" compile="1" resource="0"
+            file="Source/PatternEngine.cpp"/>
+      <FILE id="KLm8nw" name="PatternEngine.h" compile="0" resource="0" file="Source/PatternEngine.h"/>
+      <FILE id="UPI001" name="UPIParser.cpp" compile="1" resource="0" file="Source/UPIParser.cpp"/>
+      <FILE id="UPI002" name="UPIParser.h" compile="0" resource="0" file="Source/UPIParser.h"/>
+    </GROUP>
+  </MAINGROUP>
+  <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1" JUCE_VST3_CAN_REPLACE_VST2="0"/>
+  <EXPORTFORMATS>
+    <XCODE_MAC targetFolder="Builds/MacOSX" smallIcon="bFQgdF" bigIcon="bFQgdF"
+               externalLibraries="" extraDefs="" extraCompilerFlags="" extraLinkerFlags=""
+               extraFrameworks="" enableLegacyBuildSystem="0" microphonePermissionNeeded="0"
+               microphonePermissionText="" cameraPermissionNeeded="0" cameraPermissionText=""
+               iosBluetoothPermissionNeeded="0" iosBluetoothPermissionText=""
+               customPListEntries="" customXcodeResourceFolders="" iosAppGroups=""
+               postbuildCommand="" plistPreprocessorDefinitions="" iosRequiredArchitectures=""
+               macOSDeploymentTarget="10.13" macOSArchitecture="arm64,x86_64">
+      <CONFIGURATIONS>
+        <CONFIGURATION isDebug="1" name="Debug" targetName="Rhythm Pattern Explorer"
+                       enablePluginBinaryCopyStep="1" stripLocalSymbols="0" linkTimeOptimisation="0"
+                       useRuntimeLibDLL="0"/>
+        <CONFIGURATION isDebug="0" name="Release" targetName="Rhythm Pattern Explorer"
+                       enablePluginBinaryCopyStep="1" stripLocalSymbols="1" linkTimeOptimisation="1"
+                       useRuntimeLibDLL="0"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_audio_basics" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_devices" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_formats" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_plugin_client" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_processors" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_utils" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_core" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_data_structures" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_events" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_graphics" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_gui_basics" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_gui_extra" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_dsp" path="/Applications/JUCE/modules"/>
+      </MODULEPATHS>
+    </XCODE_MAC>
+    <XCODE_IPHONE targetFolder="Builds/iOS" iosBackgroundModes="iosBackgroundAudio"
+                  smallIcon="bFQgdF" bigIcon="bFQgdF" iosDevelopmentTeamID="" iosAppGroups=""
+                  iCloudPermissions="0" pushNotifications="0" uiFileSharingEnabled="0"
+                  documentBrowserEnabled="0" iosBluetoothPermissionNeeded="0" iosBluetoothPermissionText=""
+                  microphonePermissionNeeded="0" microphonePermissionText="" cameraPermissionNeeded="0"
+                  cameraPermissionText="" iosScreenOrientations="UIInterfaceOrientationPortrait,UIInterfaceOrientationPortraitUpsideDown,UIInterfaceOrientationLandscapeLeft,UIInterfaceOrientationLandscapeRight"
+                  iPadScreenOrientations="UIInterfaceOrientationPortrait,UIInterfaceOrientationPortraitUpsideDown,UIInterfaceOrientationLandscapeLeft,UIInterfaceOrientationLandscapeRight"
+                  customPListEntries="" plistPreprocessorDefinitions="" extraLinkerFlags=""
+                  extraFrameworks="" postbuildCommand="" iosMinimumVersion="11.0">
+      <CONFIGURATIONS>
+        <CONFIGURATION isDebug="1" name="Debug" iosArchitecture="arm64"/>
+        <CONFIGURATION isDebug="0" name="Release" iosArchitecture="arm64"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_audio_basics" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_devices" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_formats" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_plugin_client" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_processors" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_utils" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_core" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_data_structures" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_events" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_graphics" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_gui_basics" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_gui_extra" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_dsp" path="/Applications/JUCE/modules"/>
+      </MODULEPATHS>
+    </XCODE_IPHONE>
+  </EXPORTFORMATS>
+  <MODULES>
+    <MODULE id="juce_audio_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_devices" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_formats" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_plugin_client" showAllCode="1" useLocalCopy="0"
+            useGlobalPath="1"/>
+    <MODULE id="juce_audio_processors" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_utils" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_core" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_data_structures" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_dsp" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_events" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_graphics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_gui_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_gui_extra" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+  </MODULES>
+</JUCERPROJECT>

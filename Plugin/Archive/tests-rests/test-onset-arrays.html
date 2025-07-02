@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Onset Array Test</title>
+</head>
+<body>
+    <h1>Testing Onset Array Functionality</h1>
+    
+    <!-- Load the required modules -->
+    <script src="math-core.js"></script>
+    <script src="pattern-generators.js"></script>
+    <script src="pattern-analysis.js"></script>
+    <script src="pattern-processing.js"></script>
+    
+    <script>
+        console.log('🧪 Testing onset array functionality...');
+        
+        try {
+            // Test 1: Basic onset array [0,3,6]
+            console.log('Test 1: [0,3,6]');
+            const result1 = UnifiedPatternParser.parsePattern('[0,3,6]');
+            console.log('Result:', result1);
+            console.log('Steps:', result1.steps);
+            console.log('Step count:', result1.stepCount);
+            console.log('Formula:', result1.formula);
+            
+            // Test 2: Onset array with explicit step count [0,3,6]:8
+            console.log('\nTest 2: [0,3,6]:8');
+            const result2 = UnifiedPatternParser.parsePattern('[0,3,6]:8');
+            console.log('Result:', result2);
+            console.log('Steps:', result2.steps);
+            console.log('Step count:', result2.stepCount);
+            console.log('Formula:', result2.formula);
+            
+            // Test 3: Convert back to onset array
+            console.log('\nTest 3: Convert pattern to onset array');
+            const onsetArray1 = PatternConverter.toOnsetArray(result1.steps, result1.stepCount);
+            const onsetArray2 = PatternConverter.toEnhancedOnsetArray(result2.steps, result2.stepCount);
+            console.log('Basic onset array:', onsetArray1);
+            console.log('Enhanced onset array:', onsetArray2);
+            
+            // Test 4: Complex example [0,2,4,6,7]
+            console.log('\nTest 4: [0,2,4,6,7]');
+            const result4 = UnifiedPatternParser.parsePattern('[0,2,4,6,7]');
+            console.log('Result:', result4);
+            console.log('Steps:', result4.steps);
+            console.log('Step count:', result4.stepCount);
+            console.log('Onset array representation:', PatternConverter.toEnhancedOnsetArray(result4.steps, result4.stepCount));
+            
+            // Test 5: Error handling - invalid onset
+            console.log('\nTest 5: Error handling [0,3,10]:8 (onset 10 > step count 8)');
+            try {
+                const result5 = UnifiedPatternParser.parsePattern('[0,3,10]:8');
+                console.log('ERROR: Should have thrown an exception');
+            } catch (e) {
+                console.log('✅ Correctly caught error:', e.message);
+            }
+            
+            // Test 6: Onset array in combination
+            console.log('\nTest 6: Combination [0,3,6]+P(5,0)');
+            try {
+                const result6 = UnifiedPatternParser.parse('[0,3,6]+P(5,0)');
+                console.log('Combination result:', result6);
+                console.log('Steps:', result6.steps);
+                console.log('Step count:', result6.stepCount);
+                console.log('Is combined:', result6.isCombined);
+            } catch (e) {
+                console.log('❌ Combination test failed:', e.message);
+            }
+            
+            console.log('\n✅ All onset array tests completed successfully!');
+            
+        } catch (error) {
+            console.error('❌ Test failed:', error);
+        }
+    </script>
+</body>
+</html>

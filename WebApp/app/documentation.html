@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rhythm Pattern Explorer - Documentation</title>
+    
+    <!-- Load CSS Styles -->
+    <link rel="stylesheet" href="app-styles.css">
+    
+    <!-- MathJax Configuration -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true,
+                processEnvironments: true,
+                packages: ['base', 'ams', 'newcommand', 'configmacros']
+            },
+            options: {
+                ignoreHtmlClass: 'tex2jax_ignore',
+                processHtmlClass: 'tex2jax_process'
+            },
+            startup: {
+                pageReady: () => {
+                    console.log('📐 MathJax loaded for documentation');
+                    return MathJax.startup.defaultPageReady();
+                }
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <!-- Documentation-specific styles -->
+    <style>
+        .docs-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+        }
+        
+        .docs-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+        }
+        
+        .docs-nav {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border-left: 4px solid #007bff;
+        }
+        
+        .docs-nav h3 {
+            margin: 0 0 10px 0;
+            color: #495057;
+        }
+        
+        .docs-nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 10px;
+        }
+        
+        .docs-nav a {
+            color: #007bff;
+            text-decoration: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+            display: block;
+        }
+        
+        .docs-nav a:hover {
+            background-color: #e9ecef;
+        }
+        
+        .docs-section {
+            margin-bottom: 50px;
+            padding: 20px 0;
+        }
+        
+        .docs-section h2 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 25px;
+        }
+        
+        .docs-section h3 {
+            color: #34495e;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        
+        .docs-section h4 {
+            color: #7f8c8d;
+            margin-top: 25px;
+            margin-bottom: 12px;
+        }
+        
+        .algorithm-box {
+            background: #f8f9fa;
+            border-left: 4px solid #28a745;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .equation-container {
+            background: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .equation-title {
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+        
+        .equation-description {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-top: 15px;
+            font-style: italic;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .feature-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            border-left: 4px solid #6f42c1;
+        }
+        
+        .feature-card h4 {
+            margin-top: 0;
+            color: #6f42c1;
+        }
+        
+        .code-example {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        
+        .highlight {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+            padding: 10px 15px;
+            margin: 15px 0;
+        }
+        
+        .back-to-app {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0,123,255,0.3);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .back-to-app:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,123,255,0.4);
+        }
+        
+        @media (max-width: 768px) {
+            .docs-container {
+                padding: 15px;
+            }
+            
+            .docs-nav ul {
+                grid-template-columns: 1fr;
+            }
+            
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body class="tex2jax_process">
+    <a href="index.html" class="back-to-app">← Back to App</a>
+    
+    <div class="docs-container">
+        <header class="docs-header">
+            <h1>🎼 Rhythm Pattern Explorer</h1>
+            <p>Mathematical Analysis and Exploration of Rhythmic Patterns</p>
+            <p><strong>Interactive Documentation with Mathematical Equations</strong></p>
+        </header>
+        
+        <nav class="docs-nav">
+            <h3>📖 Quick Navigation</h3>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#getting-started">Getting Started</a></li>
+                <li><a href="#mathematical-theory">Mathematical Theory</a></li>
+                <li><a href="#algorithms">Core Algorithms</a></li>
+                <li><a href="#pattern-input">Pattern Input System</a></li>
+                <li><a href="#transformers">Pattern Transformers</a></li>
+                <li><a href="#pattern-creation">Pattern Creation</a></li>
+                <li><a href="#analysis-engine">Analysis Engine</a></li>
+                <li><a href="#generators">Pattern Generators</a></li>
+                <li><a href="#midi-output">MIDI Output System</a></li>
+                <li><a href="#technical-architecture">Technical Architecture</a></li>
+                <li><a href="#examples">Usage Examples</a></li>
+            </ul>
+        </nav>
+        
+        <main>
+            <!-- Overview Section -->
+            <section id="overview" class="docs-section">
+                <h2>🎯 Overview</h2>
+                <p>The Rhythm Pattern Explorer is a sophisticated web application that bridges the gap between mathematical music theory and practical rhythm creation. It implements cutting-edge algorithms from researchers like Andrew Milne, Godfried Toussaint, and Clarence Barlow to provide musicians, composers, researchers, and curious minds with powerful tools for understanding and creating rhythmic patterns.</p>
+                
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4>🔢 Mathematical Foundation</h4>
+                        <p>Built on peer-reviewed research in mathematical music theory, providing rigorous analytical tools for rhythm analysis.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>🎵 Universal Pattern Support</h4>
+                        <p>Parse 20+ different rhythm notation formats including Euclidean rhythms, regular polygons, and custom patterns.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>🎛️ Interactive Analysis</h4>
+                        <p>Real-time mathematical analysis with perfect balance theory, syncopation measurement, and geometric visualization.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>🔄 Intelligent Transformations</h4>
+                        <p>Advanced pattern transformations using Barlow indispensability theory and progressive offset systems.</p>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Mathematical Theory Section -->
+            <section id="mathematical-theory" class="docs-section">
+                <h2>📐 Mathematical Theory</h2>
+                
+                <h3>Andrew Milne's Perfect Balance Theory</h3>
+                <p>Andrew Milne's work on perfect balance provides the mathematical foundation for understanding rhythmic equilibrium. A pattern is perfectly balanced when the sum of its onset vectors equals zero in the complex plane.</p>
+                
+                <div class="equation-container">
+                    <div class="equation-title">Perfect Balance Condition</div>
+                    $$\sum_{j=1}^{k} e^{i2\pi k_j/n} = 0$$
+                    <div class="equation-description">
+                        Where $k_j$ are the onset positions, $n$ is the total number of steps, and $i$ is the imaginary unit.
+                    </div>
+                </div>
+                
+                <div class="algorithm-box">
+                    <h4>Key Insights from Milne's Theory:</h4>
+                    <ul>
+                        <li><strong>Perfect balance creates perceptually stable rhythms</strong></li>
+                        <li><strong>Can be achieved through polygon combinations and strategic subtraction</strong></li>
+                        <li><strong>Relates to symmetry and geometric distribution</strong></li>
+                        <li><strong>Provides objective measure of rhythmic "centeredness"</strong></li>
+                    </ul>
+                </div>
+                
+                <h4>Balance Magnitude Calculation</h4>
+                <div class="equation-container">
+                    <div class="equation-title">Balance Magnitude</div>
+                    $$|Balance| = \left|\sum_{j=1}^{k} e^{i2\pi k_j/n}\right|$$
+                    <div class="equation-description">
+                        The magnitude indicates how close a pattern is to perfect balance. Perfect balance occurs when this equals zero.
+                    </div>
+                </div>
+                
+                <h4>Normalized Balance Score</h4>
+                <div class="equation-container">
+                    <div class="equation-title">Normalized Balance Score</div>
+                    $$\text{Normalized Balance} = \frac{\left|\sum_{j=1}^{k} e^{i2\pi k_j/n}\right|}{k}$$
+                    <div class="equation-description">
+                        Normalizing by the number of onsets allows comparison between patterns of different densities.
+                    </div>
+                </div>
+                
+                <h3>Center of Gravity Analysis</h3>
+                <p>The center of gravity represents the geometric centroid of the rhythm pattern in the complex plane, providing insight into the pattern's spatial distribution.</p>
+                
+                <div class="equation-container">
+                    <div class="equation-title">Center of Gravity</div>
+                    $$CoG = \frac{1}{k}\sum_{j=1}^{k} e^{i2\pi k_j/n}$$
+                    <div class="equation-description">
+                        The center of gravity is the normalized sum of onset vectors, indicating the pattern's geometric center.
+                    </div>
+                </div>
+                
+                <div class="equation-container">
+                    <div class="equation-title">Angular Position</div>
+                    $$\theta = \arctan2(\text{Im}(CoG), \text{Re}(CoG)) \times \frac{180}{\pi}$$
+                    <div class="equation-description">
+                        The angle of the center of gravity indicates the rotational bias of the pattern.
+                    </div>
+                </div>
+                
+                <h3>Clarence Barlow's Indispensability Theory</h3>
+                <p>Barlow's indispensability theory quantifies the metric importance of each position in a rhythmic cycle, providing a mathematical foundation for understanding syncopation and metric hierarchy.</p>
+                
+                <div class="algorithm-box">
+                    <h4>Indispensability Calculation</h4>
+                    <p>For a position $p$ in a meter of $n$ steps:</p>
+                    <ul>
+                        <li>If $p = 0$ (downbeat): $\text{indispensability} = 1.0$</li>
+                        <li>If $p = n-1$ (pickup beat): $\text{indispensability} = 0.75$</li>
+                        <li>Otherwise: $\text{indispensability} = \frac{1}{\prod \text{prime factors of } \frac{n}{\gcd(p, n)}}$</li>
+                    </ul>
+                </div>
+                
+                <div class="equation-container">
+                    <div class="equation-title">Barlow Indispensability</div>
+                    $$I(p, n) = \begin{cases}
+                    1.0 & \text{if } p = 0 \\
+                    0.75 & \text{if } p = n-1 \\
+                    \frac{1}{\prod_{q \text{ prime}} q^{v_q(n/\gcd(p,n))}} & \text{otherwise}
+                    \end{cases}$$
+                    <div class="equation-description">
+                        Where $v_q(m)$ is the $q$-adic valuation (the exponent of prime $q$ in the factorization of $m$).
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Core Algorithms Section -->
+            <section id="algorithms" class="docs-section">
+                <h2>⚙️ Core Algorithms</h2>
+                
+                <h3>Euclidean Rhythm Algorithm (Bjorklund's Algorithm)</h3>
+                <p>Based on Godfried Toussaint's research, the Euclidean algorithm distributes onsets as evenly as possible across a given number of steps.</p>
+                
+                <div class="algorithm-box">
+                    <h4>Euclidean Distribution Algorithm</h4>
+                    <p>To distribute $k$ onsets across $n$ steps:</p>
+                    <ol>
+                        <li>Start with $k$ groups of "1" (onset) and $(n-k)$ groups of "0" (rest)</li>
+                        <li>Repeatedly pair groups from opposite ends until no more pairs can be formed</li>
+                        <li>Continue until only one or two distinct group types remain</li>
+                        <li>Concatenate the final groups to form the rhythm pattern</li>
+                    </ol>
+                </div>
+                
+                <div class="equation-container">
+                    <div class="equation-title">Euclidean Rhythm Generation</div>
+                    $$E(k, n) = \text{Bjorklund}(k, n-k)$$
+                    <div class="equation-description">
+                        The Euclidean rhythm $E(k,n)$ is equivalent to applying Bjorklund's algorithm to distribute $k$ events across $n$ time slots.
+                    </div>
+                </div>
+                
+                <h4>Mathematical Properties</h4>
+                <div class="equation-container">
+                    <div class="equation-title">Euclidean Complement</div>
+                    $$\overline{E(k, n)} = E(n-k, n)$$
+                    <div class="equation-description">
+                        The complement of a Euclidean rhythm is also Euclidean, with onset and rest positions swapped.
+                    </div>
+                </div>
+                
+                <h3>Regular Polygon Generator</h3>
+                <p>Regular polygons provide a geometric approach to rhythm generation, where vertices of polygons inscribed in a circle correspond to onset positions.</p>
+                
+                <div class="equation-container">
+                    <div class="equation-title">Polygon Vertex Positions</div>
+                    $$P(v, o, n) = \left\{\left\lfloor \frac{(j \cdot n + o \cdot n) \bmod (v \cdot n)}{v} \right\rfloor : j = 0, 1, \ldots, v-1\right\}$$
+                    <div class="equation-description">
+                        Where $v$ is the number of vertices, $o$ is the offset, and $n$ is the number of steps in the expanded pattern.
+                    </div>
+                </div>
+                
+                <h4>Polygon Combination Mathematics</h4>
+                <div class="equation-container">
+                    <div class="equation-title">LCM Expansion for Polygon Combinations</div>
+                    $$P(v_1, o_1) + P(v_2, o_2) = P(v_1, o_1, \text{lcm}(v_1, v_2)) \cup P(v_2, o_2, \text{lcm}(v_1, v_2))$$
+                    <div class="equation-description">
+                        When combining polygons, they are expanded to their least common multiple to ensure proper alignment.
+                    </div>
+                </div>
+                
+                <h3>Random Pattern Generator with Bell Curve Distribution</h3>
+                <p>Random patterns provide stochastic rhythm generation with musical intelligence through bell curve distribution, avoiding musically uninteresting extremes.</p>
+                
+                <div class="algorithm-box">
+                    <h4>Bell Curve Distribution Algorithm</h4>
+                    <p>For R(r,n) patterns, onset counts are generated using normal distribution:</p>
+                    <ol>
+                        <li>Apply Box-Muller transformation to generate normal distribution</li>
+                        <li>Map to range [1, n-1] to avoid empty or full patterns</li>
+                        <li>Center distribution around n/2 for optimal musical density</li>
+                        <li>Use 3-sigma rule: 99.7% of values within musical range</li>
+                    </ol>
+                </div>
+                
+                <div class="equation-container">
+                    <div class="equation-title">Box-Muller Transformation</div>
+                    $$Z_0 = \sqrt{-2\ln(U_1)} \cos(2\pi U_2)$$
+                    <div class="equation-description">
+                        Where $U_1, U_2$ are uniform random variables, generating normally distributed $Z_0$.
+                    </div>
+                </div>
+                
+                <div class="equation-container">
+                    <div class="equation-title">Musical Range Mapping</div>
+                    $$\text{OnsetCount} = \text{round}\left(\frac{n}{2} + Z_0 \cdot \frac{n-2}{6}\right)$$
+                    <div class="equation-description">
+                        Maps standard normal distribution to range [1, n-1] with mean at n/2, avoiding musical extremes.
+                    </div>
+                </div>
+                
+                <h4>Musical Benefits</h4>
+                <div class="algorithm-box">
+                    <ul>
+                        <li><strong>Avoids Empty Patterns:</strong> Rarely generates 0 onsets (musically uninteresting)</li>
+                        <li><strong>Avoids Full Patterns:</strong> Rarely generates all onsets (rhythmically static)</li>
+                        <li><strong>Favors Musical Densities:</strong> Most likely to generate moderate onset counts</li>
+                        <li><strong>Maintains Unpredictability:</strong> Still provides sufficient randomness for variation</li>
+                    </ul>
+                </div>
+            </section>
+            
+            <!-- Pattern Transformers Section -->
+            <section id="transformers" class="docs-section">
+                <h2>🔄 Pattern Transformers</h2>
+                
+                <h3>Barlow Transformer</h3>
+                <p>The Barlow Transformer uses indispensability theory to intelligently add or remove onsets while preserving rhythmic coherence.</p>
+                
+                <div class="algorithm-box">
+                    <h4>Dilution Process (Onset Removal)</h4>
+                    <ol>
+                        <li>Calculate indispensability for all current onset positions</li>
+                        <li>Sort onsets by indispensability (ascending for dilution)</li>
+                        <li>Remove onsets with lowest indispensability values first</li>
+                        <li>Continue until target onset count is reached</li>
+                    </ol>
+                </div>
+                
+                <div class="algorithm-box">
+                    <h4>Concentration Process (Onset Addition)</h4>
+                    <ol>
+                        <li>Calculate indispensability for all positions without onsets</li>
+                        <li>Sort empty positions by indispensability (descending for concentration)</li>
+                        <li>Add onsets to positions with highest indispensability values</li>
+                        <li>Continue until target onset count is reached</li>
+                    </ol>
+                </div>
+                
+                <div class="equation-container">
+                    <div class="equation-title">Wolrab Mode (Reverse Logic)</div>
+                    $$\text{Wolrab Dilution: Remove } \max(I(p, n)) \text{ positions first}$$
+                    $$\text{Wolrab Concentration: Add to } \min(I(p, n)) \text{ positions first}$$
+                    <div class="equation-description">
+                        Wolrab mode inverts the indispensability logic, creating anti-metrical patterns that deliberately conflict with metric expectations.
+                    </div>
+                </div>
+                
+                <h3>Progressive Offsets</h3>
+                <p>Progressive offsets provide systematic pattern rotation with customizable step increments.</p>
+                
+                <div class="equation-container">
+                    <div class="equation-title">Pattern Rotation</div>
+                    $$\text{Rotate}(P, r) = \{(p + r) \bmod n : p \in P\}$$
+                    <div class="equation-description">
+                        Where $P$ is the original pattern, $r$ is the rotation amount, and $n$ is the pattern length.
+                    </div>
+                </div>
+                
+                <div class="equation-container">
+                    <div class="equation-title">Progressive Stepping</div>
+                    $$\text{Step}_i = \text{Rotate}(P_0, i \cdot s)$$
+                    <div class="equation-description">
+                        Where $P_0$ is the original pattern, $i$ is the step number, and $s$ is the step increment.
+                    </div>
+                </div>
+                
+                <h3>Progressive Pattern Lengthening</h3>
+                <p>Progressive lengthening extends patterns by appending random steps with intelligent bell curve onset distribution.</p>
+                
+                <div class="algorithm-box">
+                    <h4>Progressive Extension Process</h4>
+                    <ol>
+                        <li>User specifies number of steps to add per extension</li>
+                        <li>Calculate onset count using bell curve distribution (same as R(r,n))</li>
+                        <li>Generate random onset positions within extension section</li>
+                        <li>Append extension to current pattern</li>
+                        <li>Update pattern length and extension count</li>
+                    </ol>
+                </div>
+                
+                <div class="equation-container">
+                    <div class="equation-title">Pattern Extension</div>
+                    $$P_{\text{extended}} = P_{\text{current}} \oplus \text{RandomExtension}(n_{\text{add}}, \text{OnsetCount}_{\text{bell}}(n_{\text{add}}))$$
+                    <div class="equation-description">
+                        Where $\oplus$ represents concatenation, $n_{\text{add}}$ is steps to add, and $\text{OnsetCount}_{\text{bell}}$ uses bell curve distribution.
+                    </div>
+                </div>
+                
+                <div class="equation-container">
+                    <div class="equation-title">Cumulative Extension Length</div>
+                    $$L_i = L_0 + i \cdot n_{\text{add}}$$
+                    <div class="equation-description">
+                        Where $L_0$ is the original length, $i$ is the extension number, and $n_{\text{add}}$ is steps per extension.
+                    </div>
+                </div>
+                
+                <h4>Musical Intelligence Features</h4>
+                <div class="algorithm-box">
+                    <ul>
+                        <li><strong>Bell Curve Distribution:</strong> Uses same logic as R(r,n) to avoid musical extremes</li>
+                        <li><strong>Progressive Building:</strong> Each Enter press adds another extension for live composition</li>
+                        <li><strong>Universal Compatibility:</strong> Works with any pattern type or length</li>
+                        <li><strong>Intelligent Randomness:</strong> Favors musically interesting onset densities</li>
+                    </ul>
+                </div>
+            </section>
+            
+            <!-- Pattern Creation Section -->
+            <section id="pattern-creation" class="docs-section">
+                <h2>🎨 Pattern Creation</h2>
+                
+                <p>The Pattern Creation module provides an intuitive interface for generating rhythmic patterns using five different algorithmic approaches. This streamlined tool allows musicians and researchers to quickly create and explore various rhythmic structures.</p>
+                
+                <h3>Interface Overview</h3>
+                <div class="algorithm-box">
+                    <h4>Mode Selection (Radio Buttons)</h4>
+                    <ul>
+                        <li><strong>Euclidean:</strong> Even distribution using Euclidean algorithm</li>
+                        <li><strong>Dilcue:</strong> Anti-Euclidean patterns for syncopated effects</li>
+                        <li><strong>Barlow:</strong> Indispensability theory for intelligent placement</li>
+                        <li><strong>Wolrab:</strong> Anti-Barlow for groove-oriented patterns</li>
+                        <li><strong>Random:</strong> Distribution-based randomness with musical intelligence</li>
+                        <li><strong>Polygon:</strong> Geometric patterns using regular polygons with combination support</li>
+                    </ul>
+                </div>
+                
+                <div class="algorithm-box">
+                    <h4>Parameters (Inline Controls)</h4>
+                    <ul>
+                        <li><strong>Onsets:</strong> Number of active beats in the pattern</li>
+                        <li><strong>Steps:</strong> Total length of the pattern</li>
+                        <li><strong>Offset:</strong> Rotation offset for pattern start position</li>
+                        <li><strong>Target:</strong> Optional target onset count for progressive mode</li>
+                    </ul>
+                </div>
+                
+                <div class="algorithm-box">
+                    <h4>Progressive Mode</h4>
+                    <p>When a target value is specified, the system automatically enables progressive mode, allowing you to step through transformations from the current onset count to the target count using the Enter key.</p>
+                </div>
+                
+                <h3>Keyboard Interface</h3>
+                <div class="algorithm-box">
+                    <ul>
+                        <li><strong>Enter:</strong> Generate pattern or step to next in progressive sequence</li>
+                        <li><strong>Cmd/Ctrl+Enter:</strong> Add current pattern to database</li>
+                        <li><strong>Parameter Changes:</strong> Automatically reset progressive state</li>
+                    </ul>
+                </div>
+                
+                <h3>Design Philosophy</h3>
+                <p>This module focuses on <em>pattern generation</em> rather than transformation. Unlike the Pattern Transformers that modify existing patterns, Pattern Creation generates new rhythmic structures from algorithmic foundations. The streamlined interface prioritizes quick experimentation and iterative creation.</p>
+                
+                <h3>Random Mode Distributions</h3>
+                <div class="algorithm-box">
+                    <h4>Distribution Types</h4>
+                    <ul>
+                        <li><strong>Uniform:</strong> Equal probability for all positions - pure randomness</li>
+                        <li><strong>Bell Curve:</strong> Favors middle positions for balanced, musical patterns</li>
+                        <li><strong>Syncopated:</strong> Emphasizes off-beat positions for rhythmic tension</li>
+                        <li><strong>Balanced:</strong> Even spacing with controlled randomness variation</li>
+                        <li><strong>Clustered:</strong> Groups onsets together with varying cluster density</li>
+                    </ul>
+                </div>
+                
+                <div class="algorithm-box">
+                    <h4>Intensity Control</h4>
+                    <p>The intensity slider (0-100%) controls how strongly the distribution pattern is applied:</p>
+                    <ul>
+                        <li><strong>Low Intensity (0-30%):</strong> Subtle distribution effects, more uniform</li>
+                        <li><strong>Medium Intensity (40-60%):</strong> Balanced distribution characteristics</li>
+                        <li><strong>High Intensity (70-100%):</strong> Strong distribution effects, more pronounced patterns</li>
+                    </ul>
+                </div>
+                
+                <div class="algorithm-box">
+                    <h4>Random Mode Behavior</h4>
+                    <ul>
+                        <li><strong>Each Generation:</strong> Produces a completely different pattern</li>
+                        <li><strong>Parameters:</strong> Only Onsets and Steps (offset not applicable)</li>
+                        <li><strong>Random Onsets:</strong> Enter 'r' for random onset count using bell curve distribution</li>
+                        <li><strong>Progressive Mode:</strong> Not available for random generation</li>
+                        <li><strong>Enter Key:</strong> Generates new random variation each time</li>
+                    </ul>
+                </div>
+                
+                <h3>Polygon Mode Interface</h3>
+                <div class="algorithm-box">
+                    <h4>Polygon Builder</h4>
+                    <p>The Polygon mode provides a visual interface for combining up to 3 regular polygons with addition and subtraction operations:</p>
+                    <ul>
+                        <li><strong>Vertices:</strong> 2-32 vertices (bipoint to 32-gon)</li>
+                        <li><strong>Offset:</strong> Optional rotation offset for each polygon</li>
+                        <li><strong>Multiplier:</strong> Optional expansion factor (1-8x)</li>
+                        <li><strong>Operations:</strong> + (addition) or - (subtraction) between polygons</li>
+                        <li><strong>Visual Icons:</strong> Dynamic polygon symbols update based on vertex count</li>
+                    </ul>
+                </div>
+                
+                <div class="algorithm-box">
+                    <h4>Polygon Combination Mathematics</h4>
+                    <p>When combining multiple polygons, the system:</p>
+                    <ul>
+                        <li><strong>LCM Expansion:</strong> Automatically expands all polygons to their least common multiple</li>
+                        <li><strong>Addition:</strong> Combines patterns using logical OR (union of onsets)</li>
+                        <li><strong>Subtraction:</strong> Removes onsets where both patterns have beats</li>
+                        <li><strong>Perfect Balance:</strong> Strategic subtraction can achieve perfect balance patterns</li>
+                    </ul>
+                </div>
+                
+                <div class="algorithm-box">
+                    <h4>Polygon Mode Features</h4>
+                    <ul>
+                        <li><strong>Add/Remove Terms:</strong> + Add Polygon button and × remove buttons</li>
+                        <li><strong>Formula Display:</strong> Shows combined formula like P(3,1)+P(5,0)-P(2,0)</li>
+                        <li><strong>Progressive Mode:</strong> Not available (polygons define their own structure)</li>
+                        <li><strong>Bipoint Support:</strong> 2-vertex patterns create alternating rhythms</li>
+                        <li><strong>Geometric Names:</strong> Visual icons show triangle, pentagon, etc.</li>
+                    </ul>
+                </div>
+                
+                <div class="highlight">
+                    <strong>🎯 Key Difference:</strong> Pattern Creation generates new patterns, while Pattern Transformers modify existing ones.
+                </div>
+            </section>
+            
+            <!-- MIDI Output Section -->
+            <section id="midi-output" class="docs-section">
+                <h2>🎹 MIDI Output System</h2>
+                
+                <p>The Rhythm Pattern Explorer includes comprehensive real-time MIDI output capabilities, enabling direct integration with DAWs, hardware synthesizers, and MIDI-enabled applications. The system provides cross-browser compatibility and professional-grade timing accuracy.</p>
+                
+                <h3>Supported Browsers & Methods</h3>
+                
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4>🚀 Brave/Chrome/Edge - WebMIDI</h4>
+                        <p><strong>Status:</strong> ✅ Recommended</p>
+                        <p>Direct MIDI output using native WebMIDI API. No additional software required.</p>
+                        <p><strong>Setup:</strong> Click MIDI toggle → Grant permission → Done!</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <h4>🖥️ Safari (Mac) - WebSocket Bridge</h4>
+                        <p><strong>Status:</strong> ✅ Working (Local HTTP only)</p>
+                        <p>WebSocket bridge converts messages to MIDI output via Python script.</p>
+                        <p><strong>Setup:</strong> Run Python bridge → Serve app locally → Enable MIDI</p>
+                        <p><strong>Note:</strong> HTTPS hosted version blocked by browser security</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <h4>📱 Safari (iOS/iPad)</h4>
+                        <p><strong>Status:</strong> ❌ Limited</p>
+                        <p>Browser security restrictions prevent direct MIDI output.</p>
+                        <p><strong>Alternative:</strong> Use native iOS MIDI apps</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <h4>🦊 Firefox</h4>
+                        <p><strong>Status:</strong> 🟡 Experimental</p>
+                        <p>OSC bridge support for MIDI output via external tools.</p>
+                        <p><strong>Setup:</strong> Requires OSC-to-MIDI bridge software</p>
+                    </div>
+                </div>
+                
+                <h3>Quick Start Guide</h3>
+                
+                <div class="algorithm-box">
+                    <h4>Brave Browser (Easiest Method)</h4>
+                    <ol>
+                        <li><strong>Open Brave Browser</strong></li>
+                        <li><strong>Click the MIDI toggle</strong> (🎹 icon) in the app interface</li>
+                        <li><strong>Grant MIDI permission</strong> when prompted by browser</li>
+                        <li><strong>Play patterns</strong> → MIDI outputs to your default MIDI device</li>
+                    </ol>
+                    <p><strong>Requirements:</strong> None - works immediately with any MIDI-capable device or software</p>
+                </div>
+                
+                <div class="algorithm-box">
+                    <h4>Safari (Mac) with Python Bridge</h4>
+                    <div class="highlight">
+                        <strong>⚠️ Important:</strong> Safari MIDI requires local HTTP version. The HTTPS hosted version cannot access localhost due to browser security restrictions.
+                    </div>
+                    <ol>
+                        <li><strong>Download bridge script:</strong> <code>minimal-midi-bridge.py</code></li>
+                        <li><strong>Install dependencies:</strong> <code>pip install websockets mido python-rtmidi</code></li>
+                        <li><strong>Run bridge:</strong> <code>python3 minimal-midi-bridge.py</code></li>
+                        <li><strong>Serve app locally:</strong> <code>python3 serve-app.py --port 3000</code></li>
+                        <li><strong>Open Safari:</strong> <code>http://localhost:3000/app/</code> (not HTTPS version)</li>
+                        <li><strong>Enable MIDI</strong> in app → connects to bridge automatically</li>
+                    </ol>
+                </div>
+                
+                <h3>MIDI Configuration</h3>
+                
+                <div class="equation-container">
+                    <div class="equation-title">Default MIDI Settings</div>
+                    <div class="code-example">
+Channel: 1           # MIDI channel (1-16)
+Base Note: 36        # C2 - kick drum position
+Velocity: 100        # Note velocity (1-127)
+Note Duration: 100ms # Note off timing</div>
+                    <div class="equation-description">
+                        MIDI output uses standard MIDI protocol with configurable parameters for musical flexibility.
+                    </div>
+                </div>
+                
+                <h4>Common MIDI Note Assignments</h4>
+                <div class="algorithm-box">
+                    <ul>
+                        <li><strong>36 (C2):</strong> Kick drum (default)</li>
+                        <li><strong>38 (D2):</strong> Snare drum</li>
+                        <li><strong>42 (F#2):</strong> Hi-hat</li>
+                        <li><strong>60 (C4):</strong> Middle C</li>
+                        <li><strong>69 (A4):</strong> A440 reference tone</li>
+                    </ul>
+                </div>
+                
+                <h3>DAW Integration Setup</h3>
+                
+                <h4>Mac Setup (IAC Driver)</h4>
+                <div class="algorithm-box">
+                    <ol>
+                        <li><strong>Open Audio MIDI Setup</strong> (/Applications/Utilities/)</li>
+                        <li><strong>Window</strong> → <strong>Show MIDI Studio</strong></li>
+                        <li><strong>Double-click IAC Driver</strong></li>
+                        <li><strong>Check "Device is online"</strong></li>
+                        <li><strong>Set Ports</strong> to at least 1 port</li>
+                        <li><strong>Click Apply</strong></li>
+                    </ol>
+                </div>
+                
+                <h4>Windows Setup (Virtual MIDI)</h4>
+                <div class="algorithm-box">
+                    <ol>
+                        <li><strong>Install loopMIDI</strong> (free virtual MIDI port software)</li>
+                        <li><strong>Create virtual port</strong> for DAW communication</li>
+                        <li><strong>Configure your DAW</strong> to receive from virtual port</li>
+                    </ol>
+                </div>
+                
+                <h4>Popular DAW Configuration</h4>
+                
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4>GarageBand</h4>
+                        <ul>
+                            <li>Create Software Instrument track</li>
+                            <li>Set Input: IAC Driver Bus 1</li>
+                            <li>Choose drum kit or instrument</li>
+                            <li>Record-enable track</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <h4>Logic Pro</h4>
+                        <ul>
+                            <li>Create Software Instrument track</li>
+                            <li>Set MIDI Input: IAC Driver Bus 1</li>
+                            <li>Load desired instrument</li>
+                            <li>Record-enable and test</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <h4>Ableton Live</h4>
+                        <ul>
+                            <li>Preferences → MIDI</li>
+                            <li>Control Surface: IAC Driver Bus 1</li>
+                            <li>Create MIDI track</li>
+                            <li>Set input to IAC Driver</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <h4>Hardware Synths</h4>
+                        <ul>
+                            <li>Connect MIDI interface</li>
+                            <li>Set synth MIDI channel</li>
+                            <li>Route through interface in DAW</li>
+                            <li>Direct hardware output</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <h3>Technical Implementation</h3>
+                
+                <div class="equation-container">
+                    <div class="equation-title">MIDI Message Format</div>
+                    <div class="code-example">
+Note On:  [0x90 + channel, note, velocity]
+Note Off: [0x80 + channel, note, 0]
+
+Example: Channel 1, Note 36, Velocity 100
+Note On:  [0x90, 36, 100]
+Note Off: [0x80, 36, 0]</div>
+                    <div class="equation-description">
+                        Standard MIDI protocol ensures compatibility with all MIDI-capable devices and software.
+                    </div>
+                </div>
+                
+                <h4>Timing Accuracy</h4>
+                <div class="algorithm-box">
+                    <ul>
+                        <li><strong>WebMIDI:</strong> Sub-millisecond accuracy, direct hardware access</li>
+                        <li><strong>WebSocket Bridge:</strong> ~5-10ms latency, excellent for most applications</li>
+                        <li><strong>Audio Sync:</strong> Perfect synchronization with visual sequencer</li>
+                        <li><strong>Scheduling:</strong> Lookahead buffering prevents timing jitter</li>
+                    </ul>
+                </div>
+                
+                <h3>Troubleshooting</h3>
+                
+                <div class="algorithm-box">
+                    <h4>No MIDI Permission (Brave/Chrome)</h4>
+                    <ul>
+                        <li>Ensure you click the MIDI toggle button</li>
+                        <li>Try starting pattern playback first (audio context requirement)</li>
+                        <li>Check Site Settings → MIDI → Allow</li>
+                        <li>Restart browser if permission issues persist</li>
+                    </ul>
+                </div>
+                
+                <div class="algorithm-box">
+                    <h4>Safari Bridge Not Connecting</h4>
+                    <ul>
+                        <li><strong>HTTPS Security Block:</strong> Hosted version (enkerli.github.io) cannot access localhost HTTP services</li>
+                        <li><strong>Solution:</strong> Use local HTTP version: <code>python3 serve-app.py --port 3000</code></li>
+                        <li>Verify Python bridge shows "server listening" message</li>
+                        <li>Check localhost access: try <code>http://localhost:3000/app/</code></li>
+                        <li>Ensure ports 8080 (bridge) and 3000 (app) are available</li>
+                        <li>Restart bridge: Ctrl+C and run <code>python3 minimal-midi-bridge.py</code></li>
+                    </ul>
+                </div>
+                
+                <div class="algorithm-box">
+                    <h4>No MIDI in DAW</h4>
+                    <ul>
+                        <li>Check IAC Driver enabled (Mac) or virtual MIDI port (Windows)</li>
+                        <li>Verify DAW input settings: Set to IAC Driver Bus 1</li>
+                        <li>Record-enable track in DAW</li>
+                        <li>Test with MIDI monitoring software to verify output</li>
+                    </ul>
+                </div>
+                
+                <h3>Advanced Features</h3>
+                
+                <h4>Multiple MIDI Outputs</h4>
+                <div class="algorithm-box">
+                    <ul>
+                        <li><strong>Mac:</strong> Create multiple IAC Driver buses for routing</li>
+                        <li><strong>DAW Routing:</strong> Use internal MIDI routing to multiple instruments</li>
+                        <li><strong>Hardware:</strong> Connect multiple devices via USB MIDI hub</li>
+                    </ul>
+                </div>
+                
+                <h4>Custom MIDI Mapping</h4>
+                <div class="code-example">
+// Modify settings in midi-output.js
+baseNote: 60,  // Change to C4 for melodic instruments
+channel: 10,   // Channel 10 for drums (General MIDI standard)
+velocity: 127, // Maximum velocity for accent patterns</div>
+                
+                <div class="highlight">
+                    <strong>🎹 Professional Integration:</strong> The MIDI system provides studio-quality timing and connectivity for serious music production workflows.
+                </div>
+            </section>
+            
+            <!-- Getting Started Section -->
+            <section id="getting-started" class="docs-section">
+                <h2>🚀 Getting Started</h2>
+                
+                <h3>Quick Start Guide</h3>
+                <ol>
+                    <li><strong>Open the Application</strong>: Load the Rhythm Pattern Explorer in a modern web browser</li>
+                    <li><strong>Parse Your First Pattern</strong>: Enter <code>E(3,8)</code> in the Universal Pattern Input</li>
+                    <li><strong>Explore Analysis</strong>: View the mathematical breakdown and circular visualization</li>
+                    <li><strong>Try Transformations</strong>: Use the Barlow Transformer to dilute/concentrate onsets</li>
+                    <li><strong>Generate Variations</strong>: Create mutated patterns with the Rhythm Mutator</li>
+                    <li><strong>Save to Database</strong>: Add interesting patterns for later exploration</li>
+                </ol>
+                
+                <div class="highlight">
+                    <strong>💡 Pro Tip:</strong> Click the 🧮 buttons next to analysis sections to view the mathematical formulas behind the calculations!
+                </div>
+            </section>
+            
+            <!-- Pattern Input Section -->
+            <section id="pattern-input" class="docs-section">
+                <h2>📝 Pattern Input System</h2>
+                
+                <h3>Supported Formats</h3>
+                
+                <h4>Geometric Patterns</h4>
+                <div class="code-example">
+P(3,1)           # 3-sided polygon with offset 1
+P(3,1)+P(5,0)    # Combined polygons with automatic LCM expansion
+P(3,0)+P(5,1)-P(2,0)  # Perfect balance via subtraction
+tri, pent, hept, oct   # Shorthand notation
+                </div>
+                
+                <h4>Euclidean Rhythms</h4>
+                <div class="code-example">
+E(3,8)           # 3 onsets distributed across 8 steps
+E(3,8,2)         # With offset of 2
+tresillo         # Traditional name for E(3,8)
+comp E(3,8)      # Euclidean complement
+                </div>
+                
+                <h4>Random Patterns</h4>
+                <div class="code-example">
+R(3,8)           # 3 random onsets distributed across 8 steps
+R(5,16)          # 5 random onsets across 16 steps
+R(r,8)           # Bell curve distribution: likely 3-5 onsets, rarely 0-1 or 7-8
+R(r,16)          # Bell curve distribution: likely 6-10 onsets, avoids extremes
+                </div>
+                
+                <h4>Binary and Numeric</h4>
+                <div class="code-example">
+b101010          # Binary representation
+0x92:8           # Hexadecimal with step count
+0o111            # Octal representation
+73               # Decimal representation
+[0,3,6]:8        # Onset array with step count
+                </div>
+                
+                <h4>Advanced Operations</h4>
+                <div class="code-example">
+~pattern         # Invert pattern
+rev pattern      # Retrograde (reverse)
+S:2 pattern      # Stretch by factor of 2
+Q:0.5 pattern    # Squeeze to half size
+pattern@3        # Rotate by 3 steps
+pattern;12       # Quantize to 12 steps
+                </div>
+            </section>
+            
+            <!-- Examples Section -->
+            <section id="examples" class="docs-section">
+                <h2>💡 Usage Examples</h2>
+                
+                <h3>Perfect Balance Discovery</h3>
+                <div class="code-example">
+P(3,1)+P(5,0)-P(2,0)  # Results in perfect balance
+# Mathematical verification: Σe^(i2πkⱼ/n) = 0
+                </div>
+                
+                <h3>Cultural Rhythm Analysis</h3>
+                <div class="code-example">
+E(3,8)    # Cuban Tresillo
+E(5,8)    # Cuban Cinquillo  
+E(7,12)   # West African Gahu
+E(2,5)    # Korean traditional rhythm
+                </div>
+                
+                <h3>Progressive Transformation Workflow</h3>
+                <div class="code-example">
+1. Start: E(5,16)
+2. Barlow Analysis: Calculate indispensability profile
+3. Progressive Dilution: Reduce to 3 onsets
+4. Enable Wolrab Mode: Reverse indispensability logic
+5. Progressive Concentration: Increase to 7 onsets
+6. Result: Anti-metrical groove pattern
+                </div>
+            </section>
+            
+            <!-- Technical Architecture Section -->
+            <section id="technical-architecture" class="docs-section">
+                <h2>🏗️ Technical Architecture</h2>
+                
+                <h3>Modular Design</h3>
+                <div class="code-example">
+app/
+├── index.html                # Main application entry point
+├── documentation.html        # Interactive documentation (this file)
+├── platform-utils.js         # Cross-platform compatibility
+├── math-renderer.js          # Mathematical equation rendering
+├── math-core.js             # Core mathematical utilities
+├── pattern-analysis.js      # Balance and syncopation analysis
+├── pattern-generators.js    # Euclidean and polygon generators
+├── pattern-processing.js    # Universal parser and converters
+├── midi-output.js           # Cross-browser MIDI output system
+├── sequencer-controller.js  # Playback control with MIDI integration
+├── sequencer-audio.js       # Web Audio API synthesis
+├── sequencer-visual.js      # Circular visualization
+├── app-controller-browser.js # Main application orchestrator
+└── app-styles.css           # Complete styling system
+                </div>
+                
+                <h3>Mathematical Rendering System</h3>
+                <ul>
+                    <li><strong>MathJax Integration</strong>: Professional mathematical notation rendering</li>
+                    <li><strong>LaTeX Support</strong>: Full LaTeX equation syntax for complex expressions</li>
+                    <li><strong>Dynamic Rendering</strong>: Real-time equation rendering for interactive content</li>
+                    <li><strong>Cross-Platform Compatibility</strong>: Consistent display across all browsers</li>
+                    <li><strong>Responsive Design</strong>: Adaptive sizing for mobile and desktop</li>
+                </ul>
+                
+                <h3>Audio & MIDI Systems</h3>
+                <ul>
+                    <li><strong>Web Audio API</strong>: Precise timing with lookahead scheduling</li>
+                    <li><strong>WebMIDI Integration</strong>: Direct MIDI output for Chrome, Edge, Opera, Brave</li>
+                    <li><strong>WebSocket Bridge</strong>: Safari MIDI support via Python bridge</li>
+                    <li><strong>Cross-Browser Compatibility</strong>: Automatic method detection and fallback</li>
+                    <li><strong>Professional Timing</strong>: Sub-millisecond accuracy for studio use</li>
+                </ul>
+                
+                <h3>Performance Optimizations</h3>
+                <ul>
+                    <li><strong>Efficient Parsing</strong>: Single-pass pattern recognition</li>
+                    <li><strong>Caching Systems</strong>: Store analysis results to avoid recalculation</li>
+                    <li><strong>Lazy Loading</strong>: Defer non-critical calculations</li>
+                    <li><strong>Equation Rendering</strong>: On-demand MathJax rendering</li>
+                    <li><strong>MIDI Buffering</strong>: Optimized scheduling prevents timing jitter</li>
+                </ul>
+            </section>
+        </main>
+        
+        <footer style="margin-top: 60px; text-align: center; padding: 30px; background: #f8f9fa; border-radius: 10px;">
+            <p><strong>Rhythm Pattern Explorer</strong> - Mathematical Analysis of Rhythmic Patterns</p>
+            <p>Built with mathematical rigor, designed for creative exploration.</p>
+            <p><a href="index.html" style="color: #007bff; font-weight: bold;">← Return to Application</a></p>
+        </footer>
+    </div>
+    
+    <!-- Auto-render MathJax when page loads -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                window.MathJax.typesetPromise().then(() => {
+                    console.log('📐 All mathematical equations rendered in documentation');
+                }).catch((err) => {
+                    console.error('📐 MathJax rendering error:', err);
+                });
+            }
+        });
+    </script>
+</body>
+</html>

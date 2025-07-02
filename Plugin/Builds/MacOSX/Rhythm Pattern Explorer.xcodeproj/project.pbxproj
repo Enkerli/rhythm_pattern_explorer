@@ -1,0 +1,2492 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXAggregateTarget section */
+		EA731A9268533C22B48B4592 /* Rhythm Pattern Explorer - All */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 8671D130C40A502B7B465FA1;
+			buildPhases = (
+			);
+			dependencies = (
+				7F40A5CE90F1CF996CEE6FF9,
+				F224673BB33CD6F354C23C09,
+				661E3159D376448BBB6AABB3,
+				A70E93A3DA8CDDEB7E375012,
+				7946E23720CE4D23B26E279E,
+				9439DD907F5B2ADC5A4E21A2,
+			);
+			name = "Rhythm Pattern Explorer - All";
+			productName = "Rhythm Pattern Explorer";
+		};
+/* End PBXAggregateTarget section */
+
+/* Begin PBXBuildFile section */
+		076BA14737510F062ADBA5F8 /* WebKit.framework */ = {isa = PBXBuildFile; fileRef = 350C7F3540E0738DF058B8CA; };
+		0BA4008374BDB1AB4EF1B2D6 /* include_juce_audio_plugin_client_ARA.cpp */ = {isa = PBXBuildFile; fileRef = B98C40E8E2A915E8CB284128; };
+		1584933FB6A739F54BF6AB9A /* IOKit.framework */ = {isa = PBXBuildFile; fileRef = EDFD0AC25164B805B5051DC3; };
+		17972E315281C09266BD2F86 /* MetalKit.framework */ = {isa = PBXBuildFile; fileRef = 211992BE4FA11C8EB8FDBD47; settings = { ATTRIBUTES = (Weak, ); }; };
+		23891F01D350B6F91809EC53 /* include_juce_audio_plugin_client_VST3.mm */ = {isa = PBXBuildFile; fileRef = EC92B3A581D80CD0FC73E0A4; };
+		2D1AFE583125E414C7888800 /* CoreAudioKit.framework */ = {isa = PBXBuildFile; fileRef = 82DE0252EEF6911D8B0387EE; };
+		341F4EC425B42B734D42145D /* include_juce_gui_extra.mm */ = {isa = PBXBuildFile; fileRef = 5585B6760C8F7861633D3B83; };
+		38F136306DA87C1722C196CF /* include_juce_audio_devices.mm */ = {isa = PBXBuildFile; fileRef = 8DC38DC0D0DEFCD718D9EA85; };
+		3F972FD71D496EEA12D0150A /* include_juce_core.mm */ = {isa = PBXBuildFile; fileRef = C000417B6852065CDF477C9F; };
+		4203B9A6240C801EB1F80140 /* PluginEditor.cpp */ = {isa = PBXBuildFile; fileRef = 513106A9DEA09FDD25289678; };
+		437FCBC413598A08689DBEEB /* Security.framework */ = {isa = PBXBuildFile; fileRef = CFF974FF38BE238A9778951B; };
+		49C4EABB03688C7B6BC56E6F /* Shared Code */ = {isa = PBXBuildFile; fileRef = 40365512EC0DA262E47ED40D; };
+		5581306D405FA26FD7774C11 /* include_juce_core_CompilationTime.cpp */ = {isa = PBXBuildFile; fileRef = 942FCADB5542AC61D20C3CDC; };
+		5911474405E35190CD622FFA /* include_juce_audio_basics.mm */ = {isa = PBXBuildFile; fileRef = B5D1442081F744EFAFBD486E; };
+		5BE77BECC2A4212BC4ED4D35 /* CoreAudio.framework */ = {isa = PBXBuildFile; fileRef = FD762AC1621B5BF98B97AB6B; };
+		624553A5AB72FA44CA51F05A /* juce_VST3ManifestHelper.mm */ = {isa = PBXBuildFile; fileRef = 49CA8C3AC76D4E9B6697E815; settings = { COMPILER_FLAGS = "-fobjc-arc -w -DJUCE_SKIP_PRECOMPILED_HEADER"; }; };
+		6255AA7551EFDF582DA76E53 /* RecentFilesMenuTemplate.nib */ = {isa = PBXBuildFile; fileRef = BFC665833D45DBD887E4CCFA; };
+		6266D354020B8A80640A8781 /* include_juce_audio_formats.mm */ = {isa = PBXBuildFile; fileRef = F3C0ACCE97C599B7A953AE08; };
+		673A9823953093DA7989BAD9 /* include_juce_events.mm */ = {isa = PBXBuildFile; fileRef = B19FE4E49AA766BD38D3CBF4; };
+		6BB642D2F900624D8C705996 /* VST3 */ = {isa = PBXBuildFile; fileRef = 556B7E9A12E6FC1A5D83D956; };
+		6E1BB752C83AA2F72FF4C32D /* include_juce_audio_utils.mm */ = {isa = PBXBuildFile; fileRef = 406EEFE8CFFF6DFBBFD7FF4F; };
+		7B01008B94C2B1BE053426AD /* AudioToolbox.framework */ = {isa = PBXBuildFile; fileRef = DC3176D0DA1FF81848A8C9AF; };
+		807E55DB22DF4EE547D40500 /* Foundation.framework */ = {isa = PBXBuildFile; fileRef = 57467F28D75F5C55B30518A2; };
+		865626816C4F6F67346AD182 /* AU */ = {isa = PBXBuildFile; fileRef = BF5970AA5EE9BF369A3653E2; };
+		874375724BCD1B6DB4F5C583 /* DiscRecording.framework */ = {isa = PBXBuildFile; fileRef = 762735DAF040256A74866F76; };
+		8D6BF6BBCFEEDC61C80179A8 /* QuartzCore.framework */ = {isa = PBXBuildFile; fileRef = 8312E68A378A3118D8E9378F; };
+		8E9E958A19D1F865F0D05DF8 /* Accelerate.framework */ = {isa = PBXBuildFile; fileRef = C873CD2F1FF4CD43481EEAEC; };
+		924A6C0707E6D092DC1AA282 /* UPIParser.cpp */ = {isa = PBXBuildFile; fileRef = D134A56167EE1189C4F23324; };
+		97158F0C81A48846505C6B4E /* PatternEngine.cpp */ = {isa = PBXBuildFile; fileRef = 3807C0D40B0C5372930BBC8E; };
+		9D218D2CB3DBE5F2DBB49E62 /* include_juce_gui_basics.mm */ = {isa = PBXBuildFile; fileRef = D69E01D310170BDB9C030EC9; };
+		9F014246351A2834EABC0B8E /* include_juce_dsp.mm */ = {isa = PBXBuildFile; fileRef = 57E0F6A5FC450BFFD8DDD049; };
+		A4A1380BEE2D994C8532D898 /* AUv3 AppExtension */ = {isa = PBXBuildFile; fileRef = 79D7DC429F3CAEA4A97E9E6F; };
+		A572E463541342F93B5B6918 /* include_juce_audio_processors_lv2_libs.cpp */ = {isa = PBXBuildFile; fileRef = BE1D943D5FC956F6F1E1C5DE; };
+		A76A77C6873073C5348141BD /* PluginProcessor.cpp */ = {isa = PBXBuildFile; fileRef = 561D7427C5647BA3838426EB; };
+		AD76E0B7EA1595F3B3161F31 /* include_juce_audio_plugin_client_AU_1.mm */ = {isa = PBXBuildFile; fileRef = 935F09DA9C7A112609565CF2; };
+		B0779DB1FA3B081FA22FB83C /* VST3 Manifest Helper */ = {isa = PBXBuildFile; fileRef = 32C38D4AB5C4169A720A5C23; };
+		B2D342B0B65F0814F57A224C /* include_juce_audio_plugin_client_AUv3.mm */ = {isa = PBXBuildFile; fileRef = CA7BDD0A2E2DCAF4487174B3; };
+		BDDC9D6C0923E9F7A6E26E41 /* include_juce_audio_plugin_client_Standalone.cpp */ = {isa = PBXBuildFile; fileRef = 92EF14FB760FFD7F6488685B; };
+		BEB4D32457C575780F13BBD2 /* AudioUnit.framework */ = {isa = PBXBuildFile; fileRef = 1378DD4DEBBEFC707D124A69; };
+		BFE2B14656943CB96B579B4E /* include_juce_audio_plugin_client_AU_2.mm */ = {isa = PBXBuildFile; fileRef = 87DEF06CE56AB148ABB487AE; };
+		C13B0454C79645C850057A72 /* CoreMIDI.framework */ = {isa = PBXBuildFile; fileRef = 535A46501B9EEE367924BBC6; };
+		CDA9C90AA3CA044A04199606 /* include_juce_audio_processors_ara.cpp */ = {isa = PBXBuildFile; fileRef = 97A1E009EC8FF37C10B9753C; };
+		CEA0F49D93D21859AC7C7402 /* include_juce_graphics.mm */ = {isa = PBXBuildFile; fileRef = 2A15FFCC893EEA52106C4F5B; };
+		D603EC644E59EDF91137ED40 /* include_juce_audio_processors.mm */ = {isa = PBXBuildFile; fileRef = 0099A282B4809A86FFC1FEA9; };
+		D74085311237B640EA3D4984 /* Standalone Plugin */ = {isa = PBXBuildFile; fileRef = 68B7B81E97E81BA7A92557C3; };
+		E19873E9DFA5500334A9E0DC /* include_juce_graphics_Harfbuzz.cpp */ = {isa = PBXBuildFile; fileRef = 7A2B5A6179FC9F8C59F1912B; };
+		E43CFB22DD384F8F3EF5B512 /* include_juce_data_structures.mm */ = {isa = PBXBuildFile; fileRef = 103B4947DD1DB38B5D3F458C; };
+		EE972CC9E7AE11E78701808E /* Cocoa.framework */ = {isa = PBXBuildFile; fileRef = 8CB47FD2265AB84CDAA3E238; };
+		F59777978942F523EE8477A1 /* Metal.framework */ = {isa = PBXBuildFile; fileRef = 94FE46E87A7E0CD03602B307; settings = { ATTRIBUTES = (Weak, ); }; };
+		FDCA18558D327E4C470281E9 /* AVFoundation.framework */ = {isa = PBXBuildFile; fileRef = E64299967117E92AB37C4A4C; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		49E2BEE6E95CBFAEC771864B /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A4A1380BEE2D994C8532D898,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		0099A282B4809A86FFC1FEA9 /* include_juce_audio_processors.mm */ /* include_juce_audio_processors.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_audio_processors.mm; path = ../../JuceLibraryCode/include_juce_audio_processors.mm; sourceTree = SOURCE_ROOT; };
+		07DC4BBC2D73709C113768E4 /* Info-VST3.plist */ /* Info-VST3.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "Info-VST3.plist"; path = "Info-VST3.plist"; sourceTree = SOURCE_ROOT; };
+		0BBA03C24DDD4E2A1CBB1EA8 /* juce_audio_formats */ /* juce_audio_formats */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_audio_formats; path = /Users/alex/JUCE/modules/juce_audio_formats; sourceTree = "<absolute>"; };
+		103B4947DD1DB38B5D3F458C /* include_juce_data_structures.mm */ /* include_juce_data_structures.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_data_structures.mm; path = ../../JuceLibraryCode/include_juce_data_structures.mm; sourceTree = SOURCE_ROOT; };
+		1378DD4DEBBEFC707D124A69 /* AudioUnit.framework */ /* AudioUnit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioUnit.framework; path = System/Library/Frameworks/AudioUnit.framework; sourceTree = SDKROOT; };
+		155B6C91A2DC732945F30847 /* AUv3_AppExtension.entitlements */ /* AUv3_AppExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = AUv3_AppExtension.entitlements; path = AUv3_AppExtension.entitlements; sourceTree = SOURCE_ROOT; };
+		1617034622498E3560A5FB87 /* juce_data_structures */ /* juce_data_structures */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_data_structures; path = /Users/alex/JUCE/modules/juce_data_structures; sourceTree = "<absolute>"; };
+		1A8A5DA41E73B9E192BA1566 /* JuceHeader.h */ /* JuceHeader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = JuceHeader.h; path = ../../JuceLibraryCode/JuceHeader.h; sourceTree = SOURCE_ROOT; };
+		211992BE4FA11C8EB8FDBD47 /* MetalKit.framework */ /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = System/Library/Frameworks/MetalKit.framework; sourceTree = SDKROOT; };
+		2A15FFCC893EEA52106C4F5B /* include_juce_graphics.mm */ /* include_juce_graphics.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_graphics.mm; path = ../../JuceLibraryCode/include_juce_graphics.mm; sourceTree = SOURCE_ROOT; };
+		32C38D4AB5C4169A720A5C23 /* VST3 Manifest Helper */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = juce_vst3_helper; sourceTree = BUILT_PRODUCTS_DIR; };
+		350C7F3540E0738DF058B8CA /* WebKit.framework */ /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
+		3807C0D40B0C5372930BBC8E /* PatternEngine.cpp */ /* PatternEngine.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = PatternEngine.cpp; path = ../../Source/PatternEngine.cpp; sourceTree = SOURCE_ROOT; };
+		40365512EC0DA262E47ED40D /* Shared Code */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libRhythm Pattern Explorer.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		406EEFE8CFFF6DFBBFD7FF4F /* include_juce_audio_utils.mm */ /* include_juce_audio_utils.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_audio_utils.mm; path = ../../JuceLibraryCode/include_juce_audio_utils.mm; sourceTree = SOURCE_ROOT; };
+		49CA8C3AC76D4E9B6697E815 /* juce_VST3ManifestHelper.mm */ /* juce_VST3ManifestHelper.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = juce_VST3ManifestHelper.mm; path = /Users/alex/JUCE/modules/juce_audio_plugin_client/VST3/juce_VST3ManifestHelper.mm; sourceTree = "<absolute>"; };
+		513106A9DEA09FDD25289678 /* PluginEditor.cpp */ /* PluginEditor.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = PluginEditor.cpp; path = ../../Source/PluginEditor.cpp; sourceTree = SOURCE_ROOT; };
+		535A46501B9EEE367924BBC6 /* CoreMIDI.framework */ /* CoreMIDI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMIDI.framework; path = System/Library/Frameworks/CoreMIDI.framework; sourceTree = SDKROOT; };
+		556B7E9A12E6FC1A5D83D956 /* VST3 */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Rhythm Pattern Explorer.vst3"; sourceTree = BUILT_PRODUCTS_DIR; };
+		5585B6760C8F7861633D3B83 /* include_juce_gui_extra.mm */ /* include_juce_gui_extra.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_gui_extra.mm; path = ../../JuceLibraryCode/include_juce_gui_extra.mm; sourceTree = SOURCE_ROOT; };
+		561D7427C5647BA3838426EB /* PluginProcessor.cpp */ /* PluginProcessor.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = PluginProcessor.cpp; path = ../../Source/PluginProcessor.cpp; sourceTree = SOURCE_ROOT; };
+		56A62B7A5501D8A8048C9FD2 /* juce_gui_basics */ /* juce_gui_basics */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_gui_basics; path = /Users/alex/JUCE/modules/juce_gui_basics; sourceTree = "<absolute>"; };
+		57467F28D75F5C55B30518A2 /* Foundation.framework */ /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		57E0F6A5FC450BFFD8DDD049 /* include_juce_dsp.mm */ /* include_juce_dsp.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_dsp.mm; path = ../../JuceLibraryCode/include_juce_dsp.mm; sourceTree = SOURCE_ROOT; };
+		595C1C404B8A41918BA496D7 /* UPIParser.h */ /* UPIParser.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = UPIParser.h; path = ../../Source/UPIParser.h; sourceTree = SOURCE_ROOT; };
+		5EF44E0CA03361D93A611F89 /* juce_events */ /* juce_events */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_events; path = /Users/alex/JUCE/modules/juce_events; sourceTree = "<absolute>"; };
+		68B7B81E97E81BA7A92557C3 /* Standalone Plugin */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Rhythm Pattern Explorer.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		72B934818FD6B87FA2265080 /* Info-AU.plist */ /* Info-AU.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "Info-AU.plist"; path = "Info-AU.plist"; sourceTree = SOURCE_ROOT; };
+		750149BEEBB2697CE59DF249 /* PatternEngine.h */ /* PatternEngine.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = PatternEngine.h; path = ../../Source/PatternEngine.h; sourceTree = SOURCE_ROOT; };
+		762735DAF040256A74866F76 /* DiscRecording.framework */ /* DiscRecording.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = DiscRecording.framework; path = System/Library/Frameworks/DiscRecording.framework; sourceTree = SDKROOT; };
+		772C1DB482FE5EEDF576B059 /* juce_audio_basics */ /* juce_audio_basics */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_audio_basics; path = /Users/alex/JUCE/modules/juce_audio_basics; sourceTree = "<absolute>"; };
+		79D7DC429F3CAEA4A97E9E6F /* AUv3 AppExtension */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Rhythm Pattern Explorer.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		7A2B5A6179FC9F8C59F1912B /* include_juce_graphics_Harfbuzz.cpp */ /* include_juce_graphics_Harfbuzz.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = include_juce_graphics_Harfbuzz.cpp; path = ../../JuceLibraryCode/include_juce_graphics_Harfbuzz.cpp; sourceTree = SOURCE_ROOT; };
+		7A7F70D19EA0C731F064CE2E /* PluginEditor.h */ /* PluginEditor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = PluginEditor.h; path = ../../Source/PluginEditor.h; sourceTree = SOURCE_ROOT; };
+		7AA0E89394DC3CD2F40D0ECF /* Info-Standalone_Plugin.plist */ /* Info-Standalone_Plugin.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "Info-Standalone_Plugin.plist"; path = "Info-Standalone_Plugin.plist"; sourceTree = SOURCE_ROOT; };
+		7E41AB414D199C3CF7BA5AB2 /* Info-VST3_Manifest_Helper.plist */ /* Info-VST3_Manifest_Helper.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "Info-VST3_Manifest_Helper.plist"; path = "Info-VST3_Manifest_Helper.plist"; sourceTree = SOURCE_ROOT; };
+		82DE0252EEF6911D8B0387EE /* CoreAudioKit.framework */ /* CoreAudioKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudioKit.framework; path = System/Library/Frameworks/CoreAudioKit.framework; sourceTree = SDKROOT; };
+		8312E68A378A3118D8E9378F /* QuartzCore.framework */ /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
+		86EAD91158EBFC48E9E5D3C6 /* juce_audio_plugin_client */ /* juce_audio_plugin_client */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_audio_plugin_client; path = /Users/alex/JUCE/modules/juce_audio_plugin_client; sourceTree = "<absolute>"; };
+		87DEF06CE56AB148ABB487AE /* include_juce_audio_plugin_client_AU_2.mm */ /* include_juce_audio_plugin_client_AU_2.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_audio_plugin_client_AU_2.mm; path = ../../JuceLibraryCode/include_juce_audio_plugin_client_AU_2.mm; sourceTree = SOURCE_ROOT; };
+		8CB47FD2265AB84CDAA3E238 /* Cocoa.framework */ /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
+		8DC38DC0D0DEFCD718D9EA85 /* include_juce_audio_devices.mm */ /* include_juce_audio_devices.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_audio_devices.mm; path = ../../JuceLibraryCode/include_juce_audio_devices.mm; sourceTree = SOURCE_ROOT; };
+		92EF14FB760FFD7F6488685B /* include_juce_audio_plugin_client_Standalone.cpp */ /* include_juce_audio_plugin_client_Standalone.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = include_juce_audio_plugin_client_Standalone.cpp; path = ../../JuceLibraryCode/include_juce_audio_plugin_client_Standalone.cpp; sourceTree = SOURCE_ROOT; };
+		92FA683F168524FC4710B170 /* Info-AUv3_AppExtension.plist */ /* Info-AUv3_AppExtension.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "Info-AUv3_AppExtension.plist"; path = "Info-AUv3_AppExtension.plist"; sourceTree = SOURCE_ROOT; };
+		935F09DA9C7A112609565CF2 /* include_juce_audio_plugin_client_AU_1.mm */ /* include_juce_audio_plugin_client_AU_1.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_audio_plugin_client_AU_1.mm; path = ../../JuceLibraryCode/include_juce_audio_plugin_client_AU_1.mm; sourceTree = SOURCE_ROOT; };
+		942FCADB5542AC61D20C3CDC /* include_juce_core_CompilationTime.cpp */ /* include_juce_core_CompilationTime.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = include_juce_core_CompilationTime.cpp; path = ../../JuceLibraryCode/include_juce_core_CompilationTime.cpp; sourceTree = SOURCE_ROOT; };
+		94D85A732A6396DA5C799A69 /* juce_core */ /* juce_core */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_core; path = /Users/alex/JUCE/modules/juce_core; sourceTree = "<absolute>"; };
+		94FE46E87A7E0CD03602B307 /* Metal.framework */ /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
+		967E52EC6693AB9FB4848A67 /* PluginProcessor.h */ /* PluginProcessor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = PluginProcessor.h; path = ../../Source/PluginProcessor.h; sourceTree = SOURCE_ROOT; };
+		97A1E009EC8FF37C10B9753C /* include_juce_audio_processors_ara.cpp */ /* include_juce_audio_processors_ara.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = include_juce_audio_processors_ara.cpp; path = ../../JuceLibraryCode/include_juce_audio_processors_ara.cpp; sourceTree = SOURCE_ROOT; };
+		B19FE4E49AA766BD38D3CBF4 /* include_juce_events.mm */ /* include_juce_events.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_events.mm; path = ../../JuceLibraryCode/include_juce_events.mm; sourceTree = SOURCE_ROOT; };
+		B1FAA219D99F668EAC9F401F /* juce_audio_processors */ /* juce_audio_processors */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_audio_processors; path = /Users/alex/JUCE/modules/juce_audio_processors; sourceTree = "<absolute>"; };
+		B5D1442081F744EFAFBD486E /* include_juce_audio_basics.mm */ /* include_juce_audio_basics.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_audio_basics.mm; path = ../../JuceLibraryCode/include_juce_audio_basics.mm; sourceTree = SOURCE_ROOT; };
+		B98C40E8E2A915E8CB284128 /* include_juce_audio_plugin_client_ARA.cpp */ /* include_juce_audio_plugin_client_ARA.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = include_juce_audio_plugin_client_ARA.cpp; path = ../../JuceLibraryCode/include_juce_audio_plugin_client_ARA.cpp; sourceTree = SOURCE_ROOT; };
+		BE1D943D5FC956F6F1E1C5DE /* include_juce_audio_processors_lv2_libs.cpp */ /* include_juce_audio_processors_lv2_libs.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = include_juce_audio_processors_lv2_libs.cpp; path = ../../JuceLibraryCode/include_juce_audio_processors_lv2_libs.cpp; sourceTree = SOURCE_ROOT; };
+		BF5970AA5EE9BF369A3653E2 /* AU */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Rhythm Pattern Explorer.component"; sourceTree = BUILT_PRODUCTS_DIR; };
+		BFC665833D45DBD887E4CCFA /* RecentFilesMenuTemplate.nib */ /* RecentFilesMenuTemplate.nib */ = {isa = PBXFileReference; lastKnownFileType = file.nib; name = RecentFilesMenuTemplate.nib; path = RecentFilesMenuTemplate.nib; sourceTree = SOURCE_ROOT; };
+		C000417B6852065CDF477C9F /* include_juce_core.mm */ /* include_juce_core.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_core.mm; path = ../../JuceLibraryCode/include_juce_core.mm; sourceTree = SOURCE_ROOT; };
+		C164D03F1155096288C039A0 /* JucePluginDefines.h */ /* JucePluginDefines.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = JucePluginDefines.h; path = ../../JuceLibraryCode/JucePluginDefines.h; sourceTree = SOURCE_ROOT; };
+		C873CD2F1FF4CD43481EEAEC /* Accelerate.framework */ /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
+		CA7BDD0A2E2DCAF4487174B3 /* include_juce_audio_plugin_client_AUv3.mm */ /* include_juce_audio_plugin_client_AUv3.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_audio_plugin_client_AUv3.mm; path = ../../JuceLibraryCode/include_juce_audio_plugin_client_AUv3.mm; sourceTree = SOURCE_ROOT; };
+		CDC925CF223E4BA93CAB3BF3 /* juce_audio_devices */ /* juce_audio_devices */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_audio_devices; path = /Users/alex/JUCE/modules/juce_audio_devices; sourceTree = "<absolute>"; };
+		CFF974FF38BE238A9778951B /* Security.framework */ /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
+		D0D5A3A99A9DA8206D31C0B0 /* juce_audio_utils */ /* juce_audio_utils */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_audio_utils; path = /Users/alex/JUCE/modules/juce_audio_utils; sourceTree = "<absolute>"; };
+		D134A56167EE1189C4F23324 /* UPIParser.cpp */ /* UPIParser.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = UPIParser.cpp; path = ../../Source/UPIParser.cpp; sourceTree = SOURCE_ROOT; };
+		D69E01D310170BDB9C030EC9 /* include_juce_gui_basics.mm */ /* include_juce_gui_basics.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_gui_basics.mm; path = ../../JuceLibraryCode/include_juce_gui_basics.mm; sourceTree = SOURCE_ROOT; };
+		D7631A5676549B021E8F496C /* juce_dsp */ /* juce_dsp */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_dsp; path = /Users/alex/JUCE/modules/juce_dsp; sourceTree = "<absolute>"; };
+		DC3176D0DA1FF81848A8C9AF /* AudioToolbox.framework */ /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
+		E64299967117E92AB37C4A4C /* AVFoundation.framework */ /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
+		EC92B3A581D80CD0FC73E0A4 /* include_juce_audio_plugin_client_VST3.mm */ /* include_juce_audio_plugin_client_VST3.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_audio_plugin_client_VST3.mm; path = ../../JuceLibraryCode/include_juce_audio_plugin_client_VST3.mm; sourceTree = SOURCE_ROOT; };
+		EDFD0AC25164B805B5051DC3 /* IOKit.framework */ /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
+		EF8A01A5EF2FDCDE7CAEC1C5 /* juce_graphics */ /* juce_graphics */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_graphics; path = /Users/alex/JUCE/modules/juce_graphics; sourceTree = "<absolute>"; };
+		F3C0ACCE97C599B7A953AE08 /* include_juce_audio_formats.mm */ /* include_juce_audio_formats.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_audio_formats.mm; path = ../../JuceLibraryCode/include_juce_audio_formats.mm; sourceTree = SOURCE_ROOT; };
+		FD762AC1621B5BF98B97AB6B /* CoreAudio.framework */ /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
+		FF9AB02D85F66845F0D6A394 /* juce_gui_extra */ /* juce_gui_extra */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_gui_extra; path = /Users/alex/JUCE/modules/juce_gui_extra; sourceTree = "<absolute>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		0F5B895E7F4270C1B11E21BD = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BEB4D32457C575780F13BBD2,
+				8E9E958A19D1F865F0D05DF8,
+				7B01008B94C2B1BE053426AD,
+				EE972CC9E7AE11E78701808E,
+				5BE77BECC2A4212BC4ED4D35,
+				2D1AFE583125E414C7888800,
+				C13B0454C79645C850057A72,
+				874375724BCD1B6DB4F5C583,
+				807E55DB22DF4EE547D40500,
+				1584933FB6A739F54BF6AB9A,
+				8D6BF6BBCFEEDC61C80179A8,
+				437FCBC413598A08689DBEEB,
+				076BA14737510F062ADBA5F8,
+				F59777978942F523EE8477A1,
+				17972E315281C09266BD2F86,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		51F80BEF3A2CB299C92D2E24 = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BEB4D32457C575780F13BBD2,
+				8E9E958A19D1F865F0D05DF8,
+				7B01008B94C2B1BE053426AD,
+				FDCA18558D327E4C470281E9,
+				EE972CC9E7AE11E78701808E,
+				5BE77BECC2A4212BC4ED4D35,
+				2D1AFE583125E414C7888800,
+				C13B0454C79645C850057A72,
+				874375724BCD1B6DB4F5C583,
+				807E55DB22DF4EE547D40500,
+				1584933FB6A739F54BF6AB9A,
+				8D6BF6BBCFEEDC61C80179A8,
+				437FCBC413598A08689DBEEB,
+				076BA14737510F062ADBA5F8,
+				F59777978942F523EE8477A1,
+				17972E315281C09266BD2F86,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9039288EB21C054F208D97FA = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8E9E958A19D1F865F0D05DF8,
+				7B01008B94C2B1BE053426AD,
+				EE972CC9E7AE11E78701808E,
+				5BE77BECC2A4212BC4ED4D35,
+				2D1AFE583125E414C7888800,
+				C13B0454C79645C850057A72,
+				874375724BCD1B6DB4F5C583,
+				807E55DB22DF4EE547D40500,
+				1584933FB6A739F54BF6AB9A,
+				8D6BF6BBCFEEDC61C80179A8,
+				437FCBC413598A08689DBEEB,
+				076BA14737510F062ADBA5F8,
+				F59777978942F523EE8477A1,
+				17972E315281C09266BD2F86,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C3A6C2067A161FF0F074DA6A = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8E9E958A19D1F865F0D05DF8,
+				7B01008B94C2B1BE053426AD,
+				EE972CC9E7AE11E78701808E,
+				5BE77BECC2A4212BC4ED4D35,
+				2D1AFE583125E414C7888800,
+				C13B0454C79645C850057A72,
+				874375724BCD1B6DB4F5C583,
+				807E55DB22DF4EE547D40500,
+				1584933FB6A739F54BF6AB9A,
+				8D6BF6BBCFEEDC61C80179A8,
+				437FCBC413598A08689DBEEB,
+				076BA14737510F062ADBA5F8,
+				F59777978942F523EE8477A1,
+				17972E315281C09266BD2F86,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D542FA7D394DE33031A3A44A = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8E9E958A19D1F865F0D05DF8,
+				7B01008B94C2B1BE053426AD,
+				EE972CC9E7AE11E78701808E,
+				5BE77BECC2A4212BC4ED4D35,
+				2D1AFE583125E414C7888800,
+				C13B0454C79645C850057A72,
+				874375724BCD1B6DB4F5C583,
+				807E55DB22DF4EE547D40500,
+				1584933FB6A739F54BF6AB9A,
+				8D6BF6BBCFEEDC61C80179A8,
+				437FCBC413598A08689DBEEB,
+				076BA14737510F062ADBA5F8,
+				F59777978942F523EE8477A1,
+				17972E315281C09266BD2F86,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		1710AE00CC26BBA6DBC9A4A7 /* Source */ = {
+			isa = PBXGroup;
+			children = (
+				561D7427C5647BA3838426EB,
+				967E52EC6693AB9FB4848A67,
+				513106A9DEA09FDD25289678,
+				7A7F70D19EA0C731F064CE2E,
+				3807C0D40B0C5372930BBC8E,
+				750149BEEBB2697CE59DF249,
+				D134A56167EE1189C4F23324,
+				595C1C404B8A41918BA496D7,
+			);
+			name = Source;
+			sourceTree = "<group>";
+		};
+		2DF79BFFD1892C0E03BABE29 /* Source */ = {
+			isa = PBXGroup;
+			children = (
+				E7827A9323F4FCAC63C2380B,
+				FC0BB55A06319C51FD4E5B06,
+				CABF91EC82A153A9DA98A483,
+				399E1065D0F7148FE6A5EC69,
+				AC409204C8D5A413BB6E6ECD,
+				BADA9D8C21FB2A5E65949D8F,
+			);
+			name = Source;
+			sourceTree = "<group>";
+		};
+		399E1065D0F7148FE6A5EC69 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				07DC4BBC2D73709C113768E4,
+				72B934818FD6B87FA2265080,
+				92FA683F168524FC4710B170,
+				7AA0E89394DC3CD2F40D0ECF,
+				7E41AB414D199C3CF7BA5AB2,
+				BFC665833D45DBD887E4CCFA,
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
+		AC409204C8D5A413BB6E6ECD /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				1378DD4DEBBEFC707D124A69,
+				C873CD2F1FF4CD43481EEAEC,
+				DC3176D0DA1FF81848A8C9AF,
+				E64299967117E92AB37C4A4C,
+				8CB47FD2265AB84CDAA3E238,
+				FD762AC1621B5BF98B97AB6B,
+				82DE0252EEF6911D8B0387EE,
+				535A46501B9EEE367924BBC6,
+				762735DAF040256A74866F76,
+				57467F28D75F5C55B30518A2,
+				EDFD0AC25164B805B5051DC3,
+				8312E68A378A3118D8E9378F,
+				CFF974FF38BE238A9778951B,
+				350C7F3540E0738DF058B8CA,
+				94FE46E87A7E0CD03602B307,
+				211992BE4FA11C8EB8FDBD47,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		BADA9D8C21FB2A5E65949D8F /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				556B7E9A12E6FC1A5D83D956,
+				BF5970AA5EE9BF369A3653E2,
+				79D7DC429F3CAEA4A97E9E6F,
+				68B7B81E97E81BA7A92557C3,
+				40365512EC0DA262E47ED40D,
+				32C38D4AB5C4169A720A5C23,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		CABF91EC82A153A9DA98A483 /* JUCE Library Code */ = {
+			isa = PBXGroup;
+			children = (
+				B5D1442081F744EFAFBD486E,
+				8DC38DC0D0DEFCD718D9EA85,
+				F3C0ACCE97C599B7A953AE08,
+				B98C40E8E2A915E8CB284128,
+				935F09DA9C7A112609565CF2,
+				87DEF06CE56AB148ABB487AE,
+				CA7BDD0A2E2DCAF4487174B3,
+				92EF14FB760FFD7F6488685B,
+				EC92B3A581D80CD0FC73E0A4,
+				0099A282B4809A86FFC1FEA9,
+				97A1E009EC8FF37C10B9753C,
+				BE1D943D5FC956F6F1E1C5DE,
+				406EEFE8CFFF6DFBBFD7FF4F,
+				C000417B6852065CDF477C9F,
+				942FCADB5542AC61D20C3CDC,
+				103B4947DD1DB38B5D3F458C,
+				57E0F6A5FC450BFFD8DDD049,
+				B19FE4E49AA766BD38D3CBF4,
+				2A15FFCC893EEA52106C4F5B,
+				7A2B5A6179FC9F8C59F1912B,
+				D69E01D310170BDB9C030EC9,
+				5585B6760C8F7861633D3B83,
+				1A8A5DA41E73B9E192BA1566,
+				C164D03F1155096288C039A0,
+			);
+			name = "JUCE Library Code";
+			sourceTree = "<group>";
+		};
+		E7827A9323F4FCAC63C2380B /* Rhythm Pattern Explorer */ = {
+			isa = PBXGroup;
+			children = (
+				1710AE00CC26BBA6DBC9A4A7,
+			);
+			name = "Rhythm Pattern Explorer";
+			sourceTree = "<group>";
+		};
+		FC0BB55A06319C51FD4E5B06 /* JUCE Modules */ = {
+			isa = PBXGroup;
+			children = (
+				772C1DB482FE5EEDF576B059,
+				CDC925CF223E4BA93CAB3BF3,
+				0BBA03C24DDD4E2A1CBB1EA8,
+				86EAD91158EBFC48E9E5D3C6,
+				B1FAA219D99F668EAC9F401F,
+				D0D5A3A99A9DA8206D31C0B0,
+				94D85A732A6396DA5C799A69,
+				1617034622498E3560A5FB87,
+				D7631A5676549B021E8F496C,
+				5EF44E0CA03361D93A611F89,
+				EF8A01A5EF2FDCDE7CAEC1C5,
+				56A62B7A5501D8A8048C9FD2,
+				FF9AB02D85F66845F0D6A394,
+			);
+			name = "JUCE Modules";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		276E279B722219EF78119969 /* Rhythm Pattern Explorer - Standalone Plugin */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F78AB0DA8E55DF8935DB7568;
+			buildPhases = (
+				4ECFA9A8140B792A5DD136B7,
+				72162EB2A60DA9C98246A7A8,
+				C3A6C2067A161FF0F074DA6A,
+				49E2BEE6E95CBFAEC771864B,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				DDEF4B63307BEA9F517C6495,
+				1785CB35AE58AFBFDD32BAB3,
+			);
+			name = "Rhythm Pattern Explorer - Standalone Plugin";
+			productName = "Rhythm Pattern Explorer";
+			productReference = 68B7B81E97E81BA7A92557C3;
+			productType = "com.apple.product-type.application";
+		};
+		4D1F3FFAAE9113D484F83486 /* Rhythm Pattern Explorer - Shared Code */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C7A55D6C64DF442C3BE5BE7C;
+			buildPhases = (
+				DA21B3455DD1E9B74658CA96,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "Rhythm Pattern Explorer - Shared Code";
+			productName = "Rhythm Pattern Explorer";
+			productReference = 40365512EC0DA262E47ED40D;
+			productType = "com.apple.product-type.library.static";
+		};
+		8E8AFA281CD0E2B941DF4AE3 /* Rhythm Pattern Explorer - AUv3 AppExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2236563CBF52B68CF001A4A7;
+			buildPhases = (
+				C1BEA83C17B8233E985077D8,
+				B46436872D75E293FA586F87,
+				51F80BEF3A2CB299C92D2E24,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				820777660D91A7EEC9991885,
+			);
+			name = "Rhythm Pattern Explorer - AUv3 AppExtension";
+			productName = "Rhythm Pattern Explorer";
+			productReference = 79D7DC429F3CAEA4A97E9E6F;
+			productType = "com.apple.product-type.app-extension";
+		};
+		940042F4C64EA739BC238170 /* Rhythm Pattern Explorer - AU */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 72573A882A2323B30C599AC9;
+			buildPhases = (
+				194D5AB1002C746686A9A728,
+				205DF328CA7D84E573BC4A63,
+				0F5B895E7F4270C1B11E21BD,
+				EEDA916813EB370E4A55FF16,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				BEA06F27D25100F1711FF00E,
+			);
+			name = "Rhythm Pattern Explorer - AU";
+			productName = "Rhythm Pattern Explorer";
+			productReference = BF5970AA5EE9BF369A3653E2;
+			productType = "com.apple.product-type.bundle";
+		};
+		A3B9BBE831FBAF2368645D50 /* Rhythm Pattern Explorer - VST3 Manifest Helper */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 25C062B8827776CDDE7F9BA5;
+			buildPhases = (
+				81CEB81CA8C96995998EBB63,
+				D542FA7D394DE33031A3A44A,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "Rhythm Pattern Explorer - VST3 Manifest Helper";
+			productName = "Rhythm Pattern Explorer";
+			productReference = 32C38D4AB5C4169A720A5C23;
+			productType = "com.apple.product-type.tool";
+		};
+		B149EE28A1A80E2257D9F51C /* Rhythm Pattern Explorer - VST3 */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CFB5B5BB879099FB2C4843D1;
+			buildPhases = (
+				C086242DF158352A48D75F2B,
+				40EBD4C51605560C84AE70B3,
+				9039288EB21C054F208D97FA,
+				4496D1A042840F92500596FA,
+				AA0141793FED42836132A8F2,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				FAB339EF871312BC7CE54B81,
+				4FD39CBAE0EF656B7E4971A2,
+			);
+			name = "Rhythm Pattern Explorer - VST3";
+			productName = "Rhythm Pattern Explorer";
+			productReference = 556B7E9A12E6FC1A5D83D956;
+			productType = "com.apple.product-type.bundle";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		FC41026A7B15C0D91E75E74D = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1340;
+				ORGANIZATIONNAME = "Rhythm Pattern Explorer";
+				TargetAttributes = {
+					276E279B722219EF78119969 = {
+						SystemCapabilities = {
+							com.apple.ApplicationGroups.iOS = {
+								enabled = 0;
+							};
+							com.apple.HardenedRuntime = {
+								enabled = 0;
+							};
+							com.apple.InAppPurchase = {
+								enabled = 0;
+							};
+							com.apple.InterAppAudio = {
+								enabled = 0;
+							};
+							com.apple.Push = {
+								enabled = 0;
+							};
+							com.apple.Sandbox = {
+								enabled = 0;
+							};
+						};
+					};
+					4D1F3FFAAE9113D484F83486 = {
+						SystemCapabilities = {
+							com.apple.ApplicationGroups.iOS = {
+								enabled = 0;
+							};
+							com.apple.HardenedRuntime = {
+								enabled = 0;
+							};
+							com.apple.InAppPurchase = {
+								enabled = 0;
+							};
+							com.apple.InterAppAudio = {
+								enabled = 0;
+							};
+							com.apple.Push = {
+								enabled = 0;
+							};
+							com.apple.Sandbox = {
+								enabled = 0;
+							};
+						};
+					};
+					8E8AFA281CD0E2B941DF4AE3 = {
+						SystemCapabilities = {
+							com.apple.ApplicationGroups.iOS = {
+								enabled = 0;
+							};
+							com.apple.HardenedRuntime = {
+								enabled = 0;
+							};
+							com.apple.InAppPurchase = {
+								enabled = 0;
+							};
+							com.apple.InterAppAudio = {
+								enabled = 0;
+							};
+							com.apple.Push = {
+								enabled = 0;
+							};
+							com.apple.Sandbox = {
+								enabled = 1;
+							};
+						};
+					};
+					940042F4C64EA739BC238170 = {
+						SystemCapabilities = {
+							com.apple.ApplicationGroups.iOS = {
+								enabled = 0;
+							};
+							com.apple.HardenedRuntime = {
+								enabled = 0;
+							};
+							com.apple.InAppPurchase = {
+								enabled = 0;
+							};
+							com.apple.InterAppAudio = {
+								enabled = 0;
+							};
+							com.apple.Push = {
+								enabled = 0;
+							};
+							com.apple.Sandbox = {
+								enabled = 0;
+							};
+						};
+					};
+					A3B9BBE831FBAF2368645D50 = {
+						SystemCapabilities = {
+							com.apple.ApplicationGroups.iOS = {
+								enabled = 0;
+							};
+							com.apple.HardenedRuntime = {
+								enabled = 0;
+							};
+							com.apple.InAppPurchase = {
+								enabled = 0;
+							};
+							com.apple.InterAppAudio = {
+								enabled = 0;
+							};
+							com.apple.Push = {
+								enabled = 0;
+							};
+							com.apple.Sandbox = {
+								enabled = 0;
+							};
+						};
+					};
+					B149EE28A1A80E2257D9F51C = {
+						SystemCapabilities = {
+							com.apple.ApplicationGroups.iOS = {
+								enabled = 0;
+							};
+							com.apple.HardenedRuntime = {
+								enabled = 0;
+							};
+							com.apple.InAppPurchase = {
+								enabled = 0;
+							};
+							com.apple.InterAppAudio = {
+								enabled = 0;
+							};
+							com.apple.Push = {
+								enabled = 0;
+							};
+							com.apple.Sandbox = {
+								enabled = 0;
+							};
+						};
+					};
+					EA731A9268533C22B48B4592 = {
+						SystemCapabilities = {
+							com.apple.ApplicationGroups.iOS = {
+								enabled = 0;
+							};
+							com.apple.HardenedRuntime = {
+								enabled = 0;
+							};
+							com.apple.InAppPurchase = {
+								enabled = 0;
+							};
+							com.apple.InterAppAudio = {
+								enabled = 0;
+							};
+							com.apple.Push = {
+								enabled = 0;
+							};
+							com.apple.Sandbox = {
+								enabled = 0;
+							};
+						};
+					};
+				};
+			};
+			buildConfigurationList = 017A40C493034B43AAF83410;
+			compatibilityVersion = "Xcode 3.2";
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 2DF79BFFD1892C0E03BABE29;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				EA731A9268533C22B48B4592,
+				B149EE28A1A80E2257D9F51C,
+				940042F4C64EA739BC238170,
+				8E8AFA281CD0E2B941DF4AE3,
+				276E279B722219EF78119969,
+				4D1F3FFAAE9113D484F83486,
+				A3B9BBE831FBAF2368645D50,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		194D5AB1002C746686A9A728 = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6255AA7551EFDF582DA76E53,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4ECFA9A8140B792A5DD136B7 = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6255AA7551EFDF582DA76E53,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C086242DF158352A48D75F2B = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6255AA7551EFDF582DA76E53,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C1BEA83C17B8233E985077D8 = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6255AA7551EFDF582DA76E53,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		4496D1A042840F92500596FA /* Update manifest */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			name = "Update manifest";
+			alwaysOutOfDate = 1;
+			shellPath = /bin/sh;
+			shellScript = "set -euo pipefail\n\necho Running codesign --verbose=4 --force --sign - \\\"${CONFIGURATION_BUILD_DIR}/${WRAPPER_NAME}\\\"\ncodesign --verbose=4 --force --sign - \"${CONFIGURATION_BUILD_DIR}/${WRAPPER_NAME}\"\n\necho Running \\\"${CONFIGURATION_BUILD_DIR}/juce_vst3_helper\\\" -create -version \\\"1.0.0\\\" -path \\\"${CONFIGURATION_BUILD_DIR}/${WRAPPER_NAME}\\\" -output \\\"${CONFIGURATION_BUILD_DIR}/${WRAPPER_NAME}/Contents/Resources/moduleinfo.json\\\"\n\"${CONFIGURATION_BUILD_DIR}/juce_vst3_helper\" -create -version \"1.0.0\" -path \"${CONFIGURATION_BUILD_DIR}/${WRAPPER_NAME}\" -output \"${CONFIGURATION_BUILD_DIR}/${WRAPPER_NAME}/Contents/Resources/moduleinfo.json\"\n";
+		};
+		AA0141793FED42836132A8F2 /* Plugin Copy Step */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			name = "Plugin Copy Step";
+			alwaysOutOfDate = 1;
+			shellPath = /bin/sh;
+			shellScript = "set -euo pipefail\n\nif [[ \"${CONFIGURATION}\" == \"Debug\" ]]; then\n  destinationPlugin=\"${HOME}/Library/Audio/Plug-Ins/VST3//$(basename \"${TARGET_BUILD_DIR}/${WRAPPER_NAME}\")\"\n  echo Running rm -rf \\\"${destinationPlugin}\\\"\n  rm -rf \"${destinationPlugin}\"\n  echo Running ditto \\\"${TARGET_BUILD_DIR}/${WRAPPER_NAME}\\\" \\\"${destinationPlugin}\\\"\n  ditto \"${TARGET_BUILD_DIR}/${WRAPPER_NAME}\" \"${destinationPlugin}\"\n\n  if [[ -n \"${EXPANDED_CODE_SIGN_IDENTITY-}\" ]]; then\n    if [[ -n \"${CODE_SIGN_ENTITLEMENTS-}\" ]]; then\n      entitlementsArg=(--entitlements \"${CODE_SIGN_ENTITLEMENTS}\")\n    fi\n\n    echo Signing Identity: \\\"${EXPANDED_CODE_SIGN_IDENTITY_NAME}\\\"\n    echo Running codesign --verbose=4 --force --sign \\\"${EXPANDED_CODE_SIGN_IDENTITY}\\\" ${entitlementsArg[*]-} ${OTHER_CODE_SIGN_FLAGS-} \\\"${HOME}/Library/Audio/Plug-Ins/VST3//${WRAPPER_NAME}\\\"\n    codesign --verbose=4 --force --sign \"${EXPANDED_CODE_SIGN_IDENTITY}\" ${entitlementsArg[*]-} ${OTHER_CODE_SIGN_FLAGS-} \"${HOME}/Library/Audio/Plug-Ins/VST3//${WRAPPER_NAME}\"\n  fi\nfi\n\nif [[ \"${CONFIGURATION}\" == \"Release\" ]]; then\n  destinationPlugin=\"${HOME}/Library/Audio/Plug-Ins/VST3//$(basename \"${TARGET_BUILD_DIR}/${WRAPPER_NAME}\")\"\n  echo Running rm -rf \\\"${destinationPlugin}\\\"\n  rm -rf \"${destinationPlugin}\"\n  echo Running ditto \\\"${TARGET_BUILD_DIR}/${WRAPPER_NAME}\\\" \\\"${destinationPlugin}\\\"\n  ditto \"${TARGET_BUILD_DIR}/${WRAPPER_NAME}\" \"${destinationPlugin}\"\n\n  if [[ -n \"${EXPANDED_CODE_SIGN_IDENTITY-}\" ]]; then\n    if [[ -n \"${CODE_SIGN_ENTITLEMENTS-}\" ]]; then\n      entitlementsArg=(--entitlements \"${CODE_SIGN_ENTITLEMENTS}\")\n    fi\n\n    echo Signing Identity: \\\"${EXPANDED_CODE_SIGN_IDENTITY_NAME}\\\"\n    echo Running codesign --verbose=4 --force --sign \\\"${EXPANDED_CODE_SIGN_IDENTITY}\\\" ${entitlementsArg[*]-} ${OTHER_CODE_SIGN_FLAGS-} \\\"${HOME}/Library/Audio/Plug-Ins/VST3//${WRAPPER_NAME}\\\"\n    codesign --verbose=4 --force --sign \"${EXPANDED_CODE_SIGN_IDENTITY}\" ${entitlementsArg[*]-} ${OTHER_CODE_SIGN_FLAGS-} \"${HOME}/Library/Audio/Plug-Ins/VST3//${WRAPPER_NAME}\"\n  fi\nfi\n";
+		};
+		EEDA916813EB370E4A55FF16 /* Plugin Copy Step */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			name = "Plugin Copy Step";
+			alwaysOutOfDate = 1;
+			shellPath = /bin/sh;
+			shellScript = "set -euo pipefail\n\nif [[ \"${CONFIGURATION}\" == \"Debug\" ]]; then\n  destinationPlugin=\"${HOME}/Library/Audio/Plug-Ins/Components//$(basename \"${TARGET_BUILD_DIR}/${WRAPPER_NAME}\")\"\n  echo Running rm -rf \\\"${destinationPlugin}\\\"\n  rm -rf \"${destinationPlugin}\"\n  echo Running ditto \\\"${TARGET_BUILD_DIR}/${WRAPPER_NAME}\\\" \\\"${destinationPlugin}\\\"\n  ditto \"${TARGET_BUILD_DIR}/${WRAPPER_NAME}\" \"${destinationPlugin}\"\n\n  if [[ -n \"${EXPANDED_CODE_SIGN_IDENTITY-}\" ]]; then\n    if [[ -n \"${CODE_SIGN_ENTITLEMENTS-}\" ]]; then\n      entitlementsArg=(--entitlements \"${CODE_SIGN_ENTITLEMENTS}\")\n    fi\n\n    echo Signing Identity: \\\"${EXPANDED_CODE_SIGN_IDENTITY_NAME}\\\"\n    echo Running codesign --verbose=4 --force --sign \\\"${EXPANDED_CODE_SIGN_IDENTITY}\\\" ${entitlementsArg[*]-} ${OTHER_CODE_SIGN_FLAGS-} \\\"${HOME}/Library/Audio/Plug-Ins/Components//${WRAPPER_NAME}\\\"\n    codesign --verbose=4 --force --sign \"${EXPANDED_CODE_SIGN_IDENTITY}\" ${entitlementsArg[*]-} ${OTHER_CODE_SIGN_FLAGS-} \"${HOME}/Library/Audio/Plug-Ins/Components//${WRAPPER_NAME}\"\n  fi\nfi\n\nif [[ \"${CONFIGURATION}\" == \"Release\" ]]; then\n  destinationPlugin=\"${HOME}/Library/Audio/Plug-Ins/Components//$(basename \"${TARGET_BUILD_DIR}/${WRAPPER_NAME}\")\"\n  echo Running rm -rf \\\"${destinationPlugin}\\\"\n  rm -rf \"${destinationPlugin}\"\n  echo Running ditto \\\"${TARGET_BUILD_DIR}/${WRAPPER_NAME}\\\" \\\"${destinationPlugin}\\\"\n  ditto \"${TARGET_BUILD_DIR}/${WRAPPER_NAME}\" \"${destinationPlugin}\"\n\n  if [[ -n \"${EXPANDED_CODE_SIGN_IDENTITY-}\" ]]; then\n    if [[ -n \"${CODE_SIGN_ENTITLEMENTS-}\" ]]; then\n      entitlementsArg=(--entitlements \"${CODE_SIGN_ENTITLEMENTS}\")\n    fi\n\n    echo Signing Identity: \\\"${EXPANDED_CODE_SIGN_IDENTITY_NAME}\\\"\n    echo Running codesign --verbose=4 --force --sign \\\"${EXPANDED_CODE_SIGN_IDENTITY}\\\" ${entitlementsArg[*]-} ${OTHER_CODE_SIGN_FLAGS-} \\\"${HOME}/Library/Audio/Plug-Ins/Components//${WRAPPER_NAME}\\\"\n    codesign --verbose=4 --force --sign \"${EXPANDED_CODE_SIGN_IDENTITY}\" ${entitlementsArg[*]-} ${OTHER_CODE_SIGN_FLAGS-} \"${HOME}/Library/Audio/Plug-Ins/Components//${WRAPPER_NAME}\"\n  fi\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		205DF328CA7D84E573BC4A63 = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AD76E0B7EA1595F3B3161F31,
+				BFE2B14656943CB96B579B4E,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		40EBD4C51605560C84AE70B3 = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				23891F01D350B6F91809EC53,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		72162EB2A60DA9C98246A7A8 = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BDDC9D6C0923E9F7A6E26E41,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		81CEB81CA8C96995998EBB63 = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				624553A5AB72FA44CA51F05A,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B46436872D75E293FA586F87 = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B2D342B0B65F0814F57A224C,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DA21B3455DD1E9B74658CA96 = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A76A77C6873073C5348141BD,
+				4203B9A6240C801EB1F80140,
+				97158F0C81A48846505C6B4E,
+				924A6C0707E6D092DC1AA282,
+				5911474405E35190CD622FFA,
+				38F136306DA87C1722C196CF,
+				6266D354020B8A80640A8781,
+				0BA4008374BDB1AB4EF1B2D6,
+				D603EC644E59EDF91137ED40,
+				CDA9C90AA3CA044A04199606,
+				A572E463541342F93B5B6918,
+				6E1BB752C83AA2F72FF4C32D,
+				3F972FD71D496EEA12D0150A,
+				5581306D405FA26FD7774C11,
+				E43CFB22DD384F8F3EF5B512,
+				9F014246351A2834EABC0B8E,
+				673A9823953093DA7989BAD9,
+				CEA0F49D93D21859AC7C7402,
+				E19873E9DFA5500334A9E0DC,
+				9D218D2CB3DBE5F2DBB49E62,
+				341F4EC425B42B734D42145D,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		1785CB35AE58AFBFDD32BAB3 = {
+			isa = PBXTargetDependency;
+			target = 8E8AFA281CD0E2B941DF4AE3;
+		};
+		4FD39CBAE0EF656B7E4971A2 = {
+			isa = PBXTargetDependency;
+			target = A3B9BBE831FBAF2368645D50;
+		};
+		661E3159D376448BBB6AABB3 = {
+			isa = PBXTargetDependency;
+			target = 8E8AFA281CD0E2B941DF4AE3;
+		};
+		7946E23720CE4D23B26E279E = {
+			isa = PBXTargetDependency;
+			target = 4D1F3FFAAE9113D484F83486;
+		};
+		7F40A5CE90F1CF996CEE6FF9 = {
+			isa = PBXTargetDependency;
+			target = B149EE28A1A80E2257D9F51C;
+		};
+		820777660D91A7EEC9991885 = {
+			isa = PBXTargetDependency;
+			target = 4D1F3FFAAE9113D484F83486;
+		};
+		9439DD907F5B2ADC5A4E21A2 = {
+			isa = PBXTargetDependency;
+			target = A3B9BBE831FBAF2368645D50;
+		};
+		A70E93A3DA8CDDEB7E375012 = {
+			isa = PBXTargetDependency;
+			target = 276E279B722219EF78119969;
+		};
+		BEA06F27D25100F1711FF00E = {
+			isa = PBXTargetDependency;
+			target = 4D1F3FFAAE9113D484F83486;
+		};
+		DDEF4B63307BEA9F517C6495 = {
+			isa = PBXTargetDependency;
+			target = 4D1F3FFAAE9113D484F83486;
+		};
+		F224673BB33CD6F354C23C09 = {
+			isa = PBXTargetDependency;
+			target = 940042F4C64EA739BC238170;
+		};
+		FAB339EF871312BC7CE54B81 = {
+			isa = PBXTargetDependency;
+			target = 4D1F3FFAAE9113D484F83486;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		06204271E412DE4636FA74ED /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_LINK_OBJC_RUNTIME = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "$(PROJECT_DIR)/build/$(CONFIGURATION)";
+				COPY_PHASE_STRIP = NO;
+				EXCLUDED_ARCHS = "";
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"_DEBUG=1",
+					"DEBUG=1",
+					"JUCE_PROJUCER_VERSION=0x80008",
+					"JUCE_MODULE_AVAILABLE_juce_audio_basics=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_devices=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_formats=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_plugin_client=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_processors=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_utils=1",
+					"JUCE_MODULE_AVAILABLE_juce_core=1",
+					"JUCE_MODULE_AVAILABLE_juce_data_structures=1",
+					"JUCE_MODULE_AVAILABLE_juce_dsp=1",
+					"JUCE_MODULE_AVAILABLE_juce_events=1",
+					"JUCE_MODULE_AVAILABLE_juce_graphics=1",
+					"JUCE_MODULE_AVAILABLE_juce_gui_basics=1",
+					"JUCE_MODULE_AVAILABLE_juce_gui_extra=1",
+					"JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1",
+					"JUCE_VST3_CAN_REPLACE_VST2=0",
+					"JUCE_STRICT_REFCOUNTEDPOINTER=1",
+					"JucePlugin_Build_VST=0",
+					"JucePlugin_Build_VST3=1",
+					"JucePlugin_Build_AU=0",
+					"JucePlugin_Build_AUv3=0",
+					"JucePlugin_Build_AAX=0",
+					"JucePlugin_Build_Standalone=0",
+					"JucePlugin_Build_Unity=0",
+					"JucePlugin_Build_LV2=0",
+					"JucePlugin_Enable_IAA=0",
+					"JucePlugin_Enable_ARA=0",
+					"JucePlugin_Name=\\\"Rhythm\\ Pattern\\ Explorer\\\"",
+					"JucePlugin_Desc=\\\"Mathematical\\ rhythm\\ pattern\\ generator\\ and\\ analyzer\\\"",
+					"JucePlugin_Manufacturer=\\\"Rhythm\\ Pattern\\ Explorer\\\"",
+					"JucePlugin_ManufacturerWebsite=\\\"https://github.com/enkerli/rhythm_pattern_explorer\\\"",
+					"JucePlugin_ManufacturerEmail=\\\"support@rhythmpatternexplorer.com\\\"",
+					"JucePlugin_ManufacturerCode=0x52504531",
+					"JucePlugin_PluginCode=0x52706531",
+					"JucePlugin_IsSynth=0",
+					"JucePlugin_WantsMidiInput=1",
+					"JucePlugin_ProducesMidiOutput=1",
+					"JucePlugin_IsMidiEffect=1",
+					"JucePlugin_EditorRequiresKeyboardFocus=0",
+					"JucePlugin_Version=1.0.0",
+					"JucePlugin_VersionCode=0x10000",
+					"JucePlugin_VersionString=\\\"1.0.0\\\"",
+					"JucePlugin_VSTUniqueID=JucePlugin_PluginCode",
+					"JucePlugin_VSTCategory=kPlugCategEffect",
+					"JucePlugin_Vst3Category=\\\"Fx\\\"",
+					"JucePlugin_AUMainType=\\'aumi\\'",
+					"JucePlugin_AUSubType=JucePlugin_PluginCode",
+					"JucePlugin_AUExportPrefix=RhythmPatternExplorerAU",
+					"JucePlugin_AUExportPrefixQuoted=\\\"RhythmPatternExplorerAU\\\"",
+					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
+					"JucePlugin_CFBundleIdentifier=com.rhythmpatternexplorer.auv3",
+					"JucePlugin_AAXIdentifier=com.rhythmpatternexplorer.auv3",
+					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
+					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
+					"JucePlugin_AAXCategory=2",
+					"JucePlugin_AAXDisableBypass=0",
+					"JucePlugin_AAXDisableMultiMono=0",
+					"JucePlugin_IAAType=0x6175726d",
+					"JucePlugin_IAASubType=JucePlugin_PluginCode",
+					"JucePlugin_IAAName=\\\"Rhythm\\ Pattern\\ Explorer:\\ Rhythm\\ Pattern\\ Explorer\\\"",
+					"JucePlugin_VSTNumMidiInputs=16",
+					"JucePlugin_VSTNumMidiOutputs=16",
+					"JucePlugin_ARAContentTypes=0",
+					"JucePlugin_ARATransformationFlags=0",
+					"JucePlugin_ARAFactoryID=\\\"com.RhythmPatternExplorer.RhythmPatternExplorer.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.RhythmPatternExplorer.RhythmPatternExplorer.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
+					"JucePlugin_MaxNumInputChannels=0",
+					"JucePlugin_MaxNumOutputChannels=0",
+					"JucePlugin_PreferredChannelConfigurations={0,0}",
+					"JUCE_STANDALONE_APPLICATION=JucePlugin_Build_Standalone",
+					"JUCE_DISPLAY_SPLASH_SCREEN=1",
+					"JUCE_USE_DARK_SPLASH_SCREEN=1",
+					"JUCER_XCODE_MAC_F6D2F4CF=1",
+					"JUCE_APP_VERSION=1.0.0",
+					"JUCE_APP_VERSION_HEX=0x10000",
+				);
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GENERATE_PKGINFO_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"/Users/alex/JUCE/modules/juce_audio_processors/format_types/VST3_SDK",
+					"$(SRCROOT)/../../JuceLibraryCode",
+					"/Users/alex/JUCE/modules",
+					"/Users/alex/JUCE/modules/juce_audio_plugin_client/AU",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = Info-VST3.plist;
+				INFOPLIST_PREPROCESS = NO;
+				INSTALL_PATH = "$(HOME)/Library/Audio/Plug-Ins/VST3/";
+				LIBRARY_STYLE = Bundle;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_HEADER_SEARCH_PATHS = "/Users/alex/JUCE/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode /Users/alex/JUCE/modules /Users/alex/JUCE/modules/juce_audio_plugin_client/AU";
+				OTHER_LDFLAGS = "-bundle -lRhythm\\ Pattern\\ Explorer";
+				PRODUCT_BUNDLE_IDENTIFIER = com.rhythmpatternexplorer.auv3;
+				PRODUCT_NAME = "Rhythm Pattern Explorer";
+				USE_HEADERMAP = NO;
+				VALID_ARCHS = "i386 x86_64 arm64 arm64e";
+				WRAPPER_EXTENSION = vst3;
+			};
+			name = Debug;
+		};
+		3B7DF969F08CC5C00DED5977 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_LINK_OBJC_RUNTIME = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "$(PROJECT_DIR)/build/$(CONFIGURATION)";
+				DEAD_CODE_STRIPPING = YES;
+				DEPLOYMENT_POSTPROCESSING = YES;
+				EXCLUDED_ARCHS = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"_NDEBUG=1",
+					"NDEBUG=1",
+					"JUCE_PROJUCER_VERSION=0x80008",
+					"JUCE_MODULE_AVAILABLE_juce_audio_basics=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_devices=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_formats=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_plugin_client=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_processors=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_utils=1",
+					"JUCE_MODULE_AVAILABLE_juce_core=1",
+					"JUCE_MODULE_AVAILABLE_juce_data_structures=1",
+					"JUCE_MODULE_AVAILABLE_juce_dsp=1",
+					"JUCE_MODULE_AVAILABLE_juce_events=1",
+					"JUCE_MODULE_AVAILABLE_juce_graphics=1",
+					"JUCE_MODULE_AVAILABLE_juce_gui_basics=1",
+					"JUCE_MODULE_AVAILABLE_juce_gui_extra=1",
+					"JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1",
+					"JUCE_VST3_CAN_REPLACE_VST2=0",
+					"JUCE_STRICT_REFCOUNTEDPOINTER=1",
+					"JucePlugin_Build_VST=0",
+					"JucePlugin_Build_VST3=1",
+					"JucePlugin_Build_AU=0",
+					"JucePlugin_Build_AUv3=0",
+					"JucePlugin_Build_AAX=0",
+					"JucePlugin_Build_Standalone=0",
+					"JucePlugin_Build_Unity=0",
+					"JucePlugin_Build_LV2=0",
+					"JucePlugin_Enable_IAA=0",
+					"JucePlugin_Enable_ARA=0",
+					"JucePlugin_Name=\\\"Rhythm\\ Pattern\\ Explorer\\\"",
+					"JucePlugin_Desc=\\\"Mathematical\\ rhythm\\ pattern\\ generator\\ and\\ analyzer\\\"",
+					"JucePlugin_Manufacturer=\\\"Rhythm\\ Pattern\\ Explorer\\\"",
+					"JucePlugin_ManufacturerWebsite=\\\"https://github.com/enkerli/rhythm_pattern_explorer\\\"",
+					"JucePlugin_ManufacturerEmail=\\\"support@rhythmpatternexplorer.com\\\"",
+					"JucePlugin_ManufacturerCode=0x52504531",
+					"JucePlugin_PluginCode=0x52706531",
+					"JucePlugin_IsSynth=0",
+					"JucePlugin_WantsMidiInput=1",
+					"JucePlugin_ProducesMidiOutput=1",
+					"JucePlugin_IsMidiEffect=1",
+					"JucePlugin_EditorRequiresKeyboardFocus=0",
+					"JucePlugin_Version=1.0.0",
+					"JucePlugin_VersionCode=0x10000",
+					"JucePlugin_VersionString=\\\"1.0.0\\\"",
+					"JucePlugin_VSTUniqueID=JucePlugin_PluginCode",
+					"JucePlugin_VSTCategory=kPlugCategEffect",
+					"JucePlugin_Vst3Category=\\\"Fx\\\"",
+					"JucePlugin_AUMainType=\\'aumi\\'",
+					"JucePlugin_AUSubType=JucePlugin_PluginCode",
+					"JucePlugin_AUExportPrefix=RhythmPatternExplorerAU",
+					"JucePlugin_AUExportPrefixQuoted=\\\"RhythmPatternExplorerAU\\\"",
+					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
+					"JucePlugin_CFBundleIdentifier=com.rhythmpatternexplorer.auv3",
+					"JucePlugin_AAXIdentifier=com.rhythmpatternexplorer.auv3",
+					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
+					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
+					"JucePlugin_AAXCategory=2",
+					"JucePlugin_AAXDisableBypass=0",
+					"JucePlugin_AAXDisableMultiMono=0",
+					"JucePlugin_IAAType=0x6175726d",
+					"JucePlugin_IAASubType=JucePlugin_PluginCode",
+					"JucePlugin_IAAName=\\\"Rhythm\\ Pattern\\ Explorer:\\ Rhythm\\ Pattern\\ Explorer\\\"",
+					"JucePlugin_VSTNumMidiInputs=16",
+					"JucePlugin_VSTNumMidiOutputs=16",
+					"JucePlugin_ARAContentTypes=0",
+					"JucePlugin_ARATransformationFlags=0",
+					"JucePlugin_ARAFactoryID=\\\"com.RhythmPatternExplorer.RhythmPatternExplorer.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.RhythmPatternExplorer.RhythmPatternExplorer.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
+					"JucePlugin_MaxNumInputChannels=0",
+					"JucePlugin_MaxNumOutputChannels=0",
+					"JucePlugin_PreferredChannelConfigurations={0,0}",
+					"JUCE_STANDALONE_APPLICATION=JucePlugin_Build_Standalone",
+					"JUCE_DISPLAY_SPLASH_SCREEN=1",
+					"JUCE_USE_DARK_SPLASH_SCREEN=1",
+					"JUCER_XCODE_MAC_F6D2F4CF=1",
+					"JUCE_APP_VERSION=1.0.0",
+					"JUCE_APP_VERSION_HEX=0x10000",
+				);
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GENERATE_PKGINFO_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"/Users/alex/JUCE/modules/juce_audio_processors/format_types/VST3_SDK",
+					"$(SRCROOT)/../../JuceLibraryCode",
+					"/Users/alex/JUCE/modules",
+					"/Users/alex/JUCE/modules/juce_audio_plugin_client/AU",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = Info-VST3.plist;
+				INFOPLIST_PREPROCESS = NO;
+				INSTALL_PATH = "$(HOME)/Library/Audio/Plug-Ins/VST3/";
+				LIBRARY_STYLE = Bundle;
+				LLVM_LTO = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_HEADER_SEARCH_PATHS = "/Users/alex/JUCE/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode /Users/alex/JUCE/modules /Users/alex/JUCE/modules/juce_audio_plugin_client/AU";
+				OTHER_LDFLAGS = "-bundle -lRhythm\\ Pattern\\ Explorer";
+				PRODUCT_BUNDLE_IDENTIFIER = com.rhythmpatternexplorer.auv3;
+				PRODUCT_NAME = "Rhythm Pattern Explorer";
+				SEPARATE_STRIP = YES;
+				STRIPFLAGS = "-x";
+				USE_HEADERMAP = NO;
+				VALID_ARCHS = "i386 x86_64 arm64 arm64e";
+				WRAPPER_EXTENSION = vst3;
+			};
+			name = Release;
+		};
+		4EF2B39E110F499DDC412751 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_LINK_OBJC_RUNTIME = NO;
+				CODE_SIGN_ENTITLEMENTS = "AUv3_AppExtension.entitlements";
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "$(PROJECT_DIR)/build/$(CONFIGURATION)";
+				DEAD_CODE_STRIPPING = YES;
+				DEPLOYMENT_POSTPROCESSING = YES;
+				EXCLUDED_ARCHS = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"_NDEBUG=1",
+					"NDEBUG=1",
+					"JUCE_PROJUCER_VERSION=0x80008",
+					"JUCE_MODULE_AVAILABLE_juce_audio_basics=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_devices=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_formats=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_plugin_client=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_processors=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_utils=1",
+					"JUCE_MODULE_AVAILABLE_juce_core=1",
+					"JUCE_MODULE_AVAILABLE_juce_data_structures=1",
+					"JUCE_MODULE_AVAILABLE_juce_dsp=1",
+					"JUCE_MODULE_AVAILABLE_juce_events=1",
+					"JUCE_MODULE_AVAILABLE_juce_graphics=1",
+					"JUCE_MODULE_AVAILABLE_juce_gui_basics=1",
+					"JUCE_MODULE_AVAILABLE_juce_gui_extra=1",
+					"JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1",
+					"JUCE_VST3_CAN_REPLACE_VST2=0",
+					"JUCE_STRICT_REFCOUNTEDPOINTER=1",
+					"JucePlugin_Build_VST=0",
+					"JucePlugin_Build_VST3=0",
+					"JucePlugin_Build_AU=0",
+					"JucePlugin_Build_AUv3=1",
+					"JucePlugin_Build_AAX=0",
+					"JucePlugin_Build_Standalone=0",
+					"JucePlugin_Build_Unity=0",
+					"JucePlugin_Build_LV2=0",
+					"JucePlugin_Enable_IAA=0",
+					"JucePlugin_Enable_ARA=0",
+					"JucePlugin_Name=\\\"Rhythm\\ Pattern\\ Explorer\\\"",
+					"JucePlugin_Desc=\\\"Mathematical\\ rhythm\\ pattern\\ generator\\ and\\ analyzer\\\"",
+					"JucePlugin_Manufacturer=\\\"Rhythm\\ Pattern\\ Explorer\\\"",
+					"JucePlugin_ManufacturerWebsite=\\\"https://github.com/enkerli/rhythm_pattern_explorer\\\"",
+					"JucePlugin_ManufacturerEmail=\\\"support@rhythmpatternexplorer.com\\\"",
+					"JucePlugin_ManufacturerCode=0x52504531",
+					"JucePlugin_PluginCode=0x52706531",
+					"JucePlugin_IsSynth=0",
+					"JucePlugin_WantsMidiInput=1",
+					"JucePlugin_ProducesMidiOutput=1",
+					"JucePlugin_IsMidiEffect=1",
+					"JucePlugin_EditorRequiresKeyboardFocus=0",
+					"JucePlugin_Version=1.0.0",
+					"JucePlugin_VersionCode=0x10000",
+					"JucePlugin_VersionString=\\\"1.0.0\\\"",
+					"JucePlugin_VSTUniqueID=JucePlugin_PluginCode",
+					"JucePlugin_VSTCategory=kPlugCategEffect",
+					"JucePlugin_Vst3Category=\\\"Fx\\\"",
+					"JucePlugin_AUMainType=\\'aumi\\'",
+					"JucePlugin_AUSubType=JucePlugin_PluginCode",
+					"JucePlugin_AUExportPrefix=RhythmPatternExplorerAU",
+					"JucePlugin_AUExportPrefixQuoted=\\\"RhythmPatternExplorerAU\\\"",
+					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
+					"JucePlugin_CFBundleIdentifier=com.rhythmpatternexplorer.auv3",
+					"JucePlugin_AAXIdentifier=com.rhythmpatternexplorer.auv3",
+					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
+					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
+					"JucePlugin_AAXCategory=2",
+					"JucePlugin_AAXDisableBypass=0",
+					"JucePlugin_AAXDisableMultiMono=0",
+					"JucePlugin_IAAType=0x6175726d",
+					"JucePlugin_IAASubType=JucePlugin_PluginCode",
+					"JucePlugin_IAAName=\\\"Rhythm\\ Pattern\\ Explorer:\\ Rhythm\\ Pattern\\ Explorer\\\"",
+					"JucePlugin_VSTNumMidiInputs=16",
+					"JucePlugin_VSTNumMidiOutputs=16",
+					"JucePlugin_ARAContentTypes=0",
+					"JucePlugin_ARATransformationFlags=0",
+					"JucePlugin_ARAFactoryID=\\\"com.RhythmPatternExplorer.RhythmPatternExplorer.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.RhythmPatternExplorer.RhythmPatternExplorer.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
+					"JucePlugin_MaxNumInputChannels=0",
+					"JucePlugin_MaxNumOutputChannels=0",
+					"JucePlugin_PreferredChannelConfigurations={0,0}",
+					"JUCE_STANDALONE_APPLICATION=JucePlugin_Build_Standalone",
+					"JUCE_DISPLAY_SPLASH_SCREEN=1",
+					"JUCE_USE_DARK_SPLASH_SCREEN=1",
+					"JUCER_XCODE_MAC_F6D2F4CF=1",
+					"JUCE_APP_VERSION=1.0.0",
+					"JUCE_APP_VERSION_HEX=0x10000",
+				);
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				HEADER_SEARCH_PATHS = (
+					"/Users/alex/JUCE/modules/juce_audio_processors/format_types/VST3_SDK",
+					"$(SRCROOT)/../../JuceLibraryCode",
+					"/Users/alex/JUCE/modules",
+					"/Users/alex/JUCE/modules/juce_audio_plugin_client/AU",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = Info-AUv3_AppExtension.plist;
+				INFOPLIST_PREPROCESS = NO;
+				LLVM_LTO = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_HEADER_SEARCH_PATHS = "/Users/alex/JUCE/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode /Users/alex/JUCE/modules /Users/alex/JUCE/modules/juce_audio_plugin_client/AU";
+				OTHER_LDFLAGS = "-lRhythm\\ Pattern\\ Explorer";
+				PRODUCT_BUNDLE_IDENTIFIER = com.rhythmpatternexplorer.auv3.auv3AUv3;
+				PRODUCT_NAME = "Rhythm Pattern Explorer";
+				SEPARATE_STRIP = YES;
+				STRIPFLAGS = "-x";
+				USE_HEADERMAP = NO;
+				VALID_ARCHS = "i386 x86_64 arm64 arm64e";
+			};
+			name = Release;
+		};
+		5C18F3FD23527E5200B05BC4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = NO;
+				GCC_C_LANGUAGE_STANDARD = c11;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_CHECK_SWITCH_STATEMENTS = YES;
+				GCC_WARN_MISSING_PARENTHESES = YES;
+				GCC_WARN_NON_VIRTUAL_DESTRUCTOR = YES;
+				GCC_WARN_TYPECHECK_CALLS_TO_PRINTF = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				OTHER_CODE_SIGN_FLAGS = --timestamp;
+				PRODUCT_NAME = "Rhythm Pattern Explorer";
+				SDKROOT = macosx;
+				WARNING_CFLAGS = "-Wreorder";
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		78F597993232BF5C5362DF5B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_LINK_OBJC_RUNTIME = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "$(PROJECT_DIR)/build/$(CONFIGURATION)";
+				COPY_PHASE_STRIP = NO;
+				EXCLUDED_ARCHS = "";
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"_DEBUG=1",
+					"DEBUG=1",
+					"JUCE_PROJUCER_VERSION=0x80008",
+					"JUCE_MODULE_AVAILABLE_juce_audio_basics=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_devices=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_formats=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_plugin_client=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_processors=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_utils=1",
+					"JUCE_MODULE_AVAILABLE_juce_core=1",
+					"JUCE_MODULE_AVAILABLE_juce_data_structures=1",
+					"JUCE_MODULE_AVAILABLE_juce_dsp=1",
+					"JUCE_MODULE_AVAILABLE_juce_events=1",
+					"JUCE_MODULE_AVAILABLE_juce_graphics=1",
+					"JUCE_MODULE_AVAILABLE_juce_gui_basics=1",
+					"JUCE_MODULE_AVAILABLE_juce_gui_extra=1",
+					"JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1",
+					"JUCE_VST3_CAN_REPLACE_VST2=0",
+					"JUCE_STRICT_REFCOUNTEDPOINTER=1",
+					"JucePlugin_Build_VST=0",
+					"JucePlugin_Build_VST3=1",
+					"JucePlugin_Build_AU=1",
+					"JucePlugin_Build_AUv3=1",
+					"JucePlugin_Build_AAX=0",
+					"JucePlugin_Build_Standalone=1",
+					"JucePlugin_Build_Unity=0",
+					"JucePlugin_Build_LV2=0",
+					"JucePlugin_Enable_IAA=0",
+					"JucePlugin_Enable_ARA=0",
+					"JucePlugin_Name=\\\"Rhythm\\ Pattern\\ Explorer\\\"",
+					"JucePlugin_Desc=\\\"Mathematical\\ rhythm\\ pattern\\ generator\\ and\\ analyzer\\\"",
+					"JucePlugin_Manufacturer=\\\"Rhythm\\ Pattern\\ Explorer\\\"",
+					"JucePlugin_ManufacturerWebsite=\\\"https://github.com/enkerli/rhythm_pattern_explorer\\\"",
+					"JucePlugin_ManufacturerEmail=\\\"support@rhythmpatternexplorer.com\\\"",
+					"JucePlugin_ManufacturerCode=0x52504531",
+					"JucePlugin_PluginCode=0x52706531",
+					"JucePlugin_IsSynth=0",
+					"JucePlugin_WantsMidiInput=1",
+					"JucePlugin_ProducesMidiOutput=1",
+					"JucePlugin_IsMidiEffect=1",
+					"JucePlugin_EditorRequiresKeyboardFocus=0",
+					"JucePlugin_Version=1.0.0",
+					"JucePlugin_VersionCode=0x10000",
+					"JucePlugin_VersionString=\\\"1.0.0\\\"",
+					"JucePlugin_VSTUniqueID=JucePlugin_PluginCode",
+					"JucePlugin_VSTCategory=kPlugCategEffect",
+					"JucePlugin_Vst3Category=\\\"Fx\\\"",
+					"JucePlugin_AUMainType=\\'aumi\\'",
+					"JucePlugin_AUSubType=JucePlugin_PluginCode",
+					"JucePlugin_AUExportPrefix=RhythmPatternExplorerAU",
+					"JucePlugin_AUExportPrefixQuoted=\\\"RhythmPatternExplorerAU\\\"",
+					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
+					"JucePlugin_CFBundleIdentifier=com.rhythmpatternexplorer.auv3",
+					"JucePlugin_AAXIdentifier=com.rhythmpatternexplorer.auv3",
+					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
+					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
+					"JucePlugin_AAXCategory=2",
+					"JucePlugin_AAXDisableBypass=0",
+					"JucePlugin_AAXDisableMultiMono=0",
+					"JucePlugin_IAAType=0x6175726d",
+					"JucePlugin_IAASubType=JucePlugin_PluginCode",
+					"JucePlugin_IAAName=\\\"Rhythm\\ Pattern\\ Explorer:\\ Rhythm\\ Pattern\\ Explorer\\\"",
+					"JucePlugin_VSTNumMidiInputs=16",
+					"JucePlugin_VSTNumMidiOutputs=16",
+					"JucePlugin_ARAContentTypes=0",
+					"JucePlugin_ARATransformationFlags=0",
+					"JucePlugin_ARAFactoryID=\\\"com.RhythmPatternExplorer.RhythmPatternExplorer.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.RhythmPatternExplorer.RhythmPatternExplorer.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
+					"JucePlugin_MaxNumInputChannels=0",
+					"JucePlugin_MaxNumOutputChannels=0",
+					"JucePlugin_PreferredChannelConfigurations={0,0}",
+					"JUCE_STANDALONE_APPLICATION=JucePlugin_Build_Standalone",
+					"JUCE_DISPLAY_SPLASH_SCREEN=1",
+					"JUCE_USE_DARK_SPLASH_SCREEN=1",
+					"JUCER_XCODE_MAC_F6D2F4CF=1",
+					"JUCE_APP_VERSION=1.0.0",
+					"JUCE_APP_VERSION_HEX=0x10000",
+					"JUCE_SHARED_CODE=1",
+				);
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				HEADER_SEARCH_PATHS = (
+					"/Users/alex/JUCE/modules/juce_audio_processors/format_types/VST3_SDK",
+					"$(SRCROOT)/../../JuceLibraryCode",
+					"/Users/alex/JUCE/modules",
+					"/Users/alex/JUCE/modules/juce_audio_plugin_client/AU",
+					"$(inherited)",
+				);
+				INSTALL_PATH = "@executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_HEADER_SEARCH_PATHS = "/Users/alex/JUCE/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode /Users/alex/JUCE/modules /Users/alex/JUCE/modules/juce_audio_plugin_client/AU";
+				PRODUCT_BUNDLE_IDENTIFIER = com.rhythmpatternexplorer.auv3;
+				PRODUCT_NAME = "Rhythm Pattern Explorer";
+				SKIP_INSTALL = YES;
+				USE_HEADERMAP = NO;
+				VALID_ARCHS = "i386 x86_64 arm64 arm64e";
+			};
+			name = Debug;
+		};
+		869B4C76D6FF4DFB4EFFBCE3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		8DC4AF467F37F458148B2FD3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_LINK_OBJC_RUNTIME = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "$(PROJECT_DIR)/build/$(CONFIGURATION)";
+				DEAD_CODE_STRIPPING = YES;
+				DEPLOYMENT_POSTPROCESSING = YES;
+				EXCLUDED_ARCHS = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"_NDEBUG=1",
+					"NDEBUG=1",
+					"JUCE_PROJUCER_VERSION=0x80008",
+					"JUCE_MODULE_AVAILABLE_juce_audio_basics=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_devices=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_formats=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_plugin_client=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_processors=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_utils=1",
+					"JUCE_MODULE_AVAILABLE_juce_core=1",
+					"JUCE_MODULE_AVAILABLE_juce_data_structures=1",
+					"JUCE_MODULE_AVAILABLE_juce_dsp=1",
+					"JUCE_MODULE_AVAILABLE_juce_events=1",
+					"JUCE_MODULE_AVAILABLE_juce_graphics=1",
+					"JUCE_MODULE_AVAILABLE_juce_gui_basics=1",
+					"JUCE_MODULE_AVAILABLE_juce_gui_extra=1",
+					"JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1",
+					"JUCE_VST3_CAN_REPLACE_VST2=0",
+					"JUCE_STRICT_REFCOUNTEDPOINTER=1",
+					"JucePlugin_Build_VST=0",
+					"JucePlugin_Build_VST3=0",
+					"JucePlugin_Build_AU=0",
+					"JucePlugin_Build_AUv3=0",
+					"JucePlugin_Build_AAX=0",
+					"JucePlugin_Build_Standalone=1",
+					"JucePlugin_Build_Unity=0",
+					"JucePlugin_Build_LV2=0",
+					"JucePlugin_Enable_IAA=0",
+					"JucePlugin_Enable_ARA=0",
+					"JucePlugin_Name=\\\"Rhythm\\ Pattern\\ Explorer\\\"",
+					"JucePlugin_Desc=\\\"Mathematical\\ rhythm\\ pattern\\ generator\\ and\\ analyzer\\\"",
+					"JucePlugin_Manufacturer=\\\"Rhythm\\ Pattern\\ Explorer\\\"",
+					"JucePlugin_ManufacturerWebsite=\\\"https://github.com/enkerli/rhythm_pattern_explorer\\\"",
+					"JucePlugin_ManufacturerEmail=\\\"support@rhythmpatternexplorer.com\\\"",
+					"JucePlugin_ManufacturerCode=0x52504531",
+					"JucePlugin_PluginCode=0x52706531",
+					"JucePlugin_IsSynth=0",
+					"JucePlugin_WantsMidiInput=1",
+					"JucePlugin_ProducesMidiOutput=1",
+					"JucePlugin_IsMidiEffect=1",
+					"JucePlugin_EditorRequiresKeyboardFocus=0",
+					"JucePlugin_Version=1.0.0",
+					"JucePlugin_VersionCode=0x10000",
+					"JucePlugin_VersionString=\\\"1.0.0\\\"",
+					"JucePlugin_VSTUniqueID=JucePlugin_PluginCode",
+					"JucePlugin_VSTCategory=kPlugCategEffect",
+					"JucePlugin_Vst3Category=\\\"Fx\\\"",
+					"JucePlugin_AUMainType=\\'aumi\\'",
+					"JucePlugin_AUSubType=JucePlugin_PluginCode",
+					"JucePlugin_AUExportPrefix=RhythmPatternExplorerAU",
+					"JucePlugin_AUExportPrefixQuoted=\\\"RhythmPatternExplorerAU\\\"",
+					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
+					"JucePlugin_CFBundleIdentifier=com.rhythmpatternexplorer.auv3",
+					"JucePlugin_AAXIdentifier=com.rhythmpatternexplorer.auv3",
+					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
+					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
+					"JucePlugin_AAXCategory=2",
+					"JucePlugin_AAXDisableBypass=0",
+					"JucePlugin_AAXDisableMultiMono=0",
+					"JucePlugin_IAAType=0x6175726d",
+					"JucePlugin_IAASubType=JucePlugin_PluginCode",
+					"JucePlugin_IAAName=\\\"Rhythm\\ Pattern\\ Explorer:\\ Rhythm\\ Pattern\\ Explorer\\\"",
+					"JucePlugin_VSTNumMidiInputs=16",
+					"JucePlugin_VSTNumMidiOutputs=16",
+					"JucePlugin_ARAContentTypes=0",
+					"JucePlugin_ARATransformationFlags=0",
+					"JucePlugin_ARAFactoryID=\\\"com.RhythmPatternExplorer.RhythmPatternExplorer.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.RhythmPatternExplorer.RhythmPatternExplorer.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
+					"JucePlugin_MaxNumInputChannels=0",
+					"JucePlugin_MaxNumOutputChannels=0",
+					"JucePlugin_PreferredChannelConfigurations={0,0}",
+					"JUCE_STANDALONE_APPLICATION=JucePlugin_Build_Standalone",
+					"JUCE_DISPLAY_SPLASH_SCREEN=1",
+					"JUCE_USE_DARK_SPLASH_SCREEN=1",
+					"JUCER_XCODE_MAC_F6D2F4CF=1",
+					"JUCE_APP_VERSION=1.0.0",
+					"JUCE_APP_VERSION_HEX=0x10000",
+				);
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				HEADER_SEARCH_PATHS = (
+					"/Users/alex/JUCE/modules/juce_audio_processors/format_types/VST3_SDK",
+					"$(SRCROOT)/../../JuceLibraryCode",
+					"/Users/alex/JUCE/modules",
+					"/Users/alex/JUCE/modules/juce_audio_plugin_client/AU",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = Info-Standalone_Plugin.plist;
+				INFOPLIST_PREPROCESS = NO;
+				LLVM_LTO = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_HEADER_SEARCH_PATHS = "/Users/alex/JUCE/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode /Users/alex/JUCE/modules /Users/alex/JUCE/modules/juce_audio_plugin_client/AU";
+				OTHER_LDFLAGS = "-lRhythm\\ Pattern\\ Explorer";
+				PRODUCT_BUNDLE_IDENTIFIER = com.rhythmpatternexplorer.auv3;
+				PRODUCT_NAME = "Rhythm Pattern Explorer";
+				SEPARATE_STRIP = YES;
+				STRIPFLAGS = "-x";
+				USE_HEADERMAP = NO;
+				VALID_ARCHS = "i386 x86_64 arm64 arm64e";
+			};
+			name = Release;
+		};
+		91322B29ABED36B0F0E3CC6B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_LINK_OBJC_RUNTIME = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "$(PROJECT_DIR)/build/$(CONFIGURATION)";
+				DEAD_CODE_STRIPPING = YES;
+				DEPLOYMENT_POSTPROCESSING = YES;
+				EXCLUDED_ARCHS = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"_NDEBUG=1",
+					"NDEBUG=1",
+					"JUCE_PROJUCER_VERSION=0x80008",
+					"JUCE_MODULE_AVAILABLE_juce_audio_basics=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_devices=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_formats=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_plugin_client=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_processors=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_utils=1",
+					"JUCE_MODULE_AVAILABLE_juce_core=1",
+					"JUCE_MODULE_AVAILABLE_juce_data_structures=1",
+					"JUCE_MODULE_AVAILABLE_juce_dsp=1",
+					"JUCE_MODULE_AVAILABLE_juce_events=1",
+					"JUCE_MODULE_AVAILABLE_juce_graphics=1",
+					"JUCE_MODULE_AVAILABLE_juce_gui_basics=1",
+					"JUCE_MODULE_AVAILABLE_juce_gui_extra=1",
+					"JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1",
+					"JUCE_VST3_CAN_REPLACE_VST2=0",
+					"JUCE_STRICT_REFCOUNTEDPOINTER=1",
+					"JucePlugin_Build_VST=0",
+					"JucePlugin_Build_VST3=0",
+					"JucePlugin_Build_AU=1",
+					"JucePlugin_Build_AUv3=0",
+					"JucePlugin_Build_AAX=0",
+					"JucePlugin_Build_Standalone=0",
+					"JucePlugin_Build_Unity=0",
+					"JucePlugin_Build_LV2=0",
+					"JucePlugin_Enable_IAA=0",
+					"JucePlugin_Enable_ARA=0",
+					"JucePlugin_Name=\\\"Rhythm\\ Pattern\\ Explorer\\\"",
+					"JucePlugin_Desc=\\\"Mathematical\\ rhythm\\ pattern\\ generator\\ and\\ analyzer\\\"",
+					"JucePlugin_Manufacturer=\\\"Rhythm\\ Pattern\\ Explorer\\\"",
+					"JucePlugin_ManufacturerWebsite=\\\"https://github.com/enkerli/rhythm_pattern_explorer\\\"",
+					"JucePlugin_ManufacturerEmail=\\\"support@rhythmpatternexplorer.com\\\"",
+					"JucePlugin_ManufacturerCode=0x52504531",
+					"JucePlugin_PluginCode=0x52706531",
+					"JucePlugin_IsSynth=0",
+					"JucePlugin_WantsMidiInput=1",
+					"JucePlugin_ProducesMidiOutput=1",
+					"JucePlugin_IsMidiEffect=1",
+					"JucePlugin_EditorRequiresKeyboardFocus=0",
+					"JucePlugin_Version=1.0.0",
+					"JucePlugin_VersionCode=0x10000",
+					"JucePlugin_VersionString=\\\"1.0.0\\\"",
+					"JucePlugin_VSTUniqueID=JucePlugin_PluginCode",
+					"JucePlugin_VSTCategory=kPlugCategEffect",
+					"JucePlugin_Vst3Category=\\\"Fx\\\"",
+					"JucePlugin_AUMainType=\\'aumi\\'",
+					"JucePlugin_AUSubType=JucePlugin_PluginCode",
+					"JucePlugin_AUExportPrefix=RhythmPatternExplorerAU",
+					"JucePlugin_AUExportPrefixQuoted=\\\"RhythmPatternExplorerAU\\\"",
+					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
+					"JucePlugin_CFBundleIdentifier=com.rhythmpatternexplorer.auv3",
+					"JucePlugin_AAXIdentifier=com.rhythmpatternexplorer.auv3",
+					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
+					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
+					"JucePlugin_AAXCategory=2",
+					"JucePlugin_AAXDisableBypass=0",
+					"JucePlugin_AAXDisableMultiMono=0",
+					"JucePlugin_IAAType=0x6175726d",
+					"JucePlugin_IAASubType=JucePlugin_PluginCode",
+					"JucePlugin_IAAName=\\\"Rhythm\\ Pattern\\ Explorer:\\ Rhythm\\ Pattern\\ Explorer\\\"",
+					"JucePlugin_VSTNumMidiInputs=16",
+					"JucePlugin_VSTNumMidiOutputs=16",
+					"JucePlugin_ARAContentTypes=0",
+					"JucePlugin_ARATransformationFlags=0",
+					"JucePlugin_ARAFactoryID=\\\"com.RhythmPatternExplorer.RhythmPatternExplorer.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.RhythmPatternExplorer.RhythmPatternExplorer.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
+					"JucePlugin_MaxNumInputChannels=0",
+					"JucePlugin_MaxNumOutputChannels=0",
+					"JucePlugin_PreferredChannelConfigurations={0,0}",
+					"JUCE_STANDALONE_APPLICATION=JucePlugin_Build_Standalone",
+					"JUCE_DISPLAY_SPLASH_SCREEN=1",
+					"JUCE_USE_DARK_SPLASH_SCREEN=1",
+					"JUCER_XCODE_MAC_F6D2F4CF=1",
+					"JUCE_APP_VERSION=1.0.0",
+					"JUCE_APP_VERSION_HEX=0x10000",
+				);
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GENERATE_PKGINFO_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"/Users/alex/JUCE/modules/juce_audio_processors/format_types/VST3_SDK",
+					"$(SRCROOT)/../../JuceLibraryCode",
+					"/Users/alex/JUCE/modules",
+					"/Users/alex/JUCE/modules/juce_audio_plugin_client/AU",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = Info-AU.plist;
+				INFOPLIST_PREPROCESS = NO;
+				INSTALL_PATH = "$(HOME)/Library/Audio/Plug-Ins/Components/";
+				LIBRARY_STYLE = Bundle;
+				LLVM_LTO = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_HEADER_SEARCH_PATHS = "/Users/alex/JUCE/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode /Users/alex/JUCE/modules /Users/alex/JUCE/modules/juce_audio_plugin_client/AU";
+				OTHER_LDFLAGS = "-bundle -lRhythm\\ Pattern\\ Explorer";
+				OTHER_REZFLAGS = "-d ppc_$ppc -d i386_$i386 -d ppc64_$ppc64 -d x86_64_$x86_64 -d arm64_$arm64 -I /System/Library/Frameworks/CoreServices.framework/Frameworks/CarbonCore.framework/Versions/A/Headers -I \"$(DEVELOPER_DIR)/Extras/CoreAudio/AudioUnits/AUPublic/AUBase\" -I \"$(DEVELOPER_DIR)/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/AudioUnit.framework/Headers\"";
+				PRODUCT_BUNDLE_IDENTIFIER = com.rhythmpatternexplorer.auv3;
+				PRODUCT_NAME = "Rhythm Pattern Explorer";
+				SEPARATE_STRIP = YES;
+				STRIPFLAGS = "-x";
+				USE_HEADERMAP = NO;
+				VALID_ARCHS = "i386 x86_64 arm64 arm64e";
+				WRAPPER_EXTENSION = component;
+			};
+			name = Release;
+		};
+		A61986E98679DD4431C1083B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_LINK_OBJC_RUNTIME = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "$(PROJECT_DIR)/build/$(CONFIGURATION)";
+				DEAD_CODE_STRIPPING = YES;
+				EXCLUDED_ARCHS = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"_NDEBUG=1",
+					"NDEBUG=1",
+					"JUCE_PROJUCER_VERSION=0x80008",
+					"JUCE_MODULE_AVAILABLE_juce_audio_basics=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_devices=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_formats=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_plugin_client=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_processors=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_utils=1",
+					"JUCE_MODULE_AVAILABLE_juce_core=1",
+					"JUCE_MODULE_AVAILABLE_juce_data_structures=1",
+					"JUCE_MODULE_AVAILABLE_juce_dsp=1",
+					"JUCE_MODULE_AVAILABLE_juce_events=1",
+					"JUCE_MODULE_AVAILABLE_juce_graphics=1",
+					"JUCE_MODULE_AVAILABLE_juce_gui_basics=1",
+					"JUCE_MODULE_AVAILABLE_juce_gui_extra=1",
+					"JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1",
+					"JUCE_VST3_CAN_REPLACE_VST2=0",
+					"JUCE_STRICT_REFCOUNTEDPOINTER=1",
+					"JucePlugin_Build_VST=0",
+					"JucePlugin_Build_VST3=1",
+					"JucePlugin_Build_AU=1",
+					"JucePlugin_Build_AUv3=1",
+					"JucePlugin_Build_AAX=0",
+					"JucePlugin_Build_Standalone=1",
+					"JucePlugin_Build_Unity=0",
+					"JucePlugin_Build_LV2=0",
+					"JucePlugin_Enable_IAA=0",
+					"JucePlugin_Enable_ARA=0",
+					"JucePlugin_Name=\\\"Rhythm\\ Pattern\\ Explorer\\\"",
+					"JucePlugin_Desc=\\\"Mathematical\\ rhythm\\ pattern\\ generator\\ and\\ analyzer\\\"",
+					"JucePlugin_Manufacturer=\\\"Rhythm\\ Pattern\\ Explorer\\\"",
+					"JucePlugin_ManufacturerWebsite=\\\"https://github.com/enkerli/rhythm_pattern_explorer\\\"",
+					"JucePlugin_ManufacturerEmail=\\\"support@rhythmpatternexplorer.com\\\"",
+					"JucePlugin_ManufacturerCode=0x52504531",
+					"JucePlugin_PluginCode=0x52706531",
+					"JucePlugin_IsSynth=0",
+					"JucePlugin_WantsMidiInput=1",
+					"JucePlugin_ProducesMidiOutput=1",
+					"JucePlugin_IsMidiEffect=1",
+					"JucePlugin_EditorRequiresKeyboardFocus=0",
+					"JucePlugin_Version=1.0.0",
+					"JucePlugin_VersionCode=0x10000",
+					"JucePlugin_VersionString=\\\"1.0.0\\\"",
+					"JucePlugin_VSTUniqueID=JucePlugin_PluginCode",
+					"JucePlugin_VSTCategory=kPlugCategEffect",
+					"JucePlugin_Vst3Category=\\\"Fx\\\"",
+					"JucePlugin_AUMainType=\\'aumi\\'",
+					"JucePlugin_AUSubType=JucePlugin_PluginCode",
+					"JucePlugin_AUExportPrefix=RhythmPatternExplorerAU",
+					"JucePlugin_AUExportPrefixQuoted=\\\"RhythmPatternExplorerAU\\\"",
+					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
+					"JucePlugin_CFBundleIdentifier=com.rhythmpatternexplorer.auv3",
+					"JucePlugin_AAXIdentifier=com.rhythmpatternexplorer.auv3",
+					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
+					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
+					"JucePlugin_AAXCategory=2",
+					"JucePlugin_AAXDisableBypass=0",
+					"JucePlugin_AAXDisableMultiMono=0",
+					"JucePlugin_IAAType=0x6175726d",
+					"JucePlugin_IAASubType=JucePlugin_PluginCode",
+					"JucePlugin_IAAName=\\\"Rhythm\\ Pattern\\ Explorer:\\ Rhythm\\ Pattern\\ Explorer\\\"",
+					"JucePlugin_VSTNumMidiInputs=16",
+					"JucePlugin_VSTNumMidiOutputs=16",
+					"JucePlugin_ARAContentTypes=0",
+					"JucePlugin_ARATransformationFlags=0",
+					"JucePlugin_ARAFactoryID=\\\"com.RhythmPatternExplorer.RhythmPatternExplorer.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.RhythmPatternExplorer.RhythmPatternExplorer.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
+					"JucePlugin_MaxNumInputChannels=0",
+					"JucePlugin_MaxNumOutputChannels=0",
+					"JucePlugin_PreferredChannelConfigurations={0,0}",
+					"JUCE_STANDALONE_APPLICATION=JucePlugin_Build_Standalone",
+					"JUCE_DISPLAY_SPLASH_SCREEN=1",
+					"JUCE_USE_DARK_SPLASH_SCREEN=1",
+					"JUCER_XCODE_MAC_F6D2F4CF=1",
+					"JUCE_APP_VERSION=1.0.0",
+					"JUCE_APP_VERSION_HEX=0x10000",
+					"JUCE_SHARED_CODE=1",
+				);
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				HEADER_SEARCH_PATHS = (
+					"/Users/alex/JUCE/modules/juce_audio_processors/format_types/VST3_SDK",
+					"$(SRCROOT)/../../JuceLibraryCode",
+					"/Users/alex/JUCE/modules",
+					"/Users/alex/JUCE/modules/juce_audio_plugin_client/AU",
+					"$(inherited)",
+				);
+				INSTALL_PATH = "@executable_path/../Frameworks";
+				LLVM_LTO = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_HEADER_SEARCH_PATHS = "/Users/alex/JUCE/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode /Users/alex/JUCE/modules /Users/alex/JUCE/modules/juce_audio_plugin_client/AU";
+				PRODUCT_BUNDLE_IDENTIFIER = com.rhythmpatternexplorer.auv3;
+				PRODUCT_NAME = "Rhythm Pattern Explorer";
+				SKIP_INSTALL = YES;
+				USE_HEADERMAP = NO;
+				VALID_ARCHS = "i386 x86_64 arm64 arm64e";
+			};
+			name = Release;
+		};
+		AA3804057710AC33D1999B0E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_LINK_OBJC_RUNTIME = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "$(PROJECT_DIR)/build/$(CONFIGURATION)";
+				COPY_PHASE_STRIP = NO;
+				EXCLUDED_ARCHS = "";
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"_DEBUG=1",
+					"DEBUG=1",
+					"JUCE_PROJUCER_VERSION=0x80008",
+					"JUCE_MODULE_AVAILABLE_juce_audio_basics=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_devices=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_formats=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_plugin_client=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_processors=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_utils=1",
+					"JUCE_MODULE_AVAILABLE_juce_core=1",
+					"JUCE_MODULE_AVAILABLE_juce_data_structures=1",
+					"JUCE_MODULE_AVAILABLE_juce_dsp=1",
+					"JUCE_MODULE_AVAILABLE_juce_events=1",
+					"JUCE_MODULE_AVAILABLE_juce_graphics=1",
+					"JUCE_MODULE_AVAILABLE_juce_gui_basics=1",
+					"JUCE_MODULE_AVAILABLE_juce_gui_extra=1",
+					"JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1",
+					"JUCE_VST3_CAN_REPLACE_VST2=0",
+					"JUCE_STRICT_REFCOUNTEDPOINTER=1",
+					"JucePlugin_Build_VST=0",
+					"JucePlugin_Build_VST3=0",
+					"JucePlugin_Build_AU=0",
+					"JucePlugin_Build_AUv3=0",
+					"JucePlugin_Build_AAX=0",
+					"JucePlugin_Build_Standalone=1",
+					"JucePlugin_Build_Unity=0",
+					"JucePlugin_Build_LV2=0",
+					"JucePlugin_Enable_IAA=0",
+					"JucePlugin_Enable_ARA=0",
+					"JucePlugin_Name=\\\"Rhythm\\ Pattern\\ Explorer\\\"",
+					"JucePlugin_Desc=\\\"Mathematical\\ rhythm\\ pattern\\ generator\\ and\\ analyzer\\\"",
+					"JucePlugin_Manufacturer=\\\"Rhythm\\ Pattern\\ Explorer\\\"",
+					"JucePlugin_ManufacturerWebsite=\\\"https://github.com/enkerli/rhythm_pattern_explorer\\\"",
+					"JucePlugin_ManufacturerEmail=\\\"support@rhythmpatternexplorer.com\\\"",
+					"JucePlugin_ManufacturerCode=0x52504531",
+					"JucePlugin_PluginCode=0x52706531",
+					"JucePlugin_IsSynth=0",
+					"JucePlugin_WantsMidiInput=1",
+					"JucePlugin_ProducesMidiOutput=1",
+					"JucePlugin_IsMidiEffect=1",
+					"JucePlugin_EditorRequiresKeyboardFocus=0",
+					"JucePlugin_Version=1.0.0",
+					"JucePlugin_VersionCode=0x10000",
+					"JucePlugin_VersionString=\\\"1.0.0\\\"",
+					"JucePlugin_VSTUniqueID=JucePlugin_PluginCode",
+					"JucePlugin_VSTCategory=kPlugCategEffect",
+					"JucePlugin_Vst3Category=\\\"Fx\\\"",
+					"JucePlugin_AUMainType=\\'aumi\\'",
+					"JucePlugin_AUSubType=JucePlugin_PluginCode",
+					"JucePlugin_AUExportPrefix=RhythmPatternExplorerAU",
+					"JucePlugin_AUExportPrefixQuoted=\\\"RhythmPatternExplorerAU\\\"",
+					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
+					"JucePlugin_CFBundleIdentifier=com.rhythmpatternexplorer.auv3",
+					"JucePlugin_AAXIdentifier=com.rhythmpatternexplorer.auv3",
+					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
+					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
+					"JucePlugin_AAXCategory=2",
+					"JucePlugin_AAXDisableBypass=0",
+					"JucePlugin_AAXDisableMultiMono=0",
+					"JucePlugin_IAAType=0x6175726d",
+					"JucePlugin_IAASubType=JucePlugin_PluginCode",
+					"JucePlugin_IAAName=\\\"Rhythm\\ Pattern\\ Explorer:\\ Rhythm\\ Pattern\\ Explorer\\\"",
+					"JucePlugin_VSTNumMidiInputs=16",
+					"JucePlugin_VSTNumMidiOutputs=16",
+					"JucePlugin_ARAContentTypes=0",
+					"JucePlugin_ARATransformationFlags=0",
+					"JucePlugin_ARAFactoryID=\\\"com.RhythmPatternExplorer.RhythmPatternExplorer.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.RhythmPatternExplorer.RhythmPatternExplorer.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
+					"JucePlugin_MaxNumInputChannels=0",
+					"JucePlugin_MaxNumOutputChannels=0",
+					"JucePlugin_PreferredChannelConfigurations={0,0}",
+					"JUCE_STANDALONE_APPLICATION=JucePlugin_Build_Standalone",
+					"JUCE_DISPLAY_SPLASH_SCREEN=1",
+					"JUCE_USE_DARK_SPLASH_SCREEN=1",
+					"JUCER_XCODE_MAC_F6D2F4CF=1",
+					"JUCE_APP_VERSION=1.0.0",
+					"JUCE_APP_VERSION_HEX=0x10000",
+				);
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				HEADER_SEARCH_PATHS = (
+					"/Users/alex/JUCE/modules/juce_audio_processors/format_types/VST3_SDK",
+					"$(SRCROOT)/../../JuceLibraryCode",
+					"/Users/alex/JUCE/modules",
+					"/Users/alex/JUCE/modules/juce_audio_plugin_client/AU",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = Info-Standalone_Plugin.plist;
+				INFOPLIST_PREPROCESS = NO;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_HEADER_SEARCH_PATHS = "/Users/alex/JUCE/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode /Users/alex/JUCE/modules /Users/alex/JUCE/modules/juce_audio_plugin_client/AU";
+				OTHER_LDFLAGS = "-lRhythm\\ Pattern\\ Explorer";
+				PRODUCT_BUNDLE_IDENTIFIER = com.rhythmpatternexplorer.auv3;
+				PRODUCT_NAME = "Rhythm Pattern Explorer";
+				USE_HEADERMAP = NO;
+				VALID_ARCHS = "i386 x86_64 arm64 arm64e";
+			};
+			name = Debug;
+		};
+		B0732E1DC35DE095077F9A85 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_LINK_OBJC_RUNTIME = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "$(PROJECT_DIR)/build/$(CONFIGURATION)";
+				COPY_PHASE_STRIP = NO;
+				EXCLUDED_ARCHS = "";
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"_DEBUG=1",
+					"DEBUG=1",
+					"JUCE_PROJUCER_VERSION=0x80008",
+					"JUCE_MODULE_AVAILABLE_juce_audio_basics=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_devices=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_formats=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_plugin_client=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_processors=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_utils=1",
+					"JUCE_MODULE_AVAILABLE_juce_core=1",
+					"JUCE_MODULE_AVAILABLE_juce_data_structures=1",
+					"JUCE_MODULE_AVAILABLE_juce_dsp=1",
+					"JUCE_MODULE_AVAILABLE_juce_events=1",
+					"JUCE_MODULE_AVAILABLE_juce_graphics=1",
+					"JUCE_MODULE_AVAILABLE_juce_gui_basics=1",
+					"JUCE_MODULE_AVAILABLE_juce_gui_extra=1",
+					"JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1",
+					"JUCE_VST3_CAN_REPLACE_VST2=0",
+					"JUCE_STRICT_REFCOUNTEDPOINTER=1",
+					"JucePlugin_Build_VST=0",
+					"JucePlugin_Build_VST3=0",
+					"JucePlugin_Build_AU=0",
+					"JucePlugin_Build_AUv3=0",
+					"JucePlugin_Build_AAX=0",
+					"JucePlugin_Build_Standalone=0",
+					"JucePlugin_Build_Unity=0",
+					"JucePlugin_Build_LV2=0",
+					"JucePlugin_Enable_IAA=0",
+					"JucePlugin_Enable_ARA=0",
+					"JucePlugin_Name=\\\"Rhythm\\ Pattern\\ Explorer\\\"",
+					"JucePlugin_Desc=\\\"Mathematical\\ rhythm\\ pattern\\ generator\\ and\\ analyzer\\\"",
+					"JucePlugin_Manufacturer=\\\"Rhythm\\ Pattern\\ Explorer\\\"",
+					"JucePlugin_ManufacturerWebsite=\\\"https://github.com/enkerli/rhythm_pattern_explorer\\\"",
+					"JucePlugin_ManufacturerEmail=\\\"support@rhythmpatternexplorer.com\\\"",
+					"JucePlugin_ManufacturerCode=0x52504531",
+					"JucePlugin_PluginCode=0x52706531",
+					"JucePlugin_IsSynth=0",
+					"JucePlugin_WantsMidiInput=1",
+					"JucePlugin_ProducesMidiOutput=1",
+					"JucePlugin_IsMidiEffect=1",
+					"JucePlugin_EditorRequiresKeyboardFocus=0",
+					"JucePlugin_Version=1.0.0",
+					"JucePlugin_VersionCode=0x10000",
+					"JucePlugin_VersionString=\\\"1.0.0\\\"",
+					"JucePlugin_VSTUniqueID=JucePlugin_PluginCode",
+					"JucePlugin_VSTCategory=kPlugCategEffect",
+					"JucePlugin_Vst3Category=\\\"Fx\\\"",
+					"JucePlugin_AUMainType=\\'aumi\\'",
+					"JucePlugin_AUSubType=JucePlugin_PluginCode",
+					"JucePlugin_AUExportPrefix=RhythmPatternExplorerAU",
+					"JucePlugin_AUExportPrefixQuoted=\\\"RhythmPatternExplorerAU\\\"",
+					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
+					"JucePlugin_CFBundleIdentifier=com.rhythmpatternexplorer.auv3",
+					"JucePlugin_AAXIdentifier=com.rhythmpatternexplorer.auv3",
+					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
+					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
+					"JucePlugin_AAXCategory=2",
+					"JucePlugin_AAXDisableBypass=0",
+					"JucePlugin_AAXDisableMultiMono=0",
+					"JucePlugin_IAAType=0x6175726d",
+					"JucePlugin_IAASubType=JucePlugin_PluginCode",
+					"JucePlugin_IAAName=\\\"Rhythm\\ Pattern\\ Explorer:\\ Rhythm\\ Pattern\\ Explorer\\\"",
+					"JucePlugin_VSTNumMidiInputs=16",
+					"JucePlugin_VSTNumMidiOutputs=16",
+					"JucePlugin_ARAContentTypes=0",
+					"JucePlugin_ARATransformationFlags=0",
+					"JucePlugin_ARAFactoryID=\\\"com.RhythmPatternExplorer.RhythmPatternExplorer.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.RhythmPatternExplorer.RhythmPatternExplorer.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
+					"JucePlugin_MaxNumInputChannels=0",
+					"JucePlugin_MaxNumOutputChannels=0",
+					"JucePlugin_PreferredChannelConfigurations={0,0}",
+					"JUCE_STANDALONE_APPLICATION=JucePlugin_Build_Standalone",
+					"JUCE_DISPLAY_SPLASH_SCREEN=1",
+					"JUCE_USE_DARK_SPLASH_SCREEN=1",
+					"JUCER_XCODE_MAC_F6D2F4CF=1",
+					"JUCE_APP_VERSION=1.0.0",
+					"JUCE_APP_VERSION_HEX=0x10000",
+				);
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				HEADER_SEARCH_PATHS = (
+					"/Users/alex/JUCE/modules/juce_audio_processors/format_types/VST3_SDK",
+					"$(SRCROOT)/../../JuceLibraryCode",
+					"/Users/alex/JUCE/modules",
+					"/Users/alex/JUCE/modules/juce_audio_plugin_client/AU",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = Info-VST3_Manifest_Helper.plist;
+				INFOPLIST_PREPROCESS = NO;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_HEADER_SEARCH_PATHS = "/Users/alex/JUCE/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode /Users/alex/JUCE/modules /Users/alex/JUCE/modules/juce_audio_plugin_client/AU";
+				PRODUCT_BUNDLE_IDENTIFIER = com.rhythmpatternexplorer.auv3;
+				PRODUCT_NAME = "juce_vst3_helper";
+				USE_HEADERMAP = NO;
+				VALID_ARCHS = "i386 x86_64 arm64 arm64e";
+			};
+			name = Debug;
+		};
+		B67C561F6C2F54A717A0E9C1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_LINK_OBJC_RUNTIME = NO;
+				CODE_SIGN_ENTITLEMENTS = "AUv3_AppExtension.entitlements";
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "$(PROJECT_DIR)/build/$(CONFIGURATION)";
+				COPY_PHASE_STRIP = NO;
+				EXCLUDED_ARCHS = "";
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"_DEBUG=1",
+					"DEBUG=1",
+					"JUCE_PROJUCER_VERSION=0x80008",
+					"JUCE_MODULE_AVAILABLE_juce_audio_basics=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_devices=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_formats=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_plugin_client=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_processors=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_utils=1",
+					"JUCE_MODULE_AVAILABLE_juce_core=1",
+					"JUCE_MODULE_AVAILABLE_juce_data_structures=1",
+					"JUCE_MODULE_AVAILABLE_juce_dsp=1",
+					"JUCE_MODULE_AVAILABLE_juce_events=1",
+					"JUCE_MODULE_AVAILABLE_juce_graphics=1",
+					"JUCE_MODULE_AVAILABLE_juce_gui_basics=1",
+					"JUCE_MODULE_AVAILABLE_juce_gui_extra=1",
+					"JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1",
+					"JUCE_VST3_CAN_REPLACE_VST2=0",
+					"JUCE_STRICT_REFCOUNTEDPOINTER=1",
+					"JucePlugin_Build_VST=0",
+					"JucePlugin_Build_VST3=0",
+					"JucePlugin_Build_AU=0",
+					"JucePlugin_Build_AUv3=1",
+					"JucePlugin_Build_AAX=0",
+					"JucePlugin_Build_Standalone=0",
+					"JucePlugin_Build_Unity=0",
+					"JucePlugin_Build_LV2=0",
+					"JucePlugin_Enable_IAA=0",
+					"JucePlugin_Enable_ARA=0",
+					"JucePlugin_Name=\\\"Rhythm\\ Pattern\\ Explorer\\\"",
+					"JucePlugin_Desc=\\\"Mathematical\\ rhythm\\ pattern\\ generator\\ and\\ analyzer\\\"",
+					"JucePlugin_Manufacturer=\\\"Rhythm\\ Pattern\\ Explorer\\\"",
+					"JucePlugin_ManufacturerWebsite=\\\"https://github.com/enkerli/rhythm_pattern_explorer\\\"",
+					"JucePlugin_ManufacturerEmail=\\\"support@rhythmpatternexplorer.com\\\"",
+					"JucePlugin_ManufacturerCode=0x52504531",
+					"JucePlugin_PluginCode=0x52706531",
+					"JucePlugin_IsSynth=0",
+					"JucePlugin_WantsMidiInput=1",
+					"JucePlugin_ProducesMidiOutput=1",
+					"JucePlugin_IsMidiEffect=1",
+					"JucePlugin_EditorRequiresKeyboardFocus=0",
+					"JucePlugin_Version=1.0.0",
+					"JucePlugin_VersionCode=0x10000",
+					"JucePlugin_VersionString=\\\"1.0.0\\\"",
+					"JucePlugin_VSTUniqueID=JucePlugin_PluginCode",
+					"JucePlugin_VSTCategory=kPlugCategEffect",
+					"JucePlugin_Vst3Category=\\\"Fx\\\"",
+					"JucePlugin_AUMainType=\\'aumi\\'",
+					"JucePlugin_AUSubType=JucePlugin_PluginCode",
+					"JucePlugin_AUExportPrefix=RhythmPatternExplorerAU",
+					"JucePlugin_AUExportPrefixQuoted=\\\"RhythmPatternExplorerAU\\\"",
+					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
+					"JucePlugin_CFBundleIdentifier=com.rhythmpatternexplorer.auv3",
+					"JucePlugin_AAXIdentifier=com.rhythmpatternexplorer.auv3",
+					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
+					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
+					"JucePlugin_AAXCategory=2",
+					"JucePlugin_AAXDisableBypass=0",
+					"JucePlugin_AAXDisableMultiMono=0",
+					"JucePlugin_IAAType=0x6175726d",
+					"JucePlugin_IAASubType=JucePlugin_PluginCode",
+					"JucePlugin_IAAName=\\\"Rhythm\\ Pattern\\ Explorer:\\ Rhythm\\ Pattern\\ Explorer\\\"",
+					"JucePlugin_VSTNumMidiInputs=16",
+					"JucePlugin_VSTNumMidiOutputs=16",
+					"JucePlugin_ARAContentTypes=0",
+					"JucePlugin_ARATransformationFlags=0",
+					"JucePlugin_ARAFactoryID=\\\"com.RhythmPatternExplorer.RhythmPatternExplorer.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.RhythmPatternExplorer.RhythmPatternExplorer.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
+					"JucePlugin_MaxNumInputChannels=0",
+					"JucePlugin_MaxNumOutputChannels=0",
+					"JucePlugin_PreferredChannelConfigurations={0,0}",
+					"JUCE_STANDALONE_APPLICATION=JucePlugin_Build_Standalone",
+					"JUCE_DISPLAY_SPLASH_SCREEN=1",
+					"JUCE_USE_DARK_SPLASH_SCREEN=1",
+					"JUCER_XCODE_MAC_F6D2F4CF=1",
+					"JUCE_APP_VERSION=1.0.0",
+					"JUCE_APP_VERSION_HEX=0x10000",
+				);
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				HEADER_SEARCH_PATHS = (
+					"/Users/alex/JUCE/modules/juce_audio_processors/format_types/VST3_SDK",
+					"$(SRCROOT)/../../JuceLibraryCode",
+					"/Users/alex/JUCE/modules",
+					"/Users/alex/JUCE/modules/juce_audio_plugin_client/AU",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = Info-AUv3_AppExtension.plist;
+				INFOPLIST_PREPROCESS = NO;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_HEADER_SEARCH_PATHS = "/Users/alex/JUCE/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode /Users/alex/JUCE/modules /Users/alex/JUCE/modules/juce_audio_plugin_client/AU";
+				OTHER_LDFLAGS = "-lRhythm\\ Pattern\\ Explorer";
+				PRODUCT_BUNDLE_IDENTIFIER = com.rhythmpatternexplorer.auv3.auv3AUv3;
+				PRODUCT_NAME = "Rhythm Pattern Explorer";
+				USE_HEADERMAP = NO;
+				VALID_ARCHS = "i386 x86_64 arm64 arm64e";
+			};
+			name = Debug;
+		};
+		BDFF0B1621890648491AFDA8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_LINK_OBJC_RUNTIME = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "$(PROJECT_DIR)/build/$(CONFIGURATION)";
+				COPY_PHASE_STRIP = NO;
+				EXCLUDED_ARCHS = "";
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"_DEBUG=1",
+					"DEBUG=1",
+					"JUCE_PROJUCER_VERSION=0x80008",
+					"JUCE_MODULE_AVAILABLE_juce_audio_basics=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_devices=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_formats=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_plugin_client=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_processors=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_utils=1",
+					"JUCE_MODULE_AVAILABLE_juce_core=1",
+					"JUCE_MODULE_AVAILABLE_juce_data_structures=1",
+					"JUCE_MODULE_AVAILABLE_juce_dsp=1",
+					"JUCE_MODULE_AVAILABLE_juce_events=1",
+					"JUCE_MODULE_AVAILABLE_juce_graphics=1",
+					"JUCE_MODULE_AVAILABLE_juce_gui_basics=1",
+					"JUCE_MODULE_AVAILABLE_juce_gui_extra=1",
+					"JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1",
+					"JUCE_VST3_CAN_REPLACE_VST2=0",
+					"JUCE_STRICT_REFCOUNTEDPOINTER=1",
+					"JucePlugin_Build_VST=0",
+					"JucePlugin_Build_VST3=0",
+					"JucePlugin_Build_AU=1",
+					"JucePlugin_Build_AUv3=0",
+					"JucePlugin_Build_AAX=0",
+					"JucePlugin_Build_Standalone=0",
+					"JucePlugin_Build_Unity=0",
+					"JucePlugin_Build_LV2=0",
+					"JucePlugin_Enable_IAA=0",
+					"JucePlugin_Enable_ARA=0",
+					"JucePlugin_Name=\\\"Rhythm\\ Pattern\\ Explorer\\\"",
+					"JucePlugin_Desc=\\\"Mathematical\\ rhythm\\ pattern\\ generator\\ and\\ analyzer\\\"",
+					"JucePlugin_Manufacturer=\\\"Rhythm\\ Pattern\\ Explorer\\\"",
+					"JucePlugin_ManufacturerWebsite=\\\"https://github.com/enkerli/rhythm_pattern_explorer\\\"",
+					"JucePlugin_ManufacturerEmail=\\\"support@rhythmpatternexplorer.com\\\"",
+					"JucePlugin_ManufacturerCode=0x52504531",
+					"JucePlugin_PluginCode=0x52706531",
+					"JucePlugin_IsSynth=0",
+					"JucePlugin_WantsMidiInput=1",
+					"JucePlugin_ProducesMidiOutput=1",
+					"JucePlugin_IsMidiEffect=1",
+					"JucePlugin_EditorRequiresKeyboardFocus=0",
+					"JucePlugin_Version=1.0.0",
+					"JucePlugin_VersionCode=0x10000",
+					"JucePlugin_VersionString=\\\"1.0.0\\\"",
+					"JucePlugin_VSTUniqueID=JucePlugin_PluginCode",
+					"JucePlugin_VSTCategory=kPlugCategEffect",
+					"JucePlugin_Vst3Category=\\\"Fx\\\"",
+					"JucePlugin_AUMainType=\\'aumi\\'",
+					"JucePlugin_AUSubType=JucePlugin_PluginCode",
+					"JucePlugin_AUExportPrefix=RhythmPatternExplorerAU",
+					"JucePlugin_AUExportPrefixQuoted=\\\"RhythmPatternExplorerAU\\\"",
+					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
+					"JucePlugin_CFBundleIdentifier=com.rhythmpatternexplorer.auv3",
+					"JucePlugin_AAXIdentifier=com.rhythmpatternexplorer.auv3",
+					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
+					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
+					"JucePlugin_AAXCategory=2",
+					"JucePlugin_AAXDisableBypass=0",
+					"JucePlugin_AAXDisableMultiMono=0",
+					"JucePlugin_IAAType=0x6175726d",
+					"JucePlugin_IAASubType=JucePlugin_PluginCode",
+					"JucePlugin_IAAName=\\\"Rhythm\\ Pattern\\ Explorer:\\ Rhythm\\ Pattern\\ Explorer\\\"",
+					"JucePlugin_VSTNumMidiInputs=16",
+					"JucePlugin_VSTNumMidiOutputs=16",
+					"JucePlugin_ARAContentTypes=0",
+					"JucePlugin_ARATransformationFlags=0",
+					"JucePlugin_ARAFactoryID=\\\"com.RhythmPatternExplorer.RhythmPatternExplorer.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.RhythmPatternExplorer.RhythmPatternExplorer.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
+					"JucePlugin_MaxNumInputChannels=0",
+					"JucePlugin_MaxNumOutputChannels=0",
+					"JucePlugin_PreferredChannelConfigurations={0,0}",
+					"JUCE_STANDALONE_APPLICATION=JucePlugin_Build_Standalone",
+					"JUCE_DISPLAY_SPLASH_SCREEN=1",
+					"JUCE_USE_DARK_SPLASH_SCREEN=1",
+					"JUCER_XCODE_MAC_F6D2F4CF=1",
+					"JUCE_APP_VERSION=1.0.0",
+					"JUCE_APP_VERSION_HEX=0x10000",
+				);
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GENERATE_PKGINFO_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"/Users/alex/JUCE/modules/juce_audio_processors/format_types/VST3_SDK",
+					"$(SRCROOT)/../../JuceLibraryCode",
+					"/Users/alex/JUCE/modules",
+					"/Users/alex/JUCE/modules/juce_audio_plugin_client/AU",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = Info-AU.plist;
+				INFOPLIST_PREPROCESS = NO;
+				INSTALL_PATH = "$(HOME)/Library/Audio/Plug-Ins/Components/";
+				LIBRARY_STYLE = Bundle;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_HEADER_SEARCH_PATHS = "/Users/alex/JUCE/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode /Users/alex/JUCE/modules /Users/alex/JUCE/modules/juce_audio_plugin_client/AU";
+				OTHER_LDFLAGS = "-bundle -lRhythm\\ Pattern\\ Explorer";
+				OTHER_REZFLAGS = "-d ppc_$ppc -d i386_$i386 -d ppc64_$ppc64 -d x86_64_$x86_64 -d arm64_$arm64 -I /System/Library/Frameworks/CoreServices.framework/Frameworks/CarbonCore.framework/Versions/A/Headers -I \"$(DEVELOPER_DIR)/Extras/CoreAudio/AudioUnits/AUPublic/AUBase\" -I \"$(DEVELOPER_DIR)/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/AudioUnit.framework/Headers\"";
+				PRODUCT_BUNDLE_IDENTIFIER = com.rhythmpatternexplorer.auv3;
+				PRODUCT_NAME = "Rhythm Pattern Explorer";
+				USE_HEADERMAP = NO;
+				VALID_ARCHS = "i386 x86_64 arm64 arm64e";
+				WRAPPER_EXTENSION = component;
+			};
+			name = Debug;
+		};
+		CBE07F6893658281ED964F03 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		E3F5AFA2477A1FDCA0127ED3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_LINK_OBJC_RUNTIME = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "$(PROJECT_DIR)/build/$(CONFIGURATION)";
+				DEAD_CODE_STRIPPING = YES;
+				DEPLOYMENT_POSTPROCESSING = YES;
+				EXCLUDED_ARCHS = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"_NDEBUG=1",
+					"NDEBUG=1",
+					"JUCE_PROJUCER_VERSION=0x80008",
+					"JUCE_MODULE_AVAILABLE_juce_audio_basics=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_devices=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_formats=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_plugin_client=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_processors=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_utils=1",
+					"JUCE_MODULE_AVAILABLE_juce_core=1",
+					"JUCE_MODULE_AVAILABLE_juce_data_structures=1",
+					"JUCE_MODULE_AVAILABLE_juce_dsp=1",
+					"JUCE_MODULE_AVAILABLE_juce_events=1",
+					"JUCE_MODULE_AVAILABLE_juce_graphics=1",
+					"JUCE_MODULE_AVAILABLE_juce_gui_basics=1",
+					"JUCE_MODULE_AVAILABLE_juce_gui_extra=1",
+					"JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1",
+					"JUCE_VST3_CAN_REPLACE_VST2=0",
+					"JUCE_STRICT_REFCOUNTEDPOINTER=1",
+					"JucePlugin_Build_VST=0",
+					"JucePlugin_Build_VST3=0",
+					"JucePlugin_Build_AU=0",
+					"JucePlugin_Build_AUv3=0",
+					"JucePlugin_Build_AAX=0",
+					"JucePlugin_Build_Standalone=0",
+					"JucePlugin_Build_Unity=0",
+					"JucePlugin_Build_LV2=0",
+					"JucePlugin_Enable_IAA=0",
+					"JucePlugin_Enable_ARA=0",
+					"JucePlugin_Name=\\\"Rhythm\\ Pattern\\ Explorer\\\"",
+					"JucePlugin_Desc=\\\"Mathematical\\ rhythm\\ pattern\\ generator\\ and\\ analyzer\\\"",
+					"JucePlugin_Manufacturer=\\\"Rhythm\\ Pattern\\ Explorer\\\"",
+					"JucePlugin_ManufacturerWebsite=\\\"https://github.com/enkerli/rhythm_pattern_explorer\\\"",
+					"JucePlugin_ManufacturerEmail=\\\"support@rhythmpatternexplorer.com\\\"",
+					"JucePlugin_ManufacturerCode=0x52504531",
+					"JucePlugin_PluginCode=0x52706531",
+					"JucePlugin_IsSynth=0",
+					"JucePlugin_WantsMidiInput=1",
+					"JucePlugin_ProducesMidiOutput=1",
+					"JucePlugin_IsMidiEffect=1",
+					"JucePlugin_EditorRequiresKeyboardFocus=0",
+					"JucePlugin_Version=1.0.0",
+					"JucePlugin_VersionCode=0x10000",
+					"JucePlugin_VersionString=\\\"1.0.0\\\"",
+					"JucePlugin_VSTUniqueID=JucePlugin_PluginCode",
+					"JucePlugin_VSTCategory=kPlugCategEffect",
+					"JucePlugin_Vst3Category=\\\"Fx\\\"",
+					"JucePlugin_AUMainType=\\'aumi\\'",
+					"JucePlugin_AUSubType=JucePlugin_PluginCode",
+					"JucePlugin_AUExportPrefix=RhythmPatternExplorerAU",
+					"JucePlugin_AUExportPrefixQuoted=\\\"RhythmPatternExplorerAU\\\"",
+					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
+					"JucePlugin_CFBundleIdentifier=com.rhythmpatternexplorer.auv3",
+					"JucePlugin_AAXIdentifier=com.rhythmpatternexplorer.auv3",
+					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
+					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
+					"JucePlugin_AAXCategory=2",
+					"JucePlugin_AAXDisableBypass=0",
+					"JucePlugin_AAXDisableMultiMono=0",
+					"JucePlugin_IAAType=0x6175726d",
+					"JucePlugin_IAASubType=JucePlugin_PluginCode",
+					"JucePlugin_IAAName=\\\"Rhythm\\ Pattern\\ Explorer:\\ Rhythm\\ Pattern\\ Explorer\\\"",
+					"JucePlugin_VSTNumMidiInputs=16",
+					"JucePlugin_VSTNumMidiOutputs=16",
+					"JucePlugin_ARAContentTypes=0",
+					"JucePlugin_ARATransformationFlags=0",
+					"JucePlugin_ARAFactoryID=\\\"com.RhythmPatternExplorer.RhythmPatternExplorer.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.RhythmPatternExplorer.RhythmPatternExplorer.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
+					"JucePlugin_MaxNumInputChannels=0",
+					"JucePlugin_MaxNumOutputChannels=0",
+					"JucePlugin_PreferredChannelConfigurations={0,0}",
+					"JUCE_STANDALONE_APPLICATION=JucePlugin_Build_Standalone",
+					"JUCE_DISPLAY_SPLASH_SCREEN=1",
+					"JUCE_USE_DARK_SPLASH_SCREEN=1",
+					"JUCER_XCODE_MAC_F6D2F4CF=1",
+					"JUCE_APP_VERSION=1.0.0",
+					"JUCE_APP_VERSION_HEX=0x10000",
+				);
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				HEADER_SEARCH_PATHS = (
+					"/Users/alex/JUCE/modules/juce_audio_processors/format_types/VST3_SDK",
+					"$(SRCROOT)/../../JuceLibraryCode",
+					"/Users/alex/JUCE/modules",
+					"/Users/alex/JUCE/modules/juce_audio_plugin_client/AU",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = Info-VST3_Manifest_Helper.plist;
+				INFOPLIST_PREPROCESS = NO;
+				LLVM_LTO = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_HEADER_SEARCH_PATHS = "/Users/alex/JUCE/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode /Users/alex/JUCE/modules /Users/alex/JUCE/modules/juce_audio_plugin_client/AU";
+				PRODUCT_BUNDLE_IDENTIFIER = com.rhythmpatternexplorer.auv3;
+				PRODUCT_NAME = "juce_vst3_helper";
+				SEPARATE_STRIP = YES;
+				STRIPFLAGS = "-x";
+				USE_HEADERMAP = NO;
+				VALID_ARCHS = "i386 x86_64 arm64 arm64e";
+			};
+			name = Release;
+		};
+		E510931B37662AAC65222E6B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = NO;
+				GCC_C_LANGUAGE_STANDARD = c11;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_CHECK_SWITCH_STATEMENTS = YES;
+				GCC_WARN_MISSING_PARENTHESES = YES;
+				GCC_WARN_NON_VIRTUAL_DESTRUCTOR = YES;
+				GCC_WARN_TYPECHECK_CALLS_TO_PRINTF = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				OTHER_CODE_SIGN_FLAGS = --timestamp;
+				PRODUCT_NAME = "Rhythm Pattern Explorer";
+				SDKROOT = macosx;
+				WARNING_CFLAGS = "-Wreorder";
+				ZERO_LINK = NO;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		017A40C493034B43AAF83410 = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5C18F3FD23527E5200B05BC4,
+				E510931B37662AAC65222E6B,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		2236563CBF52B68CF001A4A7 = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B67C561F6C2F54A717A0E9C1,
+				4EF2B39E110F499DDC412751,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		25C062B8827776CDDE7F9BA5 = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B0732E1DC35DE095077F9A85,
+				E3F5AFA2477A1FDCA0127ED3,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		72573A882A2323B30C599AC9 = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BDFF0B1621890648491AFDA8,
+				91322B29ABED36B0F0E3CC6B,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		8671D130C40A502B7B465FA1 = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CBE07F6893658281ED964F03,
+				869B4C76D6FF4DFB4EFFBCE3,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		C7A55D6C64DF442C3BE5BE7C = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				78F597993232BF5C5362DF5B,
+				A61986E98679DD4431C1083B,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		CFB5B5BB879099FB2C4843D1 = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				06204271E412DE4636FA74ED,
+				3B7DF969F08CC5C00DED5977,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		F78AB0DA8E55DF8935DB7568 = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA3804057710AC33D1999B0E,
+				8DC4AF467F37F458148B2FD3,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = FC41026A7B15C0D91E75E74D /* Project object */;
+}

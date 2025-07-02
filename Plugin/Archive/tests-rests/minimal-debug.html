@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head><title>Minimal Debug</title></head>
+<body>
+    <div id="results"></div>
+    
+    <script src="math-core.js"></script>
+    <script src="pattern-generators.js"></script>
+    <script src="pattern-analysis.js"></script>
+    <script src="pattern-processing.js"></script>
+    <script src="pattern-exploration.js"></script>
+    
+    <script>
+        const results = document.getElementById('results');
+        
+        // Replicate the exact test that's failing
+        const explorer = new SystematicExplorer();
+        
+        const mockResults = [
+            { balance: { balanceScore: 'good', magnitude: 0.2 }, polygons: [3, 4] },
+            { balance: { balanceScore: 'perfect', magnitude: 0.0001 }, polygons: [5, 7] },
+            { balance: { balanceScore: 'excellent', magnitude: 0.03 }, polygons: [3, 5] },
+            { balance: { balanceScore: 'fair', magnitude: 0.5 }, polygons: [4, 6] }
+        ];
+        
+        explorer.results = mockResults;
+        
+        results.innerHTML += '<h3>Before sorting:</h3>';
+        explorer.results.forEach((r, i) => {
+            results.innerHTML += `<div>${i}: ${r.balance.balanceScore} (${r.balance.magnitude})</div>`;
+        });
+        
+        const sortedResults = explorer.sortResultsByBalance();
+        
+        results.innerHTML += '<h3>After sorting:</h3>';
+        sortedResults.forEach((r, i) => {
+            results.innerHTML += `<div>${i}: ${r.balance.balanceScore} (${r.balance.magnitude})</div>`;
+        });
+        
+        // Test the scoreOrder mapping manually
+        const scoreOrder = { 'perfect': 0, 'excellent': 1, 'good': 2, 'fair': 3, 'poor': 4 };
+        results.innerHTML += '<h3>Score mappings:</h3>';
+        mockResults.forEach(r => {
+            const score = scoreOrder[r.balance.balanceScore] || 5;
+            results.innerHTML += `<div>${r.balance.balanceScore} -> ${score}</div>`;
+        });
+        
+        // Manual sort to see what should happen
+        const manualSort = [...mockResults].sort((a, b) => {
+            const scoreA = scoreOrder[a.balance.balanceScore] || 5;
+            const scoreB = scoreOrder[b.balance.balanceScore] || 5;
+            if (scoreA !== scoreB) return scoreA - scoreB;
+            return a.balance.magnitude - b.balance.magnitude;
+        });
+        
+        results.innerHTML += '<h3>Manual sort result:</h3>';
+        manualSort.forEach((r, i) => {
+            results.innerHTML += `<div>${i}: ${r.balance.balanceScore} (${r.balance.magnitude})</div>`;
+        });
+        
+        results.innerHTML += `<h3>First result should be: ${manualSort[0].balance.balanceScore}</h3>`;
+        results.innerHTML += `<h3>Method returns: ${sortedResults[0].balance.balanceScore}</h3>`;
+        results.innerHTML += `<h3>Are they the same? ${manualSort[0].balance.balanceScore === sortedResults[0].balance.balanceScore}</h3>`;
+        
+    </script>
+</body>
+</html>

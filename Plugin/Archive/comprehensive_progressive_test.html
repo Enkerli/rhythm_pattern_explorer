@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprehensive Progressive Transformation Test</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #f5f5f5; }
+        .test-section { 
+            background: white; 
+            margin: 20px 0; 
+            padding: 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-header { 
+            font-size: 18px; 
+            font-weight: bold; 
+            color: #2c3e50; 
+            border-bottom: 2px solid #3498db; 
+            padding-bottom: 10px; 
+            margin-bottom: 15px;
+        }
+        .step { 
+            margin: 10px 0; 
+            padding: 8px; 
+            background: #ecf0f1; 
+            border-left: 4px solid #3498db;
+        }
+        .base-pattern { background-color: #e8f5e8; border-left-color: #27ae60; }
+        .transformed { background-color: #fff3e0; border-left-color: #f39c12; }
+        .error { background-color: #ffeaa7; border-left-color: #d63031; }
+        .success { background-color: #d1f2eb; border-left-color: #00b894; }
+        .algorithm-name { font-weight: bold; color: #2d3436; }
+        .pattern-display { font-family: 'Courier New', monospace; background: #2d3436; color: #00cec9; padding: 5px; border-radius: 3px; }
+        .summary { background: #fdcb6e; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        .comparison-table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+        .comparison-table th, .comparison-table td { 
+            border: 1px solid #ddd; 
+            padding: 8px; 
+            text-align: left; 
+            font-family: 'Courier New', monospace; 
+        }
+        .comparison-table th { background-color: #f2f2f2; }
+        .step-number { font-weight: bold; color: #6c5ce7; }
+    </style>
+</head>
+<body>
+    <h1>Comprehensive Progressive Transformation Test</h1>
+    <p>Testing all 8 progressive transformations with the webapp implementation:</p>
+    <ul>
+        <li><strong>E(8,8)B>1</strong> - Barlow concentration: 8 to 1 onsets</li>
+        <li><strong>E(1,8)B>8</strong> - Barlow dilution: 1 to 8 onsets</li>
+        <li><strong>E(8,8)W>1</strong> - Wolrab concentration: 8 to 1 onsets</li>
+        <li><strong>E(1,8)W>8</strong> - Wolrab dilution: 1 to 8 onsets</li>
+        <li><strong>E(8,8)E>1</strong> - Euclidean concentration: 8 to 1 onsets</li>
+        <li><strong>E(1,8)E>8</strong> - Euclidean dilution: 1 to 8 onsets</li>
+        <li><strong>E(8,8)D>1</strong> - Dilcue concentration: 8 to 1 onsets</li>
+        <li><strong>E(1,8)D>8</strong> - Dilcue dilution: 1 to 8 onsets</li>
+    </ul>
+    
+    <div id="test-results"></div>
+
+    <!-- Import the webapp modules -->
+    <script src="app/math-core.js"></script>
+    <script src="app/pattern-generators.js"></script>
+    <script src="app/pattern-processing.js"></script>
+    <script src="app/pattern-analysis.js"></script>
+
+    <script>
+        // Test data structure to store all results
+        const testResults = {
+            patterns: [],
+            summary: {
+                total: 8,
+                passed: 0,
+                failed: 0,
+                errors: []
+            }
+        };
+
+        // Test configuration for all 8 transformations
+        const testConfigs = [
+            {
+                name: "E(8,8)B>1",
+                description: "Barlow concentration: 8 to 1 onsets",
+                basePattern: "E(8,8)",
+                transformer: "B",
+                targetOnsets: 1,
+                algorithm: "Barlow Indispensability",
+                mode: "concentration"
+            },
+            {
+                name: "E(1,8)B>8", 
+                description: "Barlow dilution: 1 to 8 onsets",
+                basePattern: "E(1,8)",
+                transformer: "B",
+                targetOnsets: 8,
+                algorithm: "Barlow Indispensability",
+                mode: "dilution"
+            },
+            {
+                name: "E(8,8)W>1",
+                description: "Wolrab concentration: 8 to 1 onsets", 
+                basePattern: "E(8,8)",
+                transformer: "W",
+                targetOnsets: 1,
+                algorithm: "Wolrab (Anti-Barlow)",
+                mode: "concentration"
+            },
+            {
+                name: "E(1,8)W>8",
+                description: "Wolrab dilution: 1 to 8 onsets",
+                basePattern: "E(1,8)", 
+                transformer: "W",
+                targetOnsets: 8,
+                algorithm: "Wolrab (Anti-Barlow)",
+                mode: "dilution"
+            },
+            {
+                name: "E(8,8)E>1",
+                description: "Euclidean concentration: 8 to 1 onsets",
+                basePattern: "E(8,8)",
+                transformer: "E", 
+                targetOnsets: 1,
+                algorithm: "Euclidean (Bjorklund)",
+                mode: "concentration"
+            },
+            {
+                name: "E(1,8)E>8",
+                description: "Euclidean dilution: 1 to 8 onsets",
+                basePattern: "E(1,8)",
+                transformer: "E",
+                targetOnsets: 8, 
+                algorithm: "Euclidean (Bjorklund)",
+                mode: "dilution"
+            },
+            {
+                name: "E(8,8)D>1", 
+                description: "Dilcue concentration: 8 to 1 onsets",
+                basePattern: "E(8,8)",
+                transformer: "D",
+                targetOnsets: 1,
+                algorithm: "Dilcue (Anti-Euclidean)",
+                mode: "concentration"
+            },
+            {
+                name: "E(1,8)D>8",
+                description: "Dilcue dilution: 1 to 8 onsets", 
+                basePattern: "E(1,8)",
+                transformer: "D",
+                targetOnsets: 8,
+                algorithm: "Dilcue (Anti-Euclidean)",
+                mode: "dilution"
+            }
+        ];
+
+        // Helper function to format binary pattern
+        function formatPattern(steps) {
+            return steps.map(s => s ? '1' : '0').join('');
+        }
+
+        // Helper function to generate base patterns
+        function generateBasePattern(patternNotation) {
+            if (patternNotation === "E(8,8)") {
+                return EuclideanGenerator.generate(8, 8, 0);
+            } else if (patternNotation === "E(1,8)") {
+                return EuclideanGenerator.generate(1, 8, 0);
+            }
+            throw new Error(`Unknown base pattern: ${patternNotation}`);
+        }
+
+        // Generate Barlow/Wolrab transformation
+        function generateBarlowTransformation(currentSteps, targetOnsets, wolrabMode = false) {
+            try {
+                const result = BarlowTransformer.transformPattern(
+                    currentSteps,
+                    targetOnsets,
+                    {
+                        wolrabMode: wolrabMode,
+                        preserveDownbeat: true,
+                        minimumIndispensability: 0.0
+                    }
+                );
+                return result && result.pattern ? result.pattern : null;
+            } catch (error) {
+                console.error('Error in Barlow transformation:', error);
+                return null;
+            }
+        }
+
+        // Generate Euclidean/Dilcue transformation  
+        function generateEuclideanTransformation(currentSteps, targetOnsets, antiMode = false) {
+            try {
+                const currentOnsets = currentSteps.filter(s => s).length;
+                const result = EuclideanTransformer.transform(
+                    currentSteps,
+                    targetOnsets,
+                    {
+                        operation: targetOnsets > currentOnsets ? 'concentrate' : 'dilute',
+                        mode: antiMode ? 'anti' : 'normal'
+                    }
+                );
+                return result && result.transformed ? result.transformed : null;
+            } catch (error) {
+                console.error('Error in Euclidean transformation:', error);
+                return null;
+            }
+        }
+
+        // Generate progressive sequence
+        function generateProgressiveSequence(config) {
+            try {
+                // Generate base pattern
+                const basePattern = generateBasePattern(config.basePattern);
+                console.log(`Generated base pattern ${config.basePattern}:`, formatPattern(basePattern));
+                
+                const baseOnsetCount = basePattern.filter(s => s).length;
+                const targetOnsets = config.targetOnsets;
+                
+                if (baseOnsetCount === targetOnsets) {
+                    return {
+                        basePattern: basePattern,
+                        transformations: [],
+                        error: 'Current and target onset counts are the same'
+                    };
+                }
+                
+                const transformations = [];
+                const direction = targetOnsets > baseOnsetCount ? 1 : -1;
+                let currentPattern = [...basePattern];
+                
+                // Generate each step in the sequence
+                for (let onsets = baseOnsetCount + direction; 
+                     direction > 0 ? onsets <= targetOnsets : onsets >= targetOnsets; 
+                     onsets += direction) {
+                     
+                    let transformedPattern;
+                    
+                    switch (config.transformer) {
+                        case 'B':
+                            transformedPattern = generateBarlowTransformation(currentPattern, onsets, false);
+                            break;
+                        case 'W':
+                            transformedPattern = generateBarlowTransformation(currentPattern, onsets, true);
+                            break;
+                        case 'E':
+                            transformedPattern = generateEuclideanTransformation(currentPattern, onsets, false);
+                            break;
+                        case 'D':
+                            transformedPattern = generateEuclideanTransformation(currentPattern, onsets, true);
+                            break;
+                        default:
+                            throw new Error(`Unknown transformer type: ${config.transformer}`);
+                    }
+                    
+                    if (transformedPattern) {
+                        transformations.push({
+                            onsetCount: onsets,
+                            stepNumber: Math.abs(onsets - baseOnsetCount),
+                            pattern: transformedPattern,
+                            binary: formatPattern(transformedPattern)
+                        });
+                        currentPattern = transformedPattern;
+                    } else {
+                        console.error(`Transformation failed for ${onsets} onsets`);
+                        break;
+                    }
+                }
+                
+                return {
+                    basePattern: basePattern,
+                    transformations: transformations,
+                    success: true
+                };
+                
+            } catch (error) {
+                return {
+                    basePattern: null,
+                    transformations: [],
+                    error: error.message
+                };
+            }
+        }
+
+        // Run all tests
+        function runAllTests() {
+            const resultsDiv = document.getElementById('test-results');
+            let html = '';
+            
+            testConfigs.forEach((config, index) => {
+                html += `<div class="test-section">`;
+                html += `<div class="test-header">${index + 1}. ${config.name}</div>`;
+                html += `<div><strong>Description:</strong> ${config.description}</div>`;
+                html += `<div><strong>Algorithm:</strong> <span class="algorithm-name">${config.algorithm}</span></div>`;
+                html += `<div><strong>Mode:</strong> ${config.mode}</div>`;
+                
+                const result = generateProgressiveSequence(config);
+                
+                if (result.error) {
+                    html += `<div class="step error"><strong>Error:</strong> ${result.error}</div>`;
+                    testResults.summary.failed++;
+                    testResults.summary.errors.push(`${config.name}: ${result.error}`);
+                } else {
+                    testResults.summary.passed++;
+                    
+                    // Base pattern
+                    const basePattern = formatPattern(result.basePattern);
+                    const baseOnsets = result.basePattern.filter(s => s).length;
+                    html += `<div class="step base-pattern">`;
+                    html += `<strong>Base Pattern:</strong> ${config.basePattern} = <span class="pattern-display">${basePattern}</span> (${baseOnsets} onsets)`;
+                    html += `</div>`;
+                    
+                    // Transformations
+                    if (result.transformations.length > 0) {
+                        html += `<div class="step"><strong>Progressive Steps:</strong></div>`;
+                        html += `<table class="comparison-table">`;
+                        html += `<tr><th>Step</th><th>Onsets</th><th>Pattern</th><th>Algorithm</th></tr>`;
+                        
+                        result.transformations.forEach((transform, stepIndex) => {
+                            html += `<tr>`;
+                            html += `<td><span class="step-number">${transform.stepNumber}</span></td>`;
+                            html += `<td>${transform.onsetCount}</td>`;
+                            html += `<td><span class="pattern-display">${transform.binary}</span></td>`;
+                            html += `<td>${config.algorithm}</td>`;
+                            html += `</tr>`;
+                        });
+                        
+                        html += `</table>`;
+                        
+                        // Final result
+                        const finalTransform = result.transformations[result.transformations.length - 1];
+                        html += `<div class="step success">`;
+                        html += `<strong>Final Result:</strong> ${baseOnsets} → ${finalTransform.onsetCount} onsets using ${config.algorithm}`;
+                        html += `</div>`;
+                        
+                    } else {
+                        html += `<div class="step"><strong>No transformations generated</strong></div>`;
+                    }
+                }
+                
+                html += `</div>`;
+                
+                // Store results for plugin comparison
+                testResults.patterns.push({
+                    config: config,
+                    result: result
+                });
+            });
+            
+            // Add summary
+            html += `<div class="summary">`;
+            html += `<h2>Test Summary</h2>`;
+            html += `<p><strong>Total Tests:</strong> ${testResults.summary.total}</p>`;
+            html += `<p><strong>Passed:</strong> ${testResults.summary.passed}</p>`;
+            html += `<p><strong>Failed:</strong> ${testResults.summary.failed}</p>`;
+            
+            if (testResults.summary.errors.length > 0) {
+                html += `<p><strong>Errors:</strong></p><ul>`;
+                testResults.summary.errors.forEach(error => {
+                    html += `<li>${error}</li>`;
+                });
+                html += `</ul>`;
+            }
+            
+            html += `<h3>Plugin Implementation Reference</h3>`;
+            html += `<p>Use these results to verify the plugin implementation in:</p>`;
+            html += `<ul>`;
+            html += `<li><code>/Users/alex/Documents/Coding/rhythm_pattern_explorer/Source/PatternEngine.cpp</code></li>`;
+            html += `<li>Implement progressive transformation methods for each algorithm</li>`;
+            html += `<li>Compare step-by-step results with webapp output above</li>`;
+            html += `</ul>`;
+            
+            html += `</div>`;
+            
+            resultsDiv.innerHTML = html;
+        }
+
+        // Key findings for plugin implementation
+        function generatePluginReference() {
+            console.log("=== PLUGIN IMPLEMENTATION REFERENCE ===");
+            console.log("Base Pattern Generators:");
+            console.log("- E(8,8) = '11111111' (8 onsets in 8 steps)");
+            console.log("- E(1,8) = '10000000' (1 onset in 8 steps)");
+            console.log("");
+            
+            console.log("Progressive Transformation Algorithms:");
+            console.log("1. Barlow (B): Uses indispensability values to determine onset priorities");
+            console.log("2. Wolrab (W): Anti-Barlow, removes/adds most indispensable positions first");
+            console.log("3. Euclidean (E): Uses Bjorklund algorithm for maximal evenness");
+            console.log("4. Dilcue (D): Anti-Euclidean, uses complement patterns");
+            console.log("");
+            
+            console.log("Expected test patterns stored in testResults object");
+            console.log("Access via: testResults.patterns[index].result.transformations");
+        }
+
+        // Run tests when page loads
+        window.addEventListener('load', () => {
+            console.log("Starting comprehensive progressive transformation tests...");
+            runAllTests();
+            generatePluginReference();
+            console.log("Tests completed. Results available in testResults global variable.");
+        });
+    </script>
+</body>
+</html>

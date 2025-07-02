@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Shorthand Combinations</title>
+</head>
+<body>
+    <h1>Debug Shorthand Combinations</h1>
+    <div id="output"></div>
+
+    <script src="math-core.js"></script>
+    <script src="pattern-generators.js"></script>
+    <script src="pattern-processing.js"></script>
+    <script>
+        const output = document.getElementById('output');
+        
+        function debugCombination(input, description) {
+            console.log(`\n=== ${description}: ${input} ===`);
+            
+            try {
+                const result = UnifiedPatternParser.parse(input);
+                
+                console.log('Parse result type:', result.type);
+                
+                if (result.type === 'combination') {
+                    console.log('Individual patterns:');
+                    result.patterns.forEach((p, i) => {
+                        console.log(`  Pattern ${i + 1}:`, {
+                            isRegularPolygon: p.isRegularPolygon,
+                            vertices: p.vertices,
+                            offset: p.offset,
+                            steps: p.steps,
+                            stepCount: p.stepCount,
+                            formula: p.formula
+                        });
+                    });
+                    
+                    const binary = PatternConverter.toBinary(result.combined.steps, result.combined.stepCount);
+                    console.log('Combined result:', binary);
+                    
+                    const div = document.createElement('div');
+                    div.innerHTML = `
+                        <h3>${description}: ${input}</h3>
+                        <p><strong>Result:</strong> ${binary}</p>
+                        <p><strong>Step count:</strong> ${result.combined.stepCount}</p>
+                        <p><strong>Individual patterns:</strong></p>
+                        <ul>
+                            ${result.patterns.map((p, i) => `
+                                <li>Pattern ${i + 1}: ${p.formula || 'No formula'} 
+                                    (isPolygon: ${p.isRegularPolygon}, vertices: ${p.vertices}, offset: ${p.offset})</li>
+                            `).join('')}
+                        </ul>
+                        <hr>
+                    `;
+                    output.appendChild(div);
+                } else {
+                    console.log('Single pattern result:', result.pattern);
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                const div = document.createElement('div');
+                div.innerHTML = `<h3>ERROR for ${input}: ${error.message}</h3><hr>`;
+                div.style.color = 'red';
+                output.appendChild(div);
+            }
+        }
+        
+        // Test the problematic combinations
+        debugCombination('tri@1+pent@2', 'Triangle offset 1 + Pentagon offset 2');
+        debugCombination('tri@2+pent', 'Triangle offset 2 + Pentagon no offset');
+        debugCombination('tri+pent', 'Triangle no offset + Pentagon no offset');
+        
+        // Test individual patterns
+        debugCombination('tri@1', 'Triangle offset 1 (individual)');
+        debugCombination('tri@2', 'Triangle offset 2 (individual)');
+        debugCombination('tri', 'Triangle no offset (individual)');
+    </script>
+</body>
+</html>

@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Comprehensive Rhythm Pattern Explorer Test Suite</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            font-style: italic;
+        }
+        
+        .test-section {
+            margin: 30px 0;
+            border: 2px solid #e74c3c;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .test-section.completed {
+            border-color: #27ae60;
+        }
+        
+        .test-header {
+            background: #e74c3c;
+            color: white;
+            padding: 15px 20px;
+            margin: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .test-section.completed .test-header {
+            background: #27ae60;
+        }
+        
+        .test-header:hover {
+            background: #c0392b;
+        }
+        
+        .test-section.completed .test-header:hover {
+            background: #219a52;
+        }
+        
+        .test-content {
+            padding: 20px;
+            display: none;
+        }
+        
+        .test-content.active {
+            display: block;
+        }
+        
+        .test-step {
+            margin: 15px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-left: 4px solid #3498db;
+            border-radius: 5px;
+        }
+        
+        .expected-result {
+            background: #e8f5e8;
+            border: 1px solid #27ae60;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        
+        .expected-result::before {
+            content: "✅ Expected Result: ";
+            font-weight: bold;
+            color: #27ae60;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        
+        .warning::before {
+            content: "⚠️ Important: ";
+            font-weight: bold;
+            color: #d68910;
+        }
+        
+        .input-example {
+            background: #f1c40f;
+            color: #2c3e50;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+        
+        .button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+            transition: background 0.3s;
+        }
+        
+        .button:hover {
+            background: #2980b9;
+        }
+        
+        .button.success {
+            background: #27ae60;
+        }
+        
+        .button.success:hover {
+            background: #219a52;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #ecf0f1;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2980b9);
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .stat {
+            padding: 15px;
+            background: #ecf0f1;
+            border-radius: 10px;
+            min-width: 120px;
+        }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .stat-label {
+            color: #7f8c8d;
+            text-transform: uppercase;
+            font-size: 0.8em;
+            letter-spacing: 1px;
+        }
+        
+        .app-link {
+            text-align: center;
+            margin: 30px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+        }
+        
+        .app-link a {
+            color: white;
+            text-decoration: none;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        
+        .app-link a:hover {
+            text-decoration: underline;
+        }
+        
+        .test-status {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        
+        .collapsible-toggle {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2em;
+            cursor: pointer;
+        }
+        
+        .mathematical-note {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        
+        .mathematical-note::before {
+            content: "📐 Mathematical Note: ";
+            font-weight: bold;
+            color: #1976d2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Comprehensive Test Suite</h1>
+        <p class="subtitle">Interactive Guide for the Rhythm Pattern Explorer</p>
+        
+        <div class="app-link">
+            <a href="app-template-browser.html" target="_blank">🚀 Open Rhythm Pattern Explorer App</a>
+            <p style="margin-top: 10px; font-size: 0.9em;">Open this link in a new tab to follow along with the tests</p>
+        </div>
+        
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-number" id="completedTests">0</div>
+                <div class="stat-label">Completed</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number" id="totalTests">12</div>
+                <div class="stat-label">Total Tests</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number" id="progressPercent">0%</div>
+                <div class="stat-label">Progress</div>
+            </div>
+        </div>
+        
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <!-- Test 1: Basic Pattern Input -->
+        <div class="test-section" data-test-id="1">
+            <div class="test-header" onclick="toggleTest(1)">
+                <span class="test-status">🔴 Test 1: Basic Pattern Input & Parsing</span>
+                <button class="collapsible-toggle">▼</button>
+            </div>
+            <div class="test-content">
+                <div class="test-step">
+                    <strong>Step 1:</strong> Enter a simple triangle pattern: <span class="input-example">P(3,0)</span>
+                    <div class="expected-result">
+                        Should display: Triangle (3,1,0), 3 steps, 3 beats, 100% density<br>
+                        Binary: 111, Hex: 0x7, Decimal: 7<br>
+                        Balance Score: Perfect (magnitude ≈ 0.000)
+                    </div>
+                </div>
+                
+                <div class="test-step">
+                    <strong>Step 2:</strong> Try an offset triangle: <span class="input-example">P(3,1)</span>
+                    <div class="expected-result">
+                        Should display: Triangle (3,1,1), 3 steps, 3 beats, 100% density<br>
+                        Binary: 111, Hex: 0x7, Decimal: 7<br>
+                        Balance Score: Perfect (magnitude ≈ 0.000)
+                    </div>
+                </div>
+                
+                <div class="test-step">
+                    <strong>Step 3:</strong> Test expanded pattern: <span class="input-example">P(4,0,2)</span>
+                    <div class="expected-result">
+                        Should display: Square (4,0,2), 8 steps, 4 beats, 50% density<br>
+                        Binary: 10101010, Hex: 0xAA, Decimal: 170<br>
+                        Balance Score: Perfect (magnitude ≈ 0.000)
+                    </div>
+                </div>
+                
+                <button class="button" onclick="markTestComplete(1)">Mark Test 1 Complete</button>
+            </div>
+        </div>
+
+        <!-- Test 2: Euclidean Rhythms -->
+        <div class="test-section" data-test-id="2">
+            <div class="test-header" onclick="toggleTest(2)">
+                <span class="test-status">🔴 Test 2: Euclidean Rhythm Generation</span>
+                <button class="collapsible-toggle">▼</button>
+            </div>
+            <div class="test-content">
+                <div class="test-step">
+                    <strong>Step 1:</strong> Enter classic Euclidean rhythm: <span class="input-example">E(3,8,0)</span>
+                    <div class="expected-result">
+                        Should display: 8 steps, 3 beats, 37.5% density<br>
+                        Binary: 10010010, Hex: 0x49, Decimal: 73<br>
+                        Balance Score: Good (magnitude ≈ 0.138)
+                    </div>
+                    <div class="mathematical-note">
+                        This is the famous "tresillo" rhythm used in Latin music
+                    </div>
+                </div>
+                
+                <div class="test-step">
+                    <strong>Step 2:</strong> Try with offset: <span class="input-example">E(5,8,3)</span>
+                    <div class="expected-result">
+                        Should display: 8 steps, 5 beats, 62.5% density<br>
+                        Different binary pattern due to offset<br>
+                        Balance score should vary
+                    </div>
+                </div>
+                
+                <div class="test-step">
+                    <strong>Step 3:</strong> Test longer Euclidean: <span class="input-example">E(7,16,0)</span>
+                    <div class="expected-result">
+                        Should display: 16 steps, 7 beats, 43.75% density<br>
+                        Complex binary pattern with good distribution
+                    </div>
+                </div>
+                
+                <button class="button" onclick="markTestComplete(2)">Mark Test 2 Complete</button>
+            </div>
+        </div>
+
+        <!-- Test 3: Binary and Hex Input -->
+        <div class="test-section" data-test-id="3">
+            <div class="test-header" onclick="toggleTest(3)">
+                <span class="test-status">🔴 Test 3: Binary & Hexadecimal Input</span>
+                <button class="collapsible-toggle">▼</button>
+            </div>
+            <div class="test-content">
+                <div class="test-step">
+                    <strong>Step 1:</strong> Enter binary pattern: <span class="input-example">10110100</span>
+                    <div class="expected-result">
+                        Should display: 8 steps, 4 beats, 50% density<br>
+                        Hex: 0xB4, Decimal: 180<br>
+                        Balance analysis for the specific pattern
+                    </div>
+                </div>
+                
+                <div class="test-step">
+                    <strong>Step 2:</strong> Try hex input: <span class="input-example">0x49</span>
+                    <div class="expected-result">
+                        Should display: Binary: 10010010<br>
+                        8 steps, 3 beats, 37.5% density<br>
+                        Decimal: 73
+                    </div>
+                </div>
+                
+                <div class="test-step">
+                    <strong>Step 3:</strong> Enhanced hex notation: <span class="input-example">0x49:8</span>
+                    <div class="expected-result">
+                        Same as above but explicitly specifies 8 steps<br>
+                        Useful for patterns with leading zeros
+                    </div>
+                </div>
+                
+                <div class="test-step">
+                    <strong>Step 4:</strong> Decimal with steps: <span class="input-example">73:8</span>
+                    <div class="expected-result">
+                        Should produce same result as 0x49:8<br>
+                        Demonstrates decimal notation with step count
+                    </div>
+                </div>
+                
+                <button class="button" onclick="markTestComplete(3)">Mark Test 3 Complete</button>
+            </div>
+        </div>
+
+        <!-- Test 4: Pattern Combinations -->
+        <div class="test-section" data-test-id="4">
+            <div class="test-header" onclick="toggleTest(4)">
+                <span class="test-status">🔴 Test 4: Advanced Pattern Combinations</span>
+                <button class="collapsible-toggle">▼</button>
+            </div>
+            <div class="test-content">
+                <div class="test-step">
+                    <strong>Step 1:</strong> Simple combination: <span class="input-example">P(3,0) + P(4,0)</span>
+                    <div class="expected-result">
+                        Should display: b100110101100, 0x9AC, 2476 (12 steps, 6 beats, 50.0% density) [🎯COMBINED: P(3,0) + P(4,0)]<br>
+                        Database entry should show blue highlighted bar: "🎯 COMBINED: P(3,0) + P(4,0)"<br>
+                        LCM(3,4) = 12 steps, more beats than either individual pattern
+                    </div>
+                </div>
+                
+                <div class="test-step">
+                    <strong>Step 2:</strong> Perfect balance combination: <span class="input-example">P(3,1) + P(5,0) + P(2,5)</span>
+                    <div class="expected-result">
+                        Should display: 30 steps (LCM of 3,5,2)<br>
+                        Balance Score: Perfect (magnitude ≈ 0.000)<br>
+                        Center of Gravity exactly at center
+                    </div>
+                    <div class="mathematical-note">
+                        This combination should achieve perfect mathematical balance
+                    </div>
+                </div>
+                
+                <div class="test-step">
+                    <strong>Step 3:</strong> Mixed notation: <span class="input-example">E(3,8,0) + P(5,2)</span>
+                    <div class="expected-result">
+                        Should combine Euclidean and polygon patterns<br>
+                        LCM(8,5) = 40 steps total<br>
+                        Complex rhythmic interaction
+                    </div>
+                </div>
+                
+                <button class="button" onclick="markTestComplete(4)">Mark Test 4 Complete</button>
+            </div>
+        </div>
+
+        <!-- Test 5: Center of Gravity Visualization -->
+        <div class="test-section" data-test-id="5">
+            <div class="test-header" onclick="toggleTest(5)">
+                <span class="test-status">🔴 Test 5: Center of Gravity Analysis</span>
+                <button class="collapsible-toggle">▼</button>
+            </div>
+            <div class="test-content">
+                <div class="test-step">
+                    <strong>Step 1:</strong> Unbalanced pattern: <span class="input-example">11100000</span>
+                    <div class="expected-result">
+                        CoG visualization should show:<br>
+                        • Gray dots at all 8 step positions<br>
+                        • Green dots only at positions 0, 1, 2<br>
+                        • CoG point significantly offset from center<br>
+                        • Line pointing at 45° (toward geometric center of cluster)<br>
+                        • Balance Quality: Poor (magnitude ≈ 0.805)
+                    </div>
+                    <div class="mathematical-note">
+                        The CoG points toward the geometric center of the onset cluster, not the first onset. For onsets at 0°, 45°, 90°, the center is at 45°.
+                    </div>
+                </div>
+                
+                <div class="test-step">
+                    <strong>Step 2:</strong> Perfectly balanced pattern: <span class="input-example">P(3,1) + P(5,0) + P(2,5)</span>
+                    <div class="expected-result">
+                        CoG visualization should show:<br>
+                        • Gray dots at all 30 step positions<br>
+                        • Green dots at onset positions only<br>
+                        • CoG point exactly at center (on black dot)<br>
+                        • No line visible (perfect balance)
+                    </div>
+                </div>
+                
+                <div class="test-step">
+                    <strong>Step 3:</strong> Good balance: <span class="input-example">E(3,8,0)</span>
+                    <div class="expected-result">
+                        CoG visualization should show:<br>
+                        • 8 gray step markers<br>
+                        • 3 green onset dots well distributed<br>
+                        • Small CoG offset with faded line<br>
+                        • Balance Quality: Good
+                    </div>
+                </div>
+                
+                <button class="button" onclick="markTestComplete(5)">Mark Test 5 Complete</button>
+            </div>
+        </div>
+
+        <!-- Test 6: Database Operations -->
+        <div class="test-section" data-test-id="6">
+            <div class="test-header" onclick="toggleTest(6)">
+                <span class="test-status">🔴 Test 6: Pattern Database Management</span>
+                <button class="collapsible-toggle">▼</button>
+            </div>
+            <div class="test-content">
+                <div class="test-step">
+                    <strong>Step 1:</strong> Add patterns to database
+                    <div class="expected-result">
+                        Parse any pattern and click "Add to Database"<br>
+                        Should see: "✅ Pattern added to database with ID: ..."<br>
+                        Pattern appears in database list below
+                    </div>
+                </div>
+                
+                <div class="test-step">
+                    <strong>Step 2:</strong> Test search functionality
+                    <div class="expected-result">
+                        Type "Triangle" in search box<br>
+                        Should filter to show only triangle patterns<br>
+                        Try binary search: type "111"<br>
+                        Should show patterns containing that sequence
+                    </div>
+                </div>
+                
+                <div class="test-step">
+                    <strong>Step 3:</strong> Test filtering
+                    <div class="expected-result">
+                        Use filter dropdown to select "Perfect Balance"<br>
+                        Should show only perfectly balanced patterns<br>
+                        Try "Polygons" filter for polygon-generated patterns
+                    </div>
+                </div>
+                
+                <div class="test-step">
+                    <strong>Step 4:</strong> Database statistics
+                    <div class="expected-result">
+                        Statistics should update as you add patterns:<br>
+                        • Total Patterns count<br>
+                        • Perfect Balance count<br>
+                        • Favorites, Polygons, etc.
+                    </div>
+                </div>
+                
+                <button class="button" onclick="markTestComplete(6)">Mark Test 6 Complete</button>
+            </div>
+        </div>
+
+        <!-- Test 7: Perfect Balance Exploration -->
+        <div class="test-section" data-test-id="7">
+            <div class="test-header" onclick="toggleTest(7)">
+                <span class="test-status">🔴 Test 7: Perfect Balance Discovery</span>
+                <button class="collapsible-toggle">▼</button>
+            </div>
+            <div class="test-content">
+                <div class="warning">
+                    This test may take 30-60 seconds to complete
+                </div>
+                
+                <div class="test-step">
+                    <strong>Step 1:</strong> Configure exploration
+                    <div class="expected-result">
+                        Set: Min Sides: 3, Max Sides: 6, Max Combinations: 3<br>
+                        Click "Find Perfect Balance Patterns"<br>
+                        Should see progress bar and combination counter
+                    </div>
+                </div>
+                
+                <div class="test-step">
+                    <strong>Step 2:</strong> Monitor progress
+                    <div class="expected-result">
+                        Progress bar should advance<br>
+                        Console should show: "Starting perfect balance exploration..."<br>
+                        Then: "Exploration complete: X perfect balance patterns found"
+                    </div>
+                </div>
+                
+                <div class="test-step">
+                    <strong>Step 3:</strong> Review results
+                    <div class="expected-result">
+                        Found patterns should be added to database<br>
+                        Each should have Balance Score: Perfect<br>
+                        Multiple polygon combinations achieving perfect balance
+                    </div>
+                </div>
+                
+                <button class="button" onclick="markTestComplete(7)">Mark Test 7 Complete</button>
+            </div>
+        </div>
+
+        <!-- Test 8: Report Generation -->
+        <div class="test-section" data-test-id="8">
+            <div class="test-header" onclick="toggleTest(8)">
+                <span class="test-status">🔴 Test 8: Analysis Report Generation</span>
+                <button class="collapsible-toggle">▼</button>
+            </div>
+            <div class="test-content">
+                <div class="test-step">
+                    <strong>Step 1:</strong> Generate comprehensive report
+                    <div class="expected-result">
+                        Click "Generate Perfect Balance Report"<br>
+                        Should open modal with detailed analysis<br>
+                        Report includes: database stats, perfect patterns, analysis
+                    </div>
+                </div>
+                
+                <div class="test-step">
+                    <strong>Step 2:</strong> Copy report functionality
+                    <div class="expected-result">
+                        Click "Copy Report" button in modal<br>
+                        Button should change to "Copied!" temporarily<br>
+                        Report text should be in clipboard
+                    </div>
+                </div>
+                
+                <div class="test-step">
+                    <strong>Step 3:</strong> Review report content
+                    <div class="expected-result">
+                        Report should include:<br>
+                        • Database statistics summary<br>
+                        • List of perfect balance patterns<br>
+                        • Mathematical analysis details<br>
+                        • Timestamp and pattern counts
+                    </div>
+                </div>
+                
+                <button class="button" onclick="markTestComplete(8)">Mark Test 8 Complete</button>
+            </div>
+        </div>
+
+        <!-- Test 9: Import/Export -->
+        <div class="test-section" data-test-id="9">
+            <div class="test-header" onclick="toggleTest(9)">
+                <span class="test-status">🔴 Test 9: Database Import/Export</span>
+                <button class="collapsible-toggle">▼</button>
+            </div>
+            <div class="test-content">
+                <div class="test-step">
+                    <strong>Step 1:</strong> Export database
+                    <div class="expected-result">
+                        Click "Export Database"<br>
+                        Should open modal with JSON data<br>
+                        Contains all stored patterns in JSON format
+                    </div>
+                </div>
+                
+                <div class="test-step">
+                    <strong>Step 2:</strong> Copy export data
+                    <div class="expected-result">
+                        Click "Copy All Data" in export modal<br>
+                        JSON data should be copied to clipboard<br>
+                        Can be saved as .json file externally
+                    </div>
+                </div>
+                
+                <div class="test-step">
+                    <strong>Step 3:</strong> Test import functionality
+                    <div class="expected-result">
+                        Click "Import Database"<br>
+                        Paste previously copied JSON<br>
+                        Click "Import" - patterns should be restored
+                    </div>
+                </div>
+                
+                <button class="button" onclick="markTestComplete(9)">Mark Test 9 Complete</button>
+            </div>
+        </div>
+
+        <!-- Test 10: Error Handling -->
+        <div class="test-section" data-test-id="10">
+            <div class="test-header" onclick="toggleTest(10)">
+                <span class="test-status">🔴 Test 10: Error Handling & Edge Cases</span>
+                <button class="collapsible-toggle">▼</button>
+            </div>
+            <div class="test-content">
+                <div class="test-step">
+                    <strong>Step 1:</strong> Invalid polygon input: <span class="input-example">P(100,0)</span>
+                    <div class="expected-result">
+                        Should show error: "Vertices must be between 2 and 32"<br>
+                        No pattern should be generated
+                    </div>
+                </div>
+                
+                <div class="test-step">
+                    <strong>Step 2:</strong> Invalid binary: <span class="input-example">102010</span>
+                    <div class="expected-result">
+                        Should show error about unrecognized pattern format<br>
+                        Binary should only contain 0s and 1s
+                    </div>
+                </div>
+                
+                <div class="test-step">
+                    <strong>Step 3:</strong> Invalid combination: <span class="input-example">P(3,0) +</span>
+                    <div class="expected-result">
+                        Should show error about incomplete combination syntax<br>
+                        Combinations need patterns on both sides of +
+                    </div>
+                </div>
+                
+                <div class="test-step">
+                    <strong>Step 4:</strong> Empty input
+                    <div class="expected-result">
+                        Should show appropriate error message<br>
+                        Application should remain stable
+                    </div>
+                </div>
+                
+                <button class="button" onclick="markTestComplete(10)">Mark Test 10 Complete</button>
+            </div>
+        </div>
+
+        <!-- Test 11: Pattern Analysis Features -->
+        <div class="test-section" data-test-id="11">
+            <div class="test-header" onclick="toggleTest(11)">
+                <span class="test-status">🔴 Test 11: Advanced Pattern Analysis</span>
+                <button class="collapsible-toggle">▼</button>
+            </div>
+            <div class="test-content">
+                <div class="test-step">
+                    <strong>Step 1:</strong> Repetitive pattern: <span class="input-example">10101010</span>
+                    <div class="expected-result">
+                        Analysis should detect:<br>
+                        • Unit Length: 2 (pattern "10" repeats 4 times)<br>
+                        • Compression Ratio: 4:1<br>
+                        • High regularity score
+                    </div>
+                </div>
+                
+                <div class="test-step">
+                    <strong>Step 2:</strong> Complex balance analysis: <span class="input-example">P(7,0)</span>
+                    <div class="expected-result">
+                        Should show:<br>
+                        • Balance Score: Perfect<br>
+                        • 7 beats, 100% density<br>
+                        • CoG at exact center<br>
+                        • Perfect geometric distribution
+                    </div>
+                </div>
+                
+                <div class="test-step">
+                    <strong>Step 3:</strong> Structure analysis
+                    <div class="expected-result">
+                        For any pattern, should display:<br>
+                        • Step count and onset count<br>
+                        • Density percentage<br>
+                        • Maximum silence gap<br>
+                        • Average onset interval
+                    </div>
+                </div>
+                
+                <button class="button" onclick="markTestComplete(11)">Mark Test 11 Complete</button>
+            </div>
+        </div>
+
+        <!-- Test 12: Performance & Reliability -->
+        <div class="test-section" data-test-id="12">
+            <div class="test-header" onclick="toggleTest(12)">
+                <span class="test-status">🔴 Test 12: Performance & Reliability</span>
+                <button class="collapsible-toggle">▼</button>
+            </div>
+            <div class="test-content">
+                <div class="test-step">
+                    <strong>Step 1:</strong> Large pattern handling: <span class="input-example">P(16,0,4)</span>
+                    <div class="expected-result">
+                        Should handle 64-step pattern (maximum size)<br>
+                        Analysis should complete within 1-2 seconds<br>
+                        Visualization should render properly
+                    </div>
+                </div>
+                
+                <div class="test-step">
+                    <strong>Step 2:</strong> Rapid input testing
+                    <div class="expected-result">
+                        Quickly enter multiple patterns in succession<br>
+                        Application should remain responsive<br>
+                        No memory leaks or performance degradation
+                    </div>
+                </div>
+                
+                <div class="test-step">
+                    <strong>Step 3:</strong> Browser refresh test
+                    <div class="expected-result">
+                        Refresh the browser page<br>
+                        Database patterns should persist (localStorage)<br>
+                        Application should reinitialize properly
+                    </div>
+                </div>
+                
+                <div class="test-step">
+                    <strong>Step 4:</strong> Complex exploration
+                    <div class="expected-result">
+                        Run exploration with Max Sides: 8, Max Combinations: 4<br>
+                        Should complete without crashes<br>
+                        Progress updates should be smooth
+                    </div>
+                </div>
+                
+                <button class="button" onclick="markTestComplete(12)">Mark Test 12 Complete</button>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+            <h3>🎉 Test Suite Complete!</h3>
+            <p>Congratulations on thoroughly testing the Rhythm Pattern Explorer!</p>
+            <p>You've verified all core functionality, edge cases, and performance characteristics.</p>
+            <button class="button success" onclick="resetAllTests()">🔄 Reset All Tests</button>
+        </div>
+    </div>
+
+    <script>
+        let completedTests = new Set();
+        const totalTests = 12;
+
+        function toggleTest(testId) {
+            const section = document.querySelector(`[data-test-id="${testId}"]`);
+            const content = section.querySelector('.test-content');
+            const toggle = section.querySelector('.collapsible-toggle');
+            
+            if (content.classList.contains('active')) {
+                content.classList.remove('active');
+                toggle.textContent = '▼';
+            } else {
+                content.classList.add('active');
+                toggle.textContent = '▲';
+            }
+        }
+
+        function markTestComplete(testId) {
+            completedTests.add(testId);
+            
+            const section = document.querySelector(`[data-test-id="${testId}"]`);
+            section.classList.add('completed');
+            
+            const status = section.querySelector('.test-status');
+            status.textContent = status.textContent.replace('🔴', '🟢');
+            
+            const button = section.querySelector('.button');
+            button.textContent = '✅ Test Completed';
+            button.classList.add('success');
+            button.disabled = true;
+            
+            updateProgress();
+        }
+
+        function updateProgress() {
+            const completed = completedTests.size;
+            const percentage = Math.round((completed / totalTests) * 100);
+            
+            document.getElementById('completedTests').textContent = completed;
+            document.getElementById('progressPercent').textContent = percentage + '%';
+            document.getElementById('progressFill').style.width = percentage + '%';
+            
+            // Auto-collapse completed tests after a delay
+            setTimeout(() => {
+                document.querySelectorAll('.test-section.completed .test-content.active').forEach(content => {
+                    const testSection = content.closest('.test-section');
+                    const toggle = testSection.querySelector('.collapsible-toggle');
+                    content.classList.remove('active');
+                    toggle.textContent = '▼';
+                });
+            }, 2000);
+        }
+
+        function resetAllTests() {
+            completedTests.clear();
+            
+            document.querySelectorAll('.test-section').forEach(section => {
+                section.classList.remove('completed');
+                
+                const status = section.querySelector('.test-status');
+                status.textContent = status.textContent.replace('🟢', '🔴');
+                
+                const button = section.querySelector('.button');
+                const testId = section.dataset.testId;
+                button.textContent = `Mark Test ${testId} Complete`;
+                button.classList.remove('success');
+                button.disabled = false;
+                
+                const content = section.querySelector('.test-content');
+                content.classList.remove('active');
+                
+                const toggle = section.querySelector('.collapsible-toggle');
+                toggle.textContent = '▼';
+            });
+            
+            updateProgress();
+        }
+
+        // Initialize
+        updateProgress();
+        
+        // Auto-open first test
+        toggleTest(1);
+    </script>
+</body>
+</html>

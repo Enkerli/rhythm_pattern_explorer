@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Shorthand Fix</title>
+</head>
+<body>
+    <h1>Test Shorthand Polygon Offset Fix</h1>
+    <div id="output"></div>
+
+    <script src="math-core.js"></script>
+    <script src="pattern-generators.js"></script>
+    <script src="pattern-processing.js"></script>
+    <script>
+        const output = document.getElementById('output');
+        
+        function testPattern(input, expected, description) {
+            try {
+                const result = UnifiedPatternParser.parse(input);
+                let binary;
+                
+                if (result.type === 'combination') {
+                    binary = PatternConverter.toBinary(result.combined.steps, result.combined.stepCount);
+                } else {
+                    binary = PatternConverter.toBinary(result.pattern.steps, result.pattern.stepCount);
+                }
+                
+                const success = binary === expected;
+                console.log(`${description}: ${input} = ${binary} ${success ? '✅' : '❌'}`);
+                
+                const div = document.createElement('div');
+                div.innerHTML = `
+                    <p><strong>${description}:</strong> ${input}</p>
+                    <p>Result: ${binary} ${success ? '✅' : '❌'}</p>
+                    <p>Expected: ${expected}</p>
+                    <hr>
+                `;
+                div.style.color = success ? 'green' : 'red';
+                output.appendChild(div);
+                
+                return success;
+            } catch (error) {
+                console.error(`Error testing ${input}:`, error);
+                const div = document.createElement('div');
+                div.innerHTML = `<p><strong>ERROR:</strong> ${input} - ${error.message}</p><hr>`;
+                div.style.color = 'red';
+                output.appendChild(div);
+                return false;
+            }
+        }
+        
+        console.log('Testing shorthand polygon offset fix...');
+        
+        // Test that P() notation and shorthand notation now produce the same results
+        const tests = [
+            ['P(3,1)', '010100100', 'P(3,1) individual'],
+            ['triangle@1', '010100100', 'triangle@1 individual'],
+            ['P(5,0)', '10001', 'P(5,0) individual'],
+            ['pentagon', '10001', 'pentagon individual'],
+            ['P(3,1)+P(5,0)', '100101100110100', 'P(3,1)+P(5,0) combination'],
+            ['triangle@1+pentagon', '100101100110100', 'triangle@1+pentagon combination (should match above)']
+        ];
+        
+        let passed = 0;
+        let total = tests.length;
+        
+        tests.forEach(([input, expected, description]) => {
+            if (testPattern(input, expected, description)) {
+                passed++;
+            }
+        });
+        
+        const summary = document.createElement('div');
+        summary.innerHTML = `<h2>Summary: ${passed}/${total} tests passed</h2>`;
+        summary.style.color = passed === total ? 'green' : 'red';
+        output.appendChild(summary);
+        
+        console.log(`Test Summary: ${passed}/${total} tests passed`);
+    </script>
+</body>
+</html>

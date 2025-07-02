@@ -1,0 +1,171 @@
+2025-07-01 02:26:30,273 - WARNING - MIDI not available - bridge will run in simulation mode
+2025-07-01 02:26:30,274 - INFO - iPad MIDI Bridge Diagnostic initialized
+2025-07-01 02:26:30,274 - INFO - iPad IP: 10.0.0.170
+2025-07-01 02:26:30,274 - INFO - Platform: Darwin 24.6.0
+2025-07-01 02:26:30,274 - INFO - 🚀 Starting WebSocket server on 10.0.0.170:8080
+2025-07-01 02:26:30,305 - INFO - server listening on 0.0.0.0:8080
+2025-07-01 02:26:30,305 - INFO - ✅ WebSocket server ready
+2025-07-01 02:26:30,305 - INFO - 
+2025-07-01 02:26:30,305 - INFO - iPad MIDI Bridge - DIAGNOSTIC MODE
+2025-07-01 02:26:30,305 - INFO - ============================================================
+2025-07-01 02:26:30,305 - INFO - 📱 iPad IP Address: 10.0.0.170
+2025-07-01 02:26:30,305 - INFO - 🌐 WebSocket URL: ws://10.0.0.170:8080
+2025-07-01 02:26:30,305 - INFO - 🐍 Platform: Darwin 24.6.0
+2025-07-01 02:26:30,305 - INFO - 
+2025-07-01 02:26:30,305 - INFO - ⚠️  MIDI Output: SIMULATION ONLY
+2025-07-01 02:26:30,305 - INFO - 
+2025-07-01 02:26:30,305 - INFO - 🎹 iOS Network Session Setup:
+2025-07-01 02:26:30,305 - INFO - 1. Open iOS Settings
+2025-07-01 02:26:30,305 - INFO - 2. Go to General > AirPlay & Handoff
+2025-07-01 02:26:30,305 - INFO - 3. Enable 'Network MIDI'
+2025-07-01 02:26:30,305 - INFO - 4. Or: Settings > MIDI > Enable Network Session
+2025-07-01 02:26:30,305 - INFO - 5. Verify 'Network Session 1' appears in MIDI apps
+2025-07-01 02:26:30,305 - INFO - 
+2025-07-01 02:26:30,305 - INFO - 🧪 Test with iOS MIDI Apps:
+2025-07-01 02:26:30,305 - INFO - - GarageBand: Check if it receives MIDI
+2025-07-01 02:26:30,305 - INFO - - AUM: Monitor MIDI input
+2025-07-01 02:26:30,305 - INFO - - MIDI apps: Look for 'Network Session 1' input
+2025-07-01 02:26:30,305 - INFO - 
+2025-07-01 02:26:30,305 - INFO - 📊 Monitoring:
+2025-07-01 02:26:30,305 - INFO - - All WebSocket messages will be logged
+2025-07-01 02:26:30,305 - INFO - - MIDI send attempts will be detailed
+2025-07-01 02:26:30,305 - INFO - - Errors will include full traceback
+2025-07-01 02:26:30,305 - INFO - - Log file: ipad-midi-bridge.log
+2025-07-01 02:26:30,305 - INFO - 
+2025-07-01 02:26:30,305 - INFO - Ready! Press Ctrl+C to stop
+2025-07-01 02:26:30,306 - INFO - ============================================================
+2025-07-01 02:27:00,307 - INFO - 📊 Status: 0 clients, 0 messages, 0 MIDI messages
+2025-07-01 02:27:00,683 - INFO - connection open
+2025-07-01 02:27:00,683 - INFO - 🌐 WebSocket client connected from 127.0.0.1
+2025-07-01 02:27:00,683 - INFO - Total clients: 1
+2025-07-01 02:27:03,674 - INFO - 📨 Received message #1: {'address': '/midi/note', 'args': [{'type': 'i', 'value': 1}, {'type': 'i', 'value': 36}, {'type': 'i', 'value': 100}]}
+2025-07-01 02:27:03,674 - INFO - 🔍 Processing message: {'address': '/midi/note', 'args': [{'type': 'i', 'value': 1}, {'type': 'i', 'value': 36}, {'type': 'i', 'value': 100}]}
+2025-07-01 02:27:03,674 - INFO - 🎵 MIDI Note Message #1:
+2025-07-01 02:27:03,674 - INFO -    Channel: 0 (0-15) / 1 (1-16)
+2025-07-01 02:27:03,674 - INFO -    Note: 36 (C2)
+2025-07-01 02:27:03,674 - INFO -    Velocity: 100
+2025-07-01 02:27:03,675 - INFO -    Type: Note On
+2025-07-01 02:27:03,675 - INFO - 🎵 [SIMULATION] Note On: Ch1 Note36 (C2) Vel100
+2025-07-01 02:27:03,774 - INFO - 📨 Received message #2: {'address': '/midi/note', 'args': [{'type': 'i', 'value': 1}, {'type': 'i', 'value': 36}, {'type': 'i', 'value': 0}]}
+2025-07-01 02:27:03,774 - INFO - 🔍 Processing message: {'address': '/midi/note', 'args': [{'type': 'i', 'value': 1}, {'type': 'i', 'value': 36}, {'type': 'i', 'value': 0}]}
+2025-07-01 02:27:03,774 - INFO - 🎵 MIDI Note Message #2:
+2025-07-01 02:27:03,774 - INFO -    Channel: 0 (0-15) / 1 (1-16)
+2025-07-01 02:27:03,774 - INFO -    Note: 36 (C2)
+2025-07-01 02:27:03,774 - INFO -    Velocity: 0
+2025-07-01 02:27:03,774 - INFO -    Type: Note Off
+2025-07-01 02:27:03,775 - INFO - 🎵 [SIMULATION] Note Off: Ch1 Note36 (C2)
+2025-07-01 02:27:03,955 - INFO - 📨 Received message #3: {'address': '/midi/note', 'args': [{'type': 'i', 'value': 1}, {'type': 'i', 'value': 36}, {'type': 'i', 'value': 100}]}
+2025-07-01 02:27:03,956 - INFO - 🔍 Processing message: {'address': '/midi/note', 'args': [{'type': 'i', 'value': 1}, {'type': 'i', 'value': 36}, {'type': 'i', 'value': 100}]}
+2025-07-01 02:27:03,956 - INFO - 🎵 MIDI Note Message #3:
+2025-07-01 02:27:03,956 - INFO -    Channel: 0 (0-15) / 1 (1-16)
+2025-07-01 02:27:03,956 - INFO -    Note: 36 (C2)
+2025-07-01 02:27:03,956 - INFO -    Velocity: 100
+2025-07-01 02:27:03,956 - INFO -    Type: Note On
+2025-07-01 02:27:03,956 - INFO - 🎵 [SIMULATION] Note On: Ch1 Note36 (C2) Vel100
+2025-07-01 02:27:04,056 - INFO - 📨 Received message #4: {'address': '/midi/note', 'args': [{'type': 'i', 'value': 1}, {'type': 'i', 'value': 36}, {'type': 'i', 'value': 0}]}
+2025-07-01 02:27:04,056 - INFO - 🔍 Processing message: {'address': '/midi/note', 'args': [{'type': 'i', 'value': 1}, {'type': 'i', 'value': 36}, {'type': 'i', 'value': 0}]}
+2025-07-01 02:27:04,056 - INFO - 🎵 MIDI Note Message #4:
+2025-07-01 02:27:04,056 - INFO -    Channel: 0 (0-15) / 1 (1-16)
+2025-07-01 02:27:04,056 - INFO -    Note: 36 (C2)
+2025-07-01 02:27:04,057 - INFO -    Velocity: 0
+2025-07-01 02:27:04,057 - INFO -    Type: Note Off
+2025-07-01 02:27:04,057 - INFO - 🎵 [SIMULATION] Note Off: Ch1 Note36 (C2)
+2025-07-01 02:27:04,315 - INFO - 📨 Received message #5: {'address': '/midi/note', 'args': [{'type': 'i', 'value': 1}, {'type': 'i', 'value': 36}, {'type': 'i', 'value': 100}]}
+2025-07-01 02:27:04,316 - INFO - 🔍 Processing message: {'address': '/midi/note', 'args': [{'type': 'i', 'value': 1}, {'type': 'i', 'value': 36}, {'type': 'i', 'value': 100}]}
+2025-07-01 02:27:04,316 - INFO - 🎵 MIDI Note Message #5:
+2025-07-01 02:27:04,316 - INFO -    Channel: 0 (0-15) / 1 (1-16)
+2025-07-01 02:27:04,316 - INFO -    Note: 36 (C2)
+2025-07-01 02:27:04,316 - INFO -    Velocity: 100
+2025-07-01 02:27:04,316 - INFO -    Type: Note On
+2025-07-01 02:27:04,316 - INFO - 🎵 [SIMULATION] Note On: Ch1 Note36 (C2) Vel100
+2025-07-01 02:27:04,416 - INFO - 📨 Received message #6: {'address': '/midi/note', 'args': [{'type': 'i', 'value': 1}, {'type': 'i', 'value': 36}, {'type': 'i', 'value': 0}]}
+2025-07-01 02:27:04,416 - INFO - 🔍 Processing message: {'address': '/midi/note', 'args': [{'type': 'i', 'value': 1}, {'type': 'i', 'value': 36}, {'type': 'i', 'value': 0}]}
+2025-07-01 02:27:04,416 - INFO - 🎵 MIDI Note Message #6:
+2025-07-01 02:27:04,416 - INFO -    Channel: 0 (0-15) / 1 (1-16)
+2025-07-01 02:27:04,416 - INFO -    Note: 36 (C2)
+2025-07-01 02:27:04,416 - INFO -    Velocity: 0
+2025-07-01 02:27:04,416 - INFO -    Type: Note Off
+2025-07-01 02:27:04,416 - INFO - 🎵 [SIMULATION] Note Off: Ch1 Note36 (C2)
+2025-07-01 02:27:04,572 - INFO - 📨 Received message #7: {'address': '/midi/note', 'args': [{'type': 'i', 'value': 1}, {'type': 'i', 'value': 36}, {'type': 'i', 'value': 100}]}
+2025-07-01 02:27:04,572 - INFO - 🔍 Processing message: {'address': '/midi/note', 'args': [{'type': 'i', 'value': 1}, {'type': 'i', 'value': 36}, {'type': 'i', 'value': 100}]}
+2025-07-01 02:27:04,572 - INFO - 🎵 MIDI Note Message #7:
+2025-07-01 02:27:04,572 - INFO -    Channel: 0 (0-15) / 1 (1-16)
+2025-07-01 02:27:04,572 - INFO -    Note: 36 (C2)
+2025-07-01 02:27:04,572 - INFO -    Velocity: 100
+2025-07-01 02:27:04,573 - INFO -    Type: Note On
+2025-07-01 02:27:04,573 - INFO - 🎵 [SIMULATION] Note On: Ch1 Note36 (C2) Vel100
+2025-07-01 02:27:04,672 - INFO - 📨 Received message #8: {'address': '/midi/note', 'args': [{'type': 'i', 'value': 1}, {'type': 'i', 'value': 36}, {'type': 'i', 'value': 0}]}
+2025-07-01 02:27:04,672 - INFO - 🔍 Processing message: {'address': '/midi/note', 'args': [{'type': 'i', 'value': 1}, {'type': 'i', 'value': 36}, {'type': 'i', 'value': 0}]}
+2025-07-01 02:27:04,672 - INFO - 🎵 MIDI Note Message #8:
+2025-07-01 02:27:04,673 - INFO -    Channel: 0 (0-15) / 1 (1-16)
+2025-07-01 02:27:04,673 - INFO -    Note: 36 (C2)
+2025-07-01 02:27:04,673 - INFO -    Velocity: 0
+2025-07-01 02:27:04,673 - INFO -    Type: Note Off
+2025-07-01 02:27:04,673 - INFO - 🎵 [SIMULATION] Note Off: Ch1 Note36 (C2)
+2025-07-01 02:27:04,956 - INFO - 📨 Received message #9: {'address': '/midi/note', 'args': [{'type': 'i', 'value': 1}, {'type': 'i', 'value': 36}, {'type': 'i', 'value': 100}]}
+2025-07-01 02:27:04,956 - INFO - 🔍 Processing message: {'address': '/midi/note', 'args': [{'type': 'i', 'value': 1}, {'type': 'i', 'value': 36}, {'type': 'i', 'value': 100}]}
+2025-07-01 02:27:04,957 - INFO - 🎵 MIDI Note Message #9:
+2025-07-01 02:27:04,957 - INFO -    Channel: 0 (0-15) / 1 (1-16)
+2025-07-01 02:27:04,957 - INFO -    Note: 36 (C2)
+2025-07-01 02:27:04,957 - INFO -    Velocity: 100
+2025-07-01 02:27:04,957 - INFO -    Type: Note On
+2025-07-01 02:27:04,957 - INFO - 🎵 [SIMULATION] Note On: Ch1 Note36 (C2) Vel100
+2025-07-01 02:27:05,056 - INFO - 📨 Received message #10: {'address': '/midi/note', 'args': [{'type': 'i', 'value': 1}, {'type': 'i', 'value': 36}, {'type': 'i', 'value': 0}]}
+2025-07-01 02:27:05,056 - INFO - 🔍 Processing message: {'address': '/midi/note', 'args': [{'type': 'i', 'value': 1}, {'type': 'i', 'value': 36}, {'type': 'i', 'value': 0}]}
+2025-07-01 02:27:05,057 - INFO - 🎵 MIDI Note Message #10:
+2025-07-01 02:27:05,057 - INFO -    Channel: 0 (0-15) / 1 (1-16)
+2025-07-01 02:27:05,057 - INFO -    Note: 36 (C2)
+2025-07-01 02:27:05,057 - INFO -    Velocity: 0
+2025-07-01 02:27:05,057 - INFO -    Type: Note Off
+2025-07-01 02:27:05,057 - INFO - 🎵 [SIMULATION] Note Off: Ch1 Note36 (C2)
+2025-07-01 02:27:05,341 - INFO - 📨 Received message #11: {'address': '/midi/note', 'args': [{'type': 'i', 'value': 1}, {'type': 'i', 'value': 36}, {'type': 'i', 'value': 100}]}
+2025-07-01 02:27:05,341 - INFO - 🔍 Processing message: {'address': '/midi/note', 'args': [{'type': 'i', 'value': 1}, {'type': 'i', 'value': 36}, {'type': 'i', 'value': 100}]}
+2025-07-01 02:27:05,341 - INFO - 🎵 MIDI Note Message #11:
+2025-07-01 02:27:05,342 - INFO -    Channel: 0 (0-15) / 1 (1-16)
+2025-07-01 02:27:05,342 - INFO -    Note: 36 (C2)
+2025-07-01 02:27:05,342 - INFO -    Velocity: 100
+2025-07-01 02:27:05,342 - INFO -    Type: Note On
+2025-07-01 02:27:05,342 - INFO - 🎵 [SIMULATION] Note On: Ch1 Note36 (C2) Vel100
+2025-07-01 02:27:05,441 - INFO - 📨 Received message #12: {'address': '/midi/note', 'args': [{'type': 'i', 'value': 1}, {'type': 'i', 'value': 36}, {'type': 'i', 'value': 0}]}
+2025-07-01 02:27:05,441 - INFO - 🔍 Processing message: {'address': '/midi/note', 'args': [{'type': 'i', 'value': 1}, {'type': 'i', 'value': 36}, {'type': 'i', 'value': 0}]}
+2025-07-01 02:27:05,442 - INFO - 🎵 MIDI Note Message #12:
+2025-07-01 02:27:05,442 - INFO -    Channel: 0 (0-15) / 1 (1-16)
+2025-07-01 02:27:05,442 - INFO -    Note: 36 (C2)
+2025-07-01 02:27:05,442 - INFO -    Velocity: 0
+2025-07-01 02:27:05,442 - INFO -    Type: Note Off
+2025-07-01 02:27:05,442 - INFO - 🎵 [SIMULATION] Note Off: Ch1 Note36 (C2)
+2025-07-01 02:27:05,597 - INFO - 📨 Received message #13: {'address': '/midi/note', 'args': [{'type': 'i', 'value': 1}, {'type': 'i', 'value': 36}, {'type': 'i', 'value': 100}]}
+2025-07-01 02:27:05,598 - INFO - 🔍 Processing message: {'address': '/midi/note', 'args': [{'type': 'i', 'value': 1}, {'type': 'i', 'value': 36}, {'type': 'i', 'value': 100}]}
+2025-07-01 02:27:05,598 - INFO - 🎵 MIDI Note Message #13:
+2025-07-01 02:27:05,598 - INFO -    Channel: 0 (0-15) / 1 (1-16)
+2025-07-01 02:27:05,598 - INFO -    Note: 36 (C2)
+2025-07-01 02:27:05,598 - INFO -    Velocity: 100
+2025-07-01 02:27:05,598 - INFO -    Type: Note On
+2025-07-01 02:27:05,598 - INFO - 🎵 [SIMULATION] Note On: Ch1 Note36 (C2) Vel100
+2025-07-01 02:27:05,698 - INFO - 📨 Received message #14: {'address': '/midi/note', 'args': [{'type': 'i', 'value': 1}, {'type': 'i', 'value': 36}, {'type': 'i', 'value': 0}]}
+2025-07-01 02:27:05,699 - INFO - 🔍 Processing message: {'address': '/midi/note', 'args': [{'type': 'i', 'value': 1}, {'type': 'i', 'value': 36}, {'type': 'i', 'value': 0}]}
+2025-07-01 02:27:05,699 - INFO - 🎵 MIDI Note Message #14:
+2025-07-01 02:27:05,699 - INFO -    Channel: 0 (0-15) / 1 (1-16)
+2025-07-01 02:27:05,699 - INFO -    Note: 36 (C2)
+2025-07-01 02:27:05,699 - INFO -    Velocity: 0
+2025-07-01 02:27:05,699 - INFO -    Type: Note Off
+2025-07-01 02:27:05,699 - INFO - 🎵 [SIMULATION] Note Off: Ch1 Note36 (C2)
+2025-07-01 02:27:05,955 - INFO - 📨 Received message #15: {'address': '/midi/note', 'args': [{'type': 'i', 'value': 1}, {'type': 'i', 'value': 36}, {'type': 'i', 'value': 100}]}
+2025-07-01 02:27:05,955 - INFO - 🔍 Processing message: {'address': '/midi/note', 'args': [{'type': 'i', 'value': 1}, {'type': 'i', 'value': 36}, {'type': 'i', 'value': 100}]}
+2025-07-01 02:27:05,956 - INFO - 🎵 MIDI Note Message #15:
+2025-07-01 02:27:05,956 - INFO -    Channel: 0 (0-15) / 1 (1-16)
+2025-07-01 02:27:05,956 - INFO -    Note: 36 (C2)
+2025-07-01 02:27:05,956 - INFO -    Velocity: 100
+2025-07-01 02:27:05,956 - INFO -    Type: Note On
+2025-07-01 02:27:05,956 - INFO - 🎵 [SIMULATION] Note On: Ch1 Note36 (C2) Vel100
+2025-07-01 02:27:06,056 - INFO - 📨 Received message #16: {'address': '/midi/note', 'args': [{'type': 'i', 'value': 1}, {'type': 'i', 'value': 36}, {'type': 'i', 'value': 0}]}
+2025-07-01 02:27:06,056 - INFO - 🔍 Processing message: {'address': '/midi/note', 'args': [{'type': 'i', 'value': 1}, {'type': 'i', 'value': 36}, {'type': 'i', 'value': 0}]}
+2025-07-01 02:27:06,057 - INFO - 🎵 MIDI Note Message #16:
+2025-07-01 02:27:06,057 - INFO -    Channel: 0 (0-15) / 1 (1-16)
+2025-07-01 02:27:06,057 - INFO -    Note: 36 (C2)
+2025-07-01 02:27:06,057 - INFO -    Velocity: 0
+2025-07-01 02:27:06,057 - INFO -    Type: Note Off
+2025-07-01 02:27:06,057 - INFO - 🎵 [SIMULATION] Note Off: Ch1 Note36 (C2)
+2025-07-01 02:27:30,309 - INFO - server closing
+2025-07-01 02:27:30,310 - INFO - server closed
+2025-07-01 02:27:30,310 - INFO - 🛑 iPad MIDI Bridge Diagnostic closed

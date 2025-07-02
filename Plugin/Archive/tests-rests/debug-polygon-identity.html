@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Polygon Identity</title>
+</head>
+<body>
+    <h1>Debug Polygon Identity in Combinations</h1>
+    <div id="output"></div>
+
+    <script src="math-core.js"></script>
+    <script src="pattern-generators.js"></script>
+    <script src="pattern-processing.js"></script>
+    <script>
+        const output = document.getElementById('output');
+        
+        function debugPattern(input, description) {
+            console.log(`\n=== ${description}: ${input} ===`);
+            
+            try {
+                const result = UnifiedPatternParser.parse(input);
+                
+                if (result.type === 'combination') {
+                    console.log('Checking each pattern in combination:');
+                    result.patterns.forEach((p, i) => {
+                        const inputPart = input.split('+')[i]?.trim();
+                        console.log(`Pattern ${i + 1} (${inputPart}):`, {
+                            isRegularPolygon: p.isRegularPolygon,
+                            vertices: p.vertices,
+                            offset: p.offset,
+                            polygonType: p.polygonType,
+                            formula: p.formula,
+                            steps: PatternConverter.toBinary(p.steps, p.stepCount)
+                        });
+                        
+                        // Explicitly log the key properties
+                        console.log(`  - isRegularPolygon: ${p.isRegularPolygon}`);
+                        console.log(`  - vertices: ${p.vertices}`);
+                        console.log(`  - offset: ${p.offset}`);
+                        console.log(`  - formula: ${p.formula}`);
+                    });
+                    
+                    const binary = PatternConverter.toBinary(result.combined.steps, result.combined.stepCount);
+                    console.log('Combined result:', binary);
+                    
+                    const div = document.createElement('div');
+                    div.innerHTML = `
+                        <h3>${description}: ${input}</h3>
+                        <p><strong>Combined result:</strong> ${binary}</p>
+                        <p><strong>Individual patterns:</strong></p>
+                        <ul>
+                            ${result.patterns.map((p, i) => `
+                                <li><strong>Pattern ${i + 1}:</strong> 
+                                    ${PatternConverter.toBinary(p.steps, p.stepCount)} 
+                                    (isPolygon: ${p.isRegularPolygon}, 
+                                    vertices: ${p.vertices}, 
+                                    offset: ${p.offset},
+                                    formula: ${p.formula})</li>
+                            `).join('')}
+                        </ul>
+                        <hr>
+                    `;
+                    output.appendChild(div);
+                } else {
+                    const p = result.pattern;
+                    console.log('Single pattern:', {
+                        isRegularPolygon: p.isRegularPolygon,
+                        vertices: p.vertices,
+                        offset: p.offset,
+                        steps: PatternConverter.toBinary(p.steps, p.stepCount)
+                    });
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+        
+        // Compare P() notation vs shorthand
+        debugPattern('P(3,1)+P(5,0)', 'P() notation (working)');
+        debugPattern('triangle@1+pentagon', 'Shorthand notation (broken)');
+        
+        // Test individual patterns
+        debugPattern('P(3,1)', 'P(3,1) individual');
+        debugPattern('triangle@1', 'triangle@1 individual');
+        debugPattern('P(5,0)', 'P(5,0) individual');
+        debugPattern('pentagon', 'pentagon individual');
+    </script>
+</body>
+</html>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Verify Database Module</title>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        .pass { color: green; }
+        .fail { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Verify Database Module</h1>
+    <div id="results"></div>
+    
+    <script src="math-core.js"></script>
+    <script src="pattern-generators.js"></script>
+    <script src="pattern-analysis.js"></script>
+    <script src="pattern-processing.js"></script>
+    <script src="pattern-exploration.js"></script>
+    <script src="pattern-database.js"></script>
+    
+    <script>
+        const results = document.getElementById('results');
+        
+        function test(name, testFn) {
+            try {
+                testFn();
+                results.innerHTML += `<div class="pass">✅ ${name}</div>`;
+                return true;
+            } catch (error) {
+                results.innerHTML += `<div class="fail">❌ ${name}: ${error.message}</div>`;
+                console.error(error);
+                return false;
+            }
+        }
+        
+        function assert(condition, message) {
+            if (!condition) throw new Error(message || 'Assertion failed');
+        }
+        
+        function assertEqual(actual, expected, message) {
+            if (actual !== expected) {
+                throw new Error(message || `Expected ${expected}, got ${actual}`);
+            }
+        }
+        
+        // Test basic instantiation
+        test('PatternDatabase instantiation', () => {
+            const db = new PatternDatabase();
+            assert(Array.isArray(db.patterns));
+            assert(typeof db.useLocalStorage === 'boolean');
+        });
+        
+        // Test adding patterns
+        test('Pattern addition', () => {
+            const db = new PatternDatabase();
+            db.clear(); // Start fresh
+            
+            const triangle = RegularPolygonGenerator.generate(3, 0);
+            const pattern = createDatabasePattern(triangle);
+            
+            const id = db.add(pattern);
+            assert(typeof id === 'string');
+            assertEqual(db.patterns.length, 1);
+        });
+        
+        // Test search
+        test('Pattern search', () => {
+            const db = new PatternDatabase();
+            db.clear();
+            
+            const pattern = {
+                name: 'Test Pattern',
+                steps: [true, false, true],
+                stepCount: 3,
+                binary: '101'
+            };
+            
+            db.add(pattern);
+            
+            const searchResults = db.search('Test');
+            assert(searchResults.length > 0);
+            assert(searchResults[0].name.includes('Test'));
+        });
+        
+        // Test filtering
+        test('Pattern filtering', () => {
+            const db = new PatternDatabase();
+            db.clear();
+            
+            const pattern = {
+                name: 'Favorite Pattern',
+                steps: [true, false],
+                stepCount: 2,
+                binary: '10',
+                favorite: true
+            };
+            
+            db.add(pattern);
+            
+            const favorites = db.filter('favorites');
+            assert(favorites.length > 0);
+            assert(favorites[0].favorite === true);
+        });
+        
+        // Test statistics
+        test('Database statistics', () => {
+            const db = new PatternDatabase();
+            const stats = db.getStatistics();
+            
+            assert(typeof stats === 'object');
+            assert(typeof stats.totalPatterns === 'number');
+        });
+        
+        // Test integration with other modules
+        test('Integration with other modules', () => {
+            const db = new PatternDatabase();
+            db.clear();
+            
+            // Generate a pattern using other modules
+            const triangle = RegularPolygonGenerator.generate(3, 0);
+            const balance = PerfectBalanceAnalyzer.calculateBalance(triangle.steps, triangle.stepCount);
+            
+            const pattern = createDatabasePattern(triangle, { perfectBalance: balance });
+            
+            const id = db.add(pattern);
+            assert(id !== null);
+            
+            const stored = db.getById(id);
+            assert(stored !== null);
+            assert(stored.perfectBalance !== undefined);
+        });
+        
+        results.innerHTML += '<h2>All tests completed!</h2>';
+    </script>
+</body>
+</html>
