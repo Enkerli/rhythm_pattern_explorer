@@ -1,1 +1,37 @@
+# macOS
 **/.DS_Store
+.AppleDouble
+.LSOverride
+
+# Xcode
+**/build/
+**/xcuserdata/
+**/*.xcuserstate
+**/*.xcworkspace/xcuserdata/
+**/project.xcworkspace/xcuserdata/
+**/xcuserdata/**
+
+# Build artifacts
+**/*.o
+**/*.a
+**/*.build
+**/DerivedData/
+**/ModuleCache/
+**/Pods/
+
+# JUCE build files
+**/Builds/**/build/
+**/JuceLibraryCode/
+
+# Compiled binaries  
+**/*.component/
+**/*.vst3/Contents/MacOS/
+**/*.au/Contents/MacOS/
+**/juce_vst3_helper
+
+# Code signing
+**/_CodeSignature/
+
+# Temporary files
+**/Temporary*
+**/temp/
