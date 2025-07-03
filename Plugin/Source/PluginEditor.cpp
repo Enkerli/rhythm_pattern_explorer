@@ -131,7 +131,7 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     addAndMakeVisible(analysisLabel);
     
     // Version Label with build number
-    versionLabel.setText("v0.02a.240703", juce::dontSendNotification);
+    versionLabel.setText("v0.02b.240703", juce::dontSendNotification);
     versionLabel.setJustificationType(juce::Justification::centredLeft);
     versionLabel.setFont(juce::Font(10.0f));
     versionLabel.setColour(juce::Label::textColourId, juce::Colours::grey);
@@ -177,7 +177,7 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     updateAnalysisDisplay();
     
     // Start timer for regular UI updates
-    startTimer(50); // Update every 50ms for smoother animation
+    startTimer(30); // Update every 30ms for even smoother animation
     
     DBG("RhythmPatternExplorer: Editor initialized");
 }
@@ -319,8 +319,9 @@ void RhythmPatternExplorerAudioProcessorEditor::timerCallback()
     bool isPlaying = audioProcessor.isCurrentlyPlaying();
     
     // Repaint if pattern changed, step changed during playback, or play state changed
+    // Be more aggressive about detecting step changes for better animation
     if (currentHash != lastUpdateHash || 
-        (isPlaying && currentStep != lastCurrentStep) ||
+        currentStep != lastCurrentStep ||
         isPlaying != lastPlayingState)
     {
         if (currentHash != lastUpdateHash)
@@ -353,32 +354,39 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
     int currentStep = audioProcessor.getCurrentStep();
     bool isPlaying = audioProcessor.isCurrentlyPlaying();
     
-    // Debug current step
-    DBG("Current step: " + juce::String(currentStep) + ", Playing: " + juce::String(isPlaying ? "true" : "false"));
+    // Debug current step (removed for production)
+    // DBG("Current step: " + juce::String(currentStep) + ", Playing: " + juce::String(isPlaying ? "true" : "false"));
     
     // Draw the background circle first
     g.setColour(juce::Colour(0xff2d3748));
     g.fillEllipse(center.x - outerRadius, center.y - outerRadius, outerRadius * 2, outerRadius * 2);
     
-    // Draw each slice with CORRECTED positioning
+    // Draw each slice with FIXED positioning and calculations
     for (int i = 0; i < numSteps; ++i)
     {
-        // Fix: Each slice should be positioned exactly at step i
-        // Start at 12 o'clock (top) and go clockwise
+        // Calculate slice angles correctly
         float sliceAngle = 2.0f * juce::MathConstants<float>::pi / numSteps;  // Angle per slice
         float startAngle = (i * sliceAngle) - juce::MathConstants<float>::halfPi;  // Start at top, step i
-        float endAngle = ((i + 1) * sliceAngle) - juce::MathConstants<float>::halfPi;  // End of step i
+        float endAngle = startAngle + sliceAngle;  // End of step i
         
         // Only color onset slices differently - rest slices stay background color
         if (pattern[i])
         {
             juce::Path slice;
-            slice.addPieSegment(center.x - outerRadius, center.y - outerRadius, 
-                               outerRadius * 2, outerRadius * 2, 
-                               startAngle, endAngle, innerRadius / outerRadius);
+            // Use proper pie segment bounds
+            float x = center.x - outerRadius;
+            float y = center.y - outerRadius;
+            float width = outerRadius * 2;
+            float height = outerRadius * 2;
+            float thickness = (outerRadius - innerRadius) / outerRadius;
+            
+            slice.addPieSegment(x, y, width, height, startAngle, endAngle, thickness);
             
             g.setColour(juce::Colour(0xff48bb78));  // Green for onsets
             g.fillPath(slice);
+            
+            // Debug slice info (removed for production)
+            // DBG("Slice " + juce::String(i) + ": onset=" + juce::String(pattern[i] ? "true" : "false"));
         }
     }
     
@@ -387,15 +395,21 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
     {
         float sliceAngle = 2.0f * juce::MathConstants<float>::pi / numSteps;
         float startAngle = (currentStep * sliceAngle) - juce::MathConstants<float>::halfPi;
-        float endAngle = ((currentStep + 1) * sliceAngle) - juce::MathConstants<float>::halfPi;
+        float endAngle = startAngle + sliceAngle;
         
         juce::Path highlightSlice;
-        highlightSlice.addPieSegment(center.x - outerRadius, center.y - outerRadius, 
-                                   outerRadius * 2, outerRadius * 2, 
-                                   startAngle, endAngle, innerRadius / outerRadius);
+        float x = center.x - outerRadius;
+        float y = center.y - outerRadius;
+        float width = outerRadius * 2;
+        float height = outerRadius * 2;
+        float thickness = (outerRadius - innerRadius) / outerRadius;
+        
+        highlightSlice.addPieSegment(x, y, width, height, startAngle, endAngle, thickness);
         
         g.setColour(juce::Colour(0xffff6b35));  // Bright orange highlight
         g.fillPath(highlightSlice);
+        
+        // DBG("Highlighting step " + juce::String(currentStep) + " at angles " + juce::String(startAngle) + " to " + juce::String(endAngle));
     }
     
     // Draw slice separator lines AFTER filling
