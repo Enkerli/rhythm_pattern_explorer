@@ -76,6 +76,10 @@ public:
     juce::AudioParameterBool* getPlayingParameter() { return playingParam; }
     juce::AudioParameterBool* getUseHostTransportParameter() { return useHostTransportParam; }
     
+    // Playback state
+    int getCurrentStep() const { return currentStep; }
+    bool isCurrentlyPlaying() const { return playingParam->get() > 0.5f; }
+    
     // UPI pattern input methods
     void setUPIInput(const juce::String& upiPattern);
     juce::String getUPIInput() const { return currentUPIInput; }

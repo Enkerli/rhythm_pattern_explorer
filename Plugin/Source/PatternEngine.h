@@ -62,6 +62,9 @@ public:
     // Pattern Information
     juce::String getPatternDescription() const;
     juce::String getBinaryString() const;
+    juce::String getHexString() const;
+    juce::String getOctalString() const;
+    juce::String getDecimalString() const;
 
 private:
     //==============================================================================

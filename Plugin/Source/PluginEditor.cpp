@@ -111,12 +111,18 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     parseUPIButton.onClick = [this]() { onParseButtonClicked(); };
     addAndMakeVisible(parseUPIButton);
     
-    // Pattern Display Label - larger and more readable
-    patternDisplayLabel.setJustificationType(juce::Justification::centred);
-    patternDisplayLabel.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 14.0f, juce::Font::plain));
-    patternDisplayLabel.setColour(juce::Label::textColourId, juce::Colours::white);
-    patternDisplayLabel.setColour(juce::Label::backgroundColourId, juce::Colour(0xff1a1a1a));
-    addAndMakeVisible(patternDisplayLabel);
+    // Pattern Display Editor - copyable and readable
+    patternDisplayEditor.setMultiLine(true);
+    patternDisplayEditor.setReadOnly(true);
+    patternDisplayEditor.setScrollbarsShown(false);
+    patternDisplayEditor.setCaretVisible(false);
+    patternDisplayEditor.setJustification(juce::Justification::centred);
+    patternDisplayEditor.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 14.0f, juce::Font::plain));
+    patternDisplayEditor.setColour(juce::TextEditor::textColourId, juce::Colours::white);
+    patternDisplayEditor.setColour(juce::TextEditor::backgroundColourId, juce::Colour(0xff1a1a1a));
+    patternDisplayEditor.setColour(juce::TextEditor::outlineColourId, juce::Colours::transparentBlack);
+    patternDisplayEditor.setColour(juce::TextEditor::focusedOutlineColourId, juce::Colour(0xff4a5568));
+    addAndMakeVisible(patternDisplayEditor);
     
     // Analysis Label - improved readability
     analysisLabel.setJustificationType(juce::Justification::centred);
@@ -124,8 +130,8 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     analysisLabel.setColour(juce::Label::textColourId, juce::Colours::lightgrey);
     addAndMakeVisible(analysisLabel);
     
-    // Version Label
-    versionLabel.setText("v0.01", juce::dontSendNotification);
+    // Version Label with build number
+    versionLabel.setText("v0.02a.240703", juce::dontSendNotification);
     versionLabel.setJustificationType(juce::Justification::centredLeft);
     versionLabel.setFont(juce::Font(10.0f));
     versionLabel.setColour(juce::Label::textColourId, juce::Colours::grey);
@@ -171,7 +177,7 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     updateAnalysisDisplay();
     
     // Start timer for regular UI updates
-    startTimer(100); // Update every 100ms
+    startTimer(50); // Update every 50ms for smoother animation
     
     DBG("RhythmPatternExplorer: Editor initialized");
 }
@@ -253,7 +259,7 @@ void RhythmPatternExplorerAudioProcessorEditor::resized()
     
     // Pattern display area (text results) - readable size
     auto displayArea = area.removeFromTop(60);
-    patternDisplayLabel.setBounds(displayArea.reduced(10));
+    patternDisplayEditor.setBounds(displayArea.reduced(10));
     
     // Analysis area - hidden
     auto analysisArea = area.removeFromTop(0);
@@ -305,13 +311,28 @@ void RhythmPatternExplorerAudioProcessorEditor::timerCallback()
     
     // Update pattern display
     static int lastUpdateHash = 0;
+    static int lastCurrentStep = -1;
+    static bool lastPlayingState = false;
+    
     int currentHash = std::hash<std::string>{}(audioProcessor.getPatternEngine().getBinaryString().toStdString());
-    if (currentHash != lastUpdateHash)
+    int currentStep = audioProcessor.getCurrentStep();
+    bool isPlaying = audioProcessor.isCurrentlyPlaying();
+    
+    // Repaint if pattern changed, step changed during playback, or play state changed
+    if (currentHash != lastUpdateHash || 
+        (isPlaying && currentStep != lastCurrentStep) ||
+        isPlaying != lastPlayingState)
     {
-        updatePatternDisplay();
-        updateAnalysisDisplay();
-        repaint(); // Repaint for visual circle
+        if (currentHash != lastUpdateHash)
+        {
+            updatePatternDisplay();
+            updateAnalysisDisplay();
+        }
+        repaint(); // Repaint for visual circle animation
+        
         lastUpdateHash = currentHash;
+        lastCurrentStep = currentStep;
+        lastPlayingState = isPlaying;
     }
 }
 
@@ -323,53 +344,119 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
         return;
     
     auto center = bounds.getCentre();
-    float radius = juce::jmin(bounds.getWidth(), bounds.getHeight()) * 0.3f;
+    float maxRadius = juce::jmin(bounds.getWidth(), bounds.getHeight()) * 0.3f;  // Keep markers inside bounds
+    float innerRadius = maxRadius * 0.15f;  // Small hole to avoid moiré
+    float outerRadius = maxRadius;
+    float markerRadius = maxRadius * 0.85f;  // Step markers INSIDE the pie boundary
     
-    // Draw circle outline
-    g.setColour(juce::Colour(0xff4a5568));
-    g.drawEllipse(center.x - radius, center.y - radius, radius * 2, radius * 2, 2.0f);
+    int numSteps = static_cast<int>(pattern.size());
+    int currentStep = audioProcessor.getCurrentStep();
+    bool isPlaying = audioProcessor.isCurrentlyPlaying();
     
-    // Draw pattern steps
-    for (int i = 0; i < pattern.size(); ++i)
+    // Debug current step
+    DBG("Current step: " + juce::String(currentStep) + ", Playing: " + juce::String(isPlaying ? "true" : "false"));
+    
+    // Draw the background circle first
+    g.setColour(juce::Colour(0xff2d3748));
+    g.fillEllipse(center.x - outerRadius, center.y - outerRadius, outerRadius * 2, outerRadius * 2);
+    
+    // Draw each slice with CORRECTED positioning
+    for (int i = 0; i < numSteps; ++i)
     {
-        float angle = 2.0f * juce::MathConstants<float>::pi * i / pattern.size() - juce::MathConstants<float>::halfPi;
-        float x = center.x + radius * std::cos(angle);
-        float y = center.y + radius * std::sin(angle);
+        // Fix: Each slice should be positioned exactly at step i
+        // Start at 12 o'clock (top) and go clockwise
+        float sliceAngle = 2.0f * juce::MathConstants<float>::pi / numSteps;  // Angle per slice
+        float startAngle = (i * sliceAngle) - juce::MathConstants<float>::halfPi;  // Start at top, step i
+        float endAngle = ((i + 1) * sliceAngle) - juce::MathConstants<float>::halfPi;  // End of step i
         
+        // Only color onset slices differently - rest slices stay background color
         if (pattern[i])
         {
-            // Onset - filled circle
-            g.setColour(juce::Colour(0xff48bb78));
-            g.fillEllipse(x - 6, y - 6, 12, 12);
-        }
-        else
-        {
-            // Rest - empty circle
-            g.setColour(juce::Colour(0xff718096));
-            g.drawEllipse(x - 4, y - 4, 8, 8, 1.0f);
+            juce::Path slice;
+            slice.addPieSegment(center.x - outerRadius, center.y - outerRadius, 
+                               outerRadius * 2, outerRadius * 2, 
+                               startAngle, endAngle, innerRadius / outerRadius);
+            
+            g.setColour(juce::Colour(0xff48bb78));  // Green for onsets
+            g.fillPath(slice);
         }
     }
     
-    // Draw center of gravity - COMMENTED OUT per user request for pre-AUv3 state
-//    auto balance = audioProcessor.getPatternEngine().analyzeBalance();
-//    double cogAngle = audioProcessor.getPatternEngine().calculateCenterOfGravityAngle();
-//    float cogAngleRad = static_cast<float>(cogAngle * juce::MathConstants<double>::pi / 180.0 - juce::MathConstants<double>::halfPi);
-//    float cogRadius = radius * 0.3f * static_cast<float>(balance.normalizedMagnitude);
-//    
-//    float cogX = center.x + cogRadius * std::cos(cogAngleRad);
-//    float cogY = center.y + cogRadius * std::sin(cogAngleRad);
-//    
-//    g.setColour(juce::Colour(0xfff56565));
-//    g.fillEllipse(cogX - 3, cogY - 3, 6, 6);
-//    g.drawLine(center.x, center.y, cogX, cogY, 1.0f);
+    // Draw playback highlighting OVER the slices
+    if (isPlaying && currentStep >= 0 && currentStep < numSteps)
+    {
+        float sliceAngle = 2.0f * juce::MathConstants<float>::pi / numSteps;
+        float startAngle = (currentStep * sliceAngle) - juce::MathConstants<float>::halfPi;
+        float endAngle = ((currentStep + 1) * sliceAngle) - juce::MathConstants<float>::halfPi;
+        
+        juce::Path highlightSlice;
+        highlightSlice.addPieSegment(center.x - outerRadius, center.y - outerRadius, 
+                                   outerRadius * 2, outerRadius * 2, 
+                                   startAngle, endAngle, innerRadius / outerRadius);
+        
+        g.setColour(juce::Colour(0xffff6b35));  // Bright orange highlight
+        g.fillPath(highlightSlice);
+    }
+    
+    // Draw slice separator lines AFTER filling
+    g.setColour(juce::Colour(0xff4a5568));
+    for (int i = 0; i < numSteps; ++i)
+    {
+        float sliceAngle = 2.0f * juce::MathConstants<float>::pi / numSteps;
+        float angle = (i * sliceAngle) - juce::MathConstants<float>::halfPi;  // Line at start of step i
+        
+        float lineStartX = center.x + innerRadius * std::cos(angle);
+        float lineStartY = center.y + innerRadius * std::sin(angle);
+        float lineEndX = center.x + outerRadius * std::cos(angle);
+        float lineEndY = center.y + outerRadius * std::sin(angle);
+        g.drawLine(lineStartX, lineStartY, lineEndX, lineEndY, 1.5f);
+    }
+    
+    // Draw outer and inner circle outlines
+    g.setColour(juce::Colour(0xff4a5568));
+    g.drawEllipse(center.x - outerRadius, center.y - outerRadius, outerRadius * 2, outerRadius * 2, 2.0f);
+    if (innerRadius > 0)
+        g.drawEllipse(center.x - innerRadius, center.y - innerRadius, innerRadius * 2, innerRadius * 2, 2.0f);
+    
+    // Draw step markers INSIDE the available space
+    for (int i = 0; i < numSteps; ++i)
+    {
+        float sliceAngle = 2.0f * juce::MathConstants<float>::pi / numSteps;
+        float angle = (i * sliceAngle) - juce::MathConstants<float>::halfPi;  // Angle for step i marker
+        
+        // Position marker at the CENTER of each slice
+        float centerAngle = angle + (sliceAngle * 0.5f);  // Middle of the slice
+        float x = center.x + markerRadius * std::cos(centerAngle);
+        float y = center.y + markerRadius * std::sin(centerAngle);
+        
+        // Draw step marker circles
+        g.setColour(juce::Colour(0xff4a5568));
+        g.fillEllipse(x - 8, y - 8, 16, 16);
+        
+        // Draw step numbers
+        juce::String stepNumber = juce::String(i);
+        g.setFont(juce::FontOptions(12.0f, juce::Font::bold));
+        g.setColour(juce::Colours::white);
+        
+        // Center the text in the marker
+        juce::Rectangle<float> textBounds(x - 8, y - 6, 16, 12);
+        g.drawText(stepNumber, textBounds, juce::Justification::centred);
+    }
 }
 
 void RhythmPatternExplorerAudioProcessorEditor::updatePatternDisplay()
 {
     juce::String binary = audioProcessor.getPatternEngine().getBinaryString();
+    juce::String hex = audioProcessor.getPatternEngine().getHexString();
+    juce::String octal = audioProcessor.getPatternEngine().getOctalString();
+    juce::String decimal = audioProcessor.getPatternEngine().getDecimalString();
     juce::String description = audioProcessor.getPatternEngine().getPatternDescription();
     
-    patternDisplayLabel.setText(binary + "\n" + description, juce::dontSendNotification);
+    // Display pattern in multiple notations: binary with description, then hex/octal/decimal
+    juce::String displayText = binary + " | " + description + "\n" + 
+                              hex + " | " + octal + " | " + decimal;
+    
+    patternDisplayEditor.setText(displayText, juce::dontSendNotification);
 }
 
 void RhythmPatternExplorerAudioProcessorEditor::updateAnalysisDisplay()

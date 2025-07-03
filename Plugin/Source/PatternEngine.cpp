@@ -111,6 +111,7 @@ void PatternEngine::generateBinaryPattern(int binaryValue, int steps)
     currentPattern.clear();
     currentPattern.resize(steps, false);
     
+    // Convert using LEFT-TO-RIGHT convention (MSB first, matching webapp standard)
     for (int i = 0; i < steps; ++i)
     {
         currentPattern[i] = (binaryValue & (1 << (steps - 1 - i))) != 0;
@@ -253,6 +254,81 @@ juce::String PatternEngine::getBinaryString() const
         binary += step ? "1" : "0";
     }
     return binary;
+}
+
+juce::String PatternEngine::getHexString() const
+{
+    if (currentPattern.empty())
+        return "0x0";
+    
+    // Convert pattern to decimal (left-to-right, MSB first)
+    int decimal = 0;
+    int stepCount = static_cast<int>(currentPattern.size());
+    
+    for (int i = 0; i < stepCount; ++i)
+    {
+        if (currentPattern[i])
+        {
+            decimal |= (1 << (stepCount - 1 - i));
+        }
+    }
+    
+    return "0x" + juce::String::toHexString(decimal).toUpperCase();
+}
+
+juce::String PatternEngine::getOctalString() const
+{
+    if (currentPattern.empty())
+        return "o0";
+    
+    // Convert pattern to decimal (left-to-right, MSB first)
+    int decimal = 0;
+    int stepCount = static_cast<int>(currentPattern.size());
+    
+    for (int i = 0; i < stepCount; ++i)
+    {
+        if (currentPattern[i])
+        {
+            decimal |= (1 << (stepCount - 1 - i));
+        }
+    }
+    
+    // Convert to octal string
+    juce::String octal;
+    if (decimal == 0)
+    {
+        octal = "0";
+    }
+    else
+    {
+        while (decimal > 0)
+        {
+            octal = juce::String(decimal % 8) + octal;
+            decimal /= 8;
+        }
+    }
+    
+    return "o" + octal; // Prefix with 'o' for octal notation
+}
+
+juce::String PatternEngine::getDecimalString() const
+{
+    if (currentPattern.empty())
+        return "d0";
+    
+    // Convert pattern to decimal (left-to-right, MSB first)
+    int decimal = 0;
+    int stepCount = static_cast<int>(currentPattern.size());
+    
+    for (int i = 0; i < stepCount; ++i)
+    {
+        if (currentPattern[i])
+        {
+            decimal |= (1 << (stepCount - 1 - i));
+        }
+    }
+    
+    return "d" + juce::String(decimal); // Prefix with 'd' for decimal notation
 }
 
 //==============================================================================

@@ -58,6 +58,7 @@ public:
     static std::vector<bool> parseRandom(int onsets, int steps);
     static std::vector<bool> parseHex(const juce::String& hexStr, int stepCount);
     static std::vector<bool> parseDecimal(int decimal, int stepCount);
+    static std::vector<bool> parseOctal(const juce::String& octalStr, int stepCount = 8);
     static std::vector<bool> parseMorse(const juce::String& morseStr);
     
     // Pattern transformations
@@ -91,6 +92,7 @@ private:
     static bool isRandomPattern(const juce::String& input);
     static bool isHexPattern(const juce::String& input);
     static bool isDecimalPattern(const juce::String& input);
+    static bool isOctalPattern(const juce::String& input);
     static bool isMorsePattern(const juce::String& input);
     
     // Polygon combination helper

@@ -63,7 +63,7 @@ private:
     juce::Label upiLabel;
     juce::TextButton parseUPIButton;
     
-    juce::Label patternDisplayLabel;
+    juce::TextEditor patternDisplayEditor;
     juce::Label analysisLabel;
     juce::Label versionLabel;
     

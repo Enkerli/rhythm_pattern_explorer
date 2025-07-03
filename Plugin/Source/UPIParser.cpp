@@ -200,7 +200,8 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
             int rotationSteps = parts[1].trim().getIntValue();
             if (baseResult.isValid())
             {
-                auto rotated = rotatePattern(baseResult.pattern, rotationSteps);
+                // Negate rotation to make positive rotations go clockwise (webapp standard)
+                auto rotated = rotatePattern(baseResult.pattern, -rotationSteps);
                 return createSuccess(rotated, baseResult.patternName + "@" + juce::String(rotationSteps));
             }
         }
@@ -279,7 +280,7 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
     if (isEuclideanPattern(cleaned))
     {
         // E(onsets,steps) or E(onsets,steps,offset) - case insensitive
-        std::regex euclideanRegex(R"([Ee]\((\d+),(\d+)(?:,(\d+))?\))");
+        std::regex euclideanRegex(R"([Ee]\((\d+),(\d+)(?:,(-?\d+))?\))");
         std::smatch match;
         std::string inputStr = cleaned.toStdString();
         
@@ -291,7 +292,7 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
             
             auto pattern = parseEuclidean(onsets, steps, offset);
             return createSuccess(pattern, "E(" + juce::String(onsets) + "," + juce::String(steps) + 
-                               (offset > 0 ? "," + juce::String(offset) : "") + ")");
+                               (offset != 0 ? "," + juce::String(offset) : "") + ")");
         }
     }
     
@@ -353,6 +354,53 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
             // Default to 8 steps if no explicit count
             auto pattern = parseHex(cleaned, 8);
             return createSuccess(pattern, "Hex: " + cleaned);
+        }
+    }
+    
+    // Check for decimal patterns (with or without step count)
+    if (isDecimalPattern(cleaned) || (cleaned.contains(":") && isDecimalPattern(cleaned.upToFirstOccurrenceOf(":", false, false))))
+    {
+        // d146:8 format
+        if (cleaned.contains(":"))
+        {
+            auto parts = tokenize(cleaned, ":");
+            if (parts.size() == 2)
+            {
+                int decimal = parts[0].substring(1).getIntValue(); // Remove 'd' prefix
+                auto pattern = parseDecimal(decimal, parts[1].trim().getIntValue());
+                return createSuccess(pattern, "Decimal: " + parts[0].trim());
+            }
+        }
+        else
+        {
+            // Default to appropriate steps if no explicit count
+            juce::String decimalStr = cleaned.substring(1); // Remove 'd' prefix
+            int decimal = decimalStr.getIntValue();
+            int minSteps = decimal > 0 ? static_cast<int>(std::ceil(std::log2(decimal + 1))) : 1;
+            int targetSteps = std::max(minSteps, 8);
+            auto pattern = parseDecimal(decimal, targetSteps);
+            return createSuccess(pattern, "Decimal: " + cleaned);
+        }
+    }
+    
+    // Check for octal patterns (with or without step count)
+    if (isOctalPattern(cleaned) || (cleaned.contains(":") && isOctalPattern(cleaned.upToFirstOccurrenceOf(":", false, false))))
+    {
+        // o222:8 format
+        if (cleaned.contains(":"))
+        {
+            auto parts = tokenize(cleaned, ":");
+            if (parts.size() == 2)
+            {
+                auto pattern = parseOctal(parts[0].trim(), parts[1].trim().getIntValue());
+                return createSuccess(pattern, "Octal: " + parts[0].trim());
+            }
+        }
+        else
+        {
+            // Default to 8 steps if no explicit count
+            auto pattern = parseOctal(cleaned, 8);
+            return createSuccess(pattern, "Octal: " + cleaned);
         }
     }
     
@@ -434,9 +482,10 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
 std::vector<bool> UPIParser::parseEuclidean(int onsets, int steps, int offset)
 {
     auto pattern = bjorklundAlgorithm(onsets, steps);
-    if (offset > 0)
+    if (offset != 0)
     {
-        pattern = rotatePattern(pattern, offset);
+        // Negate offset to make positive offsets go clockwise (webapp standard)
+        pattern = rotatePattern(pattern, -offset);
     }
     return pattern;
 }
@@ -568,13 +617,42 @@ std::vector<bool> UPIParser::parseDecimal(int decimal, int stepCount)
     std::vector<bool> pattern;
     pattern.reserve(stepCount);
     
-    // Convert decimal to binary, least significant bit first (rightmost bit = step 0)
+    // Convert decimal to binary, LEFT-TO-RIGHT: most significant bit first (leftmost bit = step 0)
+    // This matches webapp standard where E(3,8) = 0x92 and E(5,8) = 0xB6
     for (int i = 0; i < stepCount; ++i)
     {
-        pattern.push_back((decimal & (1 << i)) != 0);
+        pattern.push_back((decimal & (1 << (stepCount - 1 - i))) != 0);
     }
     
     return pattern;
+}
+
+std::vector<bool> UPIParser::parseOctal(const juce::String& octalStr, int stepCount)
+{
+    // Remove 'o' prefix if present
+    juce::String octal = octalStr.startsWith("o") ? octalStr.substring(1) : octalStr;
+    
+    // Convert octal string to decimal
+    int decimal = 0;
+    int base = 1;
+    
+    // Process from right to left (least significant digit first)
+    for (int i = octal.length() - 1; i >= 0; --i)
+    {
+        char digit = octal[i];
+        if (digit >= '0' && digit <= '7')
+        {
+            decimal += (digit - '0') * base;
+            base *= 8;
+        }
+        else
+        {
+            // Invalid octal digit
+            return std::vector<bool>(stepCount, false);
+        }
+    }
+    
+    return parseDecimal(decimal, stepCount);
 }
 
 std::vector<bool> UPIParser::parseMorse(const juce::String& morseStr)
@@ -844,6 +922,11 @@ bool UPIParser::isHexPattern(const juce::String& input)
 bool UPIParser::isDecimalPattern(const juce::String& input)
 {
     return input.startsWith("d") && input.substring(1).containsOnly("0123456789");
+}
+
+bool UPIParser::isOctalPattern(const juce::String& input)
+{
+    return input.startsWith("o") && input.substring(1).containsOnly("01234567");
 }
 
 bool UPIParser::isMorsePattern(const juce::String& input)
