@@ -9,6 +9,7 @@
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include <ctime>
 
 //==============================================================================
 RhythmPatternExplorerAudioProcessor::RhythmPatternExplorerAudioProcessor()
@@ -24,7 +25,7 @@ RhythmPatternExplorerAudioProcessor::RhythmPatternExplorerAudioProcessor()
 #endif
 {
     // Initialize parameters using original working approach
-    addParameter(bpmParam = new juce::AudioParameterFloat("bpm", "BPM", 60.0f, 180.0f, 120.0f));
+    addParameter(bpmParam = new juce::AudioParameterFloat("bpm", "BPM", 60.0f, 1000.0f, 120.0f));
     addParameter(patternTypeParam = new juce::AudioParameterChoice("patternType", "Pattern Type", 
         juce::StringArray("Euclidean", "Polygon", "Random", "Binary", "UPI"), 0));
     addParameter(onsetsParam = new juce::AudioParameterInt("onsets", "Onsets", 1, 16, 3));
@@ -36,6 +37,17 @@ RhythmPatternExplorerAudioProcessor::RhythmPatternExplorerAudioProcessor()
     patternEngine.generateEuclideanPattern(3, 8);
     
     DBG("RhythmPatternExplorer: Plugin initialized");
+    
+    // BITWIG FILE DEBUG: Write to file since console may be blocked
+    FILE* debugFile = fopen("/tmp/bitwig_debug.log", "a");
+    if (debugFile) {
+        time_t now = time(0);
+        char* timeStr = ctime(&now);
+        timeStr[strlen(timeStr)-1] = '\0'; // Remove newline
+        fprintf(debugFile, "BITWIG INIT: Plugin constructor called at %s! Debug version v0.02b.240703.2145-DBG active.\n", timeStr);
+        fflush(debugFile);
+        fclose(debugFile);
+    }
 }
 
 
@@ -115,6 +127,9 @@ void RhythmPatternExplorerAudioProcessor::prepareToPlay (double sampleRate, int 
     currentStep = 0;
     wasPlaying = false;
     
+    // Force early initialization to work around Logic Pro loading order issues
+    lastProcessBlockTime = juce::Time::getMillisecondCounter();
+    
     updateTiming();
     
     DBG("RhythmPatternExplorer: Prepared to play at " << sampleRate << " Hz");
@@ -148,6 +163,45 @@ bool RhythmPatternExplorerAudioProcessor::isBusesLayoutSupported (const BusesLay
 
 void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
+    // FIRST: Always log that processBlock is being called
+    static int processBlockCallCount = 0;
+    processBlockCallCount++;
+    
+    // Update last process time to indicate we're receiving audio callbacks
+    lastProcessBlockTime = juce::Time::getMillisecondCounter();
+    
+    // BITWIG 210 BPM DEBUG: Focus on the specific problem
+    static int debugCallCount = 0;
+    static int lastLoggedBPM = 0;
+    
+    int currentBufferSize = buffer.getNumSamples();
+    if (currentBufferSize <= 0) {
+        return;
+    }
+    
+    // Log every 50 calls or when BPM changes, with focus on 200+ BPM
+    debugCallCount++;
+    int currentBPM = static_cast<int>(bpmParam ? bpmParam->get() : 120);
+    
+    // More frequent logging at high BPMs
+    bool shouldLog = false;
+    if (currentBPM >= 200) {
+        shouldLog = (debugCallCount % 25 == 0); // Every 25 calls at high BPM
+    } else {
+        shouldLog = (debugCallCount % 100 == 0); // Every 100 calls normally
+    }
+    
+    if (shouldLog || std::abs(currentBPM - lastLoggedBPM) > 2) {
+        FILE* debugFile = fopen("/tmp/bitwig_debug.log", "a");
+        if (debugFile) {
+            fprintf(debugFile, "BITWIG PROCESS: BPM=%d, SamplesPerStep=%d, BufferSize=%d, CurrentSample=%d, CurrentStep=%d, SampleRate=%.0f, CallCount=%d\n",
+                currentBPM, samplesPerStep, currentBufferSize, currentSample, currentStep.load(), currentSampleRate, debugCallCount);
+            fflush(debugFile);
+            fclose(debugFile);
+        }
+        lastLoggedBPM = currentBPM;
+    }
+    
     juce::ScopedLock lock(processingLock);
     juce::ScopedNoDenormals noDenormals;
     auto totalNumInputChannels  = getTotalNumInputChannels();
@@ -168,14 +222,54 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
     if (playHead != nullptr)
     {
         hasValidPosition = playHead->getCurrentPosition(posInfo);
+        
+        // BITWIG TRANSPORT DEBUG: Log transport details
+        float currentBPM = bpmParam ? bpmParam->get() : 120.0f;
+        if (currentBPM >= 200.0f) {
+            static int transportDebugCount = 0;
+            if (++transportDebugCount % 100 == 0) {
+                FILE* debugFile = fopen("/tmp/bitwig_debug.log", "a");
+                if (debugFile) {
+                    fprintf(debugFile, "TRANSPORT DEBUG: hasValidPosition=%s, isPlaying=%s, isRecording=%s, ppqPosition=%.3f, bpm=%.1f\n",
+                        hasValidPosition ? "TRUE" : "FALSE",
+                        posInfo.isPlaying ? "TRUE" : "FALSE", 
+                        posInfo.isRecording ? "TRUE" : "FALSE",
+                        posInfo.ppqPosition, posInfo.bpm);
+                    fflush(debugFile);
+                    fclose(debugFile);
+                }
+            }
+        }
+        
+        // Transport sync with host
+    }
+    else
+    {
+        // No playhead available
+        float currentBPM = bpmParam ? bpmParam->get() : 120.0f;
+        if (currentBPM >= 200.0f) {
+            static int noPlayheadCount = 0;
+            if (++noPlayheadCount % 100 == 0) {
+                FILE* debugFile = fopen("/tmp/bitwig_debug.log", "a");
+                if (debugFile) {
+                    fprintf(debugFile, "NO PLAYHEAD: Bitwig not providing transport info\n");
+                    fflush(debugFile);
+                    fclose(debugFile);
+                }
+            }
+        }
     }
 
     // Determine if we should be playing
     bool isPlaying;
     if (useHostTransportParam && useHostTransportParam->get() && hasValidPosition)
     {
-        isPlaying = posInfo.isPlaying;
-        syncWithHost(posInfo);
+        // FIXED: Manual play button should work alongside host transport (OR logic)
+        isPlaying = posInfo.isPlaying || playingParam->get();
+        
+        // BITWIG FIX: Always sync BPM, but conditionally sync position
+        syncBPMWithHost(posInfo);
+        syncPositionWithHost(posInfo);
     }
     else
     {
@@ -219,20 +313,80 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
         updateTiming();
     }
     
-    // Update timing if BPM changed
-    updateTiming();
+    // Update timing if BPM changed - but preserve currentSample ratio
+    static float lastBPM = 120.0f;
+    float currentBPMFloat = bpmParam ? bpmParam->get() : 120.0f;
+    if (std::abs(currentBPMFloat - lastBPM) > 0.1f) {
+        // BITWIG FIX: Preserve timing position when BPM changes
+        double sampleRatio = (samplesPerStep > 0) ? (double)currentSample / samplesPerStep : 0.0;
+        updateTiming();
+        currentSample = static_cast<int>(sampleRatio * samplesPerStep);
+        
+        // Log BPM changes for debugging
+        if (currentBPMFloat >= 180.0f) {
+            FILE* debugFile = fopen("/tmp/bitwig_debug.log", "a");
+            if (debugFile) {
+                fprintf(debugFile, "BPM CHANGE: %.1f->%.1f, sampleRatio=%.3f, newCurrentSample=%d, newSamplesPerStep=%d\n",
+                    lastBPM, currentBPMFloat, sampleRatio, currentSample, samplesPerStep);
+                fflush(debugFile);
+                fclose(debugFile);
+            }
+        }
+        lastBPM = currentBPMFloat;
+    }
     
-    // Process each sample
+    // Clean production version
+    
+    // Clean production version - no aggressive debugging
+
+    // BITWIG PLAYING STATE DEBUG: Log playing detection
+    if (currentBPMFloat >= 180.0f) {
+        static int playingDebugCount = 0;
+        if (++playingDebugCount % 50 == 0) {
+            FILE* debugFile = fopen("/tmp/bitwig_debug.log", "a");
+            if (debugFile) {
+                fprintf(debugFile, "PLAYING DEBUG: isPlaying=%s, hostIsPlaying=%s, playingParam=%s, useHostTransport=%s\n",
+                    isPlaying ? "TRUE" : "FALSE",
+                    hostIsPlaying ? "TRUE" : "FALSE", 
+                    (playingParam->get() ? "TRUE" : "FALSE"),
+                    (useHostTransportParam->get() ? "TRUE" : "FALSE"));
+                fflush(debugFile);
+                fclose(debugFile);
+            }
+        }
+    }
+
+    // BITWIG HIGH BPM FIX: Process samples with multiple step checking
     for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
     {
         if (isPlaying)
         {
-            // Check if we need to trigger a step
-            if (currentSample >= samplesPerStep)
+            // CRITICAL FIX: Check for multiple steps per buffer at high BPM
+            while (currentSample >= samplesPerStep && samplesPerStep > 0)
             {
                 processStep(midiMessages, sample);
-                currentSample = 0;
-                currentStep = (currentStep + 1) % patternEngine.getStepCount();
+                currentSample -= samplesPerStep; // Subtract instead of reset to maintain fractional timing
+                int newStep = (currentStep.load() + 1) % patternEngine.getStepCount();
+                currentStep.store(newStep);
+                
+                // BITWIG 210 DEBUG: Log step triggers to file at high BPMs
+                float currentBPM = bpmParam ? bpmParam->get() : 120.0f;
+                if (currentBPM >= 180.0f) {
+                    FILE* debugFile = fopen("/tmp/bitwig_debug.log", "a");
+                    if (debugFile) {
+                        fprintf(debugFile, "STEP TRIGGER: BPM=%.1f, Step %d->%d, samplesPerStep=%d, currentSampleBefore=%d, currentSampleAfter=%d, buffer=%d/%d\n",
+                            currentBPM, currentStep.load(), newStep, samplesPerStep, 
+                            currentSample + samplesPerStep, currentSample, sample, buffer.getNumSamples());
+                        fflush(debugFile);
+                        fclose(debugFile);
+                    }
+                }
+                
+                // Safety break to prevent infinite loops
+                if (samplesPerStep <= 1) {
+                    std::cout << "HIGH BPM ERROR: samplesPerStep too small (" << samplesPerStep << "), breaking loop" << std::endl;
+                    break;
+                }
             }
             currentSample++;
         }
@@ -240,7 +394,8 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
         {
             // Just stopped playing - reset position
             currentSample = 0;
-            currentStep = 0;
+            currentStep.store(0);
+            // Stopped playing - resetting position
         }
     }
     
@@ -335,6 +490,19 @@ void RhythmPatternExplorerAudioProcessor::updateTiming()
     double stepsPerSecond = beatsPerSecond * 4.0; // 16th note subdivisions
     samplesPerStep = static_cast<int>(currentSampleRate / stepsPerSecond);
     
+    // HIGH BPM FIX: Enhanced timing validation for Bitwig testing
+    if (samplesPerStep <= 0) {
+        std::cout << "HIGH BPM ERROR: Invalid samplesPerStep=" << samplesPerStep << " at BPM=" << bpm << 
+            " sampleRate=" << currentSampleRate << std::endl;
+        samplesPerStep = static_cast<int>(currentSampleRate / 60.0); // Default to 1Hz fallback
+    } else if (samplesPerStep < 10) {
+        std::cout << "HIGH BPM CRITICAL: Extremely fast timing - samplesPerStep=" << samplesPerStep << 
+            " at BPM=" << bpm << " (>" << (60.0 * currentSampleRate / (samplesPerStep * 4)) << " BPM equivalent)" << std::endl;
+    } else if (samplesPerStep < 100) {
+        std::cout << "HIGH BPM WARNING: Very fast timing - samplesPerStep=" << samplesPerStep << 
+            " at BPM=" << bpm << " (" << (60.0 * currentSampleRate / (samplesPerStep * 4)) << " BPM equivalent)" << std::endl;
+    }
+        
     DBG("RhythmPatternExplorer: Updated timing - BPM: " << bpm << ", Samples per step: " << samplesPerStep);
 }
 
@@ -342,9 +510,28 @@ void RhythmPatternExplorerAudioProcessor::processStep(juce::MidiBuffer& midiBuff
 {
     auto pattern = patternEngine.getCurrentPattern();
     
+    // BITWIG 210 DEBUG: Log pattern state at high BPMs
+    float currentBPM = bpmParam ? bpmParam->get() : 120.0f;
+    static int stepCallCount = 0;
+    
+    if (currentBPM >= 200.0f && ++stepCallCount % 3 == 0) {
+        std::cout << "PROCESS STEP: BPM=" << currentBPM << 
+            ", Step=" << currentStep.load() << 
+            ", PatternSize=" << pattern.size() << 
+            ", HasOnset=" << (currentStep.load() < pattern.size() && pattern[currentStep.load()] ? "YES" : "NO") << 
+            ", SamplePos=" << samplePosition << std::endl;
+    }
+    
     if (currentStep < pattern.size() && pattern[currentStep])
     {
         triggerNote(midiBuffer, samplePosition);
+        
+        // Log note triggers at high BPM
+        if (currentBPM >= 200.0f) {
+            std::cout << "NOTE TRIGGERED: Step=" << currentStep.load() << 
+                ", BPM=" << currentBPM << 
+                ", SamplePos=" << samplePosition << std::endl;
+        }
     }
 }
 
@@ -359,22 +546,50 @@ void RhythmPatternExplorerAudioProcessor::triggerNote(juce::MidiBuffer& midiBuff
     
     // MIDI effect mode - no audio synthesis
     
-    DBG("RhythmPatternExplorer: Note triggered at step " << currentStep);
+    DBG("RhythmPatternExplorer: Note triggered at step " << currentStep.load());
 }
 
-void RhythmPatternExplorerAudioProcessor::syncWithHost(const juce::AudioPlayHead::CurrentPositionInfo& posInfo)
+void RhythmPatternExplorerAudioProcessor::syncBPMWithHost(const juce::AudioPlayHead::CurrentPositionInfo& posInfo)
 {
-    // Use host BPM if available
+    // ALWAYS sync BPM - this should never be disabled
     if (posInfo.bpm > 0)
     {
+        float hostBPM = static_cast<float>(posInfo.bpm);
+        float currentBPM = bpmParam->get();
+        
+        // BITWIG BPM SYNC DEBUG: Log BPM sync attempts  
+        if (hostBPM >= 200.0f) {
+            FILE* debugFile = fopen("/tmp/bitwig_debug.log", "a");
+            if (debugFile) {
+                fprintf(debugFile, "BPM SYNC: hostBPM=%.1f, currentBPM=%.1f, diff=%.3f\n",
+                    hostBPM, currentBPM, std::abs(currentBPM - hostBPM));
+                fflush(debugFile);
+                fclose(debugFile);
+            }
+        }
+        
         // Update our BPM parameter to match host
-        if (std::abs(bpmParam->get() - posInfo.bpm) > 0.1f)
+        if (std::abs(currentBPM - hostBPM) > 0.1f)
         {
-            bpmParam->setValueNotifyingHost(bpmParam->convertTo0to1(static_cast<float>(posInfo.bpm)));
+            bpmParam->setValueNotifyingHost(bpmParam->convertTo0to1(hostBPM));
             updateTiming();
+            
+            // Log successful BPM updates
+            if (hostBPM >= 200.0f) {
+                FILE* debugFile = fopen("/tmp/bitwig_debug.log", "a");
+                if (debugFile) {
+                    fprintf(debugFile, "BPM UPDATED: %.1f->%.1f, newSamplesPerStep=%d\n",
+                        currentBPM, hostBPM, samplesPerStep);
+                    fflush(debugFile);
+                    fclose(debugFile);
+                }
+            }
         }
     }
-    
+}
+
+void RhythmPatternExplorerAudioProcessor::syncPositionWithHost(const juce::AudioPlayHead::CurrentPositionInfo& posInfo)
+{
     // Calculate pattern position based on host timeline
     if (posInfo.ppqPosition >= 0.0)
     {
@@ -385,12 +600,28 @@ void RhythmPatternExplorerAudioProcessor::syncWithHost(const juce::AudioPlayHead
         
         int targetStep = static_cast<int>(stepsFromStart) % patternEngine.getStepCount();
         
-        // If we're significantly out of sync, jump to correct position
-        if (std::abs(targetStep - currentStep) > 1)
+        // CRITICAL FIX: Disable position sync entirely - it interferes with natural step advancement
+        float currentBPM = bpmParam ? bpmParam->get() : 120.0f;
+        bool allowPositionSync = false;  // DISABLED: Position sync was resetting currentSample constantly
+        
+        // CRITICAL FIX: Only sync position when significantly out of sync (not every block)
+        int stepDifference = std::abs(targetStep - currentStep.load());
+        if (allowPositionSync && stepDifference > 2)  // Increased threshold from 1 to 2
         {
-            currentStep = targetStep;
+            currentStep.store(targetStep);
             currentSample = static_cast<int>((stepsFromStart - std::floor(stepsFromStart)) * samplesPerStep);
-            DBG("RhythmPatternExplorer: Synced to host position - Step: " << currentStep << ", Sample: " << currentSample);
+            DBG("RhythmPatternExplorer: Synced to host position - Step: " << targetStep << ", Sample: " << currentSample);
+        }
+        else if (!allowPositionSync && currentBPM >= 180.0f)
+        {
+            // Log that we're skipping position sync at high BPM
+            FILE* debugFile = fopen("/tmp/bitwig_debug.log", "a");
+            if (debugFile) {
+                fprintf(debugFile, "POSITION SYNC DISABLED: BPM=%.1f, targetStep=%d, currentStep=%d\n",
+                    currentBPM, targetStep, currentStep.load());
+                fflush(debugFile);
+                fclose(debugFile);
+            }
         }
     }
     

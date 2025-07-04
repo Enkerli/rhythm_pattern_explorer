@@ -77,8 +77,19 @@ public:
     juce::AudioParameterBool* getUseHostTransportParameter() { return useHostTransportParam; }
     
     // Playback state
-    int getCurrentStep() const { return currentStep; }
-    bool isCurrentlyPlaying() const { return playingParam->get() > 0.5f; }
+    int getCurrentStep() const { return currentStep.load(); }
+    bool isCurrentlyPlaying() const { 
+        // REFINED: Check if we're getting recent processBlock calls AND transport is playing
+        double currentTime = juce::Time::getMillisecondCounter();
+        bool recentProcessBlock = (currentTime - lastProcessBlockTime) < 100.0; // Within last 100ms
+        
+        // First try host transport, fall back to recent processBlock activity
+        if (useHostTransportParam && useHostTransportParam->get()) {
+            return hostIsPlaying && recentProcessBlock;
+        } else {
+            return playingParam->get() && recentProcessBlock;
+        }
+    }
     
     // UPI pattern input methods
     void setUPIInput(const juce::String& upiPattern);
@@ -97,13 +108,14 @@ private:
     double currentSampleRate = 44100.0;
     int samplesPerStep = 0;
     int currentSample = 0;
-    int currentStep = 0;
+    std::atomic<int> currentStep{0};
     bool wasPlaying = false;
     
     // DAW transport sync
     bool useHostTransport = true;
     double lastHostPosition = 0.0;
     bool hostIsPlaying = false;
+    mutable double lastProcessBlockTime = 0.0;
     
     // Parameters - original working approach
     juce::AudioParameterFloat* bpmParam;
@@ -124,7 +136,8 @@ private:
     void updateTiming();
     void processStep(juce::MidiBuffer& midiBuffer, int samplePosition);
     void triggerNote(juce::MidiBuffer& midiBuffer, int samplePosition);
-    void syncWithHost(const juce::AudioPlayHead::CurrentPositionInfo& posInfo);
+    void syncBPMWithHost(const juce::AudioPlayHead::CurrentPositionInfo& posInfo);
+    void syncPositionWithHost(const juce::AudioPlayHead::CurrentPositionInfo& posInfo);
     void checkMidiInputForTriggers(juce::MidiBuffer& midiMessages);
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (RhythmPatternExplorerAudioProcessor)

@@ -65,7 +65,7 @@ private:
     
     juce::TextEditor patternDisplayEditor;
     juce::Label analysisLabel;
-    juce::Label versionLabel;
+    juce::TextEditor versionEditor;
     
     // Attachments for automatic parameter binding
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> bpmAttachment;

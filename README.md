@@ -136,19 +136,17 @@ The **WebApp** serves as the **reference implementation** - all algorithms are f
 
 ## Version History
 
-### Current: v2.8 (July 2025)
-- ✅ All progressive transformations working
-- ✅ Thread-safe plugin implementation
-- ✅ Comprehensive testing framework
-- ✅ Professional-grade UI and UX
-- ✅ Full AU/VST3/Standalone support
+### Current: v0.02b (July 2024) - Major Timing Fixes Release
+- ✅ **Timing Issues Resolved**: Fixed step advancement and animation problems
+- ✅ **BPM Range Expanded**: 20-666 BPM support (previously limited to 180 BPM)
+- ✅ **Performance Validated**: Bitwig Studio 5.3.12 stress tested
+- ✅ **Position Sync Fixed**: Eliminated host timeline interference
+- ✅ **Clean Interface**: Streamlined UPI-focused design
 
 ### Key Milestones
-- **v1.0**: Initial WebApp implementation
-- **v2.0**: Plugin development started
-- **v2.5**: Progressive transformations completed
-- **v2.7**: Thread safety and stability
-- **v2.8**: Production ready, comprehensive testing
+- **v0.01**: Initial stable plugin release with core pattern engine
+- **v0.02a**: Enhanced UI with pie chart visualization and UPI input
+- **v0.02b**: Major timing fixes, BPM range expansion, performance optimization
 
 ## Requirements
 
@@ -182,12 +180,13 @@ python3 -m http.server 8000
 ## Compatibility
 
 ### Plugin Hosts (Tested)
-- ✅ **Logic Pro**: Full AU support
-- ✅ **GarageBand**: AU support
-- ✅ **MainStage**: AU support (live performance)
-- ✅ **Cubase**: VST3 support
-- ✅ **Reaper**: AU/VST3 support
-- ✅ **Ableton Live**: VST3 support
+- ✅ **Bitwig Studio**: 5.3.12 VST3 (extensively tested 20-666 BPM)
+- ✅ **Logic Pro**: AU support (validated)
+- 🔍 **GarageBand**: AU support (basic testing)
+- 🔍 **MainStage**: AU support (basic testing)
+- 🔍 **Cubase**: VST3 support (basic testing)
+- 🔍 **Reaper**: AU/VST3 support (basic testing)
+- 🔍 **Ableton Live**: VST3 support (basic testing)
 
 ### Browsers (WebApp)
 - ✅ **Chrome/Edge**: Full feature support

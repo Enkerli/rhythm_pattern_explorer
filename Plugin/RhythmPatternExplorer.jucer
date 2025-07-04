@@ -4,8 +4,8 @@
               useAppConfig="0" addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1"
               bundleIdentifier="com.rhythmpatternexplorer.auv3" pluginName="Rhythm Pattern Explorer"
               pluginDesc="Mathematical rhythm pattern generator and analyzer"
-              pluginManufacturer="Rhythm Pattern Explorer" pluginManufacturerCode="RPE1"
-              pluginCode="Rpe1" pluginChannelConfigs="{0,0}" pluginIsSynth="0"
+              pluginManufacturer="Rhythm Pattern Explorer" pluginManufacturerCode="RhPt"
+              pluginCode="RhPx" pluginChannelConfigs="{0,0}" pluginIsSynth="0"
               pluginWantsMidiIn="1" pluginProducesMidiOut="1" pluginIsMidiEffectPlugin="1"
               pluginEditorRequiresKeys="0" pluginAUExportPrefix="RhythmPatternExplorerAU"
               pluginRTASCategory="2" aaxIdentifier="com.rhythmpatternexplorer.auv3"
@@ -14,7 +14,7 @@
               reportAppUsage="1" splashScreenColour="Dark" projectLineFeed="&#10;"
               version="1.0.0" defines="JUCE_DISPLAY_SPLASH_SCREEN=1&#10;JUCE_USE_DARK_SPLASH_SCREEN=1"
               pluginCharacteristicsValue="pluginWantsMidiIn,pluginProducesMidiOut,pluginIsMidiEffectPlugin"
-              pluginFormats="buildVST3,buildAU,buildAUv3,buildStandalone">
+              pluginFormats="buildVST3,buildAU">
   <MAINGROUP id="kFhzrE" name="Rhythm Pattern Explorer">
     <GROUP id="{8E893B9A-7F6D-B7E4-1A89-6E2F8B3E5C84}" name="Source">
       <FILE id="GJxGhs" name="PluginProcessor.cpp" compile="1" resource="0"
