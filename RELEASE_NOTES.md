@@ -1,4 +1,4 @@
-# Release Notes - v0.02b.240703.2245-CLEAN
+# Release Notes - v0.02a
 
 ## 🎉 Major Timing Fixes Release
 
@@ -194,7 +194,7 @@ STEP TRIGGER: BPM=180.0, Step 2->3, samplesPerStep=1837
 
 ---
 
-**Version**: v0.02b.240703.2245-CLEAN  
-**Release Date**: July 3, 2024  
+**Version**: v0.02a  
+**Release Date**: July 2024  
 **Compatibility**: macOS 10.15+, AU/VST3  
 **Tested**: Bitwig Studio 5.3.12, Logic Pro

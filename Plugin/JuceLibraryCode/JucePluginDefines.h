@@ -56,10 +56,10 @@
  #define JucePlugin_ManufacturerEmail      "support@rhythmpatternexplorer.com"
 #endif
 #ifndef  JucePlugin_ManufacturerCode
- #define JucePlugin_ManufacturerCode       0x52504531
+ #define JucePlugin_ManufacturerCode       0x52685074
 #endif
 #ifndef  JucePlugin_PluginCode
- #define JucePlugin_PluginCode             0x52706531
+ #define JucePlugin_PluginCode             0x52685078
 #endif
 #ifndef  JucePlugin_IsSynth
  #define JucePlugin_IsSynth                0

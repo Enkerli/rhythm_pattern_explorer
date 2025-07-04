@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>BuildMachineOSBuild</key>
+	<string>24G5054d</string>
+	<key>CFBundleDisplayName</key>
+	<string>Rhythm Pattern Explorer</string>
+	<key>CFBundleExecutable</key>
+	<string>Rhythm Pattern Explorer</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.rhythmpatternexplorer.auv3.auv3AUv3</string>
+	<key>CFBundleName</key>
+	<string>Rhythm Pattern Explorer</string>
+	<key>CFBundlePackageType</key>
+	<string>XPC!</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0.0</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleSupportedPlatforms</key>
+	<array>
+		<string>MacOSX</string>
+	</array>
+	<key>CFBundleVersion</key>
+	<string>1.0.0</string>
+	<key>DTCompiler</key>
+	<string>com.apple.compilers.llvm.clang.1_0</string>
+	<key>DTPlatformBuild</key>
+	<string>24F74</string>
+	<key>DTPlatformName</key>
+	<string>macosx</string>
+	<key>DTPlatformVersion</key>
+	<string>15.5</string>
+	<key>DTSDKBuild</key>
+	<string>24F74</string>
+	<key>DTSDKName</key>
+	<string>macosx15.5</string>
+	<key>DTXcode</key>
+	<string>1640</string>
+	<key>DTXcodeBuild</key>
+	<string>16F6</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>10.13</string>
+	<key>NSExtension</key>
+	<dict>
+		<key>NSExtensionAttributes</key>
+		<dict>
+			<key>AudioComponents</key>
+			<array>
+				<dict>
+					<key>description</key>
+					<string>Mathematical rhythm pattern generator and analyzer</string>
+					<key>factoryFunction</key>
+					<string>RhythmPatternExplorerAUFactoryAUv3</string>
+					<key>manufacturer</key>
+					<string>RPE1</string>
+					<key>name</key>
+					<string>Rhythm Pattern Explorer: Rhythm Pattern Explorer</string>
+					<key>sandboxSafe</key>
+					<true/>
+					<key>subtype</key>
+					<string>Rpe1</string>
+					<key>tags</key>
+					<array>
+						<string>Effects</string>
+					</array>
+					<key>type</key>
+					<string>aumf</string>
+					<key>version</key>
+					<integer>65536</integer>
+				</dict>
+			</array>
+		</dict>
+		<key>NSExtensionPointIdentifier</key>
+		<string>com.apple.AudioUnit-UI</string>
+		<key>NSExtensionPrincipalClass</key>
+		<string>RhythmPatternExplorerAUFactoryAUv3</string>
+	</dict>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+</dict>
+</plist>

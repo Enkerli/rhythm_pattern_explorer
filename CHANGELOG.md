@@ -1,6 +1,6 @@
 # Rhythm Pattern Explorer - Changelog
 
-## v0.02b.240703.2245-CLEAN - Major Timing Fixes Release
+## v0.02a - Major Timing Fixes Release
 
 ### 🎯 **Critical Timing Issues Resolved**
 - **Fixed step advancement problems** at all BPM ranges (20-666 BPM tested)
@@ -39,20 +39,11 @@
 - **Playing Logic**: `isPlaying = posInfo.isPlaying || playingParam->get()` (OR condition)
 - **Step Advancement**: Natural sample counting without host timeline resets
 
----
-
-## v0.02a - Enhanced UI with Pie Chart Visualization
-
-### ✨ **New Features**
+### 🎨 **Enhanced UI Features**
 - **Pie Chart Visualization**: Interactive donut-style pattern display
 - **Real-time Animation**: Step highlighting during playback
-- **Multiple Format Display**: Binary, hex, octal, decimal pattern representations
 - **UPI Pattern Input**: Universal Pattern Input language support
-
-### 🎨 **UI Improvements** 
-- **Clean Interface**: Minimal controls for focused workflow
-- **Resizable Window**: Adaptive layout with size constraints
-- **Version Display**: Build version tracking for debugging
+- **Clean Interface Design**: Streamlined controls for focused workflow
 
 ---
 

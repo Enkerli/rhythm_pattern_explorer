@@ -35,11 +35,11 @@
         <key>factoryFunction</key>
         <string>RhythmPatternExplorerAUFactory</string>
         <key>manufacturer</key>
-        <string>RPE1</string>
+        <string>RhPt</string>
         <key>type</key>
         <string>aumi</string>
         <key>subtype</key>
-        <string>Rpe1</string>
+        <string>RhPx</string>
         <key>version</key>
         <integer>65536</integer>
         <key>resourceUsage</key>

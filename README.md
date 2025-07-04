@@ -136,7 +136,7 @@ The **WebApp** serves as the **reference implementation** - all algorithms are f
 
 ## Version History
 
-### Current: v0.02b (July 2024) - Major Timing Fixes Release
+### Current: v0.02a (July 2024) - Major Timing Fixes Release
 - ✅ **Timing Issues Resolved**: Fixed step advancement and animation problems
 - ✅ **BPM Range Expanded**: 20-666 BPM support (previously limited to 180 BPM)
 - ✅ **Performance Validated**: Bitwig Studio 5.3.12 stress tested
@@ -145,8 +145,7 @@ The **WebApp** serves as the **reference implementation** - all algorithms are f
 
 ### Key Milestones
 - **v0.01**: Initial stable plugin release with core pattern engine
-- **v0.02a**: Enhanced UI with pie chart visualization and UPI input
-- **v0.02b**: Major timing fixes, BPM range expansion, performance optimization
+- **v0.02a**: Enhanced UI with pie chart visualization, UPI input, and major timing fixes
 
 ## Requirements
 
