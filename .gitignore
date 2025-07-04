@@ -23,14 +23,19 @@
 **/Builds/**/build/
 **/JuceLibraryCode/
 
-# Compiled binaries  
-**/*.component/
-**/*.vst3/Contents/MacOS/
-**/*.au/Contents/MacOS/
+# Compiled binaries (exclude build artifacts, allow release versions)
+**/Builds/**/build/**/*.component/
+**/Builds/**/build/**/*.vst3/
+**/Builds/**/build/**/*.au/
 **/juce_vst3_helper
+~/Library/Audio/Plug-Ins/**
 
-# Code signing
-**/_CodeSignature/
+# Code signing for build artifacts (allow in releases)
+**/Builds/**/_CodeSignature/
+
+# Log files and temporary files
+**/*.log
+**/logs/
 
 # Temporary files
 **/Temporary*
