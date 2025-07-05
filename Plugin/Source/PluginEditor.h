@@ -37,6 +37,9 @@ public:
     
     // Timer callback for UI updates
     void timerCallback() override;
+    
+    // MIDI note access
+    int getMidiNoteNumber() const;
 
 private:
     //==============================================================================
@@ -66,6 +69,10 @@ private:
     // Instance Name
     juce::TextEditor instanceNameEditor;
     juce::Label instanceNameLabel;
+    
+    // MIDI Note Number
+    juce::TextEditor midiNoteEditor;
+    juce::Label midiNoteLabel;
     
     juce::TextEditor patternDisplayEditor;
     juce::Label analysisLabel;

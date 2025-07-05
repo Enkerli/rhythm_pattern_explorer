@@ -27,7 +27,7 @@ RhythmPatternExplorerAudioProcessor::RhythmPatternExplorerAudioProcessor()
     // Initialize parameters using original working approach
     addParameter(bpmParam = new juce::AudioParameterFloat("bpm", "BPM", 60.0f, 1000.0f, 120.0f));
     addParameter(patternTypeParam = new juce::AudioParameterChoice("patternType", "Pattern Type", 
-        juce::StringArray("Euclidean", "Polygon", "Random", "Binary", "UPI"), 0));
+        juce::StringArray("Euclidean", "Polygon", "Random", "Binary", "UPI", "Indispensability"), 0));
     addParameter(onsetsParam = new juce::AudioParameterInt("onsets", "Onsets", 1, 16, 3));
     addParameter(stepsParam = new juce::AudioParameterInt("steps", "Steps", 4, 32, 8));
     addParameter(playingParam = new juce::AudioParameterBool("playing", "Playing", false));
@@ -304,6 +304,9 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
             case 4: // UPI
                 // UPI patterns are set directly via setUPIInput(), no need to regenerate here
                 break;
+            case 5: // Indispensability (Evanstein hierarchical)
+                patternEngine.generateIndispensabilityPattern(currentOnsets, currentSteps);
+                break;
         }
         
         lastOnsets = currentOnsets;
@@ -537,16 +540,26 @@ void RhythmPatternExplorerAudioProcessor::processStep(juce::MidiBuffer& midiBuff
 
 void RhythmPatternExplorerAudioProcessor::triggerNote(juce::MidiBuffer& midiBuffer, int samplePosition)
 {
+    // Get MIDI note number from editor, default to 36 (C2) if no editor
+    int noteNumber = 36; // Default kick drum note
+    if (auto* editor = getActiveEditor())
+    {
+        if (auto* rhythmEditor = dynamic_cast<RhythmPatternExplorerAudioProcessorEditor*>(editor))
+        {
+            noteNumber = rhythmEditor->getMidiNoteNumber();
+        }
+    }
+    
     // Send MIDI note
-    juce::MidiMessage noteOn = juce::MidiMessage::noteOn(1, 36, 0.8f); // C2, velocity 102
-    juce::MidiMessage noteOff = juce::MidiMessage::noteOff(1, 36, 0.0f);
+    juce::MidiMessage noteOn = juce::MidiMessage::noteOn(1, noteNumber, 0.8f);
+    juce::MidiMessage noteOff = juce::MidiMessage::noteOff(1, noteNumber, 0.0f);
     
     midiBuffer.addEvent(noteOn, samplePosition);
     midiBuffer.addEvent(noteOff, samplePosition + 100); // 100 samples note duration
     
     // MIDI effect mode - no audio synthesis
     
-    DBG("RhythmPatternExplorer: Note triggered at step " << currentStep.load());
+    DBG("RhythmPatternExplorer: Note " << noteNumber << " triggered at step " << currentStep.load());
 }
 
 void RhythmPatternExplorerAudioProcessor::syncBPMWithHost(const juce::AudioPlayHead::CurrentPositionInfo& posInfo)
