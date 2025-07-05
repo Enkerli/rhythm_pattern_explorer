@@ -63,6 +63,10 @@ private:
     juce::Label upiLabel;
     juce::TextButton parseUPIButton;
     
+    // Instance Name
+    juce::TextEditor instanceNameEditor;
+    juce::Label instanceNameLabel;
+    
     juce::TextEditor patternDisplayEditor;
     juce::Label analysisLabel;
     juce::TextEditor versionEditor;
