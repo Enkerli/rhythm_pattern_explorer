@@ -149,7 +149,8 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     // Initialize WebView documentation (initially hidden)
 #if JUCE_WEB_BROWSER
     docsBrowser = std::make_unique<juce::WebBrowserComponent>();
-    addChildComponent(*docsBrowser); // Hidden initially
+    docsBrowser->setVisible(false); // Explicitly hidden initially
+    addAndMakeVisible(*docsBrowser);
     createDocumentationHTML();
 #endif
     
@@ -311,9 +312,17 @@ void RhythmPatternExplorerAudioProcessorEditor::resized()
     
     // WebView documentation area (full remaining area when shown)
 #if JUCE_WEB_BROWSER
-    if (docsBrowser && showingDocs)
+    if (docsBrowser)
     {
-        docsBrowser->setBounds(circleArea);
+        if (showingDocs)
+        {
+            docsBrowser->setBounds(circleArea);
+            docsBrowser->setVisible(true);
+        }
+        else
+        {
+            docsBrowser->setVisible(false);
+        }
     }
 #endif
 }
@@ -605,18 +614,11 @@ void RhythmPatternExplorerAudioProcessorEditor::toggleDocumentation()
     
     showingDocs = !showingDocs;
     
-    if (showingDocs)
-    {
-        docsToggleButton.setButtonText("Pattern");
-        docsBrowser->setVisible(true);
-    }
-    else
-    {
-        docsToggleButton.setButtonText("Docs");
-        docsBrowser->setVisible(false);
-    }
+    // Update button text
+    docsToggleButton.setButtonText(showingDocs ? "Pattern" : "Docs");
     
-    resized(); // Update layout
+    // Force layout update - this will handle visibility in resized()
+    resized();
     repaint();
 #endif
 }
@@ -656,6 +658,7 @@ void RhythmPatternExplorerAudioProcessorEditor::createDocumentationHTML()
     htmlContent += "<div class=\"quick-ref\">\n";
     htmlContent += "<h3>Quick Reference</h3>\n";
     htmlContent += "<p>UPI provides a mathematical language for describing rhythm patterns using algorithms like Euclidean, Polygon, and Binary sequences.</p>\n";
+    htmlContent += "<p><strong>Download:</strong> <a href=\"https://github.com/Enkerli/rhythm_pattern_explorer/releases\" target=\"_blank\" style=\"color: #68d391; text-decoration: underline;\">Latest Releases</a> | <a href=\"https://github.com/Enkerli/rhythm_pattern_explorer\" target=\"_blank\" style=\"color: #68d391; text-decoration: underline;\">Source Code</a></p>\n";
     htmlContent += "</div>\n";
     htmlContent += "<h2>Basic Patterns</h2>\n";
     htmlContent += "<div class=\"pattern-example\">\n";
