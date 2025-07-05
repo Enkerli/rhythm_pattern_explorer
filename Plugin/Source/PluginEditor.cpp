@@ -83,9 +83,8 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     parseUPIButton.onClick = [this]() { onParseButtonClicked(); };
     addAndMakeVisible(parseUPIButton);
     
-    // Instance Name Editor
-    instanceNameLabel.setText("Instance:", juce::dontSendNotification);
-    instanceNameLabel.attachToComponent(&instanceNameEditor, true);
+    // Instance Name Editor - compact version
+    instanceNameLabel.setText("Name:", juce::dontSendNotification);
     addAndMakeVisible(instanceNameLabel);
     
     instanceNameEditor.setMultiLine(false);
@@ -94,10 +93,25 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     instanceNameEditor.setScrollbarsShown(false);
     instanceNameEditor.setCaretVisible(true);
     instanceNameEditor.setPopupMenuEnabled(true);
-    instanceNameEditor.setText("Rhythm Explorer", juce::dontSendNotification);
-    instanceNameEditor.setFont(juce::Font(14.0f));
+    instanceNameEditor.setText("Rhythm", juce::dontSendNotification);
+    instanceNameEditor.setFont(juce::Font(12.0f));
     instanceNameEditor.setJustification(juce::Justification::centredLeft);
     addAndMakeVisible(instanceNameEditor);
+    
+    // MIDI Note Editor
+    midiNoteLabel.setText("Note:", juce::dontSendNotification);
+    addAndMakeVisible(midiNoteLabel);
+    
+    midiNoteEditor.setMultiLine(false);
+    midiNoteEditor.setReturnKeyStartsNewLine(false);
+    midiNoteEditor.setReadOnly(false);
+    midiNoteEditor.setScrollbarsShown(false);
+    midiNoteEditor.setCaretVisible(true);
+    midiNoteEditor.setPopupMenuEnabled(true);
+    midiNoteEditor.setText("36", juce::dontSendNotification); // C2 - kick drum
+    midiNoteEditor.setFont(juce::Font(12.0f));
+    midiNoteEditor.setJustification(juce::Justification::centred);
+    addAndMakeVisible(midiNoteEditor);
     
     // Pattern Display Editor - copyable and readable
     patternDisplayEditor.setMultiLine(true);
@@ -207,22 +221,32 @@ void RhythmPatternExplorerAudioProcessorEditor::resized()
     // Title area
     auto titleArea = area.removeFromTop(50);
     
-    // Control area - minimal layout with UPI input and instance name
-    auto controlArea = area.removeFromTop(100);
+    // Control area - compact layout with UPI input and controls
+    auto controlArea = area.removeFromTop(70);
     controlArea.reduce(20, 10);
     
-    // UPI Pattern Input row - primary control
+    // UPI Pattern Input row - primary control with compact extras
     auto upiRow = controlArea.removeFromTop(40);
     upiLabel.setBounds(upiRow.removeFromLeft(100));
-    parseUPIButton.setBounds(upiRow.removeFromRight(80).reduced(5));
+    
+    // Compact controls to the right
+    auto rightControls = upiRow.removeFromRight(280); // Space for Parse + Name + Note
+    parseUPIButton.setBounds(rightControls.removeFromLeft(80).reduced(5));
+    rightControls.removeFromLeft(10); // spacing
+    
+    // Instance Name (compact)
+    instanceNameLabel.setBounds(rightControls.removeFromLeft(45));
+    auto instanceField = rightControls.removeFromLeft(80).reduced(2);
+    instanceNameEditor.setBounds(instanceField);
+    rightControls.removeFromLeft(10); // spacing
+    
+    // MIDI Note (compact)
+    midiNoteLabel.setBounds(rightControls.removeFromLeft(35));
+    auto noteField = rightControls.removeFromLeft(50).reduced(2);
+    midiNoteEditor.setBounds(noteField);
+    
+    // UPI text field gets remaining space
     upiTextEditor.setBounds(upiRow.reduced(5));
-    
-    controlArea.removeFromTop(10); // spacing
-    
-    // Instance Name row
-    auto instanceRow = controlArea.removeFromTop(30);
-    instanceNameLabel.setBounds(instanceRow.removeFromLeft(80));
-    instanceNameEditor.setBounds(instanceRow.reduced(5));
     
     // All other controls commented out for clean interface
     /*
@@ -550,4 +574,11 @@ void RhythmPatternExplorerAudioProcessorEditor::parseUPIPattern()
 void RhythmPatternExplorerAudioProcessorEditor::onParseButtonClicked()
 {
     parseUPIPattern();
+}
+
+int RhythmPatternExplorerAudioProcessorEditor::getMidiNoteNumber() const
+{
+    int noteNumber = midiNoteEditor.getText().getIntValue();
+    // Clamp to valid MIDI range (0-127)
+    return juce::jlimit(0, 127, noteNumber);
 }
