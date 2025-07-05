@@ -17,7 +17,7 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     // Plugin size - resizable with minimum and maximum constraints
     setSize (500, 600);
     setResizable(true, true);
-    setResizeLimits(400, 400, 1200, 1000); // min width, min height, max width, max height
+    setResizeLimits(150, 150, 1200, 1000); // min width, min height, max width, max height - small min for Easter egg
     
     // BPM Slider - COMMENTED OUT for clean interface
     /*
@@ -208,14 +208,17 @@ RhythmPatternExplorerAudioProcessorEditor::~RhythmPatternExplorerAudioProcessorE
 //==============================================================================
 void RhythmPatternExplorerAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    // Background
-    g.fillAll (juce::Colour(0xff2d3748));
+    // Background with color option
+    g.fillAll(getBackgroundColour());
     
-    // Title
-    g.setColour (juce::Colours::white);
-    g.setFont (juce::Font(18.0f, juce::Font::bold));
-    g.drawText ("Rhythm Pattern Explorer", 0, 10, getWidth(), 30, 
-                juce::Justification::centred);
+    // Title (only in normal mode)
+    if (!minimalMode)
+    {
+        g.setColour (juce::Colours::white);
+        g.setFont (juce::Font(18.0f, juce::Font::bold));
+        g.drawText ("Rhythm Pattern Explorer", 0, 10, getWidth(), 30, 
+                    juce::Justification::centred);
+    }
     
     // Pattern circle area - now uses dynamic sizing from resized()
     if (!circleArea.isEmpty())
@@ -225,6 +228,41 @@ void RhythmPatternExplorerAudioProcessorEditor::paint (juce::Graphics& g)
 void RhythmPatternExplorerAudioProcessorEditor::resized()
 {
     auto area = getLocalBounds();
+    
+    // Check for minimal mode (Easter egg for very small windows)
+    bool shouldBeMinimal = (getWidth() <= MINIMAL_MODE_THRESHOLD || getHeight() <= MINIMAL_MODE_THRESHOLD);
+    
+    if (shouldBeMinimal != minimalMode)
+    {
+        minimalMode = shouldBeMinimal;
+        // Force all controls to update visibility
+        upiLabel.setVisible(!minimalMode);
+        upiTextEditor.setVisible(!minimalMode);
+        parseUPIButton.setVisible(!minimalMode);
+        instanceNameEditor.setVisible(!minimalMode);
+        midiNoteLabel.setVisible(!minimalMode);
+        midiNoteSlider.setVisible(!minimalMode);
+        patternDisplayEditor.setVisible(!minimalMode);
+        docsToggleButton.setVisible(!minimalMode);
+        versionEditor.setVisible(!minimalMode);
+        
+        DBG("Minimal mode: " + juce::String(minimalMode ? "ON" : "OFF"));
+    }
+    
+    if (minimalMode)
+    {
+        // MINIMAL MODE: Just the circle, maximum size
+        circleArea = getLocalBounds().reduced(5); // Small margin for visual breathing room
+        
+        // Hide WebView in minimal mode
+#if JUCE_WEB_BROWSER
+        if (docsBrowser)
+            docsBrowser->setVisible(false);
+#endif
+        return; // Early exit - no other layout needed
+    }
+    
+    // NORMAL MODE: Full UI layout
     
     // Title area
     auto titleArea = area.removeFromTop(50);
@@ -255,43 +293,6 @@ void RhythmPatternExplorerAudioProcessorEditor::resized()
     // UPI text field gets remaining space
     upiTextEditor.setBounds(upiRow.reduced(5));
     
-    // All other controls commented out for clean interface
-    /*
-    controlArea.removeFromTop(10); // spacing
-    
-    // BPM row
-    auto bpmRow = controlArea.removeFromTop(30);
-    bpmLabel.setBounds(bpmRow.removeFromLeft(50));
-    bpmSlider.setBounds(bpmRow);
-    
-    controlArea.removeFromTop(5); // spacing
-    
-    // Pattern Type row
-    auto patternRow = controlArea.removeFromTop(30);
-    patternTypeLabel.setBounds(patternRow.removeFromLeft(100));
-    patternTypeComboBox.setBounds(patternRow);
-    
-    // Additional controls in a compact layout
-    auto compactArea = area.removeFromTop(80);
-    compactArea.reduce(20, 5);
-    
-    // Onsets and Steps in one row
-    auto paramRow = compactArea.removeFromTop(30);
-    onsetsLabel.setBounds(paramRow.removeFromLeft(60));
-    onsetsSlider.setBounds(paramRow.removeFromLeft(120));
-    paramRow.removeFromLeft(10); // spacing
-    stepsLabel.setBounds(paramRow.removeFromLeft(50));
-    stepsSlider.setBounds(paramRow);
-    
-    compactArea.removeFromTop(5); // spacing
-    
-    // Play and Generate buttons row
-    auto buttonRow = compactArea.removeFromTop(30);
-    playButton.setBounds(buttonRow.removeFromLeft(80));
-    buttonRow.removeFromLeft(10); // spacing
-    generateButton.setBounds(buttonRow.removeFromLeft(100));
-    */
-    
     // Pattern display area (text results) - readable size
     auto displayArea = area.removeFromTop(60);
     patternDisplayEditor.setBounds(displayArea.reduced(10));
@@ -314,8 +315,6 @@ void RhythmPatternExplorerAudioProcessorEditor::resized()
         versionEditor.setBounds(bottomArea.removeFromLeft(100));
     }
     
-    // Step counter display removed for clean production interface
-    
     // Remaining area is for the circle - MAXIMIZED for clean interface
     circleArea = area.expanded(100);
     
@@ -334,7 +333,7 @@ void RhythmPatternExplorerAudioProcessorEditor::resized()
             // Reposition docs toggle button to be visible
             docsToggleButton.setBounds(bottomControls.removeFromRight(80).reduced(2));
         }
-        docsBrowser->setVisible(showingDocs);
+        docsBrowser->setVisible(showingDocs && !minimalMode);
     }
 #endif
 }
@@ -426,14 +425,15 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
     // Clean production version - no debug output
     
     // Draw the background circle first
-    g.setColour(juce::Colour(0xff2d3748));
+    g.setColour(getBackgroundColour());
     g.fillEllipse(center.x - outerRadius, center.y - outerRadius, outerRadius * 2, outerRadius * 2);
     
     // Draw each slice using the most basic approach possible
     for (int i = 0; i < numSteps; ++i)
     {
         float sliceAngle = 2.0f * juce::MathConstants<float>::pi / numSteps;
-        float startAngle = (i * sliceAngle) - juce::MathConstants<float>::halfPi;
+        // Start at 12 o'clock (north) and center slice 0 there: offset by half slice angle
+        float startAngle = (i * sliceAngle) - juce::MathConstants<float>::halfPi - (sliceAngle * 0.5f);
         float endAngle = startAngle + sliceAngle;
         
         // Only draw onset slices
@@ -468,7 +468,7 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
     // Draw inner circle to create donut effect AFTER all slices
     if (innerRadius > 0)
     {
-        g.setColour(juce::Colour(0xff2d3748)); // Same as background
+        g.setColour(getBackgroundColour()); // Same as background
         g.fillEllipse(center.x - innerRadius, center.y - innerRadius, 
                      innerRadius * 2, innerRadius * 2);
     }
@@ -484,7 +484,8 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
     if (showHighlight && highlightStep >= 0 && highlightStep < numSteps)
     {
         float sliceAngle = 2.0f * juce::MathConstants<float>::pi / numSteps;
-        float startAngle = (highlightStep * sliceAngle) - juce::MathConstants<float>::halfPi;
+        // Use same alignment as main slices: start at 12 o'clock and center slice 0 there
+        float startAngle = (highlightStep * sliceAngle) - juce::MathConstants<float>::halfPi - (sliceAngle * 0.5f);
         float endAngle = startAngle + sliceAngle;
         
         // Create highlight sector same way as regular slices
@@ -511,7 +512,7 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
         // Redraw inner circle on top of highlight
         if (innerRadius > 0)
         {
-            g.setColour(juce::Colour(0xff2d3748));
+            g.setColour(getBackgroundColour());
             g.fillEllipse(center.x - innerRadius, center.y - innerRadius, 
                          innerRadius * 2, innerRadius * 2);
         }
@@ -522,7 +523,8 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
     for (int i = 0; i < numSteps; ++i)
     {
         float sliceAngle = 2.0f * juce::MathConstants<float>::pi / numSteps;
-        float angle = (i * sliceAngle) - juce::MathConstants<float>::halfPi;
+        // Lines between slices: offset by half slice to place between slice boundaries
+        float angle = (i * sliceAngle) - juce::MathConstants<float>::halfPi + (sliceAngle * 0.5f);
         
         float lineStartX = center.x + innerRadius * std::cos(angle);
         float lineStartY = center.y + innerRadius * std::sin(angle);
@@ -537,29 +539,30 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
     if (innerRadius > 0)
         g.drawEllipse(center.x - innerRadius, center.y - innerRadius, innerRadius * 2, innerRadius * 2, 2.0f);
     
-    // Draw step markers INSIDE the available space
-    for (int i = 0; i < numSteps; ++i)
+    // Draw step markers INSIDE the available space (only in normal mode)
+    if (!minimalMode)
     {
-        float sliceAngle = 2.0f * juce::MathConstants<float>::pi / numSteps;
-        float angle = (i * sliceAngle) - juce::MathConstants<float>::halfPi;
-        
-        // Position marker at the CENTER of each slice
-        float centerAngle = angle + (sliceAngle * 0.5f);
-        float x = center.x + markerRadius * std::cos(centerAngle);
-        float y = center.y + markerRadius * std::sin(centerAngle);
-        
-        // Draw step marker circles
-        g.setColour(juce::Colour(0xff4a5568));
-        g.fillEllipse(x - 8, y - 8, 16, 16);
-        
-        // Draw step numbers
-        juce::String stepNumber = juce::String(i);
-        g.setFont(juce::FontOptions(12.0f, juce::Font::bold));
-        g.setColour(juce::Colours::white);
-        
-        // Center the text in the marker
-        juce::Rectangle<float> textBounds(x - 8, y - 6, 16, 12);
-        g.drawText(stepNumber, textBounds, juce::Justification::centred);
+        for (int i = 0; i < numSteps; ++i)
+        {
+            float sliceAngle = 2.0f * juce::MathConstants<float>::pi / numSteps;
+            // Position marker at the CENTER of each slice, aligned with 12 o'clock
+            float centerAngle = (i * sliceAngle) - juce::MathConstants<float>::halfPi;
+            float x = center.x + markerRadius * std::cos(centerAngle);
+            float y = center.y + markerRadius * std::sin(centerAngle);
+            
+            // Draw step marker circles
+            g.setColour(juce::Colour(0xff4a5568));
+            g.fillEllipse(x - 8, y - 8, 16, 16);
+            
+            // Draw step numbers
+            juce::String stepNumber = juce::String(i);
+            g.setFont(juce::FontOptions(12.0f, juce::Font::bold));
+            g.setColour(juce::Colours::white);
+            
+            // Center the text in the marker
+            juce::Rectangle<float> textBounds(x - 8, y - 6, 16, 12);
+            g.drawText(stepNumber, textBounds, juce::Justification::centred);
+        }
     }
 }
 
@@ -768,4 +771,32 @@ void RhythmPatternExplorerAudioProcessorEditor::createDocumentationHTML()
         docsBrowser->goToURL("data:text/html," + juce::URL::addEscapeChars(simpleHtml, false));
     }
 #endif
+}
+
+juce::Colour RhythmPatternExplorerAudioProcessorEditor::getBackgroundColour() const
+{
+    switch (currentBackgroundColor)
+    {
+        case BackgroundColor::Dark:   return juce::Colour(0xff2d3748);  // Current dark background
+        case BackgroundColor::White:  return juce::Colours::white;      // White background
+        case BackgroundColor::Green:  return juce::Colour(0xff48bb78);  // Same as onset color
+        case BackgroundColor::Orange: return juce::Colour(0xffff6b35);  // Same as highlight color
+        case BackgroundColor::Blue:   return juce::Colour(0xff4299e1);  // Contrasting blue
+        case BackgroundColor::Purple: return juce::Colour(0xff9f7aea);  // Contrasting purple
+        default: return juce::Colour(0xff2d3748);
+    }
+}
+
+void RhythmPatternExplorerAudioProcessorEditor::cycleBackgroundColor()
+{
+    int current = static_cast<int>(currentBackgroundColor);
+    current = (current + 1) % 6; // 6 total colors
+    currentBackgroundColor = static_cast<BackgroundColor>(current);
+    repaint(); // Trigger redraw with new background color
+}
+
+void RhythmPatternExplorerAudioProcessorEditor::mouseDoubleClick(const juce::MouseEvent& event)
+{
+    // Double-click anywhere to cycle background colors
+    cycleBackgroundColor();
 }
