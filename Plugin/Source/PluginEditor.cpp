@@ -83,10 +83,7 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     parseUPIButton.onClick = [this]() { onParseButtonClicked(); };
     addAndMakeVisible(parseUPIButton);
     
-    // Instance Name Editor - compact version
-    instanceNameLabel.setText("Name:", juce::dontSendNotification);
-    addAndMakeVisible(instanceNameLabel);
-    
+    // Instance Name Editor - no label to save space
     instanceNameEditor.setMultiLine(false);
     instanceNameEditor.setReturnKeyStartsNewLine(false);
     instanceNameEditor.setReadOnly(false);
@@ -98,14 +95,14 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     instanceNameEditor.setJustification(juce::Justification::centredLeft);
     addAndMakeVisible(instanceNameEditor);
     
-    // MIDI Note Slider (spinner style)
+    // MIDI Note Slider (spinner style) - wider text box for number visibility
     midiNoteLabel.setText("Note:", juce::dontSendNotification);
     addAndMakeVisible(midiNoteLabel);
     
     midiNoteSlider.setSliderStyle(juce::Slider::IncDecButtons);
     midiNoteSlider.setRange(0, 127, 1);
     midiNoteSlider.setValue(36); // C2 - kick drum
-    midiNoteSlider.setTextBoxStyle(juce::Slider::TextBoxLeft, false, 40, 20);
+    midiNoteSlider.setTextBoxStyle(juce::Slider::TextBoxLeft, false, 50, 20);
     midiNoteSlider.setIncDecButtonsMode(juce::Slider::incDecButtonsNotDraggable);
     addAndMakeVisible(midiNoteSlider);
     
@@ -226,19 +223,18 @@ void RhythmPatternExplorerAudioProcessorEditor::resized()
     upiLabel.setBounds(upiRow.removeFromLeft(100));
     
     // Compact controls to the right
-    auto rightControls = upiRow.removeFromRight(300); // Space for Parse + Name + Note spinner
+    auto rightControls = upiRow.removeFromRight(290); // Space for Parse + Name + Note spinner
     parseUPIButton.setBounds(rightControls.removeFromLeft(80).reduced(5));
     rightControls.removeFromLeft(10); // spacing
     
-    // Instance Name (compact)
-    instanceNameLabel.setBounds(rightControls.removeFromLeft(45));
-    auto instanceField = rightControls.removeFromLeft(80).reduced(2);
+    // Instance Name (no label - more space for name)
+    auto instanceField = rightControls.removeFromLeft(90).reduced(2);
     instanceNameEditor.setBounds(instanceField);
     rightControls.removeFromLeft(10); // spacing
     
-    // MIDI Note (spinner)
+    // MIDI Note (spinner with wider text box)
     midiNoteLabel.setBounds(rightControls.removeFromLeft(35));
-    auto noteField = rightControls.removeFromLeft(70).reduced(2);
+    auto noteField = rightControls.removeFromLeft(75).reduced(2);
     midiNoteSlider.setBounds(noteField);
     
     // UPI text field gets remaining space
