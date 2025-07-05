@@ -98,20 +98,16 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     instanceNameEditor.setJustification(juce::Justification::centredLeft);
     addAndMakeVisible(instanceNameEditor);
     
-    // MIDI Note Editor
+    // MIDI Note Slider (spinner style)
     midiNoteLabel.setText("Note:", juce::dontSendNotification);
     addAndMakeVisible(midiNoteLabel);
     
-    midiNoteEditor.setMultiLine(false);
-    midiNoteEditor.setReturnKeyStartsNewLine(false);
-    midiNoteEditor.setReadOnly(false);
-    midiNoteEditor.setScrollbarsShown(false);
-    midiNoteEditor.setCaretVisible(true);
-    midiNoteEditor.setPopupMenuEnabled(true);
-    midiNoteEditor.setText("36", juce::dontSendNotification); // C2 - kick drum
-    midiNoteEditor.setFont(juce::Font(12.0f));
-    midiNoteEditor.setJustification(juce::Justification::centred);
-    addAndMakeVisible(midiNoteEditor);
+    midiNoteSlider.setSliderStyle(juce::Slider::IncDecButtons);
+    midiNoteSlider.setRange(0, 127, 1);
+    midiNoteSlider.setValue(36); // C2 - kick drum
+    midiNoteSlider.setTextBoxStyle(juce::Slider::TextBoxLeft, false, 40, 20);
+    midiNoteSlider.setIncDecButtonsMode(juce::Slider::incDecButtonsNotDraggable);
+    addAndMakeVisible(midiNoteSlider);
     
     // Pattern Display Editor - copyable and readable
     patternDisplayEditor.setMultiLine(true);
@@ -230,7 +226,7 @@ void RhythmPatternExplorerAudioProcessorEditor::resized()
     upiLabel.setBounds(upiRow.removeFromLeft(100));
     
     // Compact controls to the right
-    auto rightControls = upiRow.removeFromRight(280); // Space for Parse + Name + Note
+    auto rightControls = upiRow.removeFromRight(300); // Space for Parse + Name + Note spinner
     parseUPIButton.setBounds(rightControls.removeFromLeft(80).reduced(5));
     rightControls.removeFromLeft(10); // spacing
     
@@ -240,10 +236,10 @@ void RhythmPatternExplorerAudioProcessorEditor::resized()
     instanceNameEditor.setBounds(instanceField);
     rightControls.removeFromLeft(10); // spacing
     
-    // MIDI Note (compact)
+    // MIDI Note (spinner)
     midiNoteLabel.setBounds(rightControls.removeFromLeft(35));
-    auto noteField = rightControls.removeFromLeft(50).reduced(2);
-    midiNoteEditor.setBounds(noteField);
+    auto noteField = rightControls.removeFromLeft(70).reduced(2);
+    midiNoteSlider.setBounds(noteField);
     
     // UPI text field gets remaining space
     upiTextEditor.setBounds(upiRow.reduced(5));
@@ -578,7 +574,6 @@ void RhythmPatternExplorerAudioProcessorEditor::onParseButtonClicked()
 
 int RhythmPatternExplorerAudioProcessorEditor::getMidiNoteNumber() const
 {
-    int noteNumber = midiNoteEditor.getText().getIntValue();
-    // Clamp to valid MIDI range (0-127)
-    return juce::jlimit(0, 127, noteNumber);
+    // Slider already handles range validation (0-127)
+    return static_cast<int>(midiNoteSlider.getValue());
 }

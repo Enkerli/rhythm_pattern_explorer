@@ -71,7 +71,7 @@ private:
     juce::Label instanceNameLabel;
     
     // MIDI Note Number
-    juce::TextEditor midiNoteEditor;
+    juce::Slider midiNoteSlider;
     juce::Label midiNoteLabel;
     
     juce::TextEditor patternDisplayEditor;
