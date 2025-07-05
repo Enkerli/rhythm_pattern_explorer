@@ -139,6 +139,20 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     versionEditor.setColour(juce::TextEditor::focusedOutlineColourId, juce::Colour(0xff4a5568));
     addAndMakeVisible(versionEditor);
     
+    // Documentation toggle button
+    docsToggleButton.setButtonText("Docs");
+    docsToggleButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff4a5568));
+    docsToggleButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
+    docsToggleButton.onClick = [this]() { toggleDocumentation(); };
+    addAndMakeVisible(docsToggleButton);
+    
+    // Initialize WebView documentation (initially hidden)
+#if JUCE_WEB_BROWSER
+    docsBrowser = std::make_unique<juce::WebBrowserComponent>();
+    addChildComponent(*docsBrowser); // Hidden initially
+    createDocumentationHTML();
+#endif
+    
     // Step Counter Display - removed for clean production interface
     
     // Connect sliders to parameters - COMMENTED OUT for clean interface
@@ -285,13 +299,23 @@ void RhythmPatternExplorerAudioProcessorEditor::resized()
     auto analysisArea = area.removeFromTop(0);
     analysisLabel.setBounds(analysisArea.reduced(10));
     
-    // Version editor (bottom left corner) - larger bounds for better visibility
-    versionEditor.setBounds(getLocalBounds().removeFromBottom(25).removeFromLeft(100));
+    // Bottom controls area
+    auto bottomArea = getLocalBounds().removeFromBottom(25);
+    versionEditor.setBounds(bottomArea.removeFromLeft(100));
+    docsToggleButton.setBounds(bottomArea.removeFromRight(80));
     
     // Step counter display removed for clean production interface
     
     // Remaining area is for the circle - MAXIMIZED for clean interface
     circleArea = area.expanded(100);
+    
+    // WebView documentation area (full remaining area when shown)
+#if JUCE_WEB_BROWSER
+    if (docsBrowser && showingDocs)
+    {
+        docsBrowser->setBounds(circleArea);
+    }
+#endif
 }
 
 void RhythmPatternExplorerAudioProcessorEditor::timerCallback()
@@ -572,4 +596,130 @@ int RhythmPatternExplorerAudioProcessorEditor::getMidiNoteNumber() const
 {
     // Slider already handles range validation (0-127)
     return static_cast<int>(midiNoteSlider.getValue());
+}
+
+void RhythmPatternExplorerAudioProcessorEditor::toggleDocumentation()
+{
+#if JUCE_WEB_BROWSER
+    if (!docsBrowser) return;
+    
+    showingDocs = !showingDocs;
+    
+    if (showingDocs)
+    {
+        docsToggleButton.setButtonText("Pattern");
+        docsBrowser->setVisible(true);
+    }
+    else
+    {
+        docsToggleButton.setButtonText("Docs");
+        docsBrowser->setVisible(false);
+    }
+    
+    resized(); // Update layout
+    repaint();
+#endif
+}
+
+void RhythmPatternExplorerAudioProcessorEditor::createDocumentationHTML()
+{
+#if JUCE_WEB_BROWSER
+    if (!docsBrowser) return;
+    
+    // Build HTML content using string concatenation to avoid raw string issues
+    juce::String htmlContent;
+    htmlContent += "<!DOCTYPE html>\n";
+    htmlContent += "<html>\n<head>\n";
+    htmlContent += "<meta charset=\"UTF-8\">\n";
+    htmlContent += "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n";
+    htmlContent += "<title>UPI Pattern Documentation</title>\n";
+    htmlContent += "<style>\n";
+    htmlContent += "body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: #2d3748; color: #e2e8f0; margin: 0; padding: 20px; line-height: 1.6; }\n";
+    htmlContent += ".container { max-width: 800px; margin: 0 auto; }\n";
+    htmlContent += "h1, h2, h3 { color: #48bb78; margin-top: 2em; }\n";
+    htmlContent += "h1 { border-bottom: 2px solid #48bb78; padding-bottom: 0.5em; }\n";
+    htmlContent += ".pattern-example { background: #1a202c; border: 1px solid #4a5568; border-radius: 8px; padding: 15px; margin: 15px 0; font-family: 'Monaco', 'Menlo', monospace; }\n";
+    htmlContent += ".pattern-code { color: #68d391; font-weight: bold; font-size: 1.1em; }\n";
+    htmlContent += ".pattern-description { color: #a0aec0; margin-top: 8px; }\n";
+    htmlContent += ".syntax-highlight { color: #f7fafc; background: #2d3748; padding: 2px 6px; border-radius: 4px; font-family: monospace; }\n";
+    htmlContent += ".quick-ref { background: #1a365d; border-left: 4px solid #3182ce; padding: 15px; margin: 20px 0; }\n";
+    htmlContent += ".warning { background: #744210; border-left: 4px solid #d69e2e; padding: 15px; margin: 20px 0; }\n";
+    htmlContent += "table { width: 100%; border-collapse: collapse; margin: 20px 0; }\n";
+    htmlContent += "th, td { border: 1px solid #4a5568; padding: 12px; text-align: left; }\n";
+    htmlContent += "th { background: #1a202c; color: #48bb78; font-weight: bold; }\n";
+    htmlContent += "tr:nth-child(even) { background: #1a202c; }\n";
+    htmlContent += ".copy-btn { background: #48bb78; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8em; margin-left: 10px; }\n";
+    htmlContent += ".copy-btn:hover { background: #38a169; }\n";
+    htmlContent += "</style>\n</head>\n<body>\n";
+    htmlContent += "<div class=\"container\">\n";
+    htmlContent += "<h1>Universal Pattern Interface (UPI) Documentation</h1>\n";
+    htmlContent += "<div class=\"quick-ref\">\n";
+    htmlContent += "<h3>Quick Reference</h3>\n";
+    htmlContent += "<p>UPI provides a mathematical language for describing rhythm patterns using algorithms like Euclidean, Polygon, and Binary sequences.</p>\n";
+    htmlContent += "</div>\n";
+    htmlContent += "<h2>Basic Patterns</h2>\n";
+    htmlContent += "<div class=\"pattern-example\">\n";
+    htmlContent += "<div class=\"pattern-code\">E(3,8)</div>\n";
+    htmlContent += "<div class=\"pattern-description\">Euclidean: 3 onsets distributed evenly across 8 steps</div>\n";
+    htmlContent += "</div>\n";
+    htmlContent += "<div class=\"pattern-example\">\n";
+    htmlContent += "<div class=\"pattern-code\">P(5,0)</div>\n";
+    htmlContent += "<div class=\"pattern-description\">Polygon: Pentagon rhythm (5 equally spaced onsets)</div>\n";
+    htmlContent += "</div>\n";
+    htmlContent += "<div class=\"pattern-example\">\n";
+    htmlContent += "<div class=\"pattern-code\">B(170,8)</div>\n";
+    htmlContent += "<div class=\"pattern-description\">Binary: Convert decimal 170 to 8-step binary pattern</div>\n";
+    htmlContent += "</div>\n";
+    htmlContent += "<h2>Progressive Patterns</h2>\n";
+    htmlContent += "<div class=\"pattern-example\">\n";
+    htmlContent += "<div class=\"pattern-code\">E(3,8)E.8</div>\n";
+    htmlContent += "<div class=\"pattern-description\">Progressive Euclidean: Pattern advances each trigger</div>\n";
+    htmlContent += "</div>\n";
+    htmlContent += "<div class=\"warning\">\n";
+    htmlContent += "<strong>Note:</strong> Progressive patterns change each time they are triggered via MIDI input.\n";
+    htmlContent += "</div>\n";
+    htmlContent += "<h2>Pattern Combinations</h2>\n";
+    htmlContent += "<div class=\"pattern-example\">\n";
+    htmlContent += "<div class=\"pattern-code\">E(3,8) + E(2,5)</div>\n";
+    htmlContent += "<div class=\"pattern-description\">Combine two Euclidean patterns using OR logic</div>\n";
+    htmlContent += "</div>\n";
+    htmlContent += "<h2>Syntax Reference</h2>\n";
+    htmlContent += "<table>\n";
+    htmlContent += "<tr><th>Pattern Type</th><th>Syntax</th><th>Example</th></tr>\n";
+    htmlContent += "<tr><td>Euclidean</td><td>E(onsets,steps)</td><td>E(5,13)</td></tr>\n";
+    htmlContent += "<tr><td>Polygon</td><td>P(sides,offset,steps?)</td><td>P(7,2,16)</td></tr>\n";
+    htmlContent += "<tr><td>Binary</td><td>B(decimal,steps)</td><td>B(85,8)</td></tr>\n";
+    htmlContent += "<tr><td>Progressive</td><td>Pattern.steps</td><td>E(3,8)E.8</td></tr>\n";
+    htmlContent += "<tr><td>Combination</td><td>Pattern + Pattern</td><td>E(3,8) + P(5,0)</td></tr>\n";
+    htmlContent += "</table>\n";
+    htmlContent += "<h2>Musical Examples</h2>\n";
+    htmlContent += "<div class=\"pattern-example\">\n";
+    htmlContent += "<div class=\"pattern-code\">E(3,8)</div>\n";
+    htmlContent += "<div class=\"pattern-description\">Classic tresillo rhythm</div>\n";
+    htmlContent += "</div>\n";
+    htmlContent += "<div class=\"pattern-example\">\n";
+    htmlContent += "<div class=\"pattern-code\">E(5,8)</div>\n";
+    htmlContent += "<div class=\"pattern-description\">Cinquillo pattern</div>\n";
+    htmlContent += "</div>\n";
+    htmlContent += "<h2>Tips and Tricks</h2>\n";
+    htmlContent += "<ul>\n";
+    htmlContent += "<li><strong>MIDI Triggering:</strong> Play any MIDI note to advance progressive patterns</li>\n";
+    htmlContent += "<li><strong>Mathematical Beauty:</strong> Try E(3,8), E(5,8), E(7,16) for musical results</li>\n";
+    htmlContent += "<li><strong>Polygon Magic:</strong> P(3,0) through P(12,0) create interesting polyrhythms</li>\n";
+    htmlContent += "<li><strong>Binary Exploration:</strong> Powers of 2 like B(85,8) create symmetric patterns</li>\n";
+    htmlContent += "</ul>\n";
+    htmlContent += "<div class=\"quick-ref\">\n";
+    htmlContent += "<h3>Getting Started</h3>\n";
+    htmlContent += "<ol>\n";
+    htmlContent += "<li>Try E(3,8) for a basic Euclidean rhythm</li>\n";
+    htmlContent += "<li>Experiment with P(5,0) for polygon patterns</li>\n";
+    htmlContent += "<li>Add + E(2,5) to combine patterns</li>\n";
+    htmlContent += "<li>Use progressive patterns like E(3,8)E.8 for evolution</li>\n";
+    htmlContent += "</ol>\n";
+    htmlContent += "</div>\n";
+    htmlContent += "</div>\n</body>\n</html>";
+    
+    // Load the HTML content into the WebView
+    docsBrowser->goToURL("data:text/html;charset=utf-8," + juce::URL::addEscapeChars(htmlContent, true));
+#endif
 }

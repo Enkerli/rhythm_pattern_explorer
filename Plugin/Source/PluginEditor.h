@@ -78,6 +78,11 @@ private:
     juce::Label analysisLabel;
     juce::TextEditor versionEditor;
     
+    // Documentation WebView
+    std::unique_ptr<juce::WebBrowserComponent> docsBrowser;
+    juce::TextButton docsToggleButton;
+    bool showingDocs = false;
+    
     // Attachments for automatic parameter binding
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> bpmAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> patternTypeAttachment;
@@ -96,6 +101,10 @@ private:
     // UPI handling
     void parseUPIPattern();
     void onParseButtonClicked();
+    
+    // Documentation handling
+    void toggleDocumentation();
+    void createDocumentationHTML();
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (RhythmPatternExplorerAudioProcessorEditor)
 };
