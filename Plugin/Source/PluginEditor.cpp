@@ -719,7 +719,22 @@ void RhythmPatternExplorerAudioProcessorEditor::createDocumentationHTML()
     htmlContent += "</div>\n";
     htmlContent += "</div>\n</body>\n</html>";
     
-    // Load the HTML content into the WebView
-    docsBrowser->goToURL("data:text/html;charset=utf-8," + juce::URL::addEscapeChars(htmlContent, true));
+    // Load HTML content by writing to a temporary file
+    juce::File tempDir = juce::File::getSpecialLocation(juce::File::tempDirectory);
+    juce::File htmlFile = tempDir.getChildFile("rhythm_pattern_docs.html");
+    
+    if (htmlFile.replaceWithText(htmlContent))
+    {
+        juce::URL fileURL = juce::URL(htmlFile);
+        docsBrowser->goToURL(fileURL.toString(false));
+    }
+    else
+    {
+        // Fallback: try direct HTML loading if temp file fails
+        juce::String simpleHtml = "<html><head><style>body{background:#2d3748;color:#e2e8f0;font-family:Arial;padding:20px;}</style></head>";
+        simpleHtml += "<body><h1 style='color:#48bb78'>UPI Documentation</h1>";
+        simpleHtml += "<p>Documentation loading failed. Check console for errors.</p></body></html>";
+        docsBrowser->goToURL("data:text/html," + juce::URL::addEscapeChars(simpleHtml, false));
+    }
 #endif
 }
