@@ -83,6 +83,22 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     parseUPIButton.onClick = [this]() { onParseButtonClicked(); };
     addAndMakeVisible(parseUPIButton);
     
+    // Instance Name Editor
+    instanceNameLabel.setText("Instance:", juce::dontSendNotification);
+    instanceNameLabel.attachToComponent(&instanceNameEditor, true);
+    addAndMakeVisible(instanceNameLabel);
+    
+    instanceNameEditor.setMultiLine(false);
+    instanceNameEditor.setReturnKeyStartsNewLine(false);
+    instanceNameEditor.setReadOnly(false);
+    instanceNameEditor.setScrollbarsShown(false);
+    instanceNameEditor.setCaretVisible(true);
+    instanceNameEditor.setPopupMenuEnabled(true);
+    instanceNameEditor.setText("Rhythm Explorer", juce::dontSendNotification);
+    instanceNameEditor.setFont(juce::Font(14.0f));
+    instanceNameEditor.setJustification(juce::Justification::centredLeft);
+    addAndMakeVisible(instanceNameEditor);
+    
     // Pattern Display Editor - copyable and readable
     patternDisplayEditor.setMultiLine(true);
     patternDisplayEditor.setReadOnly(true);
@@ -191,15 +207,22 @@ void RhythmPatternExplorerAudioProcessorEditor::resized()
     // Title area
     auto titleArea = area.removeFromTop(50);
     
-    // Control area - minimal layout with just UPI input
-    auto controlArea = area.removeFromTop(60);
+    // Control area - minimal layout with UPI input and instance name
+    auto controlArea = area.removeFromTop(100);
     controlArea.reduce(20, 10);
     
-    // UPI Pattern Input row - only visible control
+    // UPI Pattern Input row - primary control
     auto upiRow = controlArea.removeFromTop(40);
     upiLabel.setBounds(upiRow.removeFromLeft(100));
     parseUPIButton.setBounds(upiRow.removeFromRight(80).reduced(5));
     upiTextEditor.setBounds(upiRow.reduced(5));
+    
+    controlArea.removeFromTop(10); // spacing
+    
+    // Instance Name row
+    auto instanceRow = controlArea.removeFromTop(30);
+    instanceNameLabel.setBounds(instanceRow.removeFromLeft(80));
+    instanceNameEditor.setBounds(instanceRow.reduced(5));
     
     // All other controls commented out for clean interface
     /*
@@ -247,7 +270,7 @@ void RhythmPatternExplorerAudioProcessorEditor::resized()
     analysisLabel.setBounds(analysisArea.reduced(10));
     
     // Version editor (bottom left corner) - larger bounds for better visibility
-    versionEditor.setBounds(getLocalBounds().removeFromBottom(25).removeFromLeft(140));
+    versionEditor.setBounds(getLocalBounds().removeFromBottom(25).removeFromLeft(100));
     
     // Step counter display removed for clean production interface
     
