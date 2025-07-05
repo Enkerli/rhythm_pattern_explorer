@@ -296,26 +296,44 @@ void RhythmPatternExplorerAudioProcessorEditor::resized()
     auto displayArea = area.removeFromTop(60);
     patternDisplayEditor.setBounds(displayArea.reduced(10));
     
+    // Docs button area - positioned right after pattern display, aligned right
+    if (!showingDocs)
+    {
+        auto docsButtonArea = area.removeFromTop(30);
+        docsToggleButton.setBounds(docsButtonArea.removeFromRight(80).reduced(5));
+    }
+    
     // Analysis area - hidden
     auto analysisArea = area.removeFromTop(0);
     analysisLabel.setBounds(analysisArea.reduced(10));
     
-    // Bottom controls area
-    auto bottomArea = getLocalBounds().removeFromBottom(25);
-    versionEditor.setBounds(bottomArea.removeFromLeft(100));
-    docsToggleButton.setBounds(bottomArea.removeFromRight(80));
+    // Version display at bottom left (only when not showing docs)
+    if (!showingDocs)
+    {
+        auto bottomArea = getLocalBounds().removeFromBottom(25);
+        versionEditor.setBounds(bottomArea.removeFromLeft(100));
+    }
     
     // Step counter display removed for clean production interface
     
     // Remaining area is for the circle - MAXIMIZED for clean interface
     circleArea = area.expanded(100);
     
-    // WebView documentation area (full remaining area when shown)
+    // WebView documentation area (full plugin area when shown)
 #if JUCE_WEB_BROWSER
     if (docsBrowser)
     {
-        // Always set bounds, visibility controlled separately
-        docsBrowser->setBounds(circleArea);
+        if (showingDocs)
+        {
+            // When docs are showing, take over most of the plugin area
+            auto docsArea = getLocalBounds();
+            docsArea.removeFromTop(50); // Leave space for title
+            auto bottomControls = docsArea.removeFromBottom(30); // Leave space for toggle button
+            docsBrowser->setBounds(docsArea);
+            
+            // Reposition docs toggle button to be visible
+            docsToggleButton.setBounds(bottomControls.removeFromRight(80).reduced(2));
+        }
         docsBrowser->setVisible(showingDocs);
     }
 #endif
@@ -638,8 +656,8 @@ void RhythmPatternExplorerAudioProcessorEditor::createDocumentationHTML()
     htmlContent += "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n";
     htmlContent += "<title>UPI Pattern Documentation</title>\n";
     htmlContent += "<style>\n";
-    htmlContent += "body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: #2d3748; color: #e2e8f0; margin: 0; padding: 20px; line-height: 1.6; }\n";
-    htmlContent += ".container { max-width: 800px; margin: 0 auto; }\n";
+    htmlContent += "body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: #2d3748; color: #e2e8f0; margin: 0; padding: 15px; line-height: 1.6; box-sizing: border-box; }\n";
+    htmlContent += ".container { width: 100%; margin: 0 auto; overflow-x: hidden; }\n";
     htmlContent += "h1, h2, h3 { color: #48bb78; margin-top: 2em; }\n";
     htmlContent += "h1 { border-bottom: 2px solid #48bb78; padding-bottom: 0.5em; }\n";
     htmlContent += ".pattern-example { background: #1a202c; border: 1px solid #4a5568; border-radius: 8px; padding: 15px; margin: 15px 0; font-family: 'Monaco', 'Menlo', monospace; }\n";
