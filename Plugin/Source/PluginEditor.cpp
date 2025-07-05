@@ -314,15 +314,9 @@ void RhythmPatternExplorerAudioProcessorEditor::resized()
 #if JUCE_WEB_BROWSER
     if (docsBrowser)
     {
-        if (showingDocs)
-        {
-            docsBrowser->setBounds(circleArea);
-            docsBrowser->setVisible(true);
-        }
-        else
-        {
-            docsBrowser->setVisible(false);
-        }
+        // Always set bounds, visibility controlled separately
+        docsBrowser->setBounds(circleArea);
+        docsBrowser->setVisible(showingDocs);
     }
 #endif
 }
@@ -610,14 +604,22 @@ int RhythmPatternExplorerAudioProcessorEditor::getMidiNoteNumber() const
 void RhythmPatternExplorerAudioProcessorEditor::toggleDocumentation()
 {
 #if JUCE_WEB_BROWSER
-    if (!docsBrowser) return;
+    if (!docsBrowser) 
+    {
+        DBG("WebBrowser not available!");
+        return;
+    }
     
     showingDocs = !showingDocs;
+    DBG("Toggle documentation: showingDocs = " + juce::String(showingDocs));
     
-    // Update button text
+    // Update button text immediately
     docsToggleButton.setButtonText(showingDocs ? "Pattern" : "Docs");
     
-    // Force layout update - this will handle visibility in resized()
+    // Update visibility immediately
+    docsBrowser->setVisible(showingDocs);
+    
+    // Force layout update
     resized();
     repaint();
 #endif
@@ -728,8 +730,16 @@ void RhythmPatternExplorerAudioProcessorEditor::createDocumentationHTML()
     
     if (htmlFile.replaceWithText(htmlContent))
     {
+        // Also write to a debug file for inspection
+        juce::File debugFile = tempDir.getChildFile("rhythm_pattern_docs_debug.html");
+        debugFile.replaceWithText(htmlContent);
+        
         juce::URL fileURL = juce::URL(htmlFile);
         docsBrowser->goToURL(fileURL.toString(false));
+        
+        // Log the file path for debugging
+        DBG("HTML content written to: " + htmlFile.getFullPathName());
+        DBG("Debug file written to: " + debugFile.getFullPathName());
     }
     else
     {
