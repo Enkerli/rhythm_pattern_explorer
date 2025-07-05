@@ -27,7 +27,7 @@ RhythmPatternExplorerAudioProcessor::RhythmPatternExplorerAudioProcessor()
     // Initialize parameters using original working approach
     addParameter(bpmParam = new juce::AudioParameterFloat("bpm", "BPM", 60.0f, 1000.0f, 120.0f));
     addParameter(patternTypeParam = new juce::AudioParameterChoice("patternType", "Pattern Type", 
-        juce::StringArray("Euclidean", "Polygon", "Random", "Binary", "UPI", "Indispensability"), 0));
+        juce::StringArray("Euclidean", "Polygon", "Random", "Binary", "UPI"), 0));
     addParameter(onsetsParam = new juce::AudioParameterInt("onsets", "Onsets", 1, 16, 3));
     addParameter(stepsParam = new juce::AudioParameterInt("steps", "Steps", 4, 32, 8));
     addParameter(playingParam = new juce::AudioParameterBool("playing", "Playing", false));
@@ -303,9 +303,6 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
                 break;
             case 4: // UPI
                 // UPI patterns are set directly via setUPIInput(), no need to regenerate here
-                break;
-            case 5: // Indispensability (Evanstein hierarchical)
-                patternEngine.generateIndispensabilityPattern(currentOnsets, currentSteps);
                 break;
         }
         
