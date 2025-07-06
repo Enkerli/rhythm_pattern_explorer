@@ -105,7 +105,7 @@ UPIParser::ParseResult UPIParser::parse(const juce::String& input)
             else
             {
                 // Regular combination for non-polygon patterns
-                DBG("UPIParser: Using regular combination (not polygon combination). allPolygons: " << allPolygons << ", polygonSizes.size(): " << polygonSizes.size());
+                DBG("UPIParser: Using regular combination (not polygon combination). allPolygons: " << (allPolygons ? "true" : "false") << ", polygonSizes.size(): " << polygonSizes.size());
                 auto result = parsePattern(parts[0].trim());
                 if (!result.isValid()) return result;
                 

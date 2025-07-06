@@ -38,16 +38,8 @@ RhythmPatternExplorerAudioProcessor::RhythmPatternExplorerAudioProcessor()
     
     DBG("RhythmPatternExplorer: Plugin initialized");
     
-    // BITWIG FILE DEBUG: Write to file since console may be blocked
-    FILE* debugFile = fopen("/tmp/bitwig_debug.log", "a");
-    if (debugFile) {
-        time_t now = time(0);
-        char* timeStr = ctime(&now);
-        timeStr[strlen(timeStr)-1] = '\0'; // Remove newline
-        fprintf(debugFile, "BITWIG INIT: Plugin constructor called at %s! Debug version v0.03a3.DBG active.\n", timeStr);
-        fflush(debugFile);
-        fclose(debugFile);
-    }
+    // Debug logging for plugin initialization
+    logDebug(DebugCategory::BITWIG_INIT, "Plugin constructor called! Debug version v0.03a4.DBG active.");
 }
 
 
@@ -216,13 +208,9 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
     }
     
     if (shouldLog || std::abs(currentBPM - lastLoggedBPM) > 2) {
-        FILE* debugFile = fopen("/tmp/bitwig_debug.log", "a");
-        if (debugFile) {
-            fprintf(debugFile, "BITWIG PROCESS: BPM=%.1f, SamplesPerStep=%d, BufferSize=%d, CurrentSample=%d, CurrentStep=%d, SampleRate=%.0f, CallCount=%d\n",
-                currentBPM, samplesPerStep, currentBufferSize, currentSample, currentStep.load(), currentSampleRate, debugCallCount);
-            fflush(debugFile);
-            fclose(debugFile);
-        }
+        juce::String message = juce::String::formatted("BPM=%.1f, SamplesPerStep=%d, BufferSize=%d, CurrentSample=%d, CurrentStep=%d, SampleRate=%.0f, CallCount=%d",
+            currentBPM, samplesPerStep, currentBufferSize, currentSample, currentStep.load(), currentSampleRate, debugCallCount);
+        logDebug(DebugCategory::BITWIG_PROCESS, message);
         lastLoggedBPM = currentBPM;
     }
     
@@ -252,16 +240,12 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
         if (currentBPM >= 200.0f) {
             static int transportDebugCount = 0;
             if (++transportDebugCount % 100 == 0) {
-                FILE* debugFile = fopen("/tmp/bitwig_debug.log", "a");
-                if (debugFile) {
-                    fprintf(debugFile, "TRANSPORT DEBUG: hasValidPosition=%s, isPlaying=%s, isRecording=%s, ppqPosition=%.3f, bpm=%.1f\n",
-                        hasValidPosition ? "TRUE" : "FALSE",
-                        posInfo.isPlaying ? "TRUE" : "FALSE", 
-                        posInfo.isRecording ? "TRUE" : "FALSE",
-                        posInfo.ppqPosition, posInfo.bpm);
-                    fflush(debugFile);
-                    fclose(debugFile);
-                }
+                juce::String message = juce::String::formatted("hasValidPosition=%s, isPlaying=%s, isRecording=%s, ppqPosition=%.3f, bpm=%.1f",
+                    hasValidPosition ? "TRUE" : "FALSE",
+                    posInfo.isPlaying ? "TRUE" : "FALSE", 
+                    posInfo.isRecording ? "TRUE" : "FALSE",
+                    posInfo.ppqPosition, posInfo.bpm);
+                logDebug(DebugCategory::TRANSPORT, message);
             }
         }
         
@@ -274,12 +258,7 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
         if (currentBPM >= 200.0f) {
             static int noPlayheadCount = 0;
             if (++noPlayheadCount % 100 == 0) {
-                FILE* debugFile = fopen("/tmp/bitwig_debug.log", "a");
-                if (debugFile) {
-                    fprintf(debugFile, "NO PLAYHEAD: Bitwig not providing transport info\n");
-                    fflush(debugFile);
-                    fclose(debugFile);
-                }
+                logDebug(DebugCategory::TRANSPORT, "Bitwig not providing transport info");
             }
         }
     }
@@ -312,13 +291,9 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
         
         // Log BPM changes for debugging
         if (currentBPM >= 180.0f) {
-            FILE* debugFile = fopen("/tmp/bitwig_debug.log", "a");
-            if (debugFile) {
-                fprintf(debugFile, "BPM CHANGE: %.1f->%.1f, sampleRatio=%.3f, newCurrentSample=%d, newSamplesPerStep=%d\n",
-                    lastBPM, currentBPM, sampleRatio, currentSample, samplesPerStep);
-                fflush(debugFile);
-                fclose(debugFile);
-            }
+            juce::String message = juce::String::formatted("%.1f->%.1f, sampleRatio=%.3f, newCurrentSample=%d, newSamplesPerStep=%d",
+                lastBPM, currentBPM, sampleRatio, currentSample, samplesPerStep);
+            logDebug(DebugCategory::BPM_SYNC, message);
         }
         lastBPM = currentBPM;
     }
@@ -363,17 +338,12 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
                     parseAndApplyUPI(currentUPIInput);
                 }
                 
-                // BITWIG 210 DEBUG: Log step triggers to file at high BPMs
-                // Use internal currentBPM variable
+                // Log step triggers at high BPMs
                 if (currentBPM >= 180.0f) {
-                    FILE* debugFile = fopen("/tmp/bitwig_debug.log", "a");
-                    if (debugFile) {
-                        fprintf(debugFile, "STEP TRIGGER: BPM=%.1f, Step %d->%d, samplesPerStep=%d, currentSampleBefore=%d, currentSampleAfter=%d, buffer=%d/%d\n",
-                            currentBPM, currentStep.load(), newStep, samplesPerStep, 
-                            currentSample + samplesPerStep, currentSample, sample, buffer.getNumSamples());
-                        fflush(debugFile);
-                        fclose(debugFile);
-                    }
+                    juce::String message = juce::String::formatted("BPM=%.1f, Step %d->%d, samplesPerStep=%d, currentSampleBefore=%d, currentSampleAfter=%d, buffer=%d/%d",
+                        currentBPM, currentStep.load(), newStep, samplesPerStep, 
+                        currentSample + samplesPerStep, currentSample, sample, buffer.getNumSamples());
+                    logDebug(DebugCategory::STEP_TRIGGER, message);
                 }
                 
                 // Safety break to prevent infinite loops
@@ -648,16 +618,12 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
         // Handle scene cycling: pattern1|pattern2|pattern3
         auto scenes = juce::StringArray::fromTokens(pattern, "|", "");
         
-        // File-based debug logging
-        FILE* debugFile = fopen("/tmp/rhythm_progressive_debug.log", "a");
-        if (debugFile) {
-            fprintf(debugFile, "Scene cycling detected: %d scenes\n", static_cast<int>(scenes.size()));
-            for (int i = 0; i < scenes.size(); ++i) {
-                fprintf(debugFile, "  Scene %d: %s\n", i, scenes[i].trim().toRawUTF8());
-            }
-            fflush(debugFile);
-            fclose(debugFile);
+        // Log scene cycling detection
+        juce::String sceneList;
+        for (int i = 0; i < scenes.size(); ++i) {
+            sceneList += juce::String::formatted("  Scene %d: %s\n", i, scenes[i].trim().toRawUTF8());
         }
+        logDebug(DebugCategory::SCENE_CYCLING, juce::String::formatted("Scene cycling detected: %d scenes\n%s", static_cast<int>(scenes.size()), sceneList.toRawUTF8()));
         
         // Check if this is the same scene sequence or a new one
         bool isSameSequence = (scenes.size() == scenePatterns.size());
@@ -1257,6 +1223,57 @@ void RhythmPatternExplorerAudioProcessor::applyCurrentScenePattern()
             fflush(debugFile);
             fclose(debugFile);
         }
+    }
+}
+
+//==============================================================================
+// Centralized Debug Logging Utility
+
+void RhythmPatternExplorerAudioProcessor::logDebug(DebugCategory category, const juce::String& message) {
+#ifdef DEBUG
+    const char* logFile = getLogFile(category);
+    const char* categoryName = getCategoryName(category);
+    
+    FILE* debugFile = fopen(logFile, "a");
+    if (debugFile) {
+        // Add timestamp for important categories
+        if (category == DebugCategory::BITWIG_INIT) {
+            time_t now = time(0);
+            char* timeStr = ctime(&now);
+            timeStr[strlen(timeStr)-1] = '\0'; // Remove newline
+            fprintf(debugFile, "%s [%s]: %s\n", timeStr, categoryName, message.toRawUTF8());
+        } else {
+            fprintf(debugFile, "%s: %s\n", categoryName, message.toRawUTF8());
+        }
+        fflush(debugFile);
+        fclose(debugFile);
+    }
+#endif // DEBUG
+}
+
+const char* RhythmPatternExplorerAudioProcessor::getCategoryName(DebugCategory category) {
+    switch (category) {
+        case DebugCategory::BITWIG_INIT: return "BITWIG_INIT";
+        case DebugCategory::BITWIG_PROCESS: return "BITWIG_PROCESS";
+        case DebugCategory::TRANSPORT: return "TRANSPORT";
+        case DebugCategory::BPM_SYNC: return "BPM_SYNC";
+        case DebugCategory::STEP_TRIGGER: return "STEP_TRIGGER";
+        case DebugCategory::POSITION_SYNC: return "POSITION_SYNC";
+        case DebugCategory::SCENE_CYCLING: return "SCENE_CYCLING";
+        case DebugCategory::PROGRESSIVE_OFFSET: return "PROGRESSIVE_OFFSET";
+        case DebugCategory::PROGRESSIVE_LENGTHENING: return "PROGRESSIVE_LENGTHENING";
+        default: return "UNKNOWN";
+    }
+}
+
+const char* RhythmPatternExplorerAudioProcessor::getLogFile(DebugCategory category) {
+    switch (category) {
+        case DebugCategory::SCENE_CYCLING:
+        case DebugCategory::PROGRESSIVE_OFFSET:
+        case DebugCategory::PROGRESSIVE_LENGTHENING:
+            return "/tmp/rhythm_progressive_debug.log";
+        default:
+            return "/tmp/bitwig_debug.log";
     }
 }
 
