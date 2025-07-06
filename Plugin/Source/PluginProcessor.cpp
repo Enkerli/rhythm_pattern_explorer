@@ -642,13 +642,8 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
             advanceScene();
             
             // Debug log advancement
-            debugFile = fopen("/tmp/rhythm_progressive_debug.log", "a");
-            if (debugFile) {
-                fprintf(debugFile, "Advanced to scene %d: %s\n", 
-                    currentSceneIndex, scenePatterns[currentSceneIndex].toRawUTF8());
-                fflush(debugFile);
-                fclose(debugFile);
-            }
+            logDebug(DebugCategory::SCENE_CYCLING, 
+                "Advanced to scene " + juce::String(currentSceneIndex) + ": " + scenePatterns[currentSceneIndex]);
         }
         else
         {
@@ -711,17 +706,11 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
             currentSceneIndex = 0;
             
             // Debug log reset
-            debugFile = fopen("/tmp/rhythm_progressive_debug.log", "a");
-            if (debugFile) {
-                fprintf(debugFile, "New scene sequence - parsed %d scenes, starting with scene 0: %s\n", 
-                    static_cast<int>(scenePatterns.size()), scenePatterns[0].toRawUTF8());
-                for (int i = 0; i < scenePatterns.size(); ++i) {
-                    fprintf(debugFile, "  Scene %d: %s (base: %s, step: %d)\n", 
-                        i, scenePatterns[i].toRawUTF8(), sceneBasePatterns[i].toRawUTF8(), sceneProgressiveSteps[i]);
-                }
-                fflush(debugFile);
-                fclose(debugFile);
+            juce::String scenesInfo = "New scene sequence - parsed " + juce::String(scenePatterns.size()) + " scenes, starting with scene 0: " + scenePatterns[0];
+            for (int i = 0; i < scenePatterns.size(); ++i) {
+                scenesInfo += "\n  Scene " + juce::String(i) + ": " + scenePatterns[i] + " (base: " + sceneBasePatterns[i] + ", step: " + juce::String(sceneProgressiveSteps[i]) + ")";
             }
+            logDebug(DebugCategory::SCENE_CYCLING, scenesInfo);
         }
         
         // Parse and apply the current scene pattern using per-scene progressive state
