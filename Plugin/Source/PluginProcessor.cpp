@@ -22,7 +22,7 @@ RhythmPatternExplorerAudioProcessor::RhythmPatternExplorerAudioProcessor()
                       #endif
                        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
                      #endif
-                       )
+                       ), randomGenerator(std::random_device{}())
 #endif
 {
     // Initialize parameters using original working approach
@@ -48,7 +48,7 @@ RhythmPatternExplorerAudioProcessor::RhythmPatternExplorerAudioProcessor()
         time_t now = time(0);
         char* timeStr = ctime(&now);
         timeStr[strlen(timeStr)-1] = '\0'; // Remove newline
-        fprintf(debugFile, "BITWIG INIT: Plugin constructor called at %s! Debug version v0.03a1.DBG active.\n", timeStr);
+        fprintf(debugFile, "BITWIG INIT: Plugin constructor called at %s! Debug version v0.03a2.DBG active.\n", timeStr);
         fflush(debugFile);
         fclose(debugFile);
     }
@@ -655,13 +655,14 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
 {
     juce::ScopedLock lock(processingLock);
     
-    // Check for progressive syntax: pattern+N (e.g., "E(3,7)+2")
+    // Check for progressive syntax: pattern+N (offset) or pattern*N (lengthening)
     juce::String pattern = upiPattern.trim();
-    bool isProgressivePattern = pattern.contains("+") && pattern.lastIndexOf("+") > 0;
+    bool isProgressiveOffset = pattern.contains("+") && pattern.lastIndexOf("+") > 0;
+    bool isProgressiveLengthening = pattern.contains("*") && pattern.lastIndexOf("*") > 0;
     
-    if (isProgressivePattern)
+    if (isProgressiveOffset)
     {
-        // Extract base pattern and step
+        // Handle progressive offset: pattern+N
         int plusIndex = pattern.lastIndexOf("+");
         juce::String newBasePattern = pattern.substring(0, plusIndex).trim();
         juce::String stepStr = pattern.substring(plusIndex + 1).trim();
@@ -670,7 +671,7 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
         // File-based debug logging
         FILE* debugFile = fopen("/tmp/rhythm_progressive_debug.log", "a");
         if (debugFile) {
-            fprintf(debugFile, "Progressive pattern detected: %s (base: %s, step: +%d)\n", 
+            fprintf(debugFile, "Progressive offset detected: %s (base: %s, step: +%d)\n", 
                 pattern.toRawUTF8(), newBasePattern.toRawUTF8(), newStep);
             fflush(debugFile);
             fclose(debugFile);
@@ -728,12 +729,68 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
             }
         }
     }
+    else if (isProgressiveLengthening)
+    {
+        // Handle progressive lengthening: pattern*N
+        int starIndex = pattern.lastIndexOf("*");
+        juce::String newBasePattern = pattern.substring(0, starIndex).trim();
+        juce::String lengthStr = pattern.substring(starIndex + 1).trim();
+        int newLengthening = lengthStr.getIntValue();
+        
+        // File-based debug logging
+        FILE* debugFile = fopen("/tmp/rhythm_progressive_debug.log", "a");
+        if (debugFile) {
+            fprintf(debugFile, "Progressive lengthening detected: %s (base: %s, add: *%d)\n", 
+                pattern.toRawUTF8(), newBasePattern.toRawUTF8(), newLengthening);
+            fflush(debugFile);
+            fclose(debugFile);
+        }
+        
+        // If same base pattern, advance lengthening; if different, reset
+        if (basePattern == newBasePattern && progressiveLengthening == newLengthening)
+        {
+            advanceProgressiveLengthening();
+            
+            // Debug log advancement
+            debugFile = fopen("/tmp/rhythm_progressive_debug.log", "a");
+            if (debugFile) {
+                fprintf(debugFile, "Advanced lengthening - pattern now has %d steps\n", 
+                    static_cast<int>(baseLengthPattern.size()));
+                fflush(debugFile);
+                fclose(debugFile);
+            }
+        }
+        else
+        {
+            // New progressive lengthening pattern - reset and start
+            basePattern = newBasePattern;
+            progressiveLengthening = newLengthening;
+            
+            // Parse base pattern and store for lengthening
+            parseAndApplyUPI(basePattern);
+            baseLengthPattern = patternEngine.getCurrentPattern();
+            
+            // Debug log reset
+            debugFile = fopen("/tmp/rhythm_progressive_debug.log", "a");
+            if (debugFile) {
+                fprintf(debugFile, "New progressive lengthening - starting with %d steps\n", 
+                    static_cast<int>(baseLengthPattern.size()));
+                fflush(debugFile);
+                fclose(debugFile);
+            }
+        }
+        
+        // Apply current lengthened pattern
+        patternEngine.setPattern(baseLengthPattern);
+    }
     else
     {
-        // Non-progressive pattern - reset progressive state
+        // Non-progressive pattern - reset progressive states
         progressiveOffset = 0;
         progressiveStep = 0;
+        progressiveLengthening = 0;
         basePattern = "";
+        baseLengthPattern.clear();
         parseAndApplyUPI(pattern);
     }
     
@@ -823,17 +880,33 @@ void RhythmPatternExplorerAudioProcessor::checkMidiInputForTriggers(juce::MidiBu
             // Any MIDI note input triggers pattern regeneration for progressive/random patterns
             if (!currentUPIInput.isEmpty())
             {
-                // Check if it's a progressive pattern (contains "#")
-                if (currentUPIInput.contains("#"))
+                // Check for progressive patterns
+                bool hasProgressiveOffset = currentUPIInput.contains("+") && currentUPIInput.lastIndexOf("+") > 0;
+                bool hasProgressiveLengthening = currentUPIInput.contains("*") && currentUPIInput.lastIndexOf("*") > 0;
+                bool hasOldProgressiveOffset = currentUPIInput.contains("#");
+                
+                if (hasProgressiveOffset || hasProgressiveLengthening || hasOldProgressiveOffset)
                 {
-                    // Advance progressive offset first, then re-parse
-                    if (patternEngine.hasProgressiveOffsetEnabled())
+                    // Trigger progressive pattern advancement
+                    if (hasProgressiveOffset || hasOldProgressiveOffset)
                     {
-                        patternEngine.triggerProgressiveOffset();
-                        DBG("RhythmPatternExplorer: MIDI triggered progressive offset advancement to " 
-                            << patternEngine.getCurrentOffset());
+                        // Advance progressive offset first, then re-parse
+                        if (patternEngine.hasProgressiveOffsetEnabled())
+                        {
+                            patternEngine.triggerProgressiveOffset();
+                            DBG("RhythmPatternExplorer: MIDI triggered progressive offset advancement to " 
+                                << patternEngine.getCurrentOffset());
+                        }
                     }
-                    // Force re-parsing to apply new progressive offset
+                    
+                    if (hasProgressiveLengthening)
+                    {
+                        // Advance progressive lengthening
+                        advanceProgressiveLengthening();
+                        DBG("RhythmPatternExplorer: MIDI triggered progressive lengthening advancement");
+                    }
+                    
+                    // Force re-parsing to apply new progressive transformation
                     parseAndApplyUPI(currentUPIInput);
                 }
                 else
@@ -873,6 +946,64 @@ std::vector<bool> RhythmPatternExplorerAudioProcessor::rotatePatternBySteps(cons
     }
     
     return rotated;
+}
+
+void RhythmPatternExplorerAudioProcessor::advanceProgressiveLengthening()
+{
+    if (progressiveLengthening > 0 && !baseLengthPattern.empty())
+    {
+        // Generate random steps using bell curve distribution
+        auto randomSteps = generateBellCurveRandomSteps(progressiveLengthening);
+        
+        // Append the random steps to the pattern
+        baseLengthPattern.insert(baseLengthPattern.end(), randomSteps.begin(), randomSteps.end());
+        
+        FILE* debugFile = fopen("/tmp/rhythm_progressive_debug.log", "a");
+        if (debugFile) {
+            fprintf(debugFile, "Added %d random steps, total length now: %d\n", 
+                progressiveLengthening, static_cast<int>(baseLengthPattern.size()));
+            fflush(debugFile);
+            fclose(debugFile);
+        }
+    }
+}
+
+std::vector<bool> RhythmPatternExplorerAudioProcessor::generateBellCurveRandomSteps(int numSteps)
+{
+    std::vector<bool> randomSteps(numSteps, false);
+    
+    if (numSteps <= 0) return randomSteps;
+    
+    // Use bell curve distribution to determine number of onsets (avoid extremes)
+    std::normal_distribution<double> distribution(numSteps / 2.0, (numSteps - 1) / 6.0);
+    int onsets = static_cast<int>(std::round(distribution(randomGenerator)));
+    
+    // Clamp to valid range [1, numSteps-1] to avoid empty or full patterns
+    onsets = juce::jmax(1, juce::jmin(numSteps - 1, onsets));
+    
+    // Randomly distribute the onsets
+    std::vector<int> positions;
+    for (int i = 0; i < numSteps; ++i)
+    {
+        positions.push_back(i);
+    }
+    
+    std::shuffle(positions.begin(), positions.end(), randomGenerator);
+    
+    for (int i = 0; i < onsets && i < positions.size(); ++i)
+    {
+        randomSteps[positions[i]] = true;
+    }
+    
+    return randomSteps;
+}
+
+std::vector<bool> RhythmPatternExplorerAudioProcessor::lengthenPattern(const std::vector<bool>& pattern, int additionalSteps)
+{
+    auto lengthened = pattern;
+    auto randomSteps = generateBellCurveRandomSteps(additionalSteps);
+    lengthened.insert(lengthened.end(), randomSteps.begin(), randomSteps.end());
+    return lengthened;
 }
 
 //==============================================================================

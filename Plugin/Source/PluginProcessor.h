@@ -101,6 +101,10 @@ public:
     void advanceProgressiveOffset() { progressiveOffset += progressiveStep; }
     int getProgressiveOffset() const { return progressiveOffset; }
     
+    // Progressive lengthening support (universal for all patterns)
+    void resetProgressiveLengthening() { progressiveLengthening = 0; baseLengthPattern.clear(); }
+    void advanceProgressiveLengthening();
+    
 
 private:
     //==============================================================================
@@ -139,6 +143,11 @@ private:
     int progressiveStep = 0;        // How much to advance each time
     juce::String basePattern;       // Pattern without progressive syntax
     
+    // Progressive lengthening support (works for any pattern)
+    int progressiveLengthening = 0; // How many steps to add each time
+    std::vector<bool> baseLengthPattern; // Original pattern for lengthening
+    std::mt19937 randomGenerator;   // For bell curve random step generation
+    
     // Thread safety
     juce::CriticalSection processingLock;
     
@@ -152,6 +161,8 @@ private:
     
     // Pattern manipulation
     std::vector<bool> rotatePatternBySteps(const std::vector<bool>& pattern, int steps);
+    std::vector<bool> generateBellCurveRandomSteps(int numSteps);
+    std::vector<bool> lengthenPattern(const std::vector<bool>& pattern, int additionalSteps);
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (RhythmPatternExplorerAudioProcessor)
 };
