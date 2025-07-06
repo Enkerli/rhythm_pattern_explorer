@@ -79,9 +79,6 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     upiTextEditor.onReturnKey = [this]() { parseUPIPattern(); };
     addAndMakeVisible(upiTextEditor);
     
-    parseUPIButton.setButtonText("Parse");
-    parseUPIButton.onClick = [this]() { onParseButtonClicked(); };
-    addAndMakeVisible(parseUPIButton);
     
     // Instance Name Editor - no label to save space
     instanceNameEditor.setMultiLine(false);
@@ -105,6 +102,12 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     midiNoteSlider.setTextBoxStyle(juce::Slider::TextBoxLeft, false, 50, 20);
     midiNoteSlider.setIncDecButtonsMode(juce::Slider::incDecButtonsNotDraggable);
     addAndMakeVisible(midiNoteSlider);
+    
+    // Tick Button (equivalent to Parse)
+    tickButton.setButtonText("Tick");
+    tickButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff4a5568));
+    tickButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
+    addAndMakeVisible(tickButton);
     
     // Pattern Display Editor - copyable and readable
     patternDisplayEditor.setMultiLine(true);
@@ -191,6 +194,25 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     };
     */
     
+    // Connect essential parameters
+    midiNoteSlider.onValueChange = [this]()
+    {
+        if (audioProcessor.midiNoteParam) {
+            audioProcessor.midiNoteParam->setValueNotifyingHost(
+                audioProcessor.midiNoteParam->convertTo0to1(static_cast<int>(midiNoteSlider.getValue()))
+            );
+        }
+    };
+    
+    tickButton.onClick = [this]()
+    {
+        // Trigger both the parameter (for host automation) and immediate parsing
+        if (audioProcessor.tickParam) {
+            audioProcessor.tickParam->setValueNotifyingHost(1.0f); // Trigger tick parameter
+        }
+        parseUPIPattern(); // Execute parsing immediately
+    };
+    
     // Initial display update
     updatePatternDisplay();
     updateAnalysisDisplay();
@@ -238,10 +260,10 @@ void RhythmPatternExplorerAudioProcessorEditor::resized()
         // Force all controls to update visibility
         upiLabel.setVisible(!minimalMode);
         upiTextEditor.setVisible(!minimalMode);
-        parseUPIButton.setVisible(!minimalMode);
         instanceNameEditor.setVisible(!minimalMode);
         midiNoteLabel.setVisible(!minimalMode);
         midiNoteSlider.setVisible(!minimalMode);
+        tickButton.setVisible(!minimalMode);
         patternDisplayEditor.setVisible(!minimalMode);
         docsToggleButton.setVisible(!minimalMode);
         versionEditor.setVisible(!minimalMode);
@@ -276,8 +298,8 @@ void RhythmPatternExplorerAudioProcessorEditor::resized()
     upiLabel.setBounds(upiRow.removeFromLeft(100));
     
     // Compact controls to the right
-    auto rightControls = upiRow.removeFromRight(290); // Space for Parse + Name + Note spinner
-    parseUPIButton.setBounds(rightControls.removeFromLeft(80).reduced(5));
+    auto rightControls = upiRow.removeFromRight(290); // Space for Tick + Name + Note spinner
+    tickButton.setBounds(rightControls.removeFromLeft(70).reduced(5));
     rightControls.removeFromLeft(10); // spacing
     
     // Instance Name (no label - more space for name)

@@ -34,12 +34,14 @@ UPIParser::ParseResult UPIParser::parse(const juce::String& input)
         if (parts.size() >= 2)
         {
             // Special handling for polygon combinations - calculate LCM first
+            DBG("UPIParser: Checking for polygon combination. Parts count: " << parts.size());
             bool allPolygons = true;
             std::vector<int> polygonSizes;
             
             for (const auto& part : parts)
             {
                 juce::String trimmed = part.trim();
+                DBG("UPIParser: Checking part: '" << trimmed << "', isPolygonPattern: " << (isPolygonPattern(trimmed) ? "TRUE" : "FALSE"));
                 if (isPolygonPattern(trimmed))
                 {
                     // Extract the polygon size for LCM calculation
@@ -47,6 +49,7 @@ UPIParser::ParseResult UPIParser::parse(const juce::String& input)
                     std::smatch match;
                     std::string inputStr = trimmed.toStdString();
                     
+                    DBG("UPIParser: Regex matching against: '" << inputStr << "'");
                     if (std::regex_search(inputStr, match, polygonRegex))
                     {
                         int sides = std::stoi(match[1].str());
@@ -62,6 +65,7 @@ UPIParser::ParseResult UPIParser::parse(const juce::String& input)
                 }
                 else
                 {
+                    DBG("UPIParser: Not a polygon pattern: '" << trimmed << "'");
                     allPolygons = false;
                     break;
                 }
@@ -75,6 +79,8 @@ UPIParser::ParseResult UPIParser::parse(const juce::String& input)
                 {
                     targetLCM = lcm(targetLCM, polygonSizes[i]);
                 }
+                
+                DBG("UPIParser: Polygon combination detected. PolygonSizes: " << polygonSizes[0] << ", " << polygonSizes[1] << ". LCM: " << targetLCM);
                 
                 // Parse each polygon projected onto the LCM space
                 auto result = parsePolygonForCombination(parts[0].trim(), targetLCM);
@@ -99,6 +105,7 @@ UPIParser::ParseResult UPIParser::parse(const juce::String& input)
             else
             {
                 // Regular combination for non-polygon patterns
+                DBG("UPIParser: Using regular combination (not polygon combination). allPolygons: " << allPolygons << ", polygonSizes.size(): " << polygonSizes.size());
                 auto result = parsePattern(parts[0].trim());
                 if (!result.isValid()) return result;
                 
@@ -153,6 +160,8 @@ UPIParser::ParseResult UPIParser::parse(const juce::String& input)
 UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
 {
     juce::String cleaned = cleanInput(input);
+    
+    DBG("UPIParser::parsePattern called with input: '" << input << "', cleaned: '" << cleaned << "'");
     
     // Debug logging for pattern recognition
     juce::File logFile("/tmp/rhythm_debug.log");
@@ -537,8 +546,8 @@ std::vector<bool> UPIParser::parsePolygon(int sides, int offset, int totalSteps)
     for (int i = 0; i < sides; ++i)
     {
         // Calculate position with floating point for accuracy, then round
-        double exactPos = ((double)(i * totalSteps) / sides) + offset;
-        int pos = ((int)std::round(exactPos)) % totalSteps;
+        double exactPos = (double)(i * totalSteps) / sides;
+        int pos = ((int)std::round(exactPos) + offset) % totalSteps;
         if (pos < 0) pos += totalSteps; // Handle negative modulo
         
         if (pos >= 0 && pos < totalSteps)

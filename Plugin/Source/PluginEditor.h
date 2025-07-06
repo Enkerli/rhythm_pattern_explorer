@@ -64,7 +64,6 @@ private:
     // UPI Pattern Input
     juce::TextEditor upiTextEditor;
     juce::Label upiLabel;
-    juce::TextButton parseUPIButton;
     
     // Instance Name
     juce::TextEditor instanceNameEditor;
@@ -73,6 +72,9 @@ private:
     // MIDI Note Number
     juce::Slider midiNoteSlider;
     juce::Label midiNoteLabel;
+    
+    // Tick Button
+    juce::TextButton tickButton;
     
     juce::TextEditor patternDisplayEditor;
     juce::Label analysisLabel;
@@ -98,12 +100,9 @@ private:
     };
     BackgroundColor currentBackgroundColor = BackgroundColor::Dark;
     
-    // Attachments for automatic parameter binding
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> bpmAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> patternTypeAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> onsetsAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> stepsAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> playAttachment;
+    // Parameter attachments for essential parameters only
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> midiNoteAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> tickAttachment;
     
     // Visual pattern display
     void drawPatternCircle(juce::Graphics& g, juce::Rectangle<int> bounds);

@@ -69,13 +69,16 @@ public:
     PatternEngine& getPatternEngine() { return patternEngine; }
     
     // Parameter access for editor
-    juce::AudioParameterFloat* getBpmParameter() { return bpmParam; }
-    juce::AudioParameterChoice* getPatternTypeParameter() { return patternTypeParam; }
-    juce::AudioParameterInt* getOnsetsParameter() { return onsetsParam; }
-    juce::AudioParameterInt* getStepsParameter() { return stepsParam; }
-    juce::AudioParameterBool* getPlayingParameter() { return playingParam; }
     juce::AudioParameterBool* getUseHostTransportParameter() { return useHostTransportParam; }
     juce::AudioParameterInt* getMidiNoteParameter() { return midiNoteParam; }
+    juce::AudioParameterBool* getTickParameter() { return tickParam; }
+    
+    // Internal state access for editor
+    float getCurrentBPM() const { return currentBPM; }
+    void setCurrentBPM(float bpm) { currentBPM = bpm; updateTiming(); }
+    bool getInternalPlaying() const { return internalPlaying; }
+    void setInternalPlaying(bool playing) { internalPlaying = playing; }
+    void triggerPatternUpdate() { if (!currentUPIInput.isEmpty()) parseAndApplyUPI(currentUPIInput); }
     
     // Playback state
     int getCurrentStep() const { return currentStep.load(); }
@@ -88,7 +91,7 @@ public:
         if (useHostTransportParam && useHostTransportParam->get()) {
             return hostIsPlaying && recentProcessBlock;
         } else {
-            return playingParam->get() && recentProcessBlock;
+            return internalPlaying && recentProcessBlock;
         }
     }
     
@@ -119,6 +122,10 @@ public:
     }
     void advanceScene();
     
+    // Parameters - accessible to editor
+    juce::AudioParameterBool* useHostTransportParam;
+    juce::AudioParameterInt* midiNoteParam;
+    juce::AudioParameterBool* tickParam;
 
 private:
     //==============================================================================
@@ -140,14 +147,11 @@ private:
     bool hostIsPlaying = false;
     mutable double lastProcessBlockTime = 0.0;
     
-    // Parameters - original working approach
-    juce::AudioParameterFloat* bpmParam;
-    juce::AudioParameterChoice* patternTypeParam;
-    juce::AudioParameterInt* onsetsParam;
-    juce::AudioParameterInt* stepsParam;
-    juce::AudioParameterBool* playingParam;
-    juce::AudioParameterBool* useHostTransportParam;
-    juce::AudioParameterInt* midiNoteParam;
+    // Internal state (not exposed as parameters)
+    float currentBPM = 120.0f;
+    bool internalPlaying = false;
+    bool lastTickState = false;
+    int tickResetCounter = 0;
     
     // UPI pattern input
     juce::String currentUPIInput;

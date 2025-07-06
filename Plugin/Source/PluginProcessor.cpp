@@ -25,15 +25,10 @@ RhythmPatternExplorerAudioProcessor::RhythmPatternExplorerAudioProcessor()
                        ), randomGenerator(std::random_device{}())
 #endif
 {
-    // Initialize parameters using original working approach
-    addParameter(bpmParam = new juce::AudioParameterFloat("bpm", "BPM", 60.0f, 1000.0f, 120.0f));
-    addParameter(patternTypeParam = new juce::AudioParameterChoice("patternType", "Pattern Type", 
-        juce::StringArray("Euclidean", "Polygon", "Random", "Binary", "UPI"), 0));
-    addParameter(onsetsParam = new juce::AudioParameterInt("onsets", "Onsets", 1, 16, 3));
-    addParameter(stepsParam = new juce::AudioParameterInt("steps", "Steps", 4, 32, 8));
-    addParameter(playingParam = new juce::AudioParameterBool("playing", "Playing", false));
+    // Initialize parameters - only expose essential ones to host
     addParameter(useHostTransportParam = new juce::AudioParameterBool("useHostTransport", "Use Host Transport", true));
     addParameter(midiNoteParam = new juce::AudioParameterInt("midiNote", "MIDI Note", 0, 127, 36));
+    addParameter(tickParam = new juce::AudioParameterBool("tick", "Tick", false));
     
     // Initialize pattern engine with default Euclidean pattern
     patternEngine.generateEuclideanPattern(3, 8);
@@ -168,6 +163,30 @@ bool RhythmPatternExplorerAudioProcessor::isBusesLayoutSupported (const BusesLay
 
 void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
+    // Handle tick parameter (equivalent to pressing Parse)
+    bool currentTickState = tickParam ? tickParam->get() : false;
+    if (currentTickState && !lastTickState) {
+        // Tick edge detected - reparse current UPI pattern
+        DBG("RhythmPatternExplorer: Tick parameter activated! UPI input: '" << currentUPIInput << "'");
+        if (!currentUPIInput.isEmpty()) {
+            setUPIInput(currentUPIInput);
+            DBG("RhythmPatternExplorer: Pattern reparsed via tick");
+        } else {
+            DBG("RhythmPatternExplorer: No UPI pattern to tick - currentUPIInput is empty");
+        }
+        tickResetCounter = 1; // Start reset counter
+    }
+    
+    // Reset tick parameter after a brief delay to allow for multiple ticks
+    if (tickResetCounter > 0) {
+        tickResetCounter++;
+        if (tickResetCounter >= 20) { // Reset after ~20 process blocks (~1-2ms)
+            tickParam->setValueNotifyingHost(0.0f);
+            tickResetCounter = 0;
+        }
+    }
+    lastTickState = currentTickState;
+    
     // FIRST: Always log that processBlock is being called
     static int processBlockCallCount = 0;
     processBlockCallCount++;
@@ -186,7 +205,7 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
     
     // Log every 50 calls or when BPM changes, with focus on 200+ BPM
     debugCallCount++;
-    int currentBPM = static_cast<int>(bpmParam ? bpmParam->get() : 120);
+    int currentBPMInt = static_cast<int>(currentBPM);
     
     // More frequent logging at high BPMs
     bool shouldLog = false;
@@ -199,7 +218,7 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
     if (shouldLog || std::abs(currentBPM - lastLoggedBPM) > 2) {
         FILE* debugFile = fopen("/tmp/bitwig_debug.log", "a");
         if (debugFile) {
-            fprintf(debugFile, "BITWIG PROCESS: BPM=%d, SamplesPerStep=%d, BufferSize=%d, CurrentSample=%d, CurrentStep=%d, SampleRate=%.0f, CallCount=%d\n",
+            fprintf(debugFile, "BITWIG PROCESS: BPM=%.1f, SamplesPerStep=%d, BufferSize=%d, CurrentSample=%d, CurrentStep=%d, SampleRate=%.0f, CallCount=%d\n",
                 currentBPM, samplesPerStep, currentBufferSize, currentSample, currentStep.load(), currentSampleRate, debugCallCount);
             fflush(debugFile);
             fclose(debugFile);
@@ -229,7 +248,7 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
         hasValidPosition = playHead->getCurrentPosition(posInfo);
         
         // BITWIG TRANSPORT DEBUG: Log transport details
-        float currentBPM = bpmParam ? bpmParam->get() : 120.0f;
+        // Use internal currentBPM variable
         if (currentBPM >= 200.0f) {
             static int transportDebugCount = 0;
             if (++transportDebugCount % 100 == 0) {
@@ -251,7 +270,7 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
     else
     {
         // No playhead available
-        float currentBPM = bpmParam ? bpmParam->get() : 120.0f;
+        // Use internal currentBPM variable
         if (currentBPM >= 200.0f) {
             static int noPlayheadCount = 0;
             if (++noPlayheadCount % 100 == 0) {
@@ -270,7 +289,7 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
     if (useHostTransportParam && useHostTransportParam->get() && hasValidPosition)
     {
         // FIXED: Manual play button should work alongside host transport (OR logic)
-        isPlaying = posInfo.isPlaying || playingParam->get();
+        isPlaying = posInfo.isPlaying || internalPlaying;
         
         // BITWIG FIX: Always sync BPM, but conditionally sync position
         syncBPMWithHost(posInfo);
@@ -278,82 +297,44 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
     }
     else
     {
-        isPlaying = playingParam->get();
+        isPlaying = internalPlaying;
     }
 
-    // Update pattern if parameters changed
-    static int lastOnsets = 0;
-    static int lastSteps = 0;
-    static int lastPatternType = 0;
-    
-    int currentOnsets = onsetsParam->get();
-    int currentSteps = stepsParam->get();
-    int currentPatternType = patternTypeParam ? patternTypeParam->getIndex() : 0;
-    
-    if (currentOnsets != lastOnsets || currentSteps != lastSteps || currentPatternType != lastPatternType)
-    {
-        switch (currentPatternType)
-        {
-            case 0: // Euclidean
-                patternEngine.generateEuclideanPattern(currentOnsets, currentSteps);
-                break;
-            case 1: // Polygon
-                patternEngine.generatePolygonPattern(currentOnsets, currentSteps, 0);
-                break;
-            case 2: // Random
-                patternEngine.generateRandomPattern(currentOnsets, currentSteps);
-                break;
-            case 3: // Binary
-                patternEngine.generateBinaryPattern(currentOnsets < currentSteps ? (1 << currentOnsets) - 1 : 0, currentSteps);
-                break;
-            case 4: // UPI
-                // UPI patterns are set directly via setUPIInput(), no need to regenerate here
-                break;
-        }
-        
-        lastOnsets = currentOnsets;
-        lastSteps = currentSteps;
-        lastPatternType = currentPatternType;
-        
-        updateTiming();
-    }
+    // Pattern updates are now handled via UPI input only
     
     // Update timing if BPM changed - but preserve currentSample ratio
     static float lastBPM = 120.0f;
-    float currentBPMFloat = bpmParam ? bpmParam->get() : 120.0f;
-    if (std::abs(currentBPMFloat - lastBPM) > 0.1f) {
+    if (std::abs(currentBPM - lastBPM) > 0.1f) {
         // BITWIG FIX: Preserve timing position when BPM changes
         double sampleRatio = (samplesPerStep > 0) ? (double)currentSample / samplesPerStep : 0.0;
         updateTiming();
         currentSample = static_cast<int>(sampleRatio * samplesPerStep);
         
         // Log BPM changes for debugging
-        if (currentBPMFloat >= 180.0f) {
+        if (currentBPM >= 180.0f) {
             FILE* debugFile = fopen("/tmp/bitwig_debug.log", "a");
             if (debugFile) {
                 fprintf(debugFile, "BPM CHANGE: %.1f->%.1f, sampleRatio=%.3f, newCurrentSample=%d, newSamplesPerStep=%d\n",
-                    lastBPM, currentBPMFloat, sampleRatio, currentSample, samplesPerStep);
+                    lastBPM, currentBPM, sampleRatio, currentSample, samplesPerStep);
                 fflush(debugFile);
                 fclose(debugFile);
             }
         }
-        lastBPM = currentBPMFloat;
+        lastBPM = currentBPM;
     }
-    
-    // Clean production version
     
     // Clean production version - no aggressive debugging
 
     // BITWIG PLAYING STATE DEBUG: Log playing detection
-    if (currentBPMFloat >= 180.0f) {
+    if (currentBPM >= 180.0f) {
         static int playingDebugCount = 0;
         if (++playingDebugCount % 50 == 0) {
             FILE* debugFile = fopen("/tmp/bitwig_debug.log", "a");
             if (debugFile) {
-                fprintf(debugFile, "PLAYING DEBUG: isPlaying=%s, hostIsPlaying=%s, playingParam=%s, useHostTransport=%s\n",
+                fprintf(debugFile, "PLAYING DEBUG: isPlaying=%s, hostIsPlaying=%s, internalPlaying=%s, useHostTransport=%s\n",
                     isPlaying ? "TRUE" : "FALSE",
                     hostIsPlaying ? "TRUE" : "FALSE", 
-                    (playingParam->get() ? "TRUE" : "FALSE"),
+                    (internalPlaying ? "TRUE" : "FALSE"),
                     (useHostTransportParam->get() ? "TRUE" : "FALSE"));
                 fflush(debugFile);
                 fclose(debugFile);
@@ -383,7 +364,7 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
                 }
                 
                 // BITWIG 210 DEBUG: Log step triggers to file at high BPMs
-                float currentBPM = bpmParam ? bpmParam->get() : 120.0f;
+                // Use internal currentBPM variable
                 if (currentBPM >= 180.0f) {
                     FILE* debugFile = fopen("/tmp/bitwig_debug.log", "a");
                     if (debugFile) {
@@ -432,12 +413,10 @@ void RhythmPatternExplorerAudioProcessor::getStateInformation (juce::MemoryBlock
     // Create an XML representation of our state
     auto xml = std::make_unique<juce::XmlElement>("RhythmPatternExplorerState");
     
-    xml->setAttribute("bpm", bpmParam->get());
-    xml->setAttribute("patternType", patternTypeParam->getIndex());
-    xml->setAttribute("onsets", onsetsParam->get());
-    xml->setAttribute("steps", stepsParam->get());
-    xml->setAttribute("playing", playingParam->get());
+    xml->setAttribute("bpm", currentBPM);
+    xml->setAttribute("playing", internalPlaying);
     xml->setAttribute("useHostTransport", useHostTransportParam->get());
+    xml->setAttribute("midiNote", midiNoteParam->get());
     
     // Save pattern data
     auto patternXml = xml->createNewChildElement("Pattern");
@@ -462,12 +441,10 @@ void RhythmPatternExplorerAudioProcessor::setStateInformation (const void* data,
     
     if (xml != nullptr && xml->hasTagName("RhythmPatternExplorerState"))
     {
-        *bpmParam = xml->getDoubleAttribute("bpm", 120.0);
-        *patternTypeParam = xml->getIntAttribute("patternType", 0);
-        *onsetsParam = xml->getIntAttribute("onsets", 3);
-        *stepsParam = xml->getIntAttribute("steps", 8);
-        *playingParam = xml->getBoolAttribute("playing", false);
+        currentBPM = xml->getDoubleAttribute("bpm", 120.0);
+        internalPlaying = xml->getBoolAttribute("playing", false);
         *useHostTransportParam = xml->getBoolAttribute("useHostTransport", true);
+        *midiNoteParam = xml->getIntAttribute("midiNote", 36);
         
         // Restore pattern data if available
         auto patternXml = xml->getChildByName("Pattern");
@@ -496,7 +473,7 @@ void RhythmPatternExplorerAudioProcessor::setStateInformation (const void* data,
 //==============================================================================
 void RhythmPatternExplorerAudioProcessor::updateTiming()
 {
-    float bpm = bpmParam->get();
+    float bpm = currentBPM;
     
     // Calculate samples per step (16th notes at current BPM)
     double beatsPerSecond = bpm / 60.0;
@@ -524,7 +501,7 @@ void RhythmPatternExplorerAudioProcessor::processStep(juce::MidiBuffer& midiBuff
     auto pattern = patternEngine.getCurrentPattern();
     
     // BITWIG 210 DEBUG: Log pattern state at high BPMs
-    float currentBPM = bpmParam ? bpmParam->get() : 120.0f;
+    // Use internal currentBPM variable
     static int stepCallCount = 0;
     
     if (currentBPM >= 200.0f && ++stepCallCount % 3 == 0) {
@@ -571,23 +548,23 @@ void RhythmPatternExplorerAudioProcessor::syncBPMWithHost(const juce::AudioPlayH
     if (posInfo.bpm > 0)
     {
         float hostBPM = static_cast<float>(posInfo.bpm);
-        float currentBPM = bpmParam->get();
+        float currentBPMValue = currentBPM;
         
         // BITWIG BPM SYNC DEBUG: Log BPM sync attempts  
         if (hostBPM >= 200.0f) {
             FILE* debugFile = fopen("/tmp/bitwig_debug.log", "a");
             if (debugFile) {
                 fprintf(debugFile, "BPM SYNC: hostBPM=%.1f, currentBPM=%.1f, diff=%.3f\n",
-                    hostBPM, currentBPM, std::abs(currentBPM - hostBPM));
+                    hostBPM, currentBPMValue, std::abs(currentBPMValue - hostBPM));
                 fflush(debugFile);
                 fclose(debugFile);
             }
         }
         
-        // Update our BPM parameter to match host
-        if (std::abs(currentBPM - hostBPM) > 0.1f)
+        // Update our internal BPM to match host
+        if (std::abs(currentBPMValue - hostBPM) > 0.1f)
         {
-            bpmParam->setValueNotifyingHost(bpmParam->convertTo0to1(hostBPM));
+            currentBPM = hostBPM;
             updateTiming();
             
             // Log successful BPM updates
@@ -595,7 +572,7 @@ void RhythmPatternExplorerAudioProcessor::syncBPMWithHost(const juce::AudioPlayH
                 FILE* debugFile = fopen("/tmp/bitwig_debug.log", "a");
                 if (debugFile) {
                     fprintf(debugFile, "BPM UPDATED: %.1f->%.1f, newSamplesPerStep=%d\n",
-                        currentBPM, hostBPM, samplesPerStep);
+                        currentBPMValue, hostBPM, samplesPerStep);
                     fflush(debugFile);
                     fclose(debugFile);
                 }
@@ -617,7 +594,7 @@ void RhythmPatternExplorerAudioProcessor::syncPositionWithHost(const juce::Audio
         int targetStep = static_cast<int>(stepsFromStart) % patternEngine.getStepCount();
         
         // CRITICAL FIX: Disable position sync entirely - it interferes with natural step advancement
-        float currentBPM = bpmParam ? bpmParam->get() : 120.0f;
+        // Use internal currentBPM variable
         bool allowPositionSync = false;  // DISABLED: Position sync was resetting currentSample constantly
         
         // CRITICAL FIX: Only sync position when significantly out of sync (not every block)
@@ -649,10 +626,21 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
 {
     juce::ScopedLock lock(processingLock);
     
+    DBG("RhythmPatternExplorerAudioProcessor::setUPIInput called with: '" << upiPattern << "'");
+    
     // Check for progressive syntax: scenes first (pattern|pattern|pattern), then pattern+N (offset), pattern*N (lengthening)
     juce::String pattern = upiPattern.trim();
     bool isScenes = pattern.contains("|");
-    bool isProgressiveOffset = !isScenes && pattern.contains("+") && pattern.lastIndexOf("+") > 0;
+    
+    // Check if + is followed by a number (progressive offset) vs pattern (combination)
+    bool isProgressiveOffset = false;
+    if (!isScenes && pattern.contains("+") && pattern.lastIndexOf("+") > 0) {
+        int lastPlusIndex = pattern.lastIndexOf("+");
+        juce::String afterPlus = pattern.substring(lastPlusIndex + 1).trim();
+        // Progressive offset if what follows + is purely numeric
+        isProgressiveOffset = afterPlus.containsOnly("0123456789");
+    }
+    
     bool isProgressiveLengthening = !isScenes && pattern.contains("*") && pattern.lastIndexOf("*") > 0;
     
     if (isScenes)
@@ -712,7 +700,12 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
                 scenePatterns.add(scenePattern);
                 
                 // Check if this scene has progressive syntax
-                bool hasProgressiveOffset = scenePattern.contains("+") && scenePattern.lastIndexOf("+") > 0;
+                bool hasProgressiveOffset = false;
+                if (scenePattern.contains("+") && scenePattern.lastIndexOf("+") > 0) {
+                    int lastPlusIndex = scenePattern.lastIndexOf("+");
+                    juce::String afterPlus = scenePattern.substring(lastPlusIndex + 1).trim();
+                    hasProgressiveOffset = afterPlus.containsOnly("0123456789");
+                }
                 bool hasProgressiveLengthening = scenePattern.contains("*") && scenePattern.lastIndexOf("*") > 0;
                 
                 if (hasProgressiveOffset) {
@@ -949,18 +942,7 @@ void RhythmPatternExplorerAudioProcessor::parseAndApplyUPI(const juce::String& u
         
         DBG("   Onsets: " + juce::String(onsets) + ", Steps: " + juce::String(steps));
         
-        // Update parameters without triggering host notifications during parsing
-        if (onsetsParam && stepsParam)
-        {
-            onsetsParam->setValueNotifyingHost(onsetsParam->convertTo0to1(static_cast<float>(onsets)));
-            stepsParam->setValueNotifyingHost(stepsParam->convertTo0to1(static_cast<float>(steps)));
-        }
-        
-        // Set pattern type to a custom indicator (use index 4 for UPI patterns)
-        if (patternTypeParam)
-        {
-            patternTypeParam->setValueNotifyingHost(patternTypeParam->convertTo0to1(4.0f));
-        }
+        // Pattern applied successfully via UPI
         
         updateTiming();
         
@@ -1058,14 +1040,7 @@ void RhythmPatternExplorerAudioProcessor::checkMidiInputForTriggers(juce::MidiBu
                     parseAndApplyUPI(currentUPIInput);
                 }
             }
-            else if (patternTypeParam && patternTypeParam->getIndex() == 2) // Random pattern type
-            {
-                // Trigger random pattern regeneration
-                int currentOnsets = onsetsParam->get();
-                int currentSteps = stepsParam->get();
-                patternEngine.generateRandomPattern(currentOnsets, currentSteps);
-                updateTiming();
-            }
+            // Pattern updates are handled via UPI only
         }
         else if (message.isController())
         {
@@ -1113,13 +1088,7 @@ void RhythmPatternExplorerAudioProcessor::checkMidiInputForTriggers(juce::MidiBu
                     parseAndApplyUPI(currentUPIInput);
                 }
             }
-            else if (patternTypeParam && patternTypeParam->getIndex() == 2) // Random pattern type
-            {
-                int currentOnsets = onsetsParam->get();
-                int currentSteps = stepsParam->get();
-                patternEngine.generateRandomPattern(currentOnsets, currentSteps);
-                updateTiming();
-            }
+            // Pattern updates are handled via UPI only
         }
     }
 }
