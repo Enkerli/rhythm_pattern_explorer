@@ -126,7 +126,7 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     addAndMakeVisible(analysisLabel);
     
     // Version Editor - copyable and selectable
-    versionEditor.setText("v0.02a4", juce::dontSendNotification);
+    versionEditor.setText("v0.03a1", juce::dontSendNotification);
     versionEditor.setMultiLine(false);
     versionEditor.setReadOnly(true);
     versionEditor.setScrollbarsShown(false);

@@ -65,11 +65,25 @@ public:
     juce::String getHexString() const;
     juce::String getOctalString() const;
     juce::String getDecimalString() const;
+    
+    //==============================================================================
+    // Progressive Offset Support
+    void setProgressiveOffset(bool enabled, int initial = 0, int progressive = 0);
+    void triggerProgressiveOffset();
+    int getCurrentOffset() const { return currentOffset; }
+    bool hasProgressiveOffsetEnabled() const { return hasProgressiveOffset; }
 
 private:
     //==============================================================================
     std::vector<bool> currentPattern;
     std::mt19937 randomEngine;
+    
+    // Progressive offset state
+    bool hasProgressiveOffset = false;
+    int initialOffset = 0;
+    int progressiveOffset = 0;
+    int currentOffset = 0;
+    int triggerCount = 0;
     
     //==============================================================================
     // Helper methods

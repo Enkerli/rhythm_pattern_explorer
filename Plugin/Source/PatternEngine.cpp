@@ -52,11 +52,15 @@ void PatternEngine::generatePolygonPattern(int vertices, int steps, int offset)
     currentPattern.clear();
     currentPattern.resize(steps, false);
     
-    // Generate regular polygon pattern
+    // Generate regular polygon pattern - vertices equally spaced around circle
     for (int i = 0; i < vertices; ++i)
     {
-        int position = static_cast<int>((i * steps + offset * steps) % (vertices * steps)) / vertices;
-        if (position < steps)
+        // Calculate position with floating point for accuracy, then round
+        double exactPos = ((double)(i * steps) / vertices) + offset;
+        int position = ((int)std::round(exactPos)) % steps;
+        if (position < 0) position += steps; // Handle negative modulo
+        
+        if (position >= 0 && position < steps)
         {
             currentPattern[position] = true;
         }
@@ -427,4 +431,31 @@ int PatternEngine::bellCurveOnsetCount(int steps)
     onsets = juce::jmax(1, juce::jmin(steps - 1, onsets));
     
     return onsets;
+}
+
+//==============================================================================
+// Progressive Offset Support
+
+void PatternEngine::setProgressiveOffset(bool enabled, int initial, int progressive)
+{
+    hasProgressiveOffset = enabled;
+    initialOffset = initial;
+    progressiveOffset = progressive;
+    currentOffset = initial;
+    triggerCount = 0;
+    
+    DBG("PatternEngine: Progressive offset " << (enabled ? "enabled" : "disabled") 
+        << " - initial=" << initial << ", progressive=" << progressive);
+}
+
+void PatternEngine::triggerProgressiveOffset()
+{
+    if (!hasProgressiveOffset)
+        return;
+    
+    triggerCount++;
+    currentOffset = initialOffset + (triggerCount * progressiveOffset);
+    
+    DBG("PatternEngine: Progressive offset triggered - count=" << triggerCount 
+        << ", new offset=" << currentOffset);
 }

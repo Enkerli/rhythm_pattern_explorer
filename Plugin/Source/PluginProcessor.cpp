@@ -9,6 +9,7 @@
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "UPIParser.h"
 #include <ctime>
 
 //==============================================================================
@@ -36,6 +37,9 @@ RhythmPatternExplorerAudioProcessor::RhythmPatternExplorerAudioProcessor()
     // Initialize pattern engine with default Euclidean pattern
     patternEngine.generateEuclideanPattern(3, 8);
     
+    // Set up progressive offset engine for UPI parser
+    UPIParser::setProgressiveOffsetEngine(&patternEngine);
+    
     DBG("RhythmPatternExplorer: Plugin initialized");
     
     // BITWIG FILE DEBUG: Write to file since console may be blocked
@@ -44,7 +48,7 @@ RhythmPatternExplorerAudioProcessor::RhythmPatternExplorerAudioProcessor()
         time_t now = time(0);
         char* timeStr = ctime(&now);
         timeStr[strlen(timeStr)-1] = '\0'; // Remove newline
-        fprintf(debugFile, "BITWIG INIT: Plugin constructor called at %s! Debug version v0.02b.240703.2145-DBG active.\n", timeStr);
+        fprintf(debugFile, "BITWIG INIT: Plugin constructor called at %s! Debug version v0.03a1.DBG active.\n", timeStr);
         fflush(debugFile);
         fclose(debugFile);
     }
@@ -369,6 +373,14 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
                 int newStep = (currentStep.load() + 1) % patternEngine.getStepCount();
                 currentStep.store(newStep);
                 
+                // Trigger progressive offset advancement when pattern completes a cycle
+                if (newStep == 0 && patternEngine.hasProgressiveOffsetEnabled())
+                {
+                    patternEngine.triggerProgressiveOffset();
+                    // Re-apply the UPI pattern with new progressive offset
+                    parseAndApplyUPI(currentUPIInput);
+                }
+                
                 // BITWIG 210 DEBUG: Log step triggers to file at high BPMs
                 float currentBPM = bpmParam ? bpmParam->get() : 120.0f;
                 if (currentBPM >= 180.0f) {
@@ -643,14 +655,89 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
 {
     juce::ScopedLock lock(processingLock);
     
-    // If the pattern changed, reset all progressive states
-    if (currentUPIInput != upiPattern)
+    // Check for progressive syntax: pattern+N (e.g., "E(3,7)+2")
+    juce::String pattern = upiPattern.trim();
+    bool isProgressivePattern = pattern.contains("+") && pattern.lastIndexOf("+") > 0;
+    
+    if (isProgressivePattern)
     {
-        UPIParser::resetAllProgressiveStates();
+        // Extract base pattern and step
+        int plusIndex = pattern.lastIndexOf("+");
+        juce::String newBasePattern = pattern.substring(0, plusIndex).trim();
+        juce::String stepStr = pattern.substring(plusIndex + 1).trim();
+        int newStep = stepStr.getIntValue();
+        
+        // File-based debug logging
+        FILE* debugFile = fopen("/tmp/rhythm_progressive_debug.log", "a");
+        if (debugFile) {
+            fprintf(debugFile, "Progressive pattern detected: %s (base: %s, step: +%d)\n", 
+                pattern.toRawUTF8(), newBasePattern.toRawUTF8(), newStep);
+            fflush(debugFile);
+            fclose(debugFile);
+        }
+        
+        // If same base pattern, advance offset; if different, reset
+        if (basePattern == newBasePattern && progressiveStep == newStep)
+        {
+            advanceProgressiveOffset();
+            
+            // Debug log advancement
+            if (debugFile) {
+                debugFile = fopen("/tmp/rhythm_progressive_debug.log", "a");
+                if (debugFile) {
+                    fprintf(debugFile, "Advanced offset to: %d\n", progressiveOffset);
+                    fflush(debugFile);
+                    fclose(debugFile);
+                }
+            }
+        }
+        else
+        {
+            // New progressive pattern - reset and start
+            basePattern = newBasePattern;
+            progressiveStep = newStep;
+            progressiveOffset = newStep; // Start with first offset
+            
+            // Debug log reset
+            if (debugFile) {
+                debugFile = fopen("/tmp/rhythm_progressive_debug.log", "a");
+                if (debugFile) {
+                    fprintf(debugFile, "New progressive pattern - reset offset to: %d\n", progressiveOffset);
+                    fflush(debugFile);
+                    fclose(debugFile);
+                }
+            }
+        }
+        
+        // Parse the base pattern first, then apply progressive offset via rotation
+        parseAndApplyUPI(basePattern);
+        
+        // Apply progressive offset by rotating the generated pattern
+        if (progressiveOffset != 0)
+        {
+            auto currentPattern = patternEngine.getCurrentPattern();
+            auto rotatedPattern = rotatePatternBySteps(currentPattern, progressiveOffset);
+            patternEngine.setPattern(rotatedPattern);
+            
+            // Debug log rotation
+            FILE* debugFile2 = fopen("/tmp/rhythm_progressive_debug.log", "a");
+            if (debugFile2) {
+                fprintf(debugFile2, "Applied rotation: offset=%d\n", progressiveOffset);
+                fflush(debugFile2);
+                fclose(debugFile2);
+            }
+        }
+    }
+    else
+    {
+        // Non-progressive pattern - reset progressive state
+        progressiveOffset = 0;
+        progressiveStep = 0;
+        basePattern = "";
+        parseAndApplyUPI(pattern);
     }
     
     currentUPIInput = upiPattern;
-    parseAndApplyUPI(upiPattern);
 }
 
 void RhythmPatternExplorerAudioProcessor::parseAndApplyUPI(const juce::String& upiPattern)
@@ -661,7 +748,7 @@ void RhythmPatternExplorerAudioProcessor::parseAndApplyUPI(const juce::String& u
     DBG("parseAndApplyUPI called with: '" + upiPattern + "'");
     
     // For progressive patterns, always re-parse to advance state
-    bool isProgressive = upiPattern.contains(">");
+    bool isProgressive = upiPattern.contains("#");
     DBG("   Is progressive: " + juce::String(isProgressive ? "YES" : "NO"));
     
     auto parseResult = UPIParser::parse(upiPattern);
@@ -674,6 +761,18 @@ void RhythmPatternExplorerAudioProcessor::parseAndApplyUPI(const juce::String& u
         
         // Apply the parsed pattern to the engine
         patternEngine.setPattern(parseResult.pattern);
+        
+        // Set up progressive offset if present
+        if (parseResult.hasProgressiveOffset)
+        {
+            patternEngine.setProgressiveOffset(true, parseResult.initialOffset, parseResult.progressiveOffset);
+            DBG("   Progressive offset enabled: initial=" << parseResult.initialOffset 
+                << ", progressive=" << parseResult.progressiveOffset);
+        }
+        else
+        {
+            patternEngine.setProgressiveOffset(false);
+        }
         
         // Update parameters to reflect the new pattern
         int onsets = UPIParser::countOnsets(parseResult.pattern);
@@ -724,10 +823,17 @@ void RhythmPatternExplorerAudioProcessor::checkMidiInputForTriggers(juce::MidiBu
             // Any MIDI note input triggers pattern regeneration for progressive/random patterns
             if (!currentUPIInput.isEmpty())
             {
-                // Check if it's a progressive pattern (contains ">")
-                if (currentUPIInput.contains(">"))
+                // Check if it's a progressive pattern (contains "#")
+                if (currentUPIInput.contains("#"))
                 {
-                    // Force re-parsing to advance progressive transformation
+                    // Advance progressive offset first, then re-parse
+                    if (patternEngine.hasProgressiveOffsetEnabled())
+                    {
+                        patternEngine.triggerProgressiveOffset();
+                        DBG("RhythmPatternExplorer: MIDI triggered progressive offset advancement to " 
+                            << patternEngine.getCurrentOffset());
+                    }
+                    // Force re-parsing to apply new progressive offset
                     parseAndApplyUPI(currentUPIInput);
                 }
                 else
@@ -746,6 +852,27 @@ void RhythmPatternExplorerAudioProcessor::checkMidiInputForTriggers(juce::MidiBu
             }
         }
     }
+}
+
+std::vector<bool> RhythmPatternExplorerAudioProcessor::rotatePatternBySteps(const std::vector<bool>& pattern, int steps)
+{
+    if (pattern.empty()) 
+        return pattern;
+    
+    std::vector<bool> rotated(pattern.size());
+    int size = static_cast<int>(pattern.size());
+    
+    // Normalize steps to be within pattern size
+    steps = steps % size;
+    if (steps < 0) steps += size;
+    
+    for (int i = 0; i < size; ++i)
+    {
+        int newIndex = (i + steps) % size;
+        rotated[newIndex] = pattern[i];
+    }
+    
+    return rotated;
 }
 
 //==============================================================================

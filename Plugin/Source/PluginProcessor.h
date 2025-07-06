@@ -96,6 +96,11 @@ public:
     juce::String getUPIInput() const { return currentUPIInput; }
     void parseAndApplyUPI(const juce::String& upiPattern);
     
+    // Progressive offset support (universal for all patterns)
+    void resetProgressiveOffset() { progressiveOffset = 0; }
+    void advanceProgressiveOffset() { progressiveOffset += progressiveStep; }
+    int getProgressiveOffset() const { return progressiveOffset; }
+    
 
 private:
     //==============================================================================
@@ -129,6 +134,11 @@ private:
     juce::String currentUPIInput;
     juce::String lastParsedUPI;
     
+    // Progressive offset support (works for any pattern)
+    int progressiveOffset = 0;      // Current accumulated offset
+    int progressiveStep = 0;        // How much to advance each time
+    juce::String basePattern;       // Pattern without progressive syntax
+    
     // Thread safety
     juce::CriticalSection processingLock;
     
@@ -139,6 +149,9 @@ private:
     void syncBPMWithHost(const juce::AudioPlayHead::CurrentPositionInfo& posInfo);
     void syncPositionWithHost(const juce::AudioPlayHead::CurrentPositionInfo& posInfo);
     void checkMidiInputForTriggers(juce::MidiBuffer& midiMessages);
+    
+    // Pattern manipulation
+    std::vector<bool> rotatePatternBySteps(const std::vector<bool>& pattern, int steps);
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (RhythmPatternExplorerAudioProcessor)
 };

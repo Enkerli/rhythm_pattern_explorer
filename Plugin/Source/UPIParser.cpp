@@ -7,10 +7,16 @@
 */
 
 #include "UPIParser.h"
+#include "PatternEngine.h"
 #include <cmath>
 #include <random>
 #include <algorithm>
 #include <functional>
+
+//==============================================================================
+// Progressive offset engine support - static members
+bool UPIParser::hasProgressiveOffsetEngine = false;
+PatternEngine* UPIParser::progressiveOffsetEngine = nullptr;
 
 //==============================================================================
 UPIParser::ParseResult UPIParser::parse(const juce::String& input)
@@ -44,7 +50,8 @@ UPIParser::ParseResult UPIParser::parse(const juce::String& input)
                     if (std::regex_search(inputStr, match, polygonRegex))
                     {
                         int sides = std::stoi(match[1].str());
-                        int steps = match[3].matched ? std::stoi(match[3].str()) : sides;
+                        int multiplier = match[3].matched ? std::stoi(match[3].str()) : 1;
+                        int steps = sides * multiplier;
                         polygonSizes.push_back(steps);
                     }
                     else
@@ -279,8 +286,8 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
     // Parse core pattern types
     if (isEuclideanPattern(cleaned))
     {
-        // E(onsets,steps) or E(onsets,steps,offset) - case insensitive
-        std::regex euclideanRegex(R"([Ee]\((\d+),(\d+)(?:,(-?\d+))?\))");
+        // E(onsets,steps) or E(onsets,steps,offset) or E(onsets,steps)@initial#progressive - case insensitive
+        std::regex euclideanRegex(R"([Ee]\((\d+),(\d+)(?:,(-?\d+))?\)(?:@(-?\d+)#(-?\d+))?)");
         std::smatch match;
         std::string inputStr = cleaned.toStdString();
         
@@ -290,9 +297,37 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
             int steps = std::stoi(match[2].str());
             int offset = match[3].matched ? std::stoi(match[3].str()) : 0;
             
-            auto pattern = parseEuclidean(onsets, steps, offset);
-            return createSuccess(pattern, "E(" + juce::String(onsets) + "," + juce::String(steps) + 
-                               (offset != 0 ? "," + juce::String(offset) : "") + ")");
+            // Check for progressive offset syntax @initial>progressive
+            bool hasProgressiveOffset = match[4].matched && match[5].matched;
+            int initialOffset = hasProgressiveOffset ? std::stoi(match[4].str()) : offset;
+            int progressiveOffset = hasProgressiveOffset ? std::stoi(match[5].str()) : 0;
+            
+            // Use current progressive offset if this is a progressive pattern and engine is tracking state
+            int effectiveOffset = initialOffset;
+            if (hasProgressiveOffset && hasProgressiveOffsetEngine)
+            {
+                effectiveOffset = getCurrentProgressiveOffset();
+                DBG("UPIParser: Using progressive offset from engine: " << effectiveOffset);
+            }
+            else
+            {
+                DBG("UPIParser: Using initial offset: " << effectiveOffset << 
+                    " (hasProgressiveOffset=" << (hasProgressiveOffset ? "true" : "false") << 
+                    ", hasEngine=" << (hasProgressiveOffsetEngine ? "true" : "false") << ")");
+            }
+            
+            auto pattern = parseEuclidean(onsets, steps, effectiveOffset);
+            auto result = createSuccess(pattern, "E(" + juce::String(onsets) + "," + juce::String(steps) + 
+                               (initialOffset != 0 || hasProgressiveOffset ? 
+                                (hasProgressiveOffset ? "@" + juce::String(initialOffset) + "#" + juce::String(progressiveOffset) :
+                                 "," + juce::String(offset)) : "") + ")");
+            
+            // Set progressive offset information
+            result.hasProgressiveOffset = hasProgressiveOffset;
+            result.initialOffset = initialOffset;
+            result.progressiveOffset = progressiveOffset;
+            
+            return result;
         }
     }
     
@@ -307,11 +342,12 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
         {
             int sides = std::stoi(match[1].str());
             int offset = std::stoi(match[2].str());
-            int steps = match[3].matched ? std::stoi(match[3].str()) : sides;
+            int multiplier = match[3].matched ? std::stoi(match[3].str()) : 1;
+            int steps = sides * multiplier;
             
             auto pattern = parsePolygon(sides, offset, steps);
             return createSuccess(pattern, "P(" + juce::String(sides) + "," + juce::String(offset) + 
-                               (match[3].matched ? "," + juce::String(steps) : "") + ")");
+                               (match[3].matched ? "," + juce::String(multiplier) : "") + ")");
         }
     }
     
@@ -887,7 +923,8 @@ juce::String UPIParser::patternToBinary(const std::vector<bool>& pattern)
 
 bool UPIParser::isEuclideanPattern(const juce::String& input)
 {
-    return (input.startsWith("E(") || input.startsWith("e(")) && input.endsWith(")");
+    return (input.startsWith("E(") || input.startsWith("e(")) && 
+           (input.endsWith(")") || input.contains(")@") || input.contains(")#"));
 }
 
 bool UPIParser::isPolygonPattern(const juce::String& input)
@@ -1341,4 +1378,22 @@ UPIParser::ParseResult UPIParser::createSuccess(const std::vector<bool>& pattern
     result.patternName = name;
     result.stepCount = static_cast<int>(pattern.size());
     return result;
+}
+
+//==============================================================================
+// Progressive offset engine support - implementation
+
+void UPIParser::setProgressiveOffsetEngine(PatternEngine* engine)
+{
+    progressiveOffsetEngine = engine;
+    hasProgressiveOffsetEngine = (engine != nullptr);
+}
+
+int UPIParser::getCurrentProgressiveOffset()
+{
+    if (hasProgressiveOffsetEngine && progressiveOffsetEngine != nullptr)
+    {
+        return progressiveOffsetEngine->getCurrentOffset();
+    }
+    return 0;
 }

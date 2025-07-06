@@ -42,6 +42,11 @@ public:
         juce::String patternName;
         int stepCount = 0;
         
+        // Progressive offset support
+        bool hasProgressiveOffset = false;
+        int initialOffset = 0;
+        int progressiveOffset = 0;
+        
         bool isValid() const { return type != Error; }
     };
     
@@ -111,6 +116,12 @@ private:
     
 public:
     static void resetAllProgressiveStates();
+    
+    // Progressive offset engine support
+    static void setProgressiveOffsetEngine(class PatternEngine* engine);
+    static int getCurrentProgressiveOffset();
+    static bool hasProgressiveOffsetEngine;
+    static class PatternEngine* progressiveOffsetEngine;
     
     // String processing utilities
     static juce::String cleanInput(const juce::String& input);
