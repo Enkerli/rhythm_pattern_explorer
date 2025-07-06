@@ -655,13 +655,78 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
 {
     juce::ScopedLock lock(processingLock);
     
-    // Check for progressive syntax: pattern+N (offset), pattern*N (lengthening), or scenes (pattern|pattern|pattern)
+    // Check for progressive syntax: scenes first (pattern|pattern|pattern), then pattern+N (offset), pattern*N (lengthening)
     juce::String pattern = upiPattern.trim();
-    bool isProgressiveOffset = pattern.contains("+") && pattern.lastIndexOf("+") > 0;
-    bool isProgressiveLengthening = pattern.contains("*") && pattern.lastIndexOf("*") > 0;
     bool isScenes = pattern.contains("|");
+    bool isProgressiveOffset = !isScenes && pattern.contains("+") && pattern.lastIndexOf("+") > 0;
+    bool isProgressiveLengthening = !isScenes && pattern.contains("*") && pattern.lastIndexOf("*") > 0;
     
-    if (isProgressiveOffset)
+    if (isScenes)
+    {
+        // Handle scene cycling: pattern1|pattern2|pattern3
+        auto scenes = juce::StringArray::fromTokens(pattern, "|", "");
+        
+        // File-based debug logging
+        FILE* debugFile = fopen("/tmp/rhythm_progressive_debug.log", "a");
+        if (debugFile) {
+            fprintf(debugFile, "Scene cycling detected: %d scenes\n", static_cast<int>(scenes.size()));
+            for (int i = 0; i < scenes.size(); ++i) {
+                fprintf(debugFile, "  Scene %d: %s\n", i, scenes[i].trim().toRawUTF8());
+            }
+            fflush(debugFile);
+            fclose(debugFile);
+        }
+        
+        // Check if this is the same scene sequence or a new one
+        bool isSameSequence = (scenes.size() == scenePatterns.size());
+        if (isSameSequence) {
+            for (int i = 0; i < scenes.size(); ++i) {
+                if (scenes[i].trim() != scenePatterns[i]) {
+                    isSameSequence = false;
+                    break;
+                }
+            }
+        }
+        
+        if (isSameSequence && !scenePatterns.isEmpty())
+        {
+            // Same sequence - advance to next scene
+            advanceScene();
+            
+            // Debug log advancement
+            debugFile = fopen("/tmp/rhythm_progressive_debug.log", "a");
+            if (debugFile) {
+                fprintf(debugFile, "Advanced to scene %d: %s\n", 
+                    currentSceneIndex, scenePatterns[currentSceneIndex].toRawUTF8());
+                fflush(debugFile);
+                fclose(debugFile);
+            }
+        }
+        else
+        {
+            // New scene sequence - reset and start with first scene
+            scenePatterns.clear();
+            for (const auto& scene : scenes) {
+                scenePatterns.add(scene.trim());
+            }
+            currentSceneIndex = 0;
+            
+            // Debug log reset
+            debugFile = fopen("/tmp/rhythm_progressive_debug.log", "a");
+            if (debugFile) {
+                fprintf(debugFile, "New scene sequence - starting with scene 0: %s\n", 
+                    scenePatterns[0].toRawUTF8());
+                fflush(debugFile);
+                fclose(debugFile);
+            }
+        }
+        
+        // Parse and apply the current scene pattern
+        if (!scenePatterns.isEmpty() && currentSceneIndex < scenePatterns.size()) {
+            parseAndApplyUPI(scenePatterns[currentSceneIndex]);
+        }
+    }
+    else if (isProgressiveOffset)
     {
         // Handle progressive offset: pattern+N
         int plusIndex = pattern.lastIndexOf("+");
@@ -783,71 +848,6 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
         
         // Apply current lengthened pattern
         patternEngine.setPattern(baseLengthPattern);
-    }
-    else if (isScenes)
-    {
-        // Handle scene cycling: pattern1|pattern2|pattern3
-        auto scenes = juce::StringArray::fromTokens(pattern, "|", "");
-        
-        // File-based debug logging
-        FILE* debugFile = fopen("/tmp/rhythm_progressive_debug.log", "a");
-        if (debugFile) {
-            fprintf(debugFile, "Scene cycling detected: %d scenes\n", static_cast<int>(scenes.size()));
-            for (int i = 0; i < scenes.size(); ++i) {
-                fprintf(debugFile, "  Scene %d: %s\n", i, scenes[i].trim().toRawUTF8());
-            }
-            fflush(debugFile);
-            fclose(debugFile);
-        }
-        
-        // Check if this is the same scene sequence or a new one
-        bool isSameSequence = (scenes.size() == scenePatterns.size());
-        if (isSameSequence) {
-            for (int i = 0; i < scenes.size(); ++i) {
-                if (scenes[i].trim() != scenePatterns[i]) {
-                    isSameSequence = false;
-                    break;
-                }
-            }
-        }
-        
-        if (isSameSequence && !scenePatterns.isEmpty())
-        {
-            // Same sequence - advance to next scene
-            advanceScene();
-            
-            // Debug log advancement
-            debugFile = fopen("/tmp/rhythm_progressive_debug.log", "a");
-            if (debugFile) {
-                fprintf(debugFile, "Advanced to scene %d: %s\n", 
-                    currentSceneIndex, scenePatterns[currentSceneIndex].toRawUTF8());
-                fflush(debugFile);
-                fclose(debugFile);
-            }
-        }
-        else
-        {
-            // New scene sequence - reset and start with first scene
-            scenePatterns.clear();
-            for (const auto& scene : scenes) {
-                scenePatterns.add(scene.trim());
-            }
-            currentSceneIndex = 0;
-            
-            // Debug log reset
-            debugFile = fopen("/tmp/rhythm_progressive_debug.log", "a");
-            if (debugFile) {
-                fprintf(debugFile, "New scene sequence - starting with scene 0: %s\n", 
-                    scenePatterns[0].toRawUTF8());
-                fflush(debugFile);
-                fclose(debugFile);
-            }
-        }
-        
-        // Parse and apply the current scene pattern
-        if (!scenePatterns.isEmpty() && currentSceneIndex < scenePatterns.size()) {
-            parseAndApplyUPI(scenePatterns[currentSceneIndex]);
-        }
     }
     else
     {
