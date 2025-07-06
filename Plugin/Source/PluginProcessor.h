@@ -75,6 +75,7 @@ public:
     juce::AudioParameterInt* getStepsParameter() { return stepsParam; }
     juce::AudioParameterBool* getPlayingParameter() { return playingParam; }
     juce::AudioParameterBool* getUseHostTransportParameter() { return useHostTransportParam; }
+    juce::AudioParameterInt* getMidiNoteParameter() { return midiNoteParam; }
     
     // Playback state
     int getCurrentStep() const { return currentStep.load(); }
@@ -146,6 +147,7 @@ private:
     juce::AudioParameterInt* stepsParam;
     juce::AudioParameterBool* playingParam;
     juce::AudioParameterBool* useHostTransportParam;
+    juce::AudioParameterInt* midiNoteParam;
     
     // UPI pattern input
     juce::String currentUPIInput;

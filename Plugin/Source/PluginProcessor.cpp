@@ -33,6 +33,7 @@ RhythmPatternExplorerAudioProcessor::RhythmPatternExplorerAudioProcessor()
     addParameter(stepsParam = new juce::AudioParameterInt("steps", "Steps", 4, 32, 8));
     addParameter(playingParam = new juce::AudioParameterBool("playing", "Playing", false));
     addParameter(useHostTransportParam = new juce::AudioParameterBool("useHostTransport", "Use Host Transport", true));
+    addParameter(midiNoteParam = new juce::AudioParameterInt("midiNote", "MIDI Note", 0, 127, 36));
     
     // Initialize pattern engine with default Euclidean pattern
     patternEngine.generateEuclideanPattern(3, 8);
@@ -549,15 +550,8 @@ void RhythmPatternExplorerAudioProcessor::processStep(juce::MidiBuffer& midiBuff
 
 void RhythmPatternExplorerAudioProcessor::triggerNote(juce::MidiBuffer& midiBuffer, int samplePosition)
 {
-    // Get MIDI note number from editor, default to 36 (C2) if no editor
-    int noteNumber = 36; // Default kick drum note
-    if (auto* editor = getActiveEditor())
-    {
-        if (auto* rhythmEditor = dynamic_cast<RhythmPatternExplorerAudioProcessorEditor*>(editor))
-        {
-            noteNumber = rhythmEditor->getMidiNoteNumber();
-        }
-    }
+    // Get MIDI note number from parameter (set by incoming MIDI)
+    int noteNumber = midiNoteParam ? midiNoteParam->get() : 36; // Default kick drum note
     
     // Send MIDI note
     juce::MidiMessage noteOn = juce::MidiMessage::noteOn(1, noteNumber, 0.8f);
@@ -989,12 +983,31 @@ void RhythmPatternExplorerAudioProcessor::parseAndApplyUPI(const juce::String& u
 
 void RhythmPatternExplorerAudioProcessor::checkMidiInputForTriggers(juce::MidiBuffer& midiMessages)
 {
+    // Store MIDI messages to process, then clear the buffer to prevent passthrough
+    std::vector<juce::MidiMessage> messagesToProcess;
+    
     for (const auto metadata : midiMessages)
     {
         auto message = metadata.getMessage();
-        
+        messagesToProcess.push_back(message);
+    }
+    
+    // Clear the input buffer to prevent MIDI passthrough
+    midiMessages.clear();
+    
+    // Process the stored messages
+    for (const auto& message : messagesToProcess)
+    {
         if (message.isNoteOn())
         {
+            // Capture the MIDI note number and set the parameter
+            int noteNumber = message.getNoteNumber();
+            if (midiNoteParam)
+            {
+                midiNoteParam->setValueNotifyingHost(midiNoteParam->convertTo0to1((float)noteNumber));
+                DBG("RhythmPatternExplorer: Captured MIDI note " << noteNumber << " for output");
+            }
+            
             // Any MIDI note input triggers pattern regeneration for progressive/random patterns
             if (!currentUPIInput.isEmpty())
             {
@@ -1048,6 +1061,60 @@ void RhythmPatternExplorerAudioProcessor::checkMidiInputForTriggers(juce::MidiBu
             else if (patternTypeParam && patternTypeParam->getIndex() == 2) // Random pattern type
             {
                 // Trigger random pattern regeneration
+                int currentOnsets = onsetsParam->get();
+                int currentSteps = stepsParam->get();
+                patternEngine.generateRandomPattern(currentOnsets, currentSteps);
+                updateTiming();
+            }
+        }
+        else if (message.isController())
+        {
+            // CC messages trigger pattern updates but don't affect the MIDI note parameter
+            if (!currentUPIInput.isEmpty())
+            {
+                // Check for progressive patterns and scenes
+                bool hasProgressiveOffset = currentUPIInput.contains("+") && currentUPIInput.lastIndexOf("+") > 0;
+                bool hasProgressiveLengthening = currentUPIInput.contains("*") && currentUPIInput.lastIndexOf("*") > 0;
+                bool hasOldProgressiveOffset = currentUPIInput.contains("#");
+                bool hasScenes = currentUPIInput.contains("|");
+                
+                if (hasProgressiveOffset || hasProgressiveLengthening || hasOldProgressiveOffset || hasScenes)
+                {
+                    if (hasProgressiveOffset || hasOldProgressiveOffset)
+                    {
+                        if (patternEngine.hasProgressiveOffsetEnabled())
+                        {
+                            patternEngine.triggerProgressiveOffset();
+                            DBG("RhythmPatternExplorer: CC triggered progressive offset advancement to " 
+                                << patternEngine.getCurrentOffset());
+                        }
+                    }
+                    
+                    if (hasProgressiveLengthening)
+                    {
+                        advanceProgressiveLengthening();
+                        DBG("RhythmPatternExplorer: CC triggered progressive lengthening advancement");
+                    }
+                    
+                    if (hasScenes)
+                    {
+                        advanceScene();
+                        applyCurrentScenePattern();
+                        DBG("RhythmPatternExplorer: CC triggered scene advancement to scene " 
+                            << currentSceneIndex);
+                    }
+                    else
+                    {
+                        parseAndApplyUPI(currentUPIInput);
+                    }
+                }
+                else
+                {
+                    parseAndApplyUPI(currentUPIInput);
+                }
+            }
+            else if (patternTypeParam && patternTypeParam->getIndex() == 2) // Random pattern type
+            {
                 int currentOnsets = onsetsParam->get();
                 int currentSteps = stepsParam->get();
                 patternEngine.generateRandomPattern(currentOnsets, currentSteps);
