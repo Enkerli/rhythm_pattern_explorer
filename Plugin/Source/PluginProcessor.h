@@ -105,6 +105,10 @@ public:
     void resetProgressiveLengthening() { progressiveLengthening = 0; baseLengthPattern.clear(); }
     void advanceProgressiveLengthening();
     
+    // Scene cycling support (universal for all patterns)
+    void resetScenes() { currentSceneIndex = 0; scenePatterns.clear(); }
+    void advanceScene();
+    
 
 private:
     //==============================================================================
@@ -147,6 +151,10 @@ private:
     int progressiveLengthening = 0; // How many steps to add each time
     std::vector<bool> baseLengthPattern; // Original pattern for lengthening
     std::mt19937 randomGenerator;   // For bell curve random step generation
+    
+    // Scene cycling support (works for any pattern)
+    juce::StringArray scenePatterns; // List of patterns to cycle through
+    int currentSceneIndex = 0;      // Current scene position
     
     // Thread safety
     juce::CriticalSection processingLock;

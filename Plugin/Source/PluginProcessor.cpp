@@ -48,7 +48,7 @@ RhythmPatternExplorerAudioProcessor::RhythmPatternExplorerAudioProcessor()
         time_t now = time(0);
         char* timeStr = ctime(&now);
         timeStr[strlen(timeStr)-1] = '\0'; // Remove newline
-        fprintf(debugFile, "BITWIG INIT: Plugin constructor called at %s! Debug version v0.03a2.DBG active.\n", timeStr);
+        fprintf(debugFile, "BITWIG INIT: Plugin constructor called at %s! Debug version v0.03a3.DBG active.\n", timeStr);
         fflush(debugFile);
         fclose(debugFile);
     }
@@ -655,10 +655,11 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
 {
     juce::ScopedLock lock(processingLock);
     
-    // Check for progressive syntax: pattern+N (offset) or pattern*N (lengthening)
+    // Check for progressive syntax: pattern+N (offset), pattern*N (lengthening), or scenes (pattern|pattern|pattern)
     juce::String pattern = upiPattern.trim();
     bool isProgressiveOffset = pattern.contains("+") && pattern.lastIndexOf("+") > 0;
     bool isProgressiveLengthening = pattern.contains("*") && pattern.lastIndexOf("*") > 0;
+    bool isScenes = pattern.contains("|");
     
     if (isProgressiveOffset)
     {
@@ -783,6 +784,71 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
         // Apply current lengthened pattern
         patternEngine.setPattern(baseLengthPattern);
     }
+    else if (isScenes)
+    {
+        // Handle scene cycling: pattern1|pattern2|pattern3
+        auto scenes = juce::StringArray::fromTokens(pattern, "|", "");
+        
+        // File-based debug logging
+        FILE* debugFile = fopen("/tmp/rhythm_progressive_debug.log", "a");
+        if (debugFile) {
+            fprintf(debugFile, "Scene cycling detected: %d scenes\n", static_cast<int>(scenes.size()));
+            for (int i = 0; i < scenes.size(); ++i) {
+                fprintf(debugFile, "  Scene %d: %s\n", i, scenes[i].trim().toRawUTF8());
+            }
+            fflush(debugFile);
+            fclose(debugFile);
+        }
+        
+        // Check if this is the same scene sequence or a new one
+        bool isSameSequence = (scenes.size() == scenePatterns.size());
+        if (isSameSequence) {
+            for (int i = 0; i < scenes.size(); ++i) {
+                if (scenes[i].trim() != scenePatterns[i]) {
+                    isSameSequence = false;
+                    break;
+                }
+            }
+        }
+        
+        if (isSameSequence && !scenePatterns.isEmpty())
+        {
+            // Same sequence - advance to next scene
+            advanceScene();
+            
+            // Debug log advancement
+            debugFile = fopen("/tmp/rhythm_progressive_debug.log", "a");
+            if (debugFile) {
+                fprintf(debugFile, "Advanced to scene %d: %s\n", 
+                    currentSceneIndex, scenePatterns[currentSceneIndex].toRawUTF8());
+                fflush(debugFile);
+                fclose(debugFile);
+            }
+        }
+        else
+        {
+            // New scene sequence - reset and start with first scene
+            scenePatterns.clear();
+            for (const auto& scene : scenes) {
+                scenePatterns.add(scene.trim());
+            }
+            currentSceneIndex = 0;
+            
+            // Debug log reset
+            debugFile = fopen("/tmp/rhythm_progressive_debug.log", "a");
+            if (debugFile) {
+                fprintf(debugFile, "New scene sequence - starting with scene 0: %s\n", 
+                    scenePatterns[0].toRawUTF8());
+                fflush(debugFile);
+                fclose(debugFile);
+            }
+        }
+        
+        // Parse and apply the current scene pattern
+        if (!scenePatterns.isEmpty() && currentSceneIndex < scenePatterns.size()) {
+            parseAndApplyUPI(scenePatterns[currentSceneIndex]);
+        }
+    }
     else
     {
         // Non-progressive pattern - reset progressive states
@@ -791,6 +857,8 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
         progressiveLengthening = 0;
         basePattern = "";
         baseLengthPattern.clear();
+        scenePatterns.clear();
+        currentSceneIndex = 0;
         parseAndApplyUPI(pattern);
     }
     
@@ -880,12 +948,13 @@ void RhythmPatternExplorerAudioProcessor::checkMidiInputForTriggers(juce::MidiBu
             // Any MIDI note input triggers pattern regeneration for progressive/random patterns
             if (!currentUPIInput.isEmpty())
             {
-                // Check for progressive patterns
+                // Check for progressive patterns and scenes
                 bool hasProgressiveOffset = currentUPIInput.contains("+") && currentUPIInput.lastIndexOf("+") > 0;
                 bool hasProgressiveLengthening = currentUPIInput.contains("*") && currentUPIInput.lastIndexOf("*") > 0;
                 bool hasOldProgressiveOffset = currentUPIInput.contains("#");
+                bool hasScenes = currentUPIInput.contains("|");
                 
-                if (hasProgressiveOffset || hasProgressiveLengthening || hasOldProgressiveOffset)
+                if (hasProgressiveOffset || hasProgressiveLengthening || hasOldProgressiveOffset || hasScenes)
                 {
                     // Trigger progressive pattern advancement
                     if (hasProgressiveOffset || hasOldProgressiveOffset)
@@ -906,7 +975,15 @@ void RhythmPatternExplorerAudioProcessor::checkMidiInputForTriggers(juce::MidiBu
                         DBG("RhythmPatternExplorer: MIDI triggered progressive lengthening advancement");
                     }
                     
-                    // Force re-parsing to apply new progressive transformation
+                    if (hasScenes)
+                    {
+                        // Advance scene cycling
+                        advanceScene();
+                        DBG("RhythmPatternExplorer: MIDI triggered scene advancement to scene " 
+                            << currentSceneIndex);
+                    }
+                    
+                    // Force re-parsing to apply new progressive transformation or scene
                     parseAndApplyUPI(currentUPIInput);
                 }
                 else
@@ -1004,6 +1081,24 @@ std::vector<bool> RhythmPatternExplorerAudioProcessor::lengthenPattern(const std
     auto randomSteps = generateBellCurveRandomSteps(additionalSteps);
     lengthened.insert(lengthened.end(), randomSteps.begin(), randomSteps.end());
     return lengthened;
+}
+
+void RhythmPatternExplorerAudioProcessor::advanceScene()
+{
+    if (!scenePatterns.isEmpty())
+    {
+        // Advance to next scene in the sequence, cycling back to 0 when reaching the end
+        currentSceneIndex = (currentSceneIndex + 1) % scenePatterns.size();
+        
+        FILE* debugFile = fopen("/tmp/rhythm_progressive_debug.log", "a");
+        if (debugFile) {
+            fprintf(debugFile, "Advanced to scene %d/%d: %s\n", 
+                currentSceneIndex, static_cast<int>(scenePatterns.size()), 
+                scenePatterns[currentSceneIndex].toRawUTF8());
+            fflush(debugFile);
+            fclose(debugFile);
+        }
+    }
 }
 
 //==============================================================================
