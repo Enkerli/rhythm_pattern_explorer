@@ -95,6 +95,7 @@ public:
     void setUPIInput(const juce::String& upiPattern);
     juce::String getUPIInput() const { return currentUPIInput; }
     void parseAndApplyUPI(const juce::String& upiPattern);
+    void applyCurrentScenePattern();
     
     // Progressive offset support (universal for all patterns)
     void resetProgressiveOffset() { progressiveOffset = 0; }
@@ -106,7 +107,15 @@ public:
     void advanceProgressiveLengthening();
     
     // Scene cycling support (universal for all patterns)
-    void resetScenes() { currentSceneIndex = 0; scenePatterns.clear(); }
+    void resetScenes() { 
+        currentSceneIndex = 0; 
+        scenePatterns.clear(); 
+        sceneProgressiveOffsets.clear();
+        sceneProgressiveSteps.clear();
+        sceneBasePatterns.clear();
+        sceneProgressiveLengthening.clear();
+        sceneBaseLengthPatterns.clear();
+    }
     void advanceScene();
     
 
@@ -155,6 +164,13 @@ private:
     // Scene cycling support (works for any pattern)
     juce::StringArray scenePatterns; // List of patterns to cycle through
     int currentSceneIndex = 0;      // Current scene position
+    
+    // Per-scene progressive state tracking
+    std::vector<int> sceneProgressiveOffsets;     // Current offset for each scene
+    std::vector<int> sceneProgressiveSteps;       // Step size for each scene
+    std::vector<juce::String> sceneBasePatterns;  // Base pattern for each scene
+    std::vector<int> sceneProgressiveLengthening; // Current lengthening for each scene
+    std::vector<std::vector<bool>> sceneBaseLengthPatterns; // Base patterns for lengthening
     
     // Thread safety
     juce::CriticalSection processingLock;

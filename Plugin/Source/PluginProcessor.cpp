@@ -704,26 +704,76 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
         }
         else
         {
-            // New scene sequence - reset and start with first scene
+            // New scene sequence - reset and initialize per-scene progressive state
             scenePatterns.clear();
+            sceneProgressiveOffsets.clear();
+            sceneProgressiveSteps.clear();
+            sceneBasePatterns.clear();
+            sceneProgressiveLengthening.clear();
+            sceneBaseLengthPatterns.clear();
+            
+            // Parse each scene and initialize its progressive state
             for (const auto& scene : scenes) {
-                scenePatterns.add(scene.trim());
+                juce::String scenePattern = scene.trim();
+                scenePatterns.add(scenePattern);
+                
+                // Check if this scene has progressive syntax
+                bool hasProgressiveOffset = scenePattern.contains("+") && scenePattern.lastIndexOf("+") > 0;
+                bool hasProgressiveLengthening = scenePattern.contains("*") && scenePattern.lastIndexOf("*") > 0;
+                
+                if (hasProgressiveOffset) {
+                    // Parse offset syntax: pattern+N
+                    int plusIndex = scenePattern.lastIndexOf("+");
+                    juce::String basePattern = scenePattern.substring(0, plusIndex).trim();
+                    juce::String offsetStr = scenePattern.substring(plusIndex + 1).trim();
+                    int step = offsetStr.getIntValue();
+                    
+                    sceneBasePatterns.push_back(basePattern);
+                    sceneProgressiveSteps.push_back(step);
+                    sceneProgressiveOffsets.push_back(step); // Start with first offset
+                    sceneProgressiveLengthening.push_back(0);
+                    sceneBaseLengthPatterns.push_back(std::vector<bool>());
+                } else if (hasProgressiveLengthening) {
+                    // Parse lengthening syntax: pattern*N
+                    int starIndex = scenePattern.lastIndexOf("*");
+                    juce::String basePattern = scenePattern.substring(0, starIndex).trim();
+                    juce::String lengthStr = scenePattern.substring(starIndex + 1).trim();
+                    int lengthStep = lengthStr.getIntValue();
+                    
+                    sceneBasePatterns.push_back(basePattern);
+                    sceneProgressiveSteps.push_back(lengthStep);
+                    sceneProgressiveOffsets.push_back(0);
+                    sceneProgressiveLengthening.push_back(lengthStep); // Start with first lengthening
+                    sceneBaseLengthPatterns.push_back(std::vector<bool>()); // Will be filled when pattern is generated
+                } else {
+                    // Simple pattern without progressive syntax
+                    sceneBasePatterns.push_back(scenePattern);
+                    sceneProgressiveSteps.push_back(0);
+                    sceneProgressiveOffsets.push_back(0);
+                    sceneProgressiveLengthening.push_back(0);
+                    sceneBaseLengthPatterns.push_back(std::vector<bool>());
+                }
             }
+            
             currentSceneIndex = 0;
             
             // Debug log reset
             debugFile = fopen("/tmp/rhythm_progressive_debug.log", "a");
             if (debugFile) {
-                fprintf(debugFile, "New scene sequence - starting with scene 0: %s\n", 
-                    scenePatterns[0].toRawUTF8());
+                fprintf(debugFile, "New scene sequence - parsed %d scenes, starting with scene 0: %s\n", 
+                    static_cast<int>(scenePatterns.size()), scenePatterns[0].toRawUTF8());
+                for (int i = 0; i < scenePatterns.size(); ++i) {
+                    fprintf(debugFile, "  Scene %d: %s (base: %s, step: %d)\n", 
+                        i, scenePatterns[i].toRawUTF8(), sceneBasePatterns[i].toRawUTF8(), sceneProgressiveSteps[i]);
+                }
                 fflush(debugFile);
                 fclose(debugFile);
             }
         }
         
-        // Parse and apply the current scene pattern
+        // Parse and apply the current scene pattern using per-scene progressive state
         if (!scenePatterns.isEmpty() && currentSceneIndex < scenePatterns.size()) {
-            parseAndApplyUPI(scenePatterns[currentSceneIndex]);
+            applyCurrentScenePattern();
         }
     }
     else if (isProgressiveOffset)
@@ -977,14 +1027,17 @@ void RhythmPatternExplorerAudioProcessor::checkMidiInputForTriggers(juce::MidiBu
                     
                     if (hasScenes)
                     {
-                        // Advance scene cycling
+                        // Advance scene cycling and apply the new current scene
                         advanceScene();
+                        applyCurrentScenePattern();
                         DBG("RhythmPatternExplorer: MIDI triggered scene advancement to scene " 
                             << currentSceneIndex);
                     }
-                    
-                    // Force re-parsing to apply new progressive transformation or scene
-                    parseAndApplyUPI(currentUPIInput);
+                    else
+                    {
+                        // Force re-parsing to apply new progressive transformation
+                        parseAndApplyUPI(currentUPIInput);
+                    }
                 }
                 else
                 {
@@ -1085,9 +1138,20 @@ std::vector<bool> RhythmPatternExplorerAudioProcessor::lengthenPattern(const std
 
 void RhythmPatternExplorerAudioProcessor::advanceScene()
 {
-    if (!scenePatterns.isEmpty())
+    if (!scenePatterns.isEmpty() && currentSceneIndex < static_cast<int>(sceneProgressiveSteps.size()))
     {
-        // Advance to next scene in the sequence, cycling back to 0 when reaching the end
+        // First, advance the progressive state for the current scene if it has progressive syntax
+        if (sceneProgressiveSteps[currentSceneIndex] != 0) {
+            if (sceneProgressiveOffsets[currentSceneIndex] != 0) {
+                // Progressive offset scene
+                sceneProgressiveOffsets[currentSceneIndex] += sceneProgressiveSteps[currentSceneIndex];
+            } else if (sceneProgressiveLengthening[currentSceneIndex] != 0) {
+                // Progressive lengthening scene
+                sceneProgressiveLengthening[currentSceneIndex] += sceneProgressiveSteps[currentSceneIndex];
+            }
+        }
+        
+        // Then advance to next scene in the sequence, cycling back to 0 when reaching the end
         currentSceneIndex = (currentSceneIndex + 1) % scenePatterns.size();
         
         FILE* debugFile = fopen("/tmp/rhythm_progressive_debug.log", "a");
@@ -1095,6 +1159,65 @@ void RhythmPatternExplorerAudioProcessor::advanceScene()
             fprintf(debugFile, "Advanced to scene %d/%d: %s\n", 
                 currentSceneIndex, static_cast<int>(scenePatterns.size()), 
                 scenePatterns[currentSceneIndex].toRawUTF8());
+            if (currentSceneIndex < static_cast<int>(sceneProgressiveSteps.size())) {
+                fprintf(debugFile, "  Scene progressive state - offset: %d, lengthening: %d\n",
+                    sceneProgressiveOffsets[currentSceneIndex], sceneProgressiveLengthening[currentSceneIndex]);
+            }
+            fflush(debugFile);
+            fclose(debugFile);
+        }
+    }
+}
+
+void RhythmPatternExplorerAudioProcessor::applyCurrentScenePattern()
+{
+    // Apply the current scene pattern using per-scene progressive state
+    if (currentSceneIndex >= static_cast<int>(sceneBasePatterns.size())) {
+        return; // Safety check
+    }
+    
+    juce::String basePattern = sceneBasePatterns[currentSceneIndex];
+    int progressiveOffset = sceneProgressiveOffsets[currentSceneIndex];
+    int progressiveLengthening = sceneProgressiveLengthening[currentSceneIndex];
+    
+    // Parse the base pattern first
+    parseAndApplyUPI(basePattern);
+    
+    // Apply progressive transformations if any
+    if (progressiveOffset != 0)
+    {
+        // Apply progressive offset by rotating the generated pattern
+        auto currentPattern = patternEngine.getCurrentPattern();
+        auto rotatedPattern = rotatePatternBySteps(currentPattern, progressiveOffset);
+        patternEngine.setPattern(rotatedPattern);
+        
+        FILE* debugFile = fopen("/tmp/rhythm_progressive_debug.log", "a");
+        if (debugFile) {
+            fprintf(debugFile, "Applied scene %d progressive offset: %d\n", 
+                currentSceneIndex, progressiveOffset);
+            fflush(debugFile);
+            fclose(debugFile);
+        }
+    }
+    else if (progressiveLengthening != 0)
+    {
+        // Apply progressive lengthening
+        auto currentPattern = patternEngine.getCurrentPattern();
+        
+        // Store or retrieve the base pattern for this scene
+        if (sceneBaseLengthPatterns[currentSceneIndex].empty()) {
+            // First time - store the base pattern
+            sceneBaseLengthPatterns[currentSceneIndex] = currentPattern;
+        }
+        
+        // Apply lengthening to the stored base pattern
+        auto lengthenedPattern = lengthenPattern(sceneBaseLengthPatterns[currentSceneIndex], progressiveLengthening);
+        patternEngine.setPattern(lengthenedPattern);
+        
+        FILE* debugFile = fopen("/tmp/rhythm_progressive_debug.log", "a");
+        if (debugFile) {
+            fprintf(debugFile, "Applied scene %d progressive lengthening: %d steps\n", 
+                currentSceneIndex, progressiveLengthening);
             fflush(debugFile);
             fclose(debugFile);
         }
