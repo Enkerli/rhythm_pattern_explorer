@@ -10,6 +10,12 @@
 #include "PluginEditor.h"
 #include <iostream>
 
+// Disable debug output for production performance
+#ifdef NDEBUG
+#undef DBG
+#define DBG(textToWrite) do { } while (false)
+#endif
+
 //==============================================================================
 RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEditor (RhythmPatternExplorerAudioProcessor& p)
     : AudioProcessorEditor (&p), audioProcessor (p)
@@ -279,7 +285,6 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     // Start timer for regular UI updates
     startTimer(16); // Update every 16ms (~60fps) for even smoother animation
     
-    DBG("RhythmPatternExplorer: Editor initialized");
 }
 
 RhythmPatternExplorerAudioProcessorEditor::~RhythmPatternExplorerAudioProcessorEditor()
@@ -327,7 +332,6 @@ void RhythmPatternExplorerAudioProcessorEditor::resized()
         docsToggleButton.setVisible(!minimalMode);
         versionEditor.setVisible(!minimalMode);
         
-        DBG("Minimal mode: " + juce::String(minimalMode ? "ON" : "OFF"));
     }
     
     if (minimalMode)
@@ -495,7 +499,6 @@ void RhythmPatternExplorerAudioProcessorEditor::timerCallback()
     if (isPlaying != lastPlayingState)
     {
         shouldRepaint = true;
-        DBG("Playing state changed from " + juce::String(lastPlayingState ? "true" : "false") + " to " + juce::String(isPlaying ? "true" : "false"));
     }
     
     // Force repaint every frame when playing for smooth animation
@@ -591,13 +594,6 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
                 // Check if this onset should be accented
                 int accentStep = (displayAccentOffset + onsetIndex) % audioProcessor.getCurrentAccentPattern().size();
                 isAccented = audioProcessor.getCurrentAccentPattern()[accentStep];
-                
-                // Debug output for first few onsets to see what's happening
-                if (onsetIndex < 3) {
-                    DBG("ACCENT CHECK: OnsetIndex=" << onsetIndex << 
-                        ", AccentStep=" << accentStep << 
-                        ", IsAccented=" << (isAccented ? "YES" : "NO"));
-                }
             }
             
             if (isAccented)
@@ -863,12 +859,10 @@ void RhythmPatternExplorerAudioProcessorEditor::toggleDocumentation()
 #if JUCE_WEB_BROWSER
     if (!docsBrowser) 
     {
-        DBG("WebBrowser not available!");
         return;
     }
     
     showingDocs = !showingDocs;
-    DBG("Toggle documentation: showingDocs = " + juce::String(showingDocs));
     
     // Update button text immediately
     docsToggleButton.setButtonText(showingDocs ? "Pattern" : "Docs");
@@ -995,8 +989,6 @@ void RhythmPatternExplorerAudioProcessorEditor::createDocumentationHTML()
         docsBrowser->goToURL(fileURL.toString(false));
         
         // Log the file path for debugging
-        DBG("HTML content written to: " + htmlFile.getFullPathName());
-        DBG("Debug file written to: " + debugFile.getFullPathName());
     }
     else
     {

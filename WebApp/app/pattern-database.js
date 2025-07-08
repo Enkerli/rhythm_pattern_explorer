@@ -809,7 +809,7 @@ function createDatabasePattern(patternData, analyses = {}) {
         favorite: false,
         stepCount,
         binary: binaryString,
-        hex: PatternConverter.toHex(decimal),
+        hex: PatternConverter.toHexFromPattern(steps, stepCount),
         decimal,
         steps: steps,
         expression: patternData.expression || null,

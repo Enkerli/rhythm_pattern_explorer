@@ -12,6 +12,14 @@
 #include "UPIParser.h"
 #include <ctime>
 
+// Debug output disabled for production performance
+#ifdef DEBUG
+    // Keep debug output in debug builds
+#else
+    #undef DBG
+    #define DBG(textToWrite) do { } while (false)
+#endif
+
 //==============================================================================
 RhythmPatternExplorerAudioProcessor::RhythmPatternExplorerAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -347,7 +355,9 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
                 
                 // Safety break to prevent infinite loops
                 if (samplesPerStep <= 1) {
+#ifdef DEBUG
                     std::cout << "HIGH BPM ERROR: samplesPerStep too small (" << samplesPerStep << "), breaking loop" << std::endl;
+#endif
                     break;
                 }
             }
@@ -452,15 +462,21 @@ void RhythmPatternExplorerAudioProcessor::updateTiming()
     
     // HIGH BPM FIX: Enhanced timing validation for Bitwig testing
     if (samplesPerStep <= 0) {
+#ifdef DEBUG
         std::cout << "HIGH BPM ERROR: Invalid samplesPerStep=" << samplesPerStep << " at BPM=" << bpm << 
             " sampleRate=" << currentSampleRate << std::endl;
+#endif
         samplesPerStep = static_cast<int>(currentSampleRate / 60.0); // Default to 1Hz fallback
     } else if (samplesPerStep < 10) {
+#ifdef DEBUG
         std::cout << "HIGH BPM CRITICAL: Extremely fast timing - samplesPerStep=" << samplesPerStep << 
             " at BPM=" << bpm << " (>" << (60.0 * currentSampleRate / (samplesPerStep * 4)) << " BPM equivalent)" << std::endl;
+#endif
     } else if (samplesPerStep < 100) {
+#ifdef DEBUG
         std::cout << "HIGH BPM WARNING: Very fast timing - samplesPerStep=" << samplesPerStep << 
             " at BPM=" << bpm << " (" << (60.0 * currentSampleRate / (samplesPerStep * 4)) << " BPM equivalent)" << std::endl;
+#endif
     }
         
     DBG("RhythmPatternExplorer: Updated timing - BPM: " << bpm << ", Samples per step: " << samplesPerStep);
@@ -474,6 +490,7 @@ void RhythmPatternExplorerAudioProcessor::processStep(juce::MidiBuffer& midiBuff
     // Use internal currentBPM variable
     static int stepCallCount = 0;
     
+#ifdef DEBUG
     if (currentBPM >= 200.0f && ++stepCallCount % 3 == 0) {
         std::cout << "PROCESS STEP: BPM=" << currentBPM << 
             ", Step=" << currentStep.load() << 
@@ -481,6 +498,7 @@ void RhythmPatternExplorerAudioProcessor::processStep(juce::MidiBuffer& midiBuff
             ", HasOnset=" << (currentStep.load() < pattern.size() && pattern[currentStep.load()] ? "YES" : "NO") << 
             ", SamplePos=" << samplePosition << std::endl;
     }
+#endif
     
     if (currentStep < pattern.size() && pattern[currentStep])
     {
@@ -510,6 +528,7 @@ void RhythmPatternExplorerAudioProcessor::processStep(juce::MidiBuffer& midiBuff
         
         triggerNote(midiBuffer, samplePosition, shouldAccent);
         
+#ifdef DEBUG
         // Log note triggers at high BPM
         if (currentBPM >= 200.0f) {
             std::cout << "NOTE TRIGGERED: Step=" << currentStep.load() << 
@@ -517,6 +536,7 @@ void RhythmPatternExplorerAudioProcessor::processStep(juce::MidiBuffer& midiBuff
                 ", Accented=" << (shouldAccent ? "YES" : "NO") <<
                 ", SamplePos=" << samplePosition << std::endl;
         }
+#endif
     }
 }
 
@@ -1224,25 +1244,8 @@ void RhythmPatternExplorerAudioProcessor::applyCurrentScenePattern()
 // Centralized Debug Logging Utility
 
 void RhythmPatternExplorerAudioProcessor::logDebug(DebugCategory category, const juce::String& message) {
-#ifdef DEBUG
-    const char* logFile = getLogFile(category);
-    const char* categoryName = getCategoryName(category);
-    
-    FILE* debugFile = fopen(logFile, "a");
-    if (debugFile) {
-        // Add timestamp for important categories
-        if (category == DebugCategory::BITWIG_INIT) {
-            time_t now = time(0);
-            char* timeStr = ctime(&now);
-            timeStr[strlen(timeStr)-1] = '\0'; // Remove newline
-            fprintf(debugFile, "%s [%s]: %s\n", timeStr, categoryName, message.toRawUTF8());
-        } else {
-            fprintf(debugFile, "%s: %s\n", categoryName, message.toRawUTF8());
-        }
-        fflush(debugFile);
-        fclose(debugFile);
-    }
-#endif // DEBUG
+    // Debug logging disabled for production performance
+    juce::ignoreUnused(category, message);
 }
 
 const char* RhythmPatternExplorerAudioProcessor::getCategoryName(DebugCategory category) {

@@ -78,57 +78,161 @@ class PatternConverter {
     }
     
     /**
-     * Convert binary string to decimal representation
+     * Convert binary string to decimal representation using strict left-to-right notation
      * 
      * @param {string} binaryString - Binary pattern string
-     * @param {boolean} shouldReverse - Whether to reverse for rhythmic interpretation (default: true)
      * @returns {number} Decimal representation of the pattern
      * 
      * @example
-     * PatternConverter.toDecimal("10010010", true)  // Rhythmic interpretation
-     * // Returns: 73 (reversed: 01001001 = 73)
+     * PatternConverter.toDecimal("1000")  // Left-to-right notation
+     * // Returns: 1 (leftmost bit = LSB = 2^0 = 1)
      * 
-     * PatternConverter.toDecimal("10010010", false) // Standard binary
-     * // Returns: 146 (standard: 10010010 = 146)
+     * PatternConverter.toDecimal("0100")  // Left-to-right notation  
+     * // Returns: 2 (second bit = 2^1 = 2)
      * 
-     * Bit Ordering Philosophy:
-     * - shouldReverse=true: Musical interpretation where leftmost position 
-     *   (downbeat) gets lowest bit value for natural onset weighting
-     * - shouldReverse=false: Standard binary interpretation for computational use
+     * PatternConverter.toDecimal("10001111")  // Left-to-right notation
+     * // Returns: 31 (0x1F in hex)
      * 
-     * Musical Significance:
-     * The reversed interpretation makes musical sense because it gives the
-     * downbeat (first position) the least significant bit, making patterns
-     * with strong downbeats have predictable low-order bit patterns.
+     * Strict Left-to-Right Notation (matches plugin implementation):
+     * - Leftmost bit has least significant value (2^0)
+     * - Each subsequent bit doubles in value (2^1, 2^2, etc.)
+     * - This ensures 1000 = 0x1, 0100 = 0x2, 0010 = 0x4, 0001 = 0x8
+     * - Consistent with plugin hex display for pattern synchronization
      */
-    static toDecimal(binaryString, shouldReverse = true) {
-        if (shouldReverse) {
-            // Reverse the binary string so leftmost position (first downbeat) gets bit value 1
-            const reversedBinary = binaryString.split('').reverse().join('');
-            return parseInt(reversedBinary, 2) || 0;
-        } else {
-            // Use standard binary interpretation (for binary input)
-            return parseInt(binaryString, 2) || 0;
+    static toDecimal(binaryString) {
+        if (!binaryString) return 0;
+        
+        // Use strict left-to-right notation: leftmost bit is LSB
+        let decimal = 0;
+        for (let i = 0; i < binaryString.length; i++) {
+            if (binaryString[i] === '1') {
+                // Left-to-right: bit at position i contributes 2^i
+                decimal |= (1 << i);
+            }
         }
+        return decimal;
     }
     
+    /**
+     * Convert pattern to hex - use toHexFromPattern for correct nibble-based conversion
+     * @deprecated Use toHexFromPattern for new code
+     */
     static toHex(decimal) {
         return '0x' + decimal.toString(16).toUpperCase();
     }
     
+    /**
+     * Convert pattern directly to hex using strict left-to-right nibble processing
+     * Matches plugin implementation for consistent hex representation
+     */
+    static toHexFromPattern(steps, stepCount) {
+        const binaryString = this.toBinary(steps, stepCount);
+        return this.toHexFromBinary(binaryString);
+    }
+    
+    /**
+     * Convert binary pattern to hex using nibble-based processing (matches plugin)
+     */
+    static toHexFromBinary(binaryString) {
+        if (!binaryString) return '0x0';
+        
+        let hex = '';
+        const stepCount = binaryString.length;
+        
+        // Process pattern in 4-bit groups from left to right
+        for (let groupStart = 0; groupStart < stepCount; groupStart += 4) {
+            let nibbleValue = 0;
+            
+            // Process 4 bits in this group (or fewer if at the end)
+            for (let bitInGroup = 0; bitInGroup < 4 && (groupStart + bitInGroup) < stepCount; bitInGroup++) {
+                if (binaryString[groupStart + bitInGroup] === '1') {
+                    // Left-to-right: first bit in group is LSB of this nibble
+                    nibbleValue |= (1 << bitInGroup);
+                }
+            }
+            
+            hex += nibbleValue.toString(16).toUpperCase();
+        }
+        
+        return '0x' + hex;
+    }
+    
+    /**
+     * Convert decimal to binary with specified step count
+     */
+    static toBinaryFromDecimal(decimal, stepCount) {
+        const steps = new Array(stepCount).fill(false);
+        
+        // Set bits according to left-to-right notation
+        for (let i = 0; i < stepCount; i++) {
+            if (decimal & (1 << i)) {
+                steps[i] = true;
+            }
+        }
+        
+        return steps.map(step => step ? '1' : '0').join('');
+    }
+    
+    /**
+     * Convert pattern to octal - use toOctalFromPattern for correct nibble-based conversion
+     * @deprecated Use toOctalFromPattern for new code
+     */
     static toOctal(decimal) {
         return '0o' + decimal.toString(8);
+    }
+    
+    /**
+     * Convert pattern directly to octal using strict left-to-right 3-bit processing
+     * Matches plugin implementation for consistent octal representation
+     */
+    static toOctalFromPattern(steps, stepCount) {
+        const binaryString = this.toBinary(steps, stepCount);
+        return this.toOctalFromBinary(binaryString);
+    }
+    
+    /**
+     * Convert binary pattern to octal using 3-bit group processing (matches plugin)
+     */
+    static toOctalFromBinary(binaryString) {
+        if (!binaryString) return 'o0';
+        
+        let octal = '';
+        const stepCount = binaryString.length;
+        
+        // Process pattern in 3-bit groups from left to right
+        for (let groupStart = 0; groupStart < stepCount; groupStart += 3) {
+            let octalDigit = 0;
+            
+            // Process 3 bits in this group (or fewer if at the end)
+            for (let bitInGroup = 0; bitInGroup < 3 && (groupStart + bitInGroup) < stepCount; bitInGroup++) {
+                if (binaryString[groupStart + bitInGroup] === '1') {
+                    // Left-to-right: first bit in group is LSB of this octal digit
+                    octalDigit |= (1 << bitInGroup);
+                }
+            }
+            
+            octal += octalDigit.toString();
+        }
+        
+        return 'o' + octal;
     }
     
     static fromDecimalWithSteps(decimal, stepCount) {
         if (decimal === 0) return { steps: new Array(stepCount).fill(false), stepCount };
         
-        // Convert using standard left-to-right bit ordering
-        const standardBinary = decimal.toString(2);
-        const paddedBinary = standardBinary.padStart(stepCount, '0');
+        // Convert using strict left-to-right notation (matches plugin implementation)
+        // where leftmost bit is LSB (least significant bit)
+        const steps = new Array(stepCount).fill(false);
+        
+        // Set bits according to left-to-right notation
+        for (let i = 0; i < stepCount; i++) {
+            if (decimal & (1 << i)) {
+                steps[i] = true;
+            }
+        }
         
         return {
-            steps: paddedBinary.split('').map(bit => bit === '1'),
+            steps: steps,
             stepCount: stepCount,
             hasExplicitSteps: true
         };
@@ -147,12 +251,8 @@ class PatternConverter {
         if (numericDecimal === 0) return { steps: [false], stepCount: 1 };
         
         const stepCount = Math.max(minSteps, Math.floor(Math.log2(numericDecimal)) + 1);
-        // Convert to binary using standard left-to-right bit ordering
-        const standardBinary = numericDecimal.toString(2).padStart(stepCount, '0');
-        const result = this.fromBinary(standardBinary);
-        // Remove the isBinaryInput flag since this is decimal input, not binary input
-        delete result.isBinaryInput;
-        return result;
+        // Use strict left-to-right notation (matches plugin implementation)
+        return this.fromDecimalWithSteps(numericDecimal, stepCount);
     }
     
     static fromHex(hexString) {
@@ -203,13 +303,35 @@ class PatternConverter {
         return this.fromDecimal(decimal);
     }
     
+    /**
+     * @deprecated Use toEnhancedHexFromPattern for correct nibble-based hex
+     */
     static toEnhancedHex(decimal, stepCount) {
         const hex = this.toHex(decimal);
         return `${hex}:${stepCount}`;
     }
     
+    /**
+     * Create enhanced hex notation with step count using correct nibble-based conversion
+     */
+    static toEnhancedHexFromPattern(steps, stepCount) {
+        const hex = this.toHexFromPattern(steps, stepCount);
+        return `${hex}:${stepCount}`;
+    }
+    
+    /**
+     * @deprecated Use toEnhancedOctalFromPattern for correct 3-bit group based octal
+     */
     static toEnhancedOctal(decimal, stepCount) {
         const octal = this.toOctal(decimal);
+        return `${octal}:${stepCount}`;
+    }
+    
+    /**
+     * Create enhanced octal notation with step count using correct 3-bit group conversion
+     */
+    static toEnhancedOctalFromPattern(steps, stepCount) {
+        const octal = this.toOctalFromPattern(steps, stepCount);
         return `${octal}:${stepCount}`;
     }
     
@@ -1767,8 +1889,8 @@ class UnifiedPatternParser {
             // console.log(`🔍 Processing stringed pattern with ${pattern.stringedPatterns.length} parts`);
             const patternReprs = pattern.stringedPatterns.map(p => {
                 const binary = PatternConverter.toBinary(p.steps, p.stepCount);
-                const decimal = PatternConverter.toDecimal(binary, !p.isBinaryInput);
-                const hex = PatternConverter.toHex(decimal);
+                const decimal = PatternConverter.toDecimal(binary);
+                const hex = PatternConverter.toHexFromPattern(p.steps, p.stepCount);
                 return { binary: `b${binary}`, hex, decimal };
             });
             
@@ -1788,10 +1910,10 @@ class UnifiedPatternParser {
         
         // Regular pattern formatting
         const binary = PatternConverter.toBinary(pattern.steps, pattern.stepCount);
-        // Use standard binary interpretation for binary input, reversed for numeric input
-        const decimal = PatternConverter.toDecimal(binary, !pattern.isBinaryInput);
-        const hex = PatternConverter.toHex(decimal);
-        const octal = PatternConverter.toOctal(decimal);
+        // Use strict left-to-right notation (matches plugin implementation)
+        const decimal = PatternConverter.toDecimal(binary);
+        const hex = PatternConverter.toHexFromPattern(pattern.steps, pattern.stepCount);
+        const octal = PatternConverter.toOctalFromPattern(pattern.steps, pattern.stepCount);
         const beats = pattern.steps.filter(s => s).length;
         const density = ((beats / pattern.stepCount) * 100).toFixed(1);
         
