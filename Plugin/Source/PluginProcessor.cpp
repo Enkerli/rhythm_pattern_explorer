@@ -29,6 +29,9 @@ RhythmPatternExplorerAudioProcessor::RhythmPatternExplorerAudioProcessor()
     addParameter(useHostTransportParam = new juce::AudioParameterBool("useHostTransport", "Use Host Transport", true));
     addParameter(midiNoteParam = new juce::AudioParameterInt("midiNote", "MIDI Note", 0, 127, 36));
     addParameter(tickParam = new juce::AudioParameterBool("tick", "Tick", false));
+    addParameter(accentPitchOffsetParam = new juce::AudioParameterInt("accentPitchOffset", "Accent Pitch Offset", -12, 12, 0));
+    addParameter(accentVelocityParam = new juce::AudioParameterFloat("accentVelocity", "Accent Velocity", 0.0f, 1.0f, 1.0f));
+    addParameter(unaccentedVelocityParam = new juce::AudioParameterFloat("unaccentedVelocity", "Unaccented Velocity", 0.0f, 1.0f, 0.69f));
     
     // Initialize pattern engine with default Euclidean pattern
     patternEngine.generateEuclideanPattern(3, 8);
@@ -117,6 +120,7 @@ void RhythmPatternExplorerAudioProcessor::prepareToPlay (double sampleRate, int 
     // Reset sequencer state
     currentSample = 0;
     currentStep = 0;
+    globalAccentPosition = 0;
     wasPlaying = false;
     
     // Force early initialization to work around Logic Pro loading order issues
@@ -304,16 +308,11 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
     if (currentBPM >= 180.0f) {
         static int playingDebugCount = 0;
         if (++playingDebugCount % 50 == 0) {
-            FILE* debugFile = fopen("/tmp/bitwig_debug.log", "a");
-            if (debugFile) {
-                fprintf(debugFile, "PLAYING DEBUG: isPlaying=%s, hostIsPlaying=%s, internalPlaying=%s, useHostTransport=%s\n",
-                    isPlaying ? "TRUE" : "FALSE",
-                    hostIsPlaying ? "TRUE" : "FALSE", 
-                    (internalPlaying ? "TRUE" : "FALSE"),
-                    (useHostTransportParam->get() ? "TRUE" : "FALSE"));
-                fflush(debugFile);
-                fclose(debugFile);
-            }
+            logDebug(DebugCategory::BITWIG_PROCESS, 
+                "PLAYING DEBUG: isPlaying=" + juce::String(isPlaying ? "TRUE" : "FALSE") +
+                ", hostIsPlaying=" + juce::String(hostIsPlaying ? "TRUE" : "FALSE") + 
+                ", internalPlaying=" + juce::String(internalPlaying ? "TRUE" : "FALSE") +
+                ", useHostTransport=" + juce::String(useHostTransportParam->get() ? "TRUE" : "FALSE"));
         }
     }
 
@@ -334,8 +333,8 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
                 if (newStep == 0 && patternEngine.hasProgressiveOffsetEnabled())
                 {
                     patternEngine.triggerProgressiveOffset();
-                    // Re-apply the UPI pattern with new progressive offset
-                    parseAndApplyUPI(currentUPIInput);
+                    // Re-apply the UPI pattern with new progressive offset (preserve accent position)
+                    parseAndApplyUPI(currentUPIInput, false);
                 }
                 
                 // Log step triggers at high BPMs
@@ -359,6 +358,7 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
             // Just stopped playing - reset position
             currentSample = 0;
             currentStep.store(0);
+            globalAccentPosition = 0;
             // Stopped playing - resetting position
         }
     }
@@ -484,24 +484,68 @@ void RhythmPatternExplorerAudioProcessor::processStep(juce::MidiBuffer& midiBuff
     
     if (currentStep < pattern.size() && pattern[currentStep])
     {
-        triggerNote(midiBuffer, samplePosition);
+        // Check if this step should be accented
+        bool shouldAccent = false;
+        if (hasAccentPattern && !currentAccentPattern.empty())
+        {
+            // Use global accent position (persists across pattern cycles)
+            int accentStep = globalAccentPosition % currentAccentPattern.size();
+            shouldAccent = currentAccentPattern[accentStep];
+            
+            // Increment global accent position for next onset
+            globalAccentPosition++;
+            
+            // Debug accent detection
+            DBG("ACCENT DEBUG: Step=" << currentStep << 
+                ", GlobalAccentPos=" << (globalAccentPosition - 1) <<
+                ", AccentPatternSize=" << currentAccentPattern.size() <<
+                ", AccentStep=" << accentStep <<
+                ", ShouldAccent=" << (shouldAccent ? "YES" : "NO"));
+        }
+        else
+        {
+            DBG("ACCENT DEBUG: No accent pattern - hasAccentPattern=" << (hasAccentPattern ? "true" : "false") <<
+                ", accentPatternSize=" << currentAccentPattern.size());
+        }
+        
+        triggerNote(midiBuffer, samplePosition, shouldAccent);
         
         // Log note triggers at high BPM
         if (currentBPM >= 200.0f) {
             std::cout << "NOTE TRIGGERED: Step=" << currentStep.load() << 
                 ", BPM=" << currentBPM << 
+                ", Accented=" << (shouldAccent ? "YES" : "NO") <<
                 ", SamplePos=" << samplePosition << std::endl;
         }
     }
 }
 
-void RhythmPatternExplorerAudioProcessor::triggerNote(juce::MidiBuffer& midiBuffer, int samplePosition)
+void RhythmPatternExplorerAudioProcessor::triggerNote(juce::MidiBuffer& midiBuffer, int samplePosition, bool isAccented)
 {
-    // Get MIDI note number from parameter (set by incoming MIDI)
-    int noteNumber = midiNoteParam ? midiNoteParam->get() : 36; // Default kick drum note
+    // Get base MIDI note number from parameter (set by incoming MIDI)
+    int baseNoteNumber = midiNoteParam ? midiNoteParam->get() : 36; // Default kick drum note
+    
+    // Apply accent modulation based on parameters
+    int noteNumber = baseNoteNumber;
+    float velocity;
+    
+    if (isAccented)
+    {
+        // Apply accent pitch offset from parameter (default 0)
+        int pitchOffset = accentPitchOffsetParam ? accentPitchOffsetParam->get() : 0;
+        noteNumber = juce::jlimit(0, 127, baseNoteNumber + pitchOffset); // Clamped to MIDI range
+        
+        // Apply accent velocity from parameter (default 1.0)
+        velocity = accentVelocityParam ? accentVelocityParam->get() : 1.0f;
+    }
+    else
+    {
+        // Apply unaccented velocity from parameter (default 0.69)
+        velocity = unaccentedVelocityParam ? unaccentedVelocityParam->get() : 0.69f;
+    }
     
     // Send MIDI note
-    juce::MidiMessage noteOn = juce::MidiMessage::noteOn(1, noteNumber, 0.8f);
+    juce::MidiMessage noteOn = juce::MidiMessage::noteOn(1, noteNumber, velocity);
     juce::MidiMessage noteOff = juce::MidiMessage::noteOff(1, noteNumber, 0.0f);
     
     midiBuffer.addEvent(noteOn, samplePosition);
@@ -509,7 +553,9 @@ void RhythmPatternExplorerAudioProcessor::triggerNote(juce::MidiBuffer& midiBuff
     
     // MIDI effect mode - no audio synthesis
     
-    DBG("RhythmPatternExplorer: Note " << noteNumber << " triggered at step " << currentStep.load());
+    DBG("RhythmPatternExplorer: " << (isAccented ? "ACCENTED " : "REGULAR ") << "Note " << noteNumber << 
+        " (base: " << baseNoteNumber << ") triggered at step " << currentStep.load() << " with velocity " << velocity <<
+        " (isAccented=" << (isAccented ? "true" : "false") << ")");
 }
 
 void RhythmPatternExplorerAudioProcessor::syncBPMWithHost(const juce::AudioPlayHead::CurrentPositionInfo& posInfo)
@@ -522,13 +568,10 @@ void RhythmPatternExplorerAudioProcessor::syncBPMWithHost(const juce::AudioPlayH
         
         // BITWIG BPM SYNC DEBUG: Log BPM sync attempts  
         if (hostBPM >= 200.0f) {
-            FILE* debugFile = fopen("/tmp/bitwig_debug.log", "a");
-            if (debugFile) {
-                fprintf(debugFile, "BPM SYNC: hostBPM=%.1f, currentBPM=%.1f, diff=%.3f\n",
-                    hostBPM, currentBPMValue, std::abs(currentBPMValue - hostBPM));
-                fflush(debugFile);
-                fclose(debugFile);
-            }
+            logDebug(DebugCategory::BPM_SYNC, 
+                "BPM SYNC: hostBPM=" + juce::String(hostBPM, 1) + 
+                ", currentBPM=" + juce::String(currentBPMValue, 1) + 
+                ", diff=" + juce::String(std::abs(currentBPMValue - hostBPM), 3));
         }
         
         // Update our internal BPM to match host
@@ -539,13 +582,9 @@ void RhythmPatternExplorerAudioProcessor::syncBPMWithHost(const juce::AudioPlayH
             
             // Log successful BPM updates
             if (hostBPM >= 200.0f) {
-                FILE* debugFile = fopen("/tmp/bitwig_debug.log", "a");
-                if (debugFile) {
-                    fprintf(debugFile, "BPM UPDATED: %.1f->%.1f, newSamplesPerStep=%d\n",
-                        currentBPMValue, hostBPM, samplesPerStep);
-                    fflush(debugFile);
-                    fclose(debugFile);
-                }
+                logDebug(DebugCategory::BPM_SYNC, 
+                    "BPM UPDATED: " + juce::String(currentBPMValue, 1) + "->" + 
+                    juce::String(hostBPM, 1) + ", newSamplesPerStep=" + juce::String(samplesPerStep));
             }
         }
     }
@@ -578,13 +617,10 @@ void RhythmPatternExplorerAudioProcessor::syncPositionWithHost(const juce::Audio
         else if (!allowPositionSync && currentBPM >= 180.0f)
         {
             // Log that we're skipping position sync at high BPM
-            FILE* debugFile = fopen("/tmp/bitwig_debug.log", "a");
-            if (debugFile) {
-                fprintf(debugFile, "POSITION SYNC DISABLED: BPM=%.1f, targetStep=%d, currentStep=%d\n",
-                    currentBPM, targetStep, currentStep.load());
-                fflush(debugFile);
-                fclose(debugFile);
-            }
+            logDebug(DebugCategory::POSITION_SYNC, 
+                "POSITION SYNC DISABLED: BPM=" + juce::String(currentBPM, 1) + 
+                ", targetStep=" + juce::String(targetStep) + 
+                ", currentStep=" + juce::String(currentStep.load()));
         }
     }
     
@@ -595,6 +631,9 @@ void RhythmPatternExplorerAudioProcessor::syncPositionWithHost(const juce::Audio
 void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPattern)
 {
     juce::ScopedLock lock(processingLock);
+    
+    // Reset global accent position when setting new UPI input
+    globalAccentPosition = 0;
     
     DBG("RhythmPatternExplorerAudioProcessor::setUPIInput called with: '" << upiPattern << "'");
     
@@ -726,14 +765,9 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
         juce::String stepStr = pattern.substring(plusIndex + 1).trim();
         int newStep = stepStr.getIntValue();
         
-        // File-based debug logging
-        FILE* debugFile = fopen("/tmp/rhythm_progressive_debug.log", "a");
-        if (debugFile) {
-            fprintf(debugFile, "Progressive offset detected: %s (base: %s, step: +%d)\n", 
-                pattern.toRawUTF8(), newBasePattern.toRawUTF8(), newStep);
-            fflush(debugFile);
-            fclose(debugFile);
-        }
+        // Progressive offset debug logging
+        logDebug(DebugCategory::PROGRESSIVE_OFFSET, 
+            "Progressive offset detected: " + pattern + " (base: " + newBasePattern + ", step: +" + juce::String(newStep) + ")");
         
         // If same base pattern, advance offset; if different, reset
         if (basePattern == newBasePattern && progressiveStep == newStep)
@@ -741,14 +775,8 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
             advanceProgressiveOffset();
             
             // Debug log advancement
-            if (debugFile) {
-                debugFile = fopen("/tmp/rhythm_progressive_debug.log", "a");
-                if (debugFile) {
-                    fprintf(debugFile, "Advanced offset to: %d\n", progressiveOffset);
-                    fflush(debugFile);
-                    fclose(debugFile);
-                }
-            }
+            logDebug(DebugCategory::PROGRESSIVE_OFFSET, 
+                "Advanced offset to: " + juce::String(progressiveOffset));
         }
         else
         {
@@ -758,14 +786,8 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
             progressiveOffset = newStep; // Start with first offset
             
             // Debug log reset
-            if (debugFile) {
-                debugFile = fopen("/tmp/rhythm_progressive_debug.log", "a");
-                if (debugFile) {
-                    fprintf(debugFile, "New progressive pattern - reset offset to: %d\n", progressiveOffset);
-                    fflush(debugFile);
-                    fclose(debugFile);
-                }
-            }
+            logDebug(DebugCategory::PROGRESSIVE_OFFSET, 
+                "New progressive pattern - reset offset to: " + juce::String(progressiveOffset));
         }
         
         // Parse the base pattern first, then apply progressive offset via rotation
@@ -779,12 +801,8 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
             patternEngine.setPattern(rotatedPattern);
             
             // Debug log rotation
-            FILE* debugFile2 = fopen("/tmp/rhythm_progressive_debug.log", "a");
-            if (debugFile2) {
-                fprintf(debugFile2, "Applied rotation: offset=%d\n", progressiveOffset);
-                fflush(debugFile2);
-                fclose(debugFile2);
-            }
+            logDebug(DebugCategory::PROGRESSIVE_OFFSET, 
+                "Applied rotation: offset=" + juce::String(progressiveOffset));
         }
     }
     else if (isProgressiveLengthening)
@@ -795,14 +813,9 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
         juce::String lengthStr = pattern.substring(starIndex + 1).trim();
         int newLengthening = lengthStr.getIntValue();
         
-        // File-based debug logging
-        FILE* debugFile = fopen("/tmp/rhythm_progressive_debug.log", "a");
-        if (debugFile) {
-            fprintf(debugFile, "Progressive lengthening detected: %s (base: %s, add: *%d)\n", 
-                pattern.toRawUTF8(), newBasePattern.toRawUTF8(), newLengthening);
-            fflush(debugFile);
-            fclose(debugFile);
-        }
+        // Progressive lengthening debug logging
+        logDebug(DebugCategory::PROGRESSIVE_LENGTHENING, 
+            "Progressive lengthening detected: " + pattern + " (base: " + newBasePattern + ", add: *" + juce::String(newLengthening) + ")");
         
         // If same base pattern, advance lengthening; if different, reset
         if (basePattern == newBasePattern && progressiveLengthening == newLengthening)
@@ -810,13 +823,8 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
             advanceProgressiveLengthening();
             
             // Debug log advancement
-            debugFile = fopen("/tmp/rhythm_progressive_debug.log", "a");
-            if (debugFile) {
-                fprintf(debugFile, "Advanced lengthening - pattern now has %d steps\n", 
-                    static_cast<int>(baseLengthPattern.size()));
-                fflush(debugFile);
-                fclose(debugFile);
-            }
+            logDebug(DebugCategory::PROGRESSIVE_LENGTHENING, 
+                "Advanced lengthening - pattern now has " + juce::String(static_cast<int>(baseLengthPattern.size())) + " steps");
         }
         else
         {
@@ -829,13 +837,8 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
             baseLengthPattern = patternEngine.getCurrentPattern();
             
             // Debug log reset
-            debugFile = fopen("/tmp/rhythm_progressive_debug.log", "a");
-            if (debugFile) {
-                fprintf(debugFile, "New progressive lengthening - starting with %d steps\n", 
-                    static_cast<int>(baseLengthPattern.size()));
-                fflush(debugFile);
-                fclose(debugFile);
-            }
+            logDebug(DebugCategory::PROGRESSIVE_LENGTHENING, 
+                "New progressive lengthening - starting with " + juce::String(static_cast<int>(baseLengthPattern.size())) + " steps");
         }
         
         // Apply current lengthened pattern
@@ -857,10 +860,15 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
     currentUPIInput = upiPattern;
 }
 
-void RhythmPatternExplorerAudioProcessor::parseAndApplyUPI(const juce::String& upiPattern)
+void RhythmPatternExplorerAudioProcessor::parseAndApplyUPI(const juce::String& upiPattern, bool resetAccentPosition)
 {
     if (upiPattern.isEmpty())
         return;
+    
+    // Only reset global accent position for truly new patterns
+    if (resetAccentPosition) {
+        globalAccentPosition = 0;
+    }
     
     DBG("parseAndApplyUPI called with: '" + upiPattern + "'");
     
@@ -889,6 +897,22 @@ void RhythmPatternExplorerAudioProcessor::parseAndApplyUPI(const juce::String& u
         else
         {
             patternEngine.setProgressiveOffset(false);
+        }
+        
+        // Set up accent pattern if present
+        if (parseResult.hasAccentPattern)
+        {
+            hasAccentPattern = true;
+            currentAccentPattern = parseResult.accentPattern;
+            currentAccentPatternName = parseResult.accentPatternName;
+            DBG("   Accent pattern enabled: " << currentAccentPatternName << 
+                " (" << UPIParser::patternToBinary(currentAccentPattern) << ")");
+        }
+        else
+        {
+            hasAccentPattern = false;
+            currentAccentPattern.clear();
+            currentAccentPatternName.clear();
         }
         
         // Update parameters to reflect the new pattern
@@ -985,14 +1009,14 @@ void RhythmPatternExplorerAudioProcessor::checkMidiInputForTriggers(juce::MidiBu
                     }
                     else
                     {
-                        // Force re-parsing to apply new progressive transformation
-                        parseAndApplyUPI(currentUPIInput);
+                        // Force re-parsing to apply new progressive transformation (preserve accent position)
+                        parseAndApplyUPI(currentUPIInput, false);
                     }
                 }
                 else
                 {
-                    // Re-parse other UPI patterns to trigger regeneration
-                    parseAndApplyUPI(currentUPIInput);
+                    // Re-parse other UPI patterns to trigger regeneration (preserve accent position)
+                    parseAndApplyUPI(currentUPIInput, false);
                 }
             }
             // Pattern updates are handled via UPI only
@@ -1035,12 +1059,12 @@ void RhythmPatternExplorerAudioProcessor::checkMidiInputForTriggers(juce::MidiBu
                     }
                     else
                     {
-                        parseAndApplyUPI(currentUPIInput);
+                        parseAndApplyUPI(currentUPIInput, false);
                     }
                 }
                 else
                 {
-                    parseAndApplyUPI(currentUPIInput);
+                    parseAndApplyUPI(currentUPIInput, false);
                 }
             }
             // Pattern updates are handled via UPI only
@@ -1079,13 +1103,9 @@ void RhythmPatternExplorerAudioProcessor::advanceProgressiveLengthening()
         // Append the random steps to the pattern
         baseLengthPattern.insert(baseLengthPattern.end(), randomSteps.begin(), randomSteps.end());
         
-        FILE* debugFile = fopen("/tmp/rhythm_progressive_debug.log", "a");
-        if (debugFile) {
-            fprintf(debugFile, "Added %d random steps, total length now: %d\n", 
-                progressiveLengthening, static_cast<int>(baseLengthPattern.size()));
-            fflush(debugFile);
-            fclose(debugFile);
-        }
+        logDebug(DebugCategory::PROGRESSIVE_LENGTHENING, 
+            "Added " + juce::String(progressiveLengthening) + " random steps, total length now: " + 
+            juce::String(static_cast<int>(baseLengthPattern.size())));
     }
 }
 
@@ -1145,18 +1165,13 @@ void RhythmPatternExplorerAudioProcessor::advanceScene()
         // Then advance to next scene in the sequence, cycling back to 0 when reaching the end
         currentSceneIndex = (currentSceneIndex + 1) % scenePatterns.size();
         
-        FILE* debugFile = fopen("/tmp/rhythm_progressive_debug.log", "a");
-        if (debugFile) {
-            fprintf(debugFile, "Advanced to scene %d/%d: %s\n", 
-                currentSceneIndex, static_cast<int>(scenePatterns.size()), 
-                scenePatterns[currentSceneIndex].toRawUTF8());
-            if (currentSceneIndex < static_cast<int>(sceneProgressiveSteps.size())) {
-                fprintf(debugFile, "  Scene progressive state - offset: %d, lengthening: %d\n",
-                    sceneProgressiveOffsets[currentSceneIndex], sceneProgressiveLengthening[currentSceneIndex]);
-            }
-            fflush(debugFile);
-            fclose(debugFile);
+        juce::String sceneInfo = "Advanced to scene " + juce::String(currentSceneIndex) + "/" + 
+            juce::String(static_cast<int>(scenePatterns.size())) + ": " + scenePatterns[currentSceneIndex];
+        if (currentSceneIndex < static_cast<int>(sceneProgressiveSteps.size())) {
+            sceneInfo += "\n  Scene progressive state - offset: " + juce::String(sceneProgressiveOffsets[currentSceneIndex]) + 
+                        ", lengthening: " + juce::String(sceneProgressiveLengthening[currentSceneIndex]);
         }
+        logDebug(DebugCategory::SCENE_CYCLING, sceneInfo);
     }
 }
 
@@ -1182,13 +1197,8 @@ void RhythmPatternExplorerAudioProcessor::applyCurrentScenePattern()
         auto rotatedPattern = rotatePatternBySteps(currentPattern, progressiveOffset);
         patternEngine.setPattern(rotatedPattern);
         
-        FILE* debugFile = fopen("/tmp/rhythm_progressive_debug.log", "a");
-        if (debugFile) {
-            fprintf(debugFile, "Applied scene %d progressive offset: %d\n", 
-                currentSceneIndex, progressiveOffset);
-            fflush(debugFile);
-            fclose(debugFile);
-        }
+        logDebug(DebugCategory::SCENE_CYCLING, 
+            "Applied scene " + juce::String(currentSceneIndex) + " progressive offset: " + juce::String(progressiveOffset));
     }
     else if (progressiveLengthening != 0)
     {
@@ -1205,13 +1215,8 @@ void RhythmPatternExplorerAudioProcessor::applyCurrentScenePattern()
         auto lengthenedPattern = lengthenPattern(sceneBaseLengthPatterns[currentSceneIndex], progressiveLengthening);
         patternEngine.setPattern(lengthenedPattern);
         
-        FILE* debugFile = fopen("/tmp/rhythm_progressive_debug.log", "a");
-        if (debugFile) {
-            fprintf(debugFile, "Applied scene %d progressive lengthening: %d steps\n", 
-                currentSceneIndex, progressiveLengthening);
-            fflush(debugFile);
-            fclose(debugFile);
-        }
+        logDebug(DebugCategory::SCENE_CYCLING, 
+            "Applied scene " + juce::String(currentSceneIndex) + " progressive lengthening: " + juce::String(progressiveLengthening) + " steps");
     }
 }
 

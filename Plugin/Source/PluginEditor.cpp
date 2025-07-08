@@ -103,6 +103,37 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     midiNoteSlider.setIncDecButtonsMode(juce::Slider::incDecButtonsNotDraggable);
     addAndMakeVisible(midiNoteSlider);
     
+    // Accent Pitch Offset Slider
+    accentPitchOffsetLabel.setText("Accent +/-:", juce::dontSendNotification);
+    addAndMakeVisible(accentPitchOffsetLabel);
+    
+    accentPitchOffsetSlider.setSliderStyle(juce::Slider::IncDecButtons);
+    accentPitchOffsetSlider.setRange(-12, 12, 1);
+    accentPitchOffsetSlider.setValue(5); // Default +5 semitones
+    accentPitchOffsetSlider.setTextBoxStyle(juce::Slider::TextBoxLeft, false, 40, 20);
+    accentPitchOffsetSlider.setIncDecButtonsMode(juce::Slider::incDecButtonsNotDraggable);
+    addAndMakeVisible(accentPitchOffsetSlider);
+    
+    // Accent Velocity Slider
+    accentVelocityLabel.setText("Accent Vol:", juce::dontSendNotification);
+    addAndMakeVisible(accentVelocityLabel);
+    
+    accentVelocitySlider.setSliderStyle(juce::Slider::LinearHorizontal);
+    accentVelocitySlider.setRange(0.0, 1.0, 0.01);
+    accentVelocitySlider.setValue(1.0); // Default maximum velocity
+    accentVelocitySlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 40, 20);
+    addAndMakeVisible(accentVelocitySlider);
+    
+    // Unaccented Velocity Slider
+    unaccentedVelocityLabel.setText("Normal Vol:", juce::dontSendNotification);
+    addAndMakeVisible(unaccentedVelocityLabel);
+    
+    unaccentedVelocitySlider.setSliderStyle(juce::Slider::LinearHorizontal);
+    unaccentedVelocitySlider.setRange(0.0, 1.0, 0.01);
+    unaccentedVelocitySlider.setValue(0.69); // Default 69%
+    unaccentedVelocitySlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 40, 20);
+    addAndMakeVisible(unaccentedVelocitySlider);
+    
     // Tick Button (equivalent to Parse)
     tickButton.setButtonText("Tick");
     tickButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff4a5568));
@@ -129,7 +160,7 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     addAndMakeVisible(analysisLabel);
     
     // Version Editor - copyable and selectable
-    versionEditor.setText("v0.03a3", juce::dontSendNotification);
+    versionEditor.setText("v0.03c", juce::dontSendNotification);
     versionEditor.setMultiLine(false);
     versionEditor.setReadOnly(true);
     versionEditor.setScrollbarsShown(false);
@@ -200,6 +231,34 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
         if (audioProcessor.midiNoteParam) {
             audioProcessor.midiNoteParam->setValueNotifyingHost(
                 audioProcessor.midiNoteParam->convertTo0to1(static_cast<int>(midiNoteSlider.getValue()))
+            );
+        }
+    };
+    
+    // Connect accent parameters
+    accentPitchOffsetSlider.onValueChange = [this]()
+    {
+        if (audioProcessor.accentPitchOffsetParam) {
+            audioProcessor.accentPitchOffsetParam->setValueNotifyingHost(
+                audioProcessor.accentPitchOffsetParam->convertTo0to1(static_cast<int>(accentPitchOffsetSlider.getValue()))
+            );
+        }
+    };
+    
+    accentVelocitySlider.onValueChange = [this]()
+    {
+        if (audioProcessor.accentVelocityParam) {
+            audioProcessor.accentVelocityParam->setValueNotifyingHost(
+                static_cast<float>(accentVelocitySlider.getValue())
+            );
+        }
+    };
+    
+    unaccentedVelocitySlider.onValueChange = [this]()
+    {
+        if (audioProcessor.unaccentedVelocityParam) {
+            audioProcessor.unaccentedVelocityParam->setValueNotifyingHost(
+                static_cast<float>(unaccentedVelocitySlider.getValue())
             );
         }
     };
@@ -311,6 +370,23 @@ void RhythmPatternExplorerAudioProcessorEditor::resized()
     midiNoteLabel.setBounds(rightControls.removeFromLeft(35));
     auto noteField = rightControls.removeFromLeft(75).reduced(2);
     midiNoteSlider.setBounds(noteField);
+    rightControls.removeFromLeft(5); // spacing
+    
+    // Accent Pitch Offset (spinner)
+    accentPitchOffsetLabel.setBounds(rightControls.removeFromLeft(65));
+    auto accentPitchField = rightControls.removeFromLeft(65).reduced(2);
+    accentPitchOffsetSlider.setBounds(accentPitchField);
+    rightControls.removeFromLeft(5); // spacing
+    
+    // Accent Velocity (linear slider)
+    accentVelocityLabel.setBounds(rightControls.removeFromLeft(65));
+    auto accentVelField = rightControls.removeFromLeft(75).reduced(2);
+    accentVelocitySlider.setBounds(accentVelField);
+    
+    // Unaccented Velocity (linear slider)
+    unaccentedVelocityLabel.setBounds(rightControls.removeFromLeft(65));
+    auto unaccentedVelField = rightControls.removeFromLeft(75).reduced(2);
+    unaccentedVelocitySlider.setBounds(unaccentedVelField);
     
     // UPI text field gets remaining space
     upiTextEditor.setBounds(upiRow.reduced(5));
@@ -370,6 +446,17 @@ void RhythmPatternExplorerAudioProcessorEditor::timerCallback()
     static int testStepCounter = 0;
     
     frameCount++;
+    
+    // Sync UI sliders with parameter values (for host automation support)
+    if (audioProcessor.midiNoteParam) {
+        midiNoteSlider.setValue(audioProcessor.midiNoteParam->get(), juce::dontSendNotification);
+    }
+    if (audioProcessor.accentPitchOffsetParam) {
+        accentPitchOffsetSlider.setValue(audioProcessor.accentPitchOffsetParam->get(), juce::dontSendNotification);
+    }
+    if (audioProcessor.accentVelocityParam) {
+        accentVelocitySlider.setValue(audioProcessor.accentVelocityParam->get(), juce::dontSendNotification);
+    }
     
     int currentHash = std::hash<std::string>{}(audioProcessor.getPatternEngine().getBinaryString().toStdString());
     int currentStep = audioProcessor.getCurrentStep();
@@ -446,8 +533,15 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
     
     // Clean production version - no debug output
     
-    // Draw the background circle first
-    g.setColour(getBackgroundColour());
+    // Draw the background circle first - white for green theme, background color for others
+    if (currentBackgroundColor == BackgroundColor::Green)
+    {
+        g.setColour(juce::Colours::white);
+    }
+    else
+    {
+        g.setColour(getBackgroundColour());
+    }
     g.fillEllipse(center.x - outerRadius, center.y - outerRadius, outerRadius * 2, outerRadius * 2);
     
     // Draw each slice using the most basic approach possible
@@ -461,27 +555,147 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
         // Only draw onset slices
         if (pattern[i])
         {
-            // Create a proper filled pie sector using multiple triangles
-            juce::Path slice;
-            
-            // Start from center
-            slice.startNewSubPath(center.x, center.y);
-            
-            // Add multiple points around the arc to create a smooth sector
-            int numSegments = std::max(8, int(sliceAngle * 20)); // More segments for larger slices
-            for (int seg = 0; seg <= numSegments; ++seg)
+            // Check if this step should be accented - stable per cycle display
+            bool isAccented = false;
+            if (audioProcessor.getHasAccentPattern() && !audioProcessor.getCurrentAccentPattern().empty())
             {
-                float angle = startAngle + (sliceAngle * seg / numSegments);
-                float x = center.x + outerRadius * std::cos(angle);
-                float y = center.y + outerRadius * std::sin(angle);
-                slice.lineTo(x, y);
+                // Find which onset number this step is (count onsets up to current step)
+                int onsetIndex = 0;
+                for (int j = 0; j < i; ++j)
+                {
+                    if (j < pattern.size() && pattern[j])
+                    {
+                        onsetIndex++;
+                    }
+                }
+                
+                // SIMPLIFIED: Use global accent position directly for stable cycle-based display
+                // This bypasses cycle detection issues and uses the processor's global accent state
+                int globalAccentPosition = audioProcessor.getGlobalAccentPosition();
+                
+                // Count total onsets that have occurred before this pattern position
+                int onsetsInPattern = 0;
+                for (bool onset : pattern) {
+                    if (onset) onsetsInPattern++;
+                }
+                
+                // Calculate which cycle we're in based on global accent position
+                int currentAccentCycle = 0;
+                if (onsetsInPattern > 0) {
+                    currentAccentCycle = globalAccentPosition / onsetsInPattern;
+                }
+                
+                // Calculate the accent offset for this cycle
+                int displayAccentOffset = (currentAccentCycle * onsetsInPattern) % audioProcessor.getCurrentAccentPattern().size();
+                
+                // Check if this onset should be accented
+                int accentStep = (displayAccentOffset + onsetIndex) % audioProcessor.getCurrentAccentPattern().size();
+                isAccented = audioProcessor.getCurrentAccentPattern()[accentStep];
+                
+                // Debug output for first few onsets to see what's happening
+                if (onsetIndex < 3) {
+                    DBG("ACCENT CHECK: OnsetIndex=" << onsetIndex << 
+                        ", AccentStep=" << accentStep << 
+                        ", IsAccented=" << (isAccented ? "YES" : "NO"));
+                }
             }
             
-            // Close back to center
-            slice.closeSubPath();
-            
-            g.setColour(juce::Colour(0xff48bb78));  // Green for onsets
-            g.fillPath(slice);
+            if (isAccented)
+            {
+                // For accented onsets: create split slice with inner part (regular) and outer part (inverted)
+                
+                // Inner part: from innerRadius to markerRadius (regular color)
+                juce::Path innerSlice;
+                innerSlice.startNewSubPath(center.x + innerRadius * std::cos(startAngle), 
+                                          center.y + innerRadius * std::sin(startAngle));
+                
+                int numSegments = std::max(8, int(sliceAngle * 20));
+                for (int seg = 0; seg <= numSegments; ++seg)
+                {
+                    float angle = startAngle + (sliceAngle * seg / numSegments);
+                    float x = center.x + markerRadius * std::cos(angle);
+                    float y = center.y + markerRadius * std::sin(angle);
+                    innerSlice.lineTo(x, y);
+                }
+                
+                // Back along inner arc
+                for (int seg = numSegments; seg >= 0; --seg)
+                {
+                    float angle = startAngle + (sliceAngle * seg / numSegments);
+                    float x = center.x + innerRadius * std::cos(angle);
+                    float y = center.y + innerRadius * std::sin(angle);
+                    innerSlice.lineTo(x, y);
+                }
+                innerSlice.closeSubPath();
+                
+                g.setColour(juce::Colour(0xff48bb78));  // Green for inner part
+                g.fillPath(innerSlice);
+                
+                // Outer part: from markerRadius to outerRadius (inverted background color)
+                juce::Path outerSlice;
+                outerSlice.startNewSubPath(center.x + markerRadius * std::cos(startAngle), 
+                                          center.y + markerRadius * std::sin(startAngle));
+                
+                for (int seg = 0; seg <= numSegments; ++seg)
+                {
+                    float angle = startAngle + (sliceAngle * seg / numSegments);
+                    float x = center.x + outerRadius * std::cos(angle);
+                    float y = center.y + outerRadius * std::sin(angle);
+                    outerSlice.lineTo(x, y);
+                }
+                
+                // Back along marker arc
+                for (int seg = numSegments; seg >= 0; --seg)
+                {
+                    float angle = startAngle + (sliceAngle * seg / numSegments);
+                    float x = center.x + markerRadius * std::cos(angle);
+                    float y = center.y + markerRadius * std::sin(angle);
+                    outerSlice.lineTo(x, y);
+                }
+                outerSlice.closeSubPath();
+                
+                // Inverted background color for accent indication
+                juce::Colour accentColor;
+                if (currentBackgroundColor == BackgroundColor::Green || currentBackgroundColor == BackgroundColor::White)
+                {
+                    accentColor = juce::Colour(0xff2d3748);  // Dark for light backgrounds
+                }
+                else
+                {
+                    accentColor = juce::Colours::white;  // White for dark backgrounds
+                }
+                g.setColour(accentColor);
+                g.fillPath(outerSlice);
+            }
+            else
+            {
+                // Regular onset: create normal full slice
+                juce::Path slice;
+                slice.startNewSubPath(center.x + innerRadius * std::cos(startAngle), 
+                                     center.y + innerRadius * std::sin(startAngle));
+                
+                int numSegments = std::max(8, int(sliceAngle * 20));
+                for (int seg = 0; seg <= numSegments; ++seg)
+                {
+                    float angle = startAngle + (sliceAngle * seg / numSegments);
+                    float x = center.x + outerRadius * std::cos(angle);
+                    float y = center.y + outerRadius * std::sin(angle);
+                    slice.lineTo(x, y);
+                }
+                
+                // Back along inner arc
+                for (int seg = numSegments; seg >= 0; --seg)
+                {
+                    float angle = startAngle + (sliceAngle * seg / numSegments);
+                    float x = center.x + innerRadius * std::cos(angle);
+                    float y = center.y + innerRadius * std::sin(angle);
+                    slice.lineTo(x, y);
+                }
+                slice.closeSubPath();
+                
+                g.setColour(juce::Colour(0xff48bb78));  // Green for regular onsets
+                g.fillPath(slice);
+            }
             
             // Drew slice - clean production version
         }
