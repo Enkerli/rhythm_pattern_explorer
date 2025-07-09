@@ -74,7 +74,7 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     */
     
     // UPI Pattern Input
-    upiLabel.setText("UPI Pattern:", juce::dontSendNotification);
+    upiLabel.setText("UPI:", juce::dontSendNotification);
     upiLabel.setJustificationType(juce::Justification::centredLeft);
     addAndMakeVisible(upiLabel);
     
@@ -140,10 +140,11 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     unaccentedVelocitySlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 40, 20);
     addAndMakeVisible(unaccentedVelocitySlider);
     
-    // Tick Button (equivalent to Parse)
-    tickButton.setButtonText("Tick");
+    // Scene/Step Button (equivalent to Parse/Tick) - smaller and shows current step/scene
+    tickButton.setButtonText("1"); // Will be updated in timer
     tickButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff4a5568));
     tickButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
+    tickButton.setTooltip("Current step/scene number. Click to advance.");
     addAndMakeVisible(tickButton);
     
     // Pattern Display Editor - copyable and readable
@@ -271,11 +272,12 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     
     tickButton.onClick = [this]()
     {
-        // Trigger both the parameter (for host automation) and immediate parsing
+        // Only trigger the parameter - this will handle the advancement properly
         if (audioProcessor.tickParam) {
             audioProcessor.tickParam->setValueNotifyingHost(1.0f); // Trigger tick parameter
         }
-        parseUPIPattern(); // Execute parsing immediately
+        // Note: parseUPIPattern() removed to avoid double-triggering
+        // The parameter change will handle the advancement through the host
     };
     
     // Initial display update
@@ -358,39 +360,99 @@ void RhythmPatternExplorerAudioProcessorEditor::resized()
     
     // UPI Pattern Input row - primary control with compact extras
     auto upiRow = controlArea.removeFromTop(40);
-    upiLabel.setBounds(upiRow.removeFromLeft(100));
     
-    // Compact controls to the right
-    auto rightControls = upiRow.removeFromRight(290); // Space for Tick + Name + Note spinner
-    tickButton.setBounds(rightControls.removeFromLeft(70).reduced(5));
-    rightControls.removeFromLeft(10); // spacing
+    // Calculate available space and determine responsive layout
+    int availableWidth = upiRow.getWidth();
+    int upiLabelWidth = 40; // Reduced from 100 for "UPI:" instead of "UPI Pattern:"
+    int minUpiWidth = 120; // Minimum width for UPI text editor
+    int tickButtonWidth = 40; // Smaller for step/scene number display
+    int nameFieldWidth = 90;
+    int noteFieldWidth = 110; // Label + slider
+    int accentPitchWidth = 130; // Label + slider
+    int accentVelWidth = 140; // Label + slider
+    int unaccentedVelWidth = 140; // Label + slider
+    int spacing = 50; // Total spacing between elements
     
-    // Instance Name (no label - more space for name)
-    auto instanceField = rightControls.removeFromLeft(90).reduced(2);
-    instanceNameEditor.setBounds(instanceField);
-    rightControls.removeFromLeft(10); // spacing
+    // Required width for all controls
+    int totalRequiredWidth = upiLabelWidth + minUpiWidth + tickButtonWidth + nameFieldWidth + 
+                           noteFieldWidth + accentPitchWidth + accentVelWidth + unaccentedVelWidth + spacing;
     
-    // MIDI Note (spinner with wider text box)
-    midiNoteLabel.setBounds(rightControls.removeFromLeft(35));
-    auto noteField = rightControls.removeFromLeft(75).reduced(2);
-    midiNoteSlider.setBounds(noteField);
-    rightControls.removeFromLeft(5); // spacing
+    // Responsive layout: hide controls progressively when space is limited
+    bool showTickButton = availableWidth >= (upiLabelWidth + minUpiWidth + tickButtonWidth + 30);
+    bool showNameField = availableWidth >= (upiLabelWidth + minUpiWidth + (showTickButton ? tickButtonWidth : 0) + nameFieldWidth + 40);
+    bool showNoteField = availableWidth >= (upiLabelWidth + minUpiWidth + (showTickButton ? tickButtonWidth : 0) + 
+                                           (showNameField ? nameFieldWidth : 0) + noteFieldWidth + 50);
+    bool showAccentControls = availableWidth >= totalRequiredWidth;
     
-    // Accent Pitch Offset (spinner)
-    accentPitchOffsetLabel.setBounds(rightControls.removeFromLeft(65));
-    auto accentPitchField = rightControls.removeFromLeft(65).reduced(2);
-    accentPitchOffsetSlider.setBounds(accentPitchField);
-    rightControls.removeFromLeft(5); // spacing
+    // Set visibility based on available space
+    tickButton.setVisible(showTickButton);
+    instanceNameEditor.setVisible(showNameField);
+    midiNoteLabel.setVisible(showNoteField);
+    midiNoteSlider.setVisible(showNoteField);
+    accentPitchOffsetLabel.setVisible(showAccentControls);
+    accentPitchOffsetSlider.setVisible(showAccentControls);
+    accentVelocityLabel.setVisible(showAccentControls);
+    accentVelocitySlider.setVisible(showAccentControls);
+    unaccentedVelocityLabel.setVisible(showAccentControls);
+    unaccentedVelocitySlider.setVisible(showAccentControls);
     
-    // Accent Velocity (linear slider)
-    accentVelocityLabel.setBounds(rightControls.removeFromLeft(65));
-    auto accentVelField = rightControls.removeFromLeft(75).reduced(2);
-    accentVelocitySlider.setBounds(accentVelField);
+    // Layout UPI label (always visible)
+    upiLabel.setBounds(upiRow.removeFromLeft(upiLabelWidth));
     
-    // Unaccented Velocity (linear slider)
-    unaccentedVelocityLabel.setBounds(rightControls.removeFromLeft(65));
-    auto unaccentedVelField = rightControls.removeFromLeft(75).reduced(2);
-    unaccentedVelocitySlider.setBounds(unaccentedVelField);
+    // Calculate space for right controls
+    int rightControlsWidth = 0;
+    if (showTickButton) rightControlsWidth += tickButtonWidth + 10;
+    if (showNameField) rightControlsWidth += nameFieldWidth + 10;
+    if (showNoteField) rightControlsWidth += noteFieldWidth + 10;
+    if (showAccentControls) rightControlsWidth += accentPitchWidth + accentVelWidth + unaccentedVelWidth + 15;
+    
+    // Layout right controls if there's space
+    juce::Rectangle<int> rightControls;
+    if (rightControlsWidth > 0 && upiRow.getWidth() > rightControlsWidth)
+    {
+        rightControls = upiRow.removeFromRight(rightControlsWidth);
+        
+        if (showTickButton)
+        {
+            tickButton.setBounds(rightControls.removeFromLeft(tickButtonWidth).reduced(5));
+            rightControls.removeFromLeft(10); // spacing
+        }
+        
+        if (showNameField)
+        {
+            auto instanceField = rightControls.removeFromLeft(nameFieldWidth).reduced(2);
+            instanceNameEditor.setBounds(instanceField);
+            rightControls.removeFromLeft(10); // spacing
+        }
+        
+        if (showNoteField)
+        {
+            midiNoteLabel.setBounds(rightControls.removeFromLeft(35));
+            auto noteField = rightControls.removeFromLeft(75).reduced(2);
+            midiNoteSlider.setBounds(noteField);
+            rightControls.removeFromLeft(5); // spacing
+        }
+        
+        if (showAccentControls)
+        {
+            // Accent Pitch Offset (spinner)
+            accentPitchOffsetLabel.setBounds(rightControls.removeFromLeft(65));
+            auto accentPitchField = rightControls.removeFromLeft(65).reduced(2);
+            accentPitchOffsetSlider.setBounds(accentPitchField);
+            rightControls.removeFromLeft(5); // spacing
+            
+            // Accent Velocity (linear slider)
+            accentVelocityLabel.setBounds(rightControls.removeFromLeft(65));
+            auto accentVelField = rightControls.removeFromLeft(75).reduced(2);
+            accentVelocitySlider.setBounds(accentVelField);
+            
+            // Unaccented Velocity (linear slider)
+            unaccentedVelocityLabel.setBounds(rightControls.removeFromLeft(65));
+            auto unaccentedVelField = rightControls.removeFromLeft(75).reduced(2);
+            unaccentedVelocitySlider.setBounds(unaccentedVelField);
+        }
+    }
+    
     
     // UPI text field gets remaining space
     upiTextEditor.setBounds(upiRow.reduced(5));
@@ -461,6 +523,9 @@ void RhythmPatternExplorerAudioProcessorEditor::timerCallback()
     if (audioProcessor.accentVelocityParam) {
         accentVelocitySlider.setValue(audioProcessor.accentVelocityParam->get(), juce::dontSendNotification);
     }
+    
+    // Update step/scene button text
+    updateStepSceneButton();
     
     int currentHash = std::hash<std::string>{}(audioProcessor.getPatternEngine().getBinaryString().toStdString());
     int currentStep = audioProcessor.getCurrentStep();
@@ -772,13 +837,29 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
         g.drawEllipse(center.x - innerRadius, center.y - innerRadius, innerRadius * 2, innerRadius * 2, 2.0f);
     
     // Draw step markers INSIDE the available space (only in normal mode)
+    // Use webapp's modulo-based approach for even distribution
     if (!minimalMode)
     {
-        for (int i = 0; i < numSteps; ++i)
+        // Helper function to determine if step marker should be shown (matches webapp logic)
+        auto shouldShowStepNumber = [](int stepIndex, int numSteps) -> bool {
+            if (numSteps <= 16) {
+                return true;  // Show all numbers for 16 or fewer steps
+            } else if (numSteps <= 32) {
+                return stepIndex % 2 == 0;  // Show every 2nd step for 17-32 steps
+            } else if (numSteps <= 48) {
+                return stepIndex % 3 == 0;  // Show every 3rd step for 33-48 steps
+            } else {
+                return stepIndex % 4 == 0;  // Show every 4th step for 49+ steps
+            }
+        };
+        
+        for (int stepIndex = 0; stepIndex < numSteps; ++stepIndex)
         {
+            if (!shouldShowStepNumber(stepIndex, numSteps)) continue;
+            
             float sliceAngle = 2.0f * juce::MathConstants<float>::pi / numSteps;
             // Position marker at the CENTER of each slice, aligned with 12 o'clock
-            float centerAngle = (i * sliceAngle) - juce::MathConstants<float>::halfPi;
+            float centerAngle = (stepIndex * sliceAngle) - juce::MathConstants<float>::halfPi;
             float x = center.x + markerRadius * std::cos(centerAngle);
             float y = center.y + markerRadius * std::sin(centerAngle);
             
@@ -786,8 +867,8 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
             g.setColour(juce::Colour(0xff4a5568));
             g.fillEllipse(x - 8, y - 8, 16, 16);
             
-            // Draw step numbers
-            juce::String stepNumber = juce::String(i);
+            // Draw step numbers (show actual step index for larger patterns)
+            juce::String stepNumber = juce::String(stepIndex);
             g.setFont(juce::FontOptions(12.0f, juce::Font::bold));
             g.setColour(juce::Colours::white);
             
@@ -824,6 +905,39 @@ void RhythmPatternExplorerAudioProcessorEditor::updateAnalysisDisplay()
 //                           "\nCenter of Gravity: " + juce::String::formatted("%.1f°", cogAngle);
 //    
 //    analysisLabel.setText(analysis, juce::dontSendNotification);
+}
+
+void RhythmPatternExplorerAudioProcessorEditor::updateStepSceneButton()
+{
+    juce::String buttonText;
+    juce::String tooltip;
+    
+    // Check if we have scene cycling (multiple scenes)
+    int sceneCount = audioProcessor.getSceneCount();
+    if (sceneCount > 1)
+    {
+        // Scene cycling: show current scene index (1-based)
+        int currentScene = audioProcessor.getCurrentSceneIndex() + 1; // 1-based for display
+        buttonText = juce::String(currentScene);
+        tooltip = "Scene " + juce::String(currentScene) + " of " + juce::String(sceneCount) + ". Click to advance to next scene.";
+    }
+    else if (audioProcessor.hasProgressiveOffset())
+    {
+        // Progressive transformation: show progression step (already 1-based from UPIParser)
+        int progressionStep = audioProcessor.getProgressiveTriggerCount(); // Already 1-based
+        buttonText = juce::String(progressionStep);
+        tooltip = "Progressive step: " + juce::String(progressionStep) + ". Click to advance progression.";
+    }
+    else
+    {
+        // Regular pattern: show current step in pattern
+        int currentStep = audioProcessor.getCurrentStep() + 1; // 1-based for display
+        buttonText = juce::String(currentStep);
+        tooltip = "Current step: " + juce::String(currentStep) + ". Click to advance pattern.";
+    }
+    
+    tickButton.setButtonText(buttonText);
+    tickButton.setTooltip(tooltip);
 }
 
 void RhythmPatternExplorerAudioProcessorEditor::parseUPIPattern()

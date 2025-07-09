@@ -146,6 +146,14 @@ public:
     void advanceProgressiveOffset() { progressiveOffset += progressiveStep; }
     int getProgressiveOffset() const { return progressiveOffset; }
     
+    // Scene information access for UI
+    int getCurrentSceneIndex() const { return currentSceneIndex; }
+    int getSceneCount() const { return scenePatterns.size(); }
+    
+    // Progressive transformation access for UI  
+    int getProgressiveTriggerCount() const;
+    bool hasProgressiveOffset() const { return patternEngine.hasProgressiveOffsetEnabled(); }
+    
     // Progressive lengthening support (universal for all patterns)
     void resetProgressiveLengthening() { progressiveLengthening = 0; baseLengthPattern.clear(); }
     void advanceProgressiveLengthening();
@@ -199,6 +207,7 @@ private:
     // UPI pattern input
     juce::String currentUPIInput;
     juce::String lastParsedUPI;
+    juce::String currentProgressivePatternKey; // Track current progressive pattern for step counting
     
     // Accent pattern support
     bool hasAccentPattern = false;

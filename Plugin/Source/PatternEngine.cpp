@@ -7,6 +7,7 @@
 */
 
 #include "PatternEngine.h"
+#include "UPIParser.h"
 
 //==============================================================================
 PatternEngine::PatternEngine()
@@ -31,11 +32,11 @@ void PatternEngine::generateEuclideanPattern(int onsets, int steps, int offset)
         return;
     }
     
-    currentPattern = bjorklundAlgorithm(onsets, steps);
+    currentPattern = UPIParser::bjorklundAlgorithm(onsets, steps);
     
     if (offset != 0)
     {
-        currentPattern = rotatePattern(currentPattern, offset);
+        currentPattern = UPIParser::rotatePattern(currentPattern, offset);
     }
     
     DBG("PatternEngine: Generated Euclidean pattern E(" << onsets << "," << steps << "," << offset << ")");
@@ -265,19 +266,30 @@ juce::String PatternEngine::getHexString() const
     if (currentPattern.empty())
         return "0x0";
     
-    // Convert pattern to decimal (left-to-right, MSB first)
-    int decimal = 0;
+    // Convert pattern to hex using strict left-to-right notation
+    // Process in 4-bit groups from left to right, where 1000 = 0x1, 0100 = 0x2, etc.
+    juce::String hex;
     int stepCount = static_cast<int>(currentPattern.size());
     
-    for (int i = 0; i < stepCount; ++i)
+    // Process pattern in 4-bit groups from left to right
+    for (int groupStart = 0; groupStart < stepCount; groupStart += 4)
     {
-        if (currentPattern[i])
+        int nibbleValue = 0;
+        
+        // Process 4 bits in this group (or fewer if at the end)
+        for (int bitInGroup = 0; bitInGroup < 4 && (groupStart + bitInGroup) < stepCount; ++bitInGroup)
         {
-            decimal |= (1 << (stepCount - 1 - i));
+            if (currentPattern[groupStart + bitInGroup])
+            {
+                // Left-to-right: first bit in group is LSB of this nibble
+                nibbleValue |= (1 << bitInGroup);
+            }
         }
+        
+        hex += juce::String::toHexString(nibbleValue).toUpperCase();
     }
     
-    return "0x" + juce::String::toHexString(decimal).toUpperCase();
+    return "0x" + hex;
 }
 
 juce::String PatternEngine::getOctalString() const
@@ -285,34 +297,30 @@ juce::String PatternEngine::getOctalString() const
     if (currentPattern.empty())
         return "o0";
     
-    // Convert pattern to decimal (left-to-right, MSB first)
-    int decimal = 0;
+    // Convert pattern to octal using strict left-to-right notation
+    // Process in 3-bit groups from left to right
+    juce::String octal;
     int stepCount = static_cast<int>(currentPattern.size());
     
-    for (int i = 0; i < stepCount; ++i)
+    // Process pattern in 3-bit groups from left to right
+    for (int groupStart = 0; groupStart < stepCount; groupStart += 3)
     {
-        if (currentPattern[i])
+        int octalDigit = 0;
+        
+        // Process 3 bits in this group (or fewer if at the end)
+        for (int bitInGroup = 0; bitInGroup < 3 && (groupStart + bitInGroup) < stepCount; ++bitInGroup)
         {
-            decimal |= (1 << (stepCount - 1 - i));
+            if (currentPattern[groupStart + bitInGroup])
+            {
+                // Left-to-right: first bit in group is LSB of this octal digit
+                octalDigit |= (1 << bitInGroup);
+            }
         }
+        
+        octal += juce::String(octalDigit);
     }
     
-    // Convert to octal string
-    juce::String octal;
-    if (decimal == 0)
-    {
-        octal = "0";
-    }
-    else
-    {
-        while (decimal > 0)
-        {
-            octal = juce::String(decimal % 8) + octal;
-            decimal /= 8;
-        }
-    }
-    
-    return "o" + octal; // Prefix with 'o' for octal notation
+    return "o" + octal;
 }
 
 juce::String PatternEngine::getDecimalString() const
@@ -320,105 +328,27 @@ juce::String PatternEngine::getDecimalString() const
     if (currentPattern.empty())
         return "d0";
     
-    // Convert pattern to decimal (left-to-right, MSB first)
+    // Convert pattern to decimal using strict left-to-right notation
+    // Process the entire pattern where leftmost bit is LSB
     int decimal = 0;
     int stepCount = static_cast<int>(currentPattern.size());
     
+    // Build decimal value by reading pattern left-to-right
+    // where leftmost bit has lowest positional value
     for (int i = 0; i < stepCount; ++i)
     {
         if (currentPattern[i])
         {
-            decimal |= (1 << (stepCount - 1 - i));
+            // Left-to-right: bit at position i contributes 2^i
+            decimal |= (1 << i);
         }
     }
     
-    return "d" + juce::String(decimal); // Prefix with 'd' for decimal notation
+    return "d" + juce::String(decimal);
 }
 
 //==============================================================================
-std::vector<bool> PatternEngine::bjorklundAlgorithm(int onsets, int steps)
-{
-    if (onsets == 0)
-    {
-        return std::vector<bool>(steps, false);
-    }
-    
-    if (onsets >= steps)
-    {
-        return std::vector<bool>(steps, true);
-    }
-    
-    // Bjorklund's algorithm implementation
-    std::vector<std::vector<bool>> groups;
-    
-    // Initialize with individual onsets and rests
-    for (int i = 0; i < onsets; ++i)
-    {
-        groups.push_back({true});
-    }
-    for (int i = 0; i < steps - onsets; ++i)
-    {
-        groups.push_back({false});
-    }
-    
-    // Apply Bjorklund pairing algorithm
-    while (groups.size() > 2)
-    {
-        int pairCount = std::min(static_cast<int>(groups.size()) / 2, 
-                                std::min(onsets, steps - onsets));
-        
-        std::vector<std::vector<bool>> newGroups;
-        
-        // Pair groups from opposite ends
-        for (int i = 0; i < pairCount; ++i)
-        {
-            std::vector<bool> paired;
-            paired.insert(paired.end(), groups[i].begin(), groups[i].end());
-            paired.insert(paired.end(), groups[groups.size() - 1 - i].begin(), 
-                         groups[groups.size() - 1 - i].end());
-            newGroups.push_back(paired);
-        }
-        
-        // Add remaining unpaired groups
-        for (int i = pairCount; i < groups.size() - pairCount; ++i)
-        {
-            newGroups.push_back(groups[i]);
-        }
-        
-        groups = newGroups;
-        
-        if (groups.size() <= 2)
-            break;
-    }
-    
-    // Flatten result
-    std::vector<bool> result;
-    for (const auto& group : groups)
-    {
-        result.insert(result.end(), group.begin(), group.end());
-    }
-    
-    return result;
-}
-
-std::vector<bool> PatternEngine::rotatePattern(const std::vector<bool>& pattern, int offset)
-{
-    if (pattern.empty())
-        return pattern;
-    
-    std::vector<bool> rotated(pattern.size());
-    int size = static_cast<int>(pattern.size());
-    
-    for (int i = 0; i < size; ++i)
-    {
-        int newIndex = (i + offset) % size;
-        if (newIndex < 0)
-            newIndex += size;
-        rotated[newIndex] = pattern[i];
-    }
-    
-    return rotated;
-}
+// Pattern utility functions moved to UPIParser for centralization
 
 int PatternEngine::bellCurveOnsetCount(int steps)
 {

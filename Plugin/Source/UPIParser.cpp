@@ -26,11 +26,30 @@ UPIParser::ParseResult UPIParser::parse(const juce::String& input)
     
     juce::String cleaned = cleanInput(input);
     
-    // Check for combinations (+ or -)
-    if (cleaned.contains("+") || cleaned.contains("-"))
+    // Check for accent patterns first (before other processing)
+    ParseResult accentResult;
+    juce::String basePattern = cleaned;
+    
+    if (hasAccentPattern(cleaned))
+    {
+        juce::String accentStr = extractAccentPattern(cleaned);
+        basePattern = removeAccentPattern(cleaned);
+        
+        // Parse the accent pattern
+        accentResult = parseAccentPattern(accentStr);
+        if (!accentResult.isValid())
+        {
+            return createError("Invalid accent pattern: " + accentStr);
+        }
+        
+        DBG("UPIParser: Found accent pattern: " + accentStr + " -> " + patternToBinary(accentResult.pattern));
+    }
+    
+    // Check for combinations (+ or -) in the base pattern (without accents)
+    if (basePattern.contains("+") || basePattern.contains("-"))
     {
         // Handle pattern combinations - support multiple additions
-        auto parts = tokenize(cleaned, "+");
+        auto parts = tokenize(basePattern, "+");
         if (parts.size() >= 2)
         {
             // Special handling for polygon combinations - calculate LCM first
@@ -148,11 +167,20 @@ UPIParser::ParseResult UPIParser::parse(const juce::String& input)
         }
     }
     
-    // Parse as single pattern
-    auto result = parsePattern(cleaned);
+    // Parse as single pattern (using basePattern without accents)
+    auto result = parsePattern(basePattern);
     if (result.isValid())
     {
         result.type = ParseResult::Single;
+        
+        // Add accent pattern information if present
+        if (accentResult.isValid())
+        {
+            result.hasAccentPattern = true;
+            result.accentPattern = accentResult.pattern;
+            result.accentPatternName = accentResult.patternName;
+            DBG("UPIParser: Attached accent pattern to result: " + result.accentPatternName);
+        }
     }
     return result;
 }
@@ -287,7 +315,17 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
                 logFile.appendText("Transformed onsets: " + juce::String(countOnsets(transformed)) + "\n");
                 logFile.appendText("---\n");
                 
-                return createSuccess(transformed, "Progressive: " + cleaned);
+                auto result = createSuccess(transformed, "Progressive: " + cleaned);
+                
+                // Mark as progressive transformation so the UI knows to track progression steps
+                result.hasProgressiveOffset = true;
+                result.initialOffset = 0;  // Progressive transformations don't use offset
+                result.progressiveOffset = 1;  // Each trigger advances by 1 step
+                
+                // Store the pattern key for step tracking
+                result.progressivePatternKey = patternToBinary(baseResult.pattern) + juce::String(transformerType) + juce::String(targetOnsets);
+                
+                return result;
             }
         }
     }
@@ -382,70 +420,18 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
         }
     }
     
-    if (isHexPattern(cleaned))
-    {
-        // 0x92:8 format
-        if (cleaned.contains(":"))
-        {
-            auto parts = tokenize(cleaned, ":");
-            if (parts.size() == 2)
-            {
-                auto pattern = parseHex(parts[0].trim(), parts[1].trim().getIntValue());
-                return createSuccess(pattern, "Hex: " + parts[0].trim());
-            }
-        }
-        else
-        {
-            // Default to 8 steps if no explicit count
-            auto pattern = parseHex(cleaned, 8);
-            return createSuccess(pattern, "Hex: " + cleaned);
-        }
-    }
+    // Check for numeric patterns using generic handler
+    static const NumericPatternInfo numericPatterns[] = {
+        {"0x", NumericBase::Hexadecimal, "0123456789ABCDEFabcdef"},
+        {"d", NumericBase::Decimal, "0123456789"},
+        {"o", NumericBase::Octal, "01234567"}
+    };
     
-    // Check for decimal patterns (with or without step count)
-    if (isDecimalPattern(cleaned) || (cleaned.contains(":") && isDecimalPattern(cleaned.upToFirstOccurrenceOf(":", false, false))))
+    for (const auto& info : numericPatterns)
     {
-        // d146:8 format
-        if (cleaned.contains(":"))
+        if (isNumericPattern(cleaned, info))
         {
-            auto parts = tokenize(cleaned, ":");
-            if (parts.size() == 2)
-            {
-                int decimal = parts[0].substring(1).getIntValue(); // Remove 'd' prefix
-                auto pattern = parseDecimal(decimal, parts[1].trim().getIntValue());
-                return createSuccess(pattern, "Decimal: " + parts[0].trim());
-            }
-        }
-        else
-        {
-            // Default to appropriate steps if no explicit count
-            juce::String decimalStr = cleaned.substring(1); // Remove 'd' prefix
-            int decimal = decimalStr.getIntValue();
-            int minSteps = decimal > 0 ? static_cast<int>(std::ceil(std::log2(decimal + 1))) : 1;
-            int targetSteps = std::max(minSteps, 8);
-            auto pattern = parseDecimal(decimal, targetSteps);
-            return createSuccess(pattern, "Decimal: " + cleaned);
-        }
-    }
-    
-    // Check for octal patterns (with or without step count)
-    if (isOctalPattern(cleaned) || (cleaned.contains(":") && isOctalPattern(cleaned.upToFirstOccurrenceOf(":", false, false))))
-    {
-        // o222:8 format
-        if (cleaned.contains(":"))
-        {
-            auto parts = tokenize(cleaned, ":");
-            if (parts.size() == 2)
-            {
-                auto pattern = parseOctal(parts[0].trim(), parts[1].trim().getIntValue());
-                return createSuccess(pattern, "Octal: " + parts[0].trim());
-            }
-        }
-        else
-        {
-            // Default to 8 steps if no explicit count
-            auto pattern = parseOctal(cleaned, 8);
-            return createSuccess(pattern, "Octal: " + cleaned);
+            return parseNumericPattern(cleaned, info, 0); // 0 = auto-calculate steps
         }
     }
     
@@ -493,6 +479,65 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
                 auto pattern = parseRandom(onsets, steps);
                 return createSuccess(pattern, "R(" + juce::String(onsets) + "," + juce::String(steps) + ")");
             }
+        }
+    }
+    
+    if (isBarlowPattern(cleaned))
+    {
+        // B(onsets,steps) - Generate Barlow indispensability pattern
+        std::regex barlowRegex(R"([Bb]\((\d+),(\d+)\))");
+        std::smatch match;
+        std::string inputStr = cleaned.toStdString();
+        
+        if (std::regex_search(inputStr, match, barlowRegex))
+        {
+            int onsets = std::stoi(match[1].str());
+            int steps = std::stoi(match[2].str());
+            
+            // Create base pattern with single onset and transform to target using Barlow
+            std::vector<bool> basePattern(steps, false);
+            basePattern[0] = true; // Start with downbeat
+            
+            auto pattern = generateBarlowTransformation(basePattern, onsets, false);
+            return createSuccess(pattern, "B(" + juce::String(onsets) + "," + juce::String(steps) + ")");
+        }
+    }
+    
+    if (isWolrabPattern(cleaned))
+    {
+        // W(onsets,steps) - Generate Wolrab (anti-Barlow) pattern 
+        std::regex wolrabRegex(R"([Ww]\((\d+),(\d+)\))");
+        std::smatch match;
+        std::string inputStr = cleaned.toStdString();
+        
+        if (std::regex_search(inputStr, match, wolrabRegex))
+        {
+            int onsets = std::stoi(match[1].str());
+            int steps = std::stoi(match[2].str());
+            
+            // Create base pattern with single onset and transform to target using Wolrab
+            std::vector<bool> basePattern(steps, false);
+            basePattern[0] = true; // Start with downbeat
+            
+            auto pattern = generateBarlowTransformation(basePattern, onsets, true); // true = Wolrab mode
+            return createSuccess(pattern, "W(" + juce::String(onsets) + "," + juce::String(steps) + ")");
+        }
+    }
+    
+    if (isDilcuePattern(cleaned))
+    {
+        // D(onsets,steps) - Generate Dilcue (anti-Euclidean) pattern
+        std::regex dilcueRegex(R"([Dd]\((\d+),(\d+)\))");
+        std::smatch match;
+        std::string inputStr = cleaned.toStdString();
+        
+        if (std::regex_search(inputStr, match, dilcueRegex))
+        {
+            int onsets = std::stoi(match[1].str());
+            int steps = std::stoi(match[2].str());
+            
+            auto pattern = generateEuclideanTransformation(std::vector<bool>(steps, false), onsets, true); // true = anti-Euclidean
+            return createSuccess(pattern, "D(" + juce::String(onsets) + "," + juce::String(steps) + ")");
         }
     }
     
@@ -648,56 +693,19 @@ std::vector<bool> UPIParser::parseRandom(int onsets, int steps)
     return pattern;
 }
 
-std::vector<bool> UPIParser::parseHex(const juce::String& hexStr, int stepCount)
-{
-    // Remove 0x prefix
-    juce::String hex = hexStr.startsWith("0x") ? hexStr.substring(2) : hexStr;
-    
-    int decimal = hex.getHexValue32();
-    return parseDecimal(decimal, stepCount);
-}
-
 std::vector<bool> UPIParser::parseDecimal(int decimal, int stepCount)
 {
     std::vector<bool> pattern;
     pattern.reserve(stepCount);
     
-    // Convert decimal to binary, LEFT-TO-RIGHT: most significant bit first (leftmost bit = step 0)
-    // This matches webapp standard where E(3,8) = 0x92 and E(5,8) = 0xB6
+    // Convert decimal to binary, LEFT-TO-RIGHT: leftmost bit = LSB (least significant bit first)
+    // This gives strict left-to-right hex notation where 1000 = 0x1, 0100 = 0x2, etc.
     for (int i = 0; i < stepCount; ++i)
     {
-        pattern.push_back((decimal & (1 << (stepCount - 1 - i))) != 0);
+        pattern.push_back((decimal & (1 << i)) != 0);
     }
     
     return pattern;
-}
-
-std::vector<bool> UPIParser::parseOctal(const juce::String& octalStr, int stepCount)
-{
-    // Remove 'o' prefix if present
-    juce::String octal = octalStr.startsWith("o") ? octalStr.substring(1) : octalStr;
-    
-    // Convert octal string to decimal
-    int decimal = 0;
-    int base = 1;
-    
-    // Process from right to left (least significant digit first)
-    for (int i = octal.length() - 1; i >= 0; --i)
-    {
-        char digit = octal[i];
-        if (digit >= '0' && digit <= '7')
-        {
-            decimal += (digit - '0') * base;
-            base *= 8;
-        }
-        else
-        {
-            // Invalid octal digit
-            return std::vector<bool>(stepCount, false);
-        }
-    }
-    
-    return parseDecimal(decimal, stepCount);
 }
 
 std::vector<bool> UPIParser::parseMorse(const juce::String& morseStr)
@@ -928,56 +936,137 @@ juce::String UPIParser::patternToBinary(const std::vector<bool>& pattern)
 }
 
 //==============================================================================
-// Pattern recognition helpers
+// Table-driven pattern recognition
 
-bool UPIParser::isEuclideanPattern(const juce::String& input)
-{
-    return (input.startsWith("E(") || input.startsWith("e(")) && 
-           (input.endsWith(")") || input.contains(")@") || input.contains(")#"));
-}
-
-bool UPIParser::isPolygonPattern(const juce::String& input)
-{
-    return (input.startsWith("P(") || input.startsWith("p(")) && input.endsWith(")");
-}
-
-bool UPIParser::isBinaryPattern(const juce::String& input)
+// Custom validators for complex patterns
+static bool validateBinaryPattern(const juce::String& input)
 {
     juce::String processed = input.startsWith("b") ? input.substring(1) : input;
     if (processed.contains(":"))
         processed = processed.upToFirstOccurrenceOf(":", false, false);
-    
     return processed.containsOnly("01");
+}
+
+static bool validateMorsePattern(const juce::String& input)
+{
+    return input.startsWith("m:") || input.containsOnly(".-");
+}
+
+const std::map<UPIParser::PatternType, UPIParser::PatternRecognitionRule>& UPIParser::getPatternRules()
+{
+    static const std::map<PatternType, PatternRecognitionRule> rules = {
+        {PatternType::Euclidean, {"E(", ")", "e("}},
+        {PatternType::Polygon,   {"P(", ")", "p("}},
+        {PatternType::Random,    {"R(", ")", "r("}},
+        {PatternType::Barlow,    {"B(", ")", "b("}},
+        {PatternType::Wolrab,    {"W(", ")", "w("}},
+        {PatternType::Dilcue,    {"D(", ")", "d("}},
+        {PatternType::Array,     {"[", "]"}},
+        {PatternType::Binary,    {"", "", "", validateBinaryPattern}},
+        {PatternType::Hex,       {"0x", ""}},
+        {PatternType::Decimal,   {"d", ""}},
+        {PatternType::Octal,     {"o", ""}},
+        {PatternType::Morse,     {"", "", "", validateMorsePattern}}
+    };
+    return rules;
+}
+
+bool UPIParser::isPatternType(const juce::String& input, PatternType type)
+{
+    const auto& rules = getPatternRules();
+    auto it = rules.find(type);
+    if (it == rules.end()) return false;
+    
+    const auto& rule = it->second;
+    
+    // Use custom validator if provided
+    if (rule.customValidator) {
+        return rule.customValidator(input);
+    }
+    
+    // Check primary prefix and suffix
+    bool matchesStart = rule.startPrefix.isEmpty() || input.startsWith(rule.startPrefix);
+    if (!matchesStart && !rule.alternateStart.isEmpty()) {
+        matchesStart = input.startsWith(rule.alternateStart);
+    }
+    
+    bool matchesEnd = rule.endSuffix.isEmpty() || input.endsWith(rule.endSuffix);
+    
+    // Special handling for Euclidean patterns (supports @# suffixes)
+    if (type == PatternType::Euclidean && matchesStart) {
+        return input.endsWith(")") || input.contains(")@") || input.contains(")#");
+    }
+    
+    return matchesStart && matchesEnd;
+}
+
+//==============================================================================
+// Legacy pattern recognition helpers (for backward compatibility)
+
+bool UPIParser::isEuclideanPattern(const juce::String& input)
+{
+    return isPatternType(input, PatternType::Euclidean);
+}
+
+bool UPIParser::isPolygonPattern(const juce::String& input)
+{
+    return isPatternType(input, PatternType::Polygon);
+}
+
+bool UPIParser::isBinaryPattern(const juce::String& input)
+{
+    return isPatternType(input, PatternType::Binary);
 }
 
 bool UPIParser::isArrayPattern(const juce::String& input)
 {
-    return input.startsWith("[") && input.contains("]");
+    return isPatternType(input, PatternType::Array);
 }
 
 bool UPIParser::isRandomPattern(const juce::String& input)
 {
-    return (input.startsWith("R(") || input.startsWith("r(")) && input.endsWith(")");
+    return isPatternType(input, PatternType::Random);
+}
+
+bool UPIParser::isBarlowPattern(const juce::String& input)
+{
+    return isPatternType(input, PatternType::Barlow);
+}
+
+bool UPIParser::isWolrabPattern(const juce::String& input)
+{
+    return isPatternType(input, PatternType::Wolrab);
+}
+
+bool UPIParser::isDilcuePattern(const juce::String& input)
+{
+    return isPatternType(input, PatternType::Dilcue);
 }
 
 bool UPIParser::isHexPattern(const juce::String& input)
 {
-    return input.startsWith("0x");
+    // For hex patterns, we still need the detailed validation
+    static const NumericPatternInfo hexInfo = {"0x", NumericBase::Hexadecimal, "0123456789ABCDEFabcdef"};
+    return isNumericPattern(input, hexInfo);
 }
 
 bool UPIParser::isDecimalPattern(const juce::String& input)
 {
-    return input.startsWith("d") && input.substring(1).containsOnly("0123456789");
+    // For decimal patterns, we still need the detailed validation
+    static const NumericPatternInfo decimalInfo = {"d", NumericBase::Decimal, "0123456789"};
+    return isNumericPattern(input, decimalInfo);
 }
 
 bool UPIParser::isOctalPattern(const juce::String& input)
 {
-    return input.startsWith("o") && input.substring(1).containsOnly("01234567");
+    // For octal patterns, we still need the detailed validation
+    static const NumericPatternInfo octalInfo = {"o", NumericBase::Octal, "01234567"};
+    return isNumericPattern(input, octalInfo);
 }
 
 bool UPIParser::isMorsePattern(const juce::String& input)
 {
-    return input.startsWith("m:") || input.containsOnly(".-");
+    return isPatternType(input, PatternType::Morse);
 }
 
 //==============================================================================
@@ -999,6 +1088,176 @@ bool UPIParser::hasTransformationPrefix(const juce::String& input)
 {
     return input.startsWith("~") || input.startsWith("inv ") || 
            input.startsWith("rev ") || input.startsWith("comp ");
+}
+
+//==============================================================================
+// Accent pattern utilities
+
+/**
+ * Checks if input contains accent pattern notation.
+ * 
+ * Accent patterns use curly bracket notation: {accent}pattern or pattern{accent}
+ * Examples: {100}E(3,8), {10010}E(5,8), {E(2,5)}B(3,13)
+ * 
+ * @param input The UPI string to check
+ * @return true if contains { and } characters
+ */
+bool UPIParser::hasAccentPattern(const juce::String& input)
+{
+    return input.contains("{") && input.contains("}");
+}
+
+/**
+ * Extracts the accent pattern from curly brackets.
+ * 
+ * From "{100}E(3,8)" extracts "100"
+ * From "{E(2,5)}B(3,13)" extracts "E(2,5)"
+ * 
+ * @param input UPI string containing accent pattern
+ * @return Content between { and } characters, or empty string if not found
+ */
+juce::String UPIParser::extractAccentPattern(const juce::String& input)
+{
+    int start = input.indexOfChar('{');
+    int end = input.indexOfChar('}');
+    
+    if (start >= 0 && end > start)
+    {
+        return input.substring(start + 1, end);
+    }
+    
+    return "";
+}
+
+juce::String UPIParser::removeAccentPattern(const juce::String& input)
+{
+    int start = input.indexOfChar('{');
+    int end = input.indexOfChar('}');
+    
+    if (start >= 0 && end > start)
+    {
+        // Remove the entire {accent} portion
+        return input.substring(0, start) + input.substring(end + 1);
+    }
+    
+    return input;
+}
+
+/**
+ * Parses accent pattern string into binary pattern.
+ * 
+ * Accent patterns support the same notation as rhythm patterns:
+ * - Binary: "100", "10010", "101"
+ * - Algorithmic: "E(2,5)", "P(3,0)", "B(3,8)"
+ * - Numeric: "0x5:8", "42:8", "[0,2]:8"
+ * 
+ * Design Decision: Accent patterns are independent of rhythm patterns
+ * and cycle when different lengths (polyrhythmic accents).
+ * 
+ * @param accentStr The accent pattern string to parse
+ * @return ParseResult with binary accent pattern
+ */
+UPIParser::ParseResult UPIParser::parseAccentPattern(const juce::String& accentStr)
+{
+    if (accentStr.isEmpty())
+        return createError("Empty accent pattern");
+    
+    // Accent patterns can use any of the same notations as rhythm patterns
+    // Binary patterns like "100", "10010", etc.
+    if (accentStr.containsOnly("01"))
+    {
+        std::vector<bool> pattern;
+        for (int i = 0; i < accentStr.length(); ++i)
+        {
+            pattern.push_back(accentStr[i] == '1');
+        }
+        
+        auto result = createSuccess(pattern, "accent_" + accentStr);
+        result.patternName = "accent_" + accentStr;
+        return result;
+    }
+    
+    // For other pattern types, recursively parse using the main pattern parser
+    // This allows accent patterns like {E(3,8)}, {P(5,0)}, etc.
+    auto result = parsePattern(accentStr);
+    if (result.isValid())
+    {
+        result.patternName = "accent_" + accentStr;
+        return result;
+    }
+    
+    return createError("Invalid accent pattern format: " + accentStr);
+}
+
+//==============================================================================
+// Generic numeric pattern handler
+
+bool UPIParser::isNumericPattern(const juce::String& input, const NumericPatternInfo& info)
+{
+    if (!input.startsWith(info.prefix))
+        return false;
+    
+    juce::String content = input.substring(info.prefix.length());
+    
+    // Handle step count specification (e.g., "0xFF:16")
+    if (content.contains(":"))
+        content = content.upToFirstOccurrenceOf(":", false, false);
+    
+    return content.containsOnly(info.validChars);
+}
+
+UPIParser::ParseResult UPIParser::parseNumericPattern(const juce::String& input, const NumericPatternInfo& info, int stepCount)
+{
+    juce::String content = input.substring(info.prefix.length());
+    int explicitSteps = stepCount;
+    
+    // Extract step count if specified
+    if (content.contains(":"))
+    {
+        juce::String stepStr = content.fromFirstOccurrenceOf(":", false, false);
+        explicitSteps = stepStr.getIntValue();
+        content = content.upToFirstOccurrenceOf(":", false, false);
+    }
+    
+    // Convert to decimal based on base
+    int decimal = 0;
+    switch (info.base)
+    {
+        case NumericBase::Binary:
+            for (int i = 0; i < content.length(); ++i)
+                if (content[i] == '1')
+                    decimal |= (1 << (content.length() - 1 - i));
+            break;
+            
+        case NumericBase::Octal:
+            for (int i = 0; i < content.length(); ++i)
+            {
+                decimal *= 8;
+                decimal += (content[i] - '0');
+            }
+            break;
+            
+        case NumericBase::Decimal:
+            decimal = content.getIntValue();
+            break;
+            
+        case NumericBase::Hexadecimal:
+            decimal = content.getHexValue32();
+            break;
+    }
+    
+    // Calculate appropriate step count
+    if (explicitSteps <= 0)
+    {
+        if (info.base == NumericBase::Binary)
+            explicitSteps = content.length();
+        else
+            explicitSteps = decimal > 0 ? static_cast<int>(std::ceil(std::log2(decimal + 1))) : 1;
+        explicitSteps = std::max(explicitSteps, 8);
+    }
+    
+    auto pattern = parseDecimal(decimal, explicitSteps);
+    return createSuccess(pattern, info.prefix + content + ":" + juce::String(explicitSteps));
 }
 
 //==============================================================================
@@ -1026,30 +1285,93 @@ UPIParser::ParseResult UPIParser::parsePolygonForCombination(const juce::String&
 
 // Progressive transformation state - stores current pattern for each key
 static std::map<juce::String, std::vector<bool>> progressivePatterns;
+static std::map<juce::String, int> progressiveAccessCount; // Track access frequency for cleanup
+static std::map<juce::String, int> progressiveStepCount; // Track current step number for each pattern
+static const int MAX_PROGRESSIVE_STATES = 100; // Limit to prevent unbounded growth
 
+// Cleanup function to prevent unbounded growth
+static void cleanupProgressiveStates()
+{
+    if (progressivePatterns.size() <= MAX_PROGRESSIVE_STATES) return;
+    
+    DBG("Progressive states cleanup: " + juce::String(progressivePatterns.size()) + " states, cleaning up...");
+    
+    // Find least frequently used patterns
+    std::vector<std::pair<int, juce::String>> accessCounts;
+    for (const auto& pair : progressiveAccessCount)
+    {
+        accessCounts.push_back({pair.second, pair.first});
+    }
+    
+    // Sort by access count (ascending - least used first)
+    std::sort(accessCounts.begin(), accessCounts.end());
+    
+    // Remove the least used patterns (keep only the most recent half)
+    int toRemove = progressivePatterns.size() - (MAX_PROGRESSIVE_STATES / 2);
+    for (int i = 0; i < toRemove && i < accessCounts.size(); ++i)
+    {
+        const juce::String& keyToRemove = accessCounts[i].second;
+        progressivePatterns.erase(keyToRemove);
+        progressiveAccessCount.erase(keyToRemove);
+        progressiveStepCount.erase(keyToRemove);
+    }
+    
+    DBG("Progressive states after cleanup: " + juce::String(progressivePatterns.size()) + " states remaining");
+}
+
+/**
+ * Applies progressive transformation to a base pattern, stepping through onset counts.
+ * 
+ * This function implements the core progressive transformation logic for the ">" syntax.
+ * It maintains state between calls to create smooth transitions from base pattern to target.
+ * 
+ * Design Decisions:
+ * - Uses pattern + transformer + target as unique key for state management
+ * - Loops back to base pattern when target is reached (continuous cycling)
+ * - Increments step counter AFTER pattern generation for UI consistency
+ * - Implements LRU cleanup to prevent unbounded memory growth
+ * 
+ * @param basePattern   The starting pattern for transformation
+ * @param transformerType  'e'=Euclidean, 'b'=Barlow, 'w'=Wolrab, 'd'=Dilcue
+ * @param targetOnsets  Target number of onsets to progress toward
+ * @return Next pattern in the progressive sequence
+ */
 std::vector<bool> UPIParser::applyProgressiveTransformation(const std::vector<bool>& basePattern, char transformerType, int targetOnsets)
 {
     // Create a unique key for this progressive pattern
+    // Key format: "basePattern + transformerType + targetOnsets"
+    // Example: "10000000e8" for E(1,8)E>8
     juce::String patternKey = patternToBinary(basePattern) + juce::String(transformerType) + juce::String(targetOnsets);
     
     DBG("Progressive transformation called:");
     DBG("   Pattern key: " + patternKey);
     DBG("   Target onsets: " + juce::String(targetOnsets));
     
+    // Check if cleanup is needed before proceeding
+    // Prevents unbounded growth of progressive state maps
+    cleanupProgressiveStates();
+    
+    // Track access for LRU cleanup
+    // More frequently accessed patterns are kept longer
+    progressiveAccessCount[patternKey]++;
+    
     // Initialize or get the current pattern state
     std::vector<bool> currentPattern;
-    bool isFirstCall = false;
     
     if (progressivePatterns.find(patternKey) == progressivePatterns.end())
     {
         // First time - return base pattern directly without transformation
+        // This ensures the user sees the starting pattern on initial trigger
         progressivePatterns[patternKey] = basePattern;
+        progressiveStepCount[patternKey] = 1; // UI shows step 1 for base pattern
         DBG("   First call - returning base pattern: " + patternToBinary(basePattern));
+        DBG("   Step count: " + juce::String(progressiveStepCount[patternKey]));
         return basePattern;
     }
     else
     {
         // Get the current state from previous transformation
+        // This continues the progressive sequence from where it left off
         currentPattern = progressivePatterns[patternKey];
         DBG("   Continuing from stored pattern: " + patternToBinary(currentPattern));
     }
@@ -1057,14 +1379,27 @@ std::vector<bool> UPIParser::applyProgressiveTransformation(const std::vector<bo
     int currentOnsets = countOnsets(currentPattern);
     DBG("   Current onsets: " + juce::String(currentOnsets));
     
+    // Check if we've reached the target - if so, loop back to base pattern
+    // This creates continuous cycling behavior for live performance
+    if (currentOnsets == targetOnsets)
+    {
+        DBG("   Target reached! Looping back to base pattern");
+        progressivePatterns[patternKey] = basePattern;
+        progressiveStepCount[patternKey] = 1; // Reset UI to step 1
+        DBG("   Reset step count: " + juce::String(progressiveStepCount[patternKey]));
+        return basePattern;
+    }
+    
     // Calculate the next step in the progression
+    // Direction: +1 for concentration (adding onsets), -1 for dilution (removing onsets)
     int direction = (targetOnsets > currentOnsets) ? 1 : -1;
     int nextOnsets = currentOnsets + direction;
     
     DBG("   Direction: " + juce::String(direction));
     DBG("   Next onsets target: " + juce::String(nextOnsets));
     
-    // Clamp to valid range
+    // Clamp to valid range to prevent overshooting the target
+    // This ensures we don't go beyond the target onset count
     if (direction > 0)
     {
         nextOnsets = std::min(nextOnsets, targetOnsets);
@@ -1077,42 +1412,59 @@ std::vector<bool> UPIParser::applyProgressiveTransformation(const std::vector<bo
     DBG("   Clamped next onsets: " + juce::String(nextOnsets));
     
     // Transform from current pattern to next step
+    // Each transformer type uses different algorithms for onset placement/removal
     std::vector<bool> result;
     
     switch (transformerType)
     {
         case 'b': // Barlow transformation
         {
+            // Uses indispensability theory for musically intelligent onset placement
+            // Higher indispensability = more likely to have onsets
             result = generateBarlowTransformation(currentPattern, nextOnsets, false);
             break;
         }
         case 'w': // Wolrab (anti-Barlow) transformation
         {
+            // Inverts Barlow logic: lower indispensability = more likely to have onsets
+            // Creates anti-metrical, groove-oriented patterns
             result = generateBarlowTransformation(currentPattern, nextOnsets, true);
             break;
         }
         case 'e': // Euclidean transformation
         {
+            // Uses Euclidean algorithm for even distribution
+            // Maintains rhythmic regularity during transformation
             result = generateEuclideanTransformation(currentPattern, nextOnsets, false);
             break;
         }
         case 'd': // Dilcue (anti-Euclidean) transformation
         {
+            // Inverts Euclidean logic for more irregular patterns
+            // Creates syncopated, unexpected rhythmic structures
             result = generateEuclideanTransformation(currentPattern, nextOnsets, true);
             break;
         }
         default:
         {
+            // Fallback: return current pattern unchanged
             result = currentPattern;
             break;
         }
     }
     
-    // Store the result for the next step
+    // Store the result for the next step 
+    // This becomes the current pattern for the next transformation call
     progressivePatterns[patternKey] = result;
+    
+    // Increment step counter to reflect what we're about to return
+    // This ensures the UI shows the correct step number (1-based)
+    // Step 1 = base pattern, Step 2 = first transformation, etc.
+    progressiveStepCount[patternKey]++;
     
     DBG("   Final result: " + patternToBinary(result));
     DBG("   Final onsets: " + juce::String(countOnsets(result)));
+    DBG("   Returning step: " + juce::String(progressiveStepCount[patternKey]));
     
     return result;
 }
@@ -1215,60 +1567,89 @@ std::vector<bool> UPIParser::generateEuclideanTransformation(const std::vector<b
 
 double UPIParser::calculateBarlowIndispensability(int position, int stepCount)
 {
-    // Calculate base indispensability using Barlow's method with prime factorization
+    // Authentic Barlow indispensability based on Clarence Barlow's theory
+    // Uses algorithmic approach that works for ALL step counts including primes
+    
+    if (position == 0) {
+        // Downbeat always has maximum indispensability
+        return 10.0;
+    }
+    
+    // Calculate indispensability using metric strength theory
+    // This creates proper hierarchy even for prime step counts
+    
     double indispensability = 0.0;
-    int currentStepCount = stepCount;
-    int currentPosition = position;
     
-    // Check divisibility by powers of 2 first (most important in Western rhythm)
-    while (currentStepCount % 2 == 0 && currentPosition % 2 == 0)
-    {
-        indispensability += 1.0 / 2.0; // Strong beats get higher values
-        currentStepCount /= 2;
-        currentPosition /= 2;
+    // Method 1: GCD-based metric strength (works for composite numbers)
+    int gcd_value = gcd(position, stepCount);
+    if (gcd_value > 1) {
+        // Position aligns with a metric subdivision
+        indispensability = static_cast<double>(gcd_value) / stepCount * 10.0;
     }
     
-    // Check divisibility by 3 (important for compound meters)
-    while (currentStepCount % 3 == 0 && currentPosition % 3 == 0)
-    {
-        indispensability += 1.0 / 3.0;
-        currentStepCount /= 3;
-        currentPosition /= 3;
-    }
+    // Method 2: Fractional position strength (works for ALL numbers including primes)
+    // Calculate how this position relates to common musical subdivisions
+    double positionRatio = static_cast<double>(position) / stepCount;
     
-    // Check other prime factors
-    for (int prime = 5; prime <= currentStepCount; prime += 2)
-    {
-        if (currentStepCount % prime == 0 && currentPosition % prime == 0)
-        {
-            indispensability += 1.0 / prime;
-            while (currentStepCount % prime == 0 && currentPosition % prime == 0)
-            {
-                currentStepCount /= prime;
-                currentPosition /= prime;
-            }
+    // Check alignment with common musical fractions
+    double fractionStrengths[] = {
+        1.0/2.0,  // Half (strongest secondary accent)
+        1.0/4.0, 3.0/4.0,  // Quarters
+        1.0/3.0, 2.0/3.0,  // Thirds
+        1.0/8.0, 3.0/8.0, 5.0/8.0, 7.0/8.0,  // Eighths
+        1.0/6.0, 5.0/6.0,  // Sixths
+    };
+    
+    double fractionValues[] = {
+        5.0,      // Half gets strong accent
+        3.0, 3.0, // Quarters
+        2.5, 2.5, // Thirds  
+        1.5, 1.5, 1.5, 1.5, // Eighths
+        1.0, 1.0  // Sixths
+    };
+    
+    // Find closest musical fraction and assign its strength
+    double closestDistance = 1.0;
+    double fractionStrength = 0.0;
+    
+    for (int i = 0; i < 11; ++i) {
+        double distance = std::abs(positionRatio - fractionStrengths[i]);
+        if (distance < closestDistance) {
+            closestDistance = distance;
+            fractionStrength = fractionValues[i];
         }
     }
     
-    // Base indispensability for positions that don't align with strong metric divisions
-    if (indispensability == 0.0)
-    {
-        indispensability = 0.1;
+    // Apply fraction strength if it's close enough (tolerance for discrete positions)
+    double tolerance = 0.5 / stepCount; // Half a step tolerance
+    if (closestDistance <= tolerance) {
+        indispensability = std::max(indispensability, fractionStrength);
     }
     
-    // Special position bonuses to ensure correct ordering
-    if (position == 0) 
-    {
-        // Downbeat gets small bonus to break ties with other strong beats
-        indispensability += 0.01; 
-    }
-    else if (position == stepCount - 1) 
-    {
-        // Pickup beat has high indispensability but never higher than downbeat
-        indispensability = std::max(indispensability, 0.75);
+    // Method 3: Position-based weighting for remaining positions
+    // Creates hierarchy based on distance from strong positions
+    if (indispensability < 0.5) {
+        // Distance from center (creates symmetrical hierarchy)
+        double centerDistance = std::abs(position - stepCount / 2.0) / (stepCount / 2.0);
+        
+        // Distance from edges (pickup and anacrusis effects)
+        double edgeDistance = std::min(position, stepCount - position) / (stepCount / 2.0);
+        
+        // Combine for unique values that avoid sequential filling
+        indispensability = (1.0 - centerDistance * 0.3) + (edgeDistance * 0.2);
+        
+        // Add small position-dependent variation to break ties
+        indispensability += (position % 3) * 0.01 + (position % 5) * 0.005;
     }
     
-    return indispensability;
+    // Special position bonuses
+    if (position == stepCount - 1) {
+        // Pickup beat (last position) gets high indispensability
+        indispensability = std::max(indispensability, 7.0);
+    }
+    
+    // Ensure all positions have unique values and avoid sequential patterns
+    return std::max(indispensability, 0.1 + (position * 0.001));
 }
 
 std::vector<bool> UPIParser::diluteByBarlow(const std::vector<bool>& pattern, int targetOnsets, 
@@ -1360,12 +1741,27 @@ std::vector<bool> UPIParser::concentrateByBarlow(const std::vector<bool>& patter
 void UPIParser::resetProgressiveState(const juce::String& patternKey)
 {
     progressivePatterns.erase(patternKey);
+    progressiveAccessCount.erase(patternKey);
+    progressiveStepCount.erase(patternKey);
 }
 
 void UPIParser::resetAllProgressiveStates()
 {
-    DBG("Resetting ALL progressive states");
+    DBG("Resetting ALL progressive states (" + juce::String(progressivePatterns.size()) + " patterns)");
     progressivePatterns.clear();
+    progressiveAccessCount.clear();
+    progressiveStepCount.clear();
+}
+
+int UPIParser::getProgressiveStepCount(const juce::String& patternKey)
+{
+    auto it = progressiveStepCount.find(patternKey);
+    if (it != progressiveStepCount.end())
+    {
+        // Return the current step count directly
+        return it->second;
+    }
+    return 1; // Default to step 1 if not found
 }
 
 //==============================================================================

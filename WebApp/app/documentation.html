@@ -932,51 +932,156 @@ velocity: 127, // Maximum velocity for accent patterns</div>
             
             <!-- Pattern Input Section -->
             <section id="pattern-input" class="docs-section">
-                <h2>📝 Pattern Input System</h2>
+                <h2>📝 Universal Pattern Input (UPI) System</h2>
                 
-                <h3>Supported Formats</h3>
+                <p>The UPI system provides a comprehensive notation for rhythm patterns, supporting everything from simple binary patterns to complex progressive transformations with accent layers.</p>
                 
-                <h4>Geometric Patterns</h4>
+                <h3>Basic Pattern Generation</h3>
+                
+                <h4>Algorithmic Patterns</h4>
                 <div class="code-example">
-P(3,1)           # 3-sided polygon with offset 1
-P(3,1)+P(5,0)    # Combined polygons with automatic LCM expansion
-P(3,0)+P(5,1)-P(2,0)  # Perfect balance via subtraction
-tri, pent, hept, oct   # Shorthand notation
+E(3,8)           # Euclidean: Even distribution (10010010)
+B(3,8)           # Barlow: Indispensability-based (10001010)
+W(3,8)           # Wolrab: Anti-Barlow (01100100)
+D(3,8)           # Dilcue: Anti-Euclidean (01101001)
+P(5,12,0)        # Pentagon: 5 vertices, 12 steps, 0 offset
+R(4,8,42)        # Random: 4 onsets, 8 steps, seed 42
                 </div>
                 
-                <h4>Euclidean Rhythms</h4>
+                <h4>Binary and Numeric Patterns</h4>
                 <div class="code-example">
-E(3,8)           # 3 onsets distributed across 8 steps
-E(3,8,2)         # With offset of 2
-tresillo         # Traditional name for E(3,8)
-comp E(3,8)      # Euclidean complement
+101010           # Binary: Direct bit pattern
+0x2A:8           # Hexadecimal: 42 in hex (00101010)
+0o52:8           # Octal: 42 in octal (00101010)
+42:8             # Decimal: 42 as binary (00101010)
+[0,2,4,6]:8      # Onset array: Positions 0,2,4,6 in 8 steps
                 </div>
                 
-                <h4>Random Patterns</h4>
+                <h3>Progressive Transformations</h3>
+                
+                <h4>Manual Control (Plugin ">" Syntax)</h4>
                 <div class="code-example">
-R(3,8)           # 3 random onsets distributed across 8 steps
-R(5,16)          # 5 random onsets across 16 steps
-R(r,8)           # Bell curve distribution: likely 3-5 onsets, rarely 0-1 or 7-8
-R(r,16)          # Bell curve distribution: likely 6-10 onsets, avoids extremes
+E(1,8)E>8        # Progressive Euclidean: 1→8 onsets (manual trigger)
+E(8,8)B>1        # Progressive Barlow dilution: 8→1 onsets
+B(3,13)W>11      # Progressive Barlow to Wolrab: 3→11 onsets
+E(1,8)@3         # Progressive offset: rotation by 3 steps
                 </div>
                 
-                <h4>Binary and Numeric</h4>
-                <div class="code-example">
-b101010          # Binary representation
-0x92:8           # Hexadecimal with step count
-0o111            # Octal representation
-73               # Decimal representation
-[0,3,6]:8        # Onset array with step count
+                <div class="highlight">
+                    <strong>🎛️ Plugin Usage:</strong> In the audio plugin, progressive transformations with ">" syntax require manual triggers via the button or MIDI input. This gives you full control over when patterns advance.
                 </div>
                 
-                <h4>Advanced Operations</h4>
+                <h4>Automatic Advancement (WebApp "@#" Syntax)</h4>
                 <div class="code-example">
-~pattern         # Invert pattern
-rev pattern      # Retrograde (reverse)
-S:2 pattern      # Stretch by factor of 2
-Q:0.5 pattern    # Squeeze to half size
-pattern@3        # Rotate by 3 steps
-pattern;12       # Quantize to 12 steps
+E(1,8)@#5        # Auto-advancing offset: +5 rotation per beat
+E(1,8)E@#8       # Auto-advancing progression: toward 8 onsets
+                </div>
+                
+                <div class="highlight">
+                    <strong>🌐 WebApp Usage:</strong> The "@#" syntax provides automatic advancement for live performance and generative applications in the web version.
+                </div>
+                
+                <h3>Accent Pattern System (v0.03c+)</h3>
+                
+                <h4>Curly Bracket Notation</h4>
+                <div class="code-example">
+{100}E(3,8)      # Accent first onset of tresillo
+{10010}E(5,8)    # Accent 1st and 4th onsets of quintillo
+{10}E(4,8)       # Alternating accents (polyrhythmic)
+{E(2,5)}E(3,8)   # Euclidean accent pattern over rhythm
+{P(3,0)}B(5,13)  # All-accent pattern cycling over Barlow
+                </div>
+                
+                <div class="algorithm-box">
+                    <h4>Accent Pattern Features</h4>
+                    <ul>
+                        <li><strong>Polyrhythmic Cycling:</strong> Accents cycle when different length from rhythm</li>
+                        <li><strong>MIDI Enhancement:</strong> Accented notes have pitch offset and higher velocity</li>
+                        <li><strong>Visual Indication:</strong> Red for accented onsets, green for regular</li>
+                        <li><strong>Universal Support:</strong> Works with all pattern types (E, B, W, D, P, R)</li>
+                        <li><strong>Position Flexible:</strong> {accent}pattern or pattern{accent}</li>
+                    </ul>
+                </div>
+                
+                <h3>Scene Cycling</h3>
+                
+                <h4>Pipe Separator (|)</h4>
+                <div class="code-example">
+E(3,8)|P(5,12)           # Cycle between tresillo and pentagon
+100|110|101              # Cycle between binary patterns
+{100}E(3,8)|{010}B(5,13) # Different accent patterns per scene
+                </div>
+                
+                <div class="highlight">
+                    <strong>🎭 Scene Usage:</strong> Scenes allow you to create sequences of different patterns. Each trigger advances to the next scene in the sequence.
+                </div>
+                
+                <h3>Pattern Combinations</h3>
+                
+                <h4>Addition and Subtraction</h4>
+                <div class="code-example">
+E(3,8)+P(5,12)           # Union: Combine onsets
+E(3,8)-P(5,12)           # Subtraction: Remove overlaps
+P(3,0)+P(5,0)-P(2,0)     # Complex: Perfect balance via subtraction
+                </div>
+                
+                <div class="algorithm-box">
+                    <h4>Combination Mathematics</h4>
+                    <ul>
+                        <li><strong>LCM Expansion:</strong> Patterns expanded to least common multiple</li>
+                        <li><strong>Addition (+):</strong> Logical OR - union of all onsets</li>
+                        <li><strong>Subtraction (-):</strong> Remove onsets where both patterns have beats</li>
+                        <li><strong>Perfect Balance:</strong> Strategic subtraction can achieve perfect balance</li>
+                    </ul>
+                </div>
+                
+                <h3>Quick Reference</h3>
+                
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4>Pattern Types</h4>
+                        <ul>
+                            <li><strong>E(n,s):</strong> Euclidean</li>
+                            <li><strong>B(n,s):</strong> Barlow</li>
+                            <li><strong>W(n,s):</strong> Wolrab</li>
+                            <li><strong>D(n,s):</strong> Dilcue</li>
+                            <li><strong>P(v,s,o):</strong> Polygon</li>
+                            <li><strong>R(n,s,seed):</strong> Random</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <h4>Operators</h4>
+                        <ul>
+                            <li><strong>+:</strong> Combine patterns</li>
+                            <li><strong>-:</strong> Subtract patterns</li>
+                            <li><strong>|:</strong> Scene cycling</li>
+                            <li><strong>@:</strong> Offset rotation</li>
+                            <li><strong>>:</strong> Progressive (manual)</li>
+                            <li><strong>@#:</strong> Progressive (auto)</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <h4>Accent Notation</h4>
+                        <ul>
+                            <li><strong>{101}pattern:</strong> Binary accents</li>
+                            <li><strong>{E(2,5)}pattern:</strong> Euclidean accents</li>
+                            <li><strong>{P(3,0)}pattern:</strong> Polygon accents</li>
+                            <li><strong>pattern{101}:</strong> Postfix notation</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <h4>Number Systems</h4>
+                        <ul>
+                            <li><strong>101010:</strong> Binary</li>
+                            <li><strong>0x2A:8:</strong> Hexadecimal</li>
+                            <li><strong>0o52:8:</strong> Octal</li>
+                            <li><strong>42:8:</strong> Decimal</li>
+                            <li><strong>[0,2,4]:8:</strong> Onset array</li>
+                        </ul>
+                    </div>
                 </div>
             </section>
             

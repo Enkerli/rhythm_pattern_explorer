@@ -47,6 +47,14 @@ public:
         int initialOffset = 0;
         int progressiveOffset = 0;
         
+        // Accent pattern support
+        bool hasAccentPattern = false;
+        std::vector<bool> accentPattern;
+        juce::String accentPatternName;
+        
+        // Progressive transformation tracking
+        juce::String progressivePatternKey;
+        
         bool isValid() const { return type != Error; }
     };
     
@@ -61,9 +69,7 @@ public:
     static std::vector<bool> parseBinary(const juce::String& binaryStr, int stepCount = 0);
     static std::vector<bool> parseArray(const juce::String& arrayStr, int stepCount = 0);
     static std::vector<bool> parseRandom(int onsets, int steps);
-    static std::vector<bool> parseHex(const juce::String& hexStr, int stepCount);
     static std::vector<bool> parseDecimal(int decimal, int stepCount);
-    static std::vector<bool> parseOctal(const juce::String& octalStr, int stepCount = 8);
     static std::vector<bool> parseMorse(const juce::String& morseStr);
     
     // Pattern transformations
@@ -89,16 +95,45 @@ public:
     static juce::String patternToBinary(const std::vector<bool>& pattern);
 
 private:
-    // Pattern recognition helpers
+    // Pattern recognition - table-driven approach
+    enum class PatternType {
+        Euclidean, Polygon, Binary, Array, Random, Barlow, Wolrab, Dilcue, 
+        Hex, Decimal, Octal, Morse
+    };
+    
+    struct PatternRecognitionRule {
+        juce::String startPrefix;
+        juce::String endSuffix;
+        juce::String alternateStart = "";
+        bool (*customValidator)(const juce::String&) = nullptr;
+    };
+    
+    static bool isPatternType(const juce::String& input, PatternType type);
+    static const std::map<PatternType, PatternRecognitionRule>& getPatternRules();
+    
+    // Legacy pattern recognition helpers (for backward compatibility)
     static bool isEuclideanPattern(const juce::String& input);
     static bool isPolygonPattern(const juce::String& input);
     static bool isBinaryPattern(const juce::String& input);
     static bool isArrayPattern(const juce::String& input);
     static bool isRandomPattern(const juce::String& input);
+    static bool isBarlowPattern(const juce::String& input);
+    static bool isWolrabPattern(const juce::String& input);
+    static bool isDilcuePattern(const juce::String& input);
     static bool isHexPattern(const juce::String& input);
     static bool isDecimalPattern(const juce::String& input);
     static bool isOctalPattern(const juce::String& input);
     static bool isMorsePattern(const juce::String& input);
+    
+    // Generic numeric pattern handler
+    enum class NumericBase { Binary = 2, Octal = 8, Decimal = 10, Hexadecimal = 16 };
+    struct NumericPatternInfo {
+        juce::String prefix;
+        NumericBase base;
+        juce::String validChars;
+    };
+    static bool isNumericPattern(const juce::String& input, const NumericPatternInfo& info);
+    static ParseResult parseNumericPattern(const juce::String& input, const NumericPatternInfo& info, int stepCount);
     
     // Polygon combination helper
     static ParseResult parsePolygonForCombination(const juce::String& polygonStr, int targetSteps);
@@ -116,6 +151,7 @@ private:
     
 public:
     static void resetAllProgressiveStates();
+    static int getProgressiveStepCount(const juce::String& patternKey);
     
     // Progressive offset engine support
     static void setProgressiveOffsetEngine(class PatternEngine* engine);
@@ -127,6 +163,12 @@ public:
     static juce::String cleanInput(const juce::String& input);
     static juce::StringArray tokenize(const juce::String& input, const juce::String& delimiter);
     static bool hasTransformationPrefix(const juce::String& input);
+    
+    // Accent pattern utilities
+    static bool hasAccentPattern(const juce::String& input);
+    static juce::String extractAccentPattern(const juce::String& input);
+    static juce::String removeAccentPattern(const juce::String& input);
+    static ParseResult parseAccentPattern(const juce::String& accentStr);
     
     // Error handling
     static ParseResult createError(const juce::String& message);

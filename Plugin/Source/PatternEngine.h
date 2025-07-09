@@ -72,6 +72,7 @@ public:
     void triggerProgressiveOffset();
     int getCurrentOffset() const { return currentOffset; }
     bool hasProgressiveOffsetEnabled() const { return hasProgressiveOffset; }
+    int getProgressiveTriggerCount() const { return triggerCount; }
 
 private:
     //==============================================================================
@@ -88,8 +89,7 @@ private:
     //==============================================================================
     // Helper methods
     std::vector<bool> euclideanDistribution(int onsets, int steps);
-    std::vector<bool> bjorklundAlgorithm(int onsets, int steps);
-    std::vector<bool> rotatePattern(const std::vector<bool>& pattern, int offset);
+    // Pattern utility functions moved to UPIParser for centralization
     int bellCurveOnsetCount(int steps);
     double calculateGCD(double a, double b);
     

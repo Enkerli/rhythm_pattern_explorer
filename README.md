@@ -72,6 +72,7 @@ python3 -m http.server 8000
 - **Polygon Patterns**: Geometric rhythm generation
 - **Random Patterns**: Controlled randomization with seeds
 - **Binary Patterns**: Direct binary representation
+- **Accent Patterns**: Suprasegmental accent layer with curly bracket notation
 
 ### Progressive Transformations
 - **Barlow (B)**: Indispensability-based pattern evolution
@@ -79,15 +80,65 @@ python3 -m http.server 8000
 - **Wolrab (W)**: Anti-Barlow transformations
 - **Dilcue (D)**: Anti-Euclidean transformations
 
+### Accent Pattern System (v0.03c+)
+- **Curly Bracket Notation**: `{accent}pattern` or `pattern{accent}`
+- **Polyrhythmic Cycling**: Automatic cycling when accent/rhythm lengths differ
+- **MIDI Enhancement**: Accented notes have +5 semitones pitch and higher velocity
+- **Visual Feedback**: Red for accented onsets, green for regular onsets
+- **Universal Support**: Works with all pattern types (E, P, R, B, W, D)
+
 ### UPI (Universal Pattern Input) Notation
+
+#### Basic Pattern Generation
 ```
-E(3,8)                    # Basic Euclidean: 10010010
-E(1,8)E>8                 # Progressive: 1→11111111
-E(8,8)B>1                 # Barlow dilution: 11111111→10000000
-P(5,12,0)                 # Pentagon rhythm
-E(3,8)+P(5,12)           # Pattern combination
-E(3,8)*P(5,12)           # Pattern multiplication
-R(4,8,42)                # Random with seed
+E(3,8)                    # Euclidean: 3 onsets in 8 steps → 10010010
+B(3,8)                    # Barlow indispensability: 3 onsets in 8 steps → 10001010
+W(3,8)                    # Wolrab (anti-Barlow): 3 onsets in 8 steps → 01100100
+D(3,8)                    # Dilcue (anti-Euclidean): 3 onsets in 8 steps → 01101001
+P(5,12,0)                 # Pentagon rhythm: 5 vertices in 12 steps with 0 offset
+R(4,8,42)                 # Random: 4 onsets in 8 steps with seed 42
+```
+
+#### Progressive Transformations
+```
+E(1,8)E>8                 # Progressive Euclidean: 1→8 onsets (manual trigger)
+E(8,8)B>1                 # Progressive Barlow dilution: 8→1 onsets (manual trigger)
+B(3,13)W>11               # Progressive Barlow to Wolrab: 3→11 onsets
+E(1,8)@3                  # Progressive offset: rotation by 3 steps per trigger
+E(1,8)@#5                 # Auto-advancing offset: rotation by 5 steps per beat
+```
+
+#### Scene Cycling
+```
+E(3,8)|P(5,12)           # Scene cycling: alternate between tresillo and pentagon
+100|110|101              # Scene cycling: alternate between binary patterns
+{100}E(3,8)|{010}B(5,13) # Scene cycling with different accent patterns
+```
+
+#### Accent Patterns (v0.03c+)
+```
+{100}E(3,8)              # Accented tresillo: accent on first onset
+{10010}E(5,8)            # Quintillo with accents on 1st and 4th onsets
+{10}E(4,8)               # Alternating strong/weak accents (polyrhythmic)
+{E(2,5)}E(3,8)           # Euclidean accent pattern over Euclidean rhythm
+{P(3,0)}B(5,13)          # All-accent pattern cycling over Barlow rhythm
+{101}E(1,8)B>8           # Progressive transformation with accents
+```
+
+#### Pattern Combinations
+```
+E(3,8)+P(5,12)           # Pattern combination: union of onsets
+E(3,8)-P(5,12)           # Pattern subtraction: remove overlapping onsets
+P(3,0)+P(5,0)-P(2,0)     # Complex combination for perfect balance
+```
+
+#### Binary and Numeric Patterns
+```
+101010                   # Binary pattern: direct onset specification
+0x2A:8                   # Hexadecimal: 42 in hex spread over 8 steps
+0o52:8                   # Octal: 42 in octal spread over 8 steps
+42:8                     # Decimal: 42 spread over 8 steps
+[0,2,4,6]:8              # Onset array: specific positions in 8 steps
 ```
 
 ## Implementation Relationship
@@ -136,12 +187,16 @@ The **WebApp** serves as the **reference implementation** - all algorithms are f
 
 ## Version History
 
-### Current: v0.02a (July 2024) - Major Timing Fixes Release
-- ✅ **Timing Issues Resolved**: Fixed step advancement and animation problems
-- ✅ **BPM Range Expanded**: 20-666 BPM support (previously limited to 180 BPM)
-- ✅ **Performance Validated**: Bitwig Studio 5.3.12 stress tested
-- ✅ **Position Sync Fixed**: Eliminated host timeline interference
-- ✅ **Clean Interface**: Streamlined UPI-focused design
+### Current: v0.03c (January 2025) - Accent Patterns & Progressive Transformations Release
+- ✅ **Accent Pattern System**: Suprasegmental accent layer with curly bracket notation `{accent}pattern`
+- ✅ **Progressive Transformations**: Manual control with `>` syntax vs automatic with `@#` syntax
+- ✅ **B(n,s), W(n,s), D(n,s) Notations**: Complete pattern language with Barlow, Wolrab, and Dilcue
+- ✅ **Off-by-One Fixes**: Progressive transformations now correctly cycle 1-7 instead of 2-8
+- ✅ **Auto-Advancement Control**: Users can choose manual triggers or automatic progression
+- ✅ **Polyrhythmic Accent Cycling**: Accents cycle when different lengths from rhythm patterns
+- ✅ **MIDI Accent Enhancement**: Accented notes have pitch offset and higher velocity
+- ✅ **Visual Accent Indication**: Red for accented onsets, green for regular onsets
+- ✅ **Streamlined UI**: Only essential parameters exposed to hosts (Use Host Transport, MIDI Note, Trigger)
 
 ### Key Milestones
 - **v0.01**: Initial stable plugin release with core pattern engine

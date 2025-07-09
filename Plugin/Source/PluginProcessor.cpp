@@ -338,7 +338,8 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
                 currentStep.store(newStep);
                 
                 // Trigger progressive offset advancement when pattern completes a cycle
-                if (newStep == 0 && patternEngine.hasProgressiveOffsetEnabled())
+                // But only for old "@#" syntax, not new ">" syntax
+                if (newStep == 0 && patternEngine.hasProgressiveOffsetEnabled() && !currentUPIInput.contains(">"))
                 {
                     patternEngine.triggerProgressiveOffset();
                     // Re-apply the UPI pattern with new progressive offset (preserve accent position)
@@ -896,6 +897,13 @@ void RhythmPatternExplorerAudioProcessor::parseAndApplyUPI(const juce::String& u
     bool isProgressive = upiPattern.contains("#");
     DBG("   Is progressive: " + juce::String(isProgressive ? "YES" : "NO"));
     
+    // Check if this is a progressive transformation with ">" syntax
+    bool isProgressiveTransformation = upiPattern.contains(">");
+    if (isProgressiveTransformation) {
+        // Store the pattern key for step tracking
+        currentProgressivePatternKey = upiPattern;
+    }
+    
     auto parseResult = UPIParser::parse(upiPattern);
     
     if (parseResult.isValid())
@@ -913,10 +921,18 @@ void RhythmPatternExplorerAudioProcessor::parseAndApplyUPI(const juce::String& u
             patternEngine.setProgressiveOffset(true, parseResult.initialOffset, parseResult.progressiveOffset);
             DBG("   Progressive offset enabled: initial=" << parseResult.initialOffset 
                 << ", progressive=" << parseResult.progressiveOffset);
+                
+            // Store progressive pattern key for step tracking
+            if (!parseResult.progressivePatternKey.isEmpty())
+            {
+                currentProgressivePatternKey = parseResult.progressivePatternKey;
+                DBG("   Progressive pattern key stored: " << currentProgressivePatternKey);
+            }
         }
         else
         {
             patternEngine.setProgressiveOffset(false);
+            currentProgressivePatternKey.clear(); // Clear for non-progressive patterns
         }
         
         // Set up accent pattern if present
@@ -996,9 +1012,16 @@ void RhythmPatternExplorerAudioProcessor::checkMidiInputForTriggers(juce::MidiBu
                 bool hasProgressiveOffset = currentUPIInput.contains("+") && currentUPIInput.lastIndexOf("+") > 0;
                 bool hasProgressiveLengthening = currentUPIInput.contains("*") && currentUPIInput.lastIndexOf("*") > 0;
                 bool hasOldProgressiveOffset = currentUPIInput.contains("#");
+                bool hasProgressiveTransformation = currentUPIInput.contains(">"); // New progressive syntax
                 bool hasScenes = currentUPIInput.contains("|");
                 
-                if (hasProgressiveOffset || hasProgressiveLengthening || hasOldProgressiveOffset || hasScenes)
+                // Skip auto-advancement for progressive transformations with ">" syntax
+                if (hasProgressiveTransformation)
+                {
+                    DBG("RhythmPatternExplorer: MIDI input ignored for progressive transformation - manual trigger only");
+                    // Don't re-parse - progressive transformations should only advance on manual trigger
+                }
+                else if (hasProgressiveOffset || hasProgressiveLengthening || hasOldProgressiveOffset || hasScenes)
                 {
                     // Trigger progressive pattern advancement
                     if (hasProgressiveOffset || hasOldProgressiveOffset)
@@ -1050,9 +1073,16 @@ void RhythmPatternExplorerAudioProcessor::checkMidiInputForTriggers(juce::MidiBu
                 bool hasProgressiveOffset = currentUPIInput.contains("+") && currentUPIInput.lastIndexOf("+") > 0;
                 bool hasProgressiveLengthening = currentUPIInput.contains("*") && currentUPIInput.lastIndexOf("*") > 0;
                 bool hasOldProgressiveOffset = currentUPIInput.contains("#");
+                bool hasProgressiveTransformation = currentUPIInput.contains(">"); // New progressive syntax
                 bool hasScenes = currentUPIInput.contains("|");
                 
-                if (hasProgressiveOffset || hasProgressiveLengthening || hasOldProgressiveOffset || hasScenes)
+                // Skip auto-advancement for progressive transformations with ">" syntax
+                if (hasProgressiveTransformation)
+                {
+                    DBG("RhythmPatternExplorer: CC input ignored for progressive transformation - manual trigger only");
+                    // Don't re-parse - progressive transformations should only advance on manual trigger
+                }
+                else if (hasProgressiveOffset || hasProgressiveLengthening || hasOldProgressiveOffset || hasScenes)
                 {
                     if (hasProgressiveOffset || hasOldProgressiveOffset)
                     {
@@ -1238,6 +1268,18 @@ void RhythmPatternExplorerAudioProcessor::applyCurrentScenePattern()
         logDebug(DebugCategory::SCENE_CYCLING, 
             "Applied scene " + juce::String(currentSceneIndex) + " progressive lengthening: " + juce::String(progressiveLengthening) + " steps");
     }
+}
+
+int RhythmPatternExplorerAudioProcessor::getProgressiveTriggerCount() const
+{
+    // For progressive transformations with ">" syntax, get step count from UPIParser
+    if (!currentProgressivePatternKey.isEmpty())
+    {
+        return UPIParser::getProgressiveStepCount(currentProgressivePatternKey);
+    }
+    
+    // Fall back to PatternEngine's trigger count for old "@#" syntax
+    return patternEngine.getProgressiveTriggerCount();
 }
 
 //==============================================================================

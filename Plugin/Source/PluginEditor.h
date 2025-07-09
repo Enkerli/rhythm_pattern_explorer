@@ -131,6 +131,9 @@ private:
     void parseUPIPattern();
     void onParseButtonClicked();
     
+    // Step/Scene button update
+    void updateStepSceneButton();
+    
     // Documentation handling
     void toggleDocumentation();
     void createDocumentationHTML();
