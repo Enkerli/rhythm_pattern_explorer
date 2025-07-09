@@ -1,7 +1,7 @@
 # Rhythm Pattern Explorer v0.03d - Release Notes
 
 **Complete Documentation & Bug Fixes Release**  
-*Released: January 2025*
+*Released: July 2025*
 
 ## Installation
 
