@@ -187,7 +187,7 @@ The **WebApp** serves as the **reference implementation** - all algorithms are f
 
 ## Version History
 
-### Current: v0.03c (January 2025) - Accent Patterns & Progressive Transformations Release
+### Current: v0.03d (January 2025) - Complete Documentation & Bug Fixes Release
 - ✅ **Accent Pattern System**: Suprasegmental accent layer with curly bracket notation `{accent}pattern`
 - ✅ **Progressive Transformations**: Manual control with `>` syntax vs automatic with `@#` syntax
 - ✅ **B(n,s), W(n,s), D(n,s) Notations**: Complete pattern language with Barlow, Wolrab, and Dilcue

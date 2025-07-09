@@ -12,7 +12,7 @@
               pluginAAXCategory="2" companyName="Rhythm Pattern Explorer" companyWebsite="https://github.com/enkerli/rhythm_pattern_explorer"
               companyEmail="support@rhythmpatternexplorer.com" displaySplashScreen="1"
               reportAppUsage="1" splashScreenColour="Dark" projectLineFeed="&#10;"
-              version="1.0.0" defines="JUCE_DISPLAY_SPLASH_SCREEN=1&#10;JUCE_USE_DARK_SPLASH_SCREEN=1"
+              version="0.03d" defines="JUCE_DISPLAY_SPLASH_SCREEN=1&#10;JUCE_USE_DARK_SPLASH_SCREEN=1"
               pluginCharacteristicsValue="pluginWantsMidiIn,pluginProducesMidiOut,pluginIsMidiEffectPlugin"
               pluginFormats="buildVST3,buildAU">
   <MAINGROUP id="kFhzrE" name="Rhythm Pattern Explorer">
