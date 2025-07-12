@@ -350,11 +350,27 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
         }
     }
 
+    // FIRST STEP FIX: Track if we've processed step 0 in this buffer
+    static bool processedFirstStepThisBuffer = false;
+    if (!isPlaying) processedFirstStepThisBuffer = false; // Reset when not playing
+
     // BITWIG HIGH BPM FIX: Process samples with multiple step checking
     for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
     {
         if (isPlaying)
         {
+            // FIRST STEP FIX: Process step 0 immediately when playback starts
+            if (!wasPlaying && currentSample == 0 && currentStep.load() == 0 && !processedFirstStepThisBuffer)
+            {
+                processStep(midiMessages, sample);
+                processedFirstStepThisBuffer = true;
+                // Advance to next step to prevent double-triggering
+                int newStep = (currentStep.load() + 1) % patternEngine.getStepCount();
+                currentStep.store(newStep);
+                // Reset currentSample so normal timing continues correctly
+                currentSample = 0;
+            }
+            
             // CRITICAL FIX: Check for multiple steps per buffer at high BPM
             while (currentSample >= samplesPerStep && samplesPerStep > 0)
             {
@@ -729,6 +745,7 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
     if (isScenes)
     {
         // Handle scene cycling: pattern1|pattern2|pattern3
+        // CRITICAL: Split scenes BEFORE any UPI parsing to preserve individual accent patterns
         auto scenes = juce::StringArray::fromTokens(pattern, "|", "");
         
         // Log scene cycling detection
@@ -768,7 +785,8 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
             sceneProgressiveLengthening.clear();
             sceneBaseLengthPatterns.clear();
             
-            // Parse each scene and initialize its progressive state
+            // Parse each scene and initialize its progressive state  
+            // CRITICAL: Store original scene patterns with accent syntax intact
             for (const auto& scene : scenes) {
                 juce::String scenePattern = scene.trim();
                 scenePatterns.add(scenePattern);
