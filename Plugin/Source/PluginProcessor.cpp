@@ -41,6 +41,11 @@ RhythmPatternExplorerAudioProcessor::RhythmPatternExplorerAudioProcessor()
     addParameter(accentVelocityParam = new juce::AudioParameterFloat("accentVelocity", "Accent Velocity", 0.0f, 1.0f, 1.0f));
     addParameter(unaccentedVelocityParam = new juce::AudioParameterFloat("unaccentedVelocity", "Unaccented Velocity", 0.0f, 1.0f, 0.69f));
     
+    // Pattern Length parameters for Phase 2 temporal control
+    addParameter(patternLengthUnitParam = new juce::AudioParameterChoice("patternLengthUnit", "Pattern Length Unit", 
+        juce::StringArray{"Steps", "Beats", "Bars"}, 1)); // Default to "Beats"
+    addParameter(patternLengthValueParam = new juce::AudioParameterFloat("patternLengthValue", "Pattern Length Value", 0.125f, 32.0f, 8.0f));
+    
     // Initialize pattern engine with default Euclidean pattern
     patternEngine.generateEuclideanPattern(3, 8);
     
@@ -293,20 +298,41 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
 
     // Pattern updates are now handled via UPI input only
     
-    // Update timing if BPM changed - but preserve currentSample ratio
+    // Update timing if pattern length parameters changed
+    static int lastPatternLengthUnit = 1; // Default to Beats
+    static float lastPatternLengthValue = 8.0f;
+    bool patternLengthChanged = false;
+    
+    int currentPatternLengthUnit = patternLengthUnitParam->getIndex();
+    float currentPatternLengthValue = patternLengthValueParam->get();
+    
+    if (currentPatternLengthUnit != lastPatternLengthUnit || 
+        std::abs(currentPatternLengthValue - lastPatternLengthValue) > 0.001f) {
+        patternLengthChanged = true;
+        lastPatternLengthUnit = currentPatternLengthUnit;
+        lastPatternLengthValue = currentPatternLengthValue;
+    }
+    
+    // Update timing if BPM or pattern length changed - but preserve currentSample ratio
     static float lastBPM = 120.0f;
-    if (std::abs(currentBPM - lastBPM) > 0.1f) {
+    bool bpmChanged = std::abs(currentBPM - lastBPM) > 0.1f;
+    
+    if (bpmChanged || patternLengthChanged) {
         // BITWIG FIX: Preserve timing position when BPM changes
         double sampleRatio = (samplesPerStep > 0) ? (double)currentSample / samplesPerStep : 0.0;
         updateTiming();
         currentSample = static_cast<int>(sampleRatio * samplesPerStep);
         
         // Log BPM changes for debugging
-        if (currentBPM >= 180.0f) {
+        if (bpmChanged && currentBPM >= 180.0f) {
             juce::String message = juce::String::formatted("%.1f->%.1f, sampleRatio=%.3f, newCurrentSample=%d, newSamplesPerStep=%d",
                 lastBPM, currentBPM, sampleRatio, currentSample, samplesPerStep);
             logDebug(DebugCategory::BPM_SYNC, message);
         }
+    }
+    
+    // Always update lastBPM outside the if block
+    if (bpmChanged) {
         lastBPM = currentBPM;
     }
     
@@ -456,10 +482,37 @@ void RhythmPatternExplorerAudioProcessor::updateTiming()
 {
     float bpm = currentBPM;
     
-    // Calculate samples per step (16th notes at current BPM)
+    // Get pattern length parameters for Phase 2 temporal control
+    int lengthUnit = patternLengthUnitParam->getIndex(); // 0=Steps, 1=Beats, 2=Bars
+    float lengthValue = patternLengthValueParam->get();
+    
+    // Calculate samples per step using pattern length parameters
     double beatsPerSecond = bpm / 60.0;
-    double stepsPerSecond = beatsPerSecond * 4.0; // 16th note subdivisions
-    samplesPerStep = static_cast<int>(currentSampleRate / stepsPerSecond);
+    double patternLengthInBeats;
+    
+    switch (lengthUnit) {
+        case 0: // Steps mode - use 16th note subdivisions (default behavior)
+            patternLengthInBeats = lengthValue / 4.0; // Steps are 16th notes
+            break;
+        case 1: // Beats mode 
+            patternLengthInBeats = lengthValue; 
+            break;
+        case 2: // Bars mode
+            patternLengthInBeats = lengthValue * 4.0; // Assume 4/4 time
+            break;
+        default:
+            patternLengthInBeats = lengthValue; // Default to beats
+            break;
+    }
+    
+    // Calculate timing for entire pattern, then divide by number of steps
+    auto pattern = patternEngine.getCurrentPattern();
+    int patternSteps = static_cast<int>(pattern.size());
+    if (patternSteps <= 0) patternSteps = 8; // Fallback
+    
+    double patternDurationInSeconds = patternLengthInBeats / beatsPerSecond;
+    double stepDurationInSeconds = patternDurationInSeconds / patternSteps;
+    samplesPerStep = static_cast<int>(currentSampleRate * stepDurationInSeconds);
     
     // HIGH BPM FIX: Enhanced timing validation for Bitwig testing
     if (samplesPerStep <= 0) {
