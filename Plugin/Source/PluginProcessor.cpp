@@ -363,7 +363,7 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
             // FIRST STEP FIX: Process step 0 immediately when playback starts
             if (!wasPlaying && currentSample == 0 && currentStep.load() == 0 && !processedFirstStepThisBuffer)
             {
-                processStep(midiMessages, sample);
+                processStep(midiMessages, 0); // First step always at sample 0
                 processedFirstStepThisBuffer = true;
                 // Advance to next step to prevent double-triggering
                 int newStep = (currentStep.load() + 1) % patternEngine.getStepCount();
@@ -375,7 +375,15 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
             // CRITICAL FIX: Check for multiple steps per buffer at high BPM
             while (currentSample >= samplesPerStep && samplesPerStep > 0)
             {
-                processStep(midiMessages, sample);
+                // Calculate exact sample position where this step should occur
+                // stepSamplePosition = current sample - how much we've overshot the step boundary
+                int overshoot = currentSample - samplesPerStep;
+                int stepSamplePosition = sample - overshoot;
+                
+                // Ensure sample position is within buffer bounds
+                stepSamplePosition = juce::jlimit(0, buffer.getNumSamples() - 1, stepSamplePosition);
+                
+                processStep(midiMessages, stepSamplePosition);
                 currentSample -= samplesPerStep; // Subtract instead of reset to maintain fractional timing
                 int newStep = (currentStep.load() + 1) % patternEngine.getStepCount();
                 
