@@ -19,7 +19,93 @@
 - HTML documentation includes comprehensive UPI syntax guide
 - File-based delivery (not data URLs) for proper rendering
 
-## Recent Issues Resolved
+## Recent Issues Resolved  
+
+### CRITICAL: MIDI Trigger Logic Fix (July 2025)
+**Problem**: Patterns with both progressive transformations and scenes (like `{1000000}E(1,16)E>16|1010101010101010`) only triggered progressive transformations via MIDI input, never advancing to scenes, unlike Enter key behavior.
+
+**Root Cause**: MIDI trigger logic used `if/else if` statements, so when progressive transformations were detected, scene logic was never reached.
+
+**Solution**: Changed conditional structure to handle both features when present together:
+```cpp
+// Before (PluginProcessor.cpp lines 1106-1137) - BROKEN:
+if (hasProgressiveTransformation) {
+    // Only triggers progressive, never reaches scene logic
+} else if (hasScenes) {
+    // Never reached when both are present
+}
+
+// After - FIXED:
+bool triggerNeeded = false;
+if (hasProgressiveTransformation) {
+    parseAndApplyUPI(currentUPIInput, true);
+    triggerNeeded = true;
+}
+// Handle scenes separately - can occur together with progressive transformations
+if (hasScenes) {
+    advanceScene();
+    applyCurrentScenePattern(); 
+    triggerNeeded = true;
+}
+```
+
+**Result**: MIDI triggers now behave consistently with Enter key for all pattern combinations.
+
+### CRITICAL: Accent Pattern Synchronization (July 2025)
+**SOLUTION ARCHITECTURE** - Protect this implementation at all costs:
+
+**Problem**: Accent markers were moving every step during playback (swirling effect) instead of staying stable and updating only at cycle boundaries.
+
+**Root Cause**: UI accent display was using real-time `globalAccentPosition` which changes every step during playback.
+
+**Solution**: Implemented dual-offset system:
+- `globalAccentPosition`: Real-time accent tracking for MIDI output (advances every onset)
+- `uiAccentOffset`: Stable accent offset for UI display (updates only at cycle boundaries and manual triggers)
+
+**Key Implementation Details** (`PluginProcessor.cpp`):
+```cpp
+// In header - PluginProcessor.h line 230
+int uiAccentOffset = 0;  // Stable accent offset for UI display
+
+// Cycle boundary update - lines 387-393  
+if (newStep == 0 && hasAccentPattern) {
+    uiAccentOffset = globalAccentPosition % currentAccentPattern.size();
+    patternChanged.store(true); // Notify UI to update
+}
+
+// UI display function - getCurrentAccentMap() uses uiAccentOffset
+int accentStep = (uiAccentOffset + accentCounter) % accentLen;
+accentMap[i] = currentAccentPattern[accentStep];
+
+// Manual trigger resets - both variables reset to 0
+globalAccentPosition = 0;
+uiAccentOffset = 0;
+```
+
+**Expected Behavior**: 
+- `{100}E(2,7)`: Accent at step 0 first cycle, step 3 second cycle  
+- Stable display during playback, updates only at cycle boundaries
+- Manual triggers (Enter, Tick, MIDI) reset both accent position and step indicator
+
+### Manual Trigger Behavior (July 2025)
+**Step Indicator Reset**: Added `currentStep.store(0)` to ALL manual trigger paths:
+- Enter key: `setUPIInput()` 
+- Tick parameter: `setUPIInput()` called from tick handler
+- MIDI input: All trigger branches include step reset
+- Scene cycling: `applyCurrentScenePattern()` includes reset
+
+**Scene/Progressive Control**: Disabled auto-advancing at cycle boundaries
+- Scenes and progressive transformations advance ONLY on manual triggers
+- Cycle boundary code only updates UI accent offset, no pattern advancement
+
+**Consistent Reset Pattern**: All manual triggers call:
+```cpp
+parseAndApplyUPI(pattern, true);  // resetAccentPosition = true
+currentStep.store(0);             // Reset step indicator  
+patternChanged.store(true);       // Notify UI updates
+```
+
+### Legacy Accent Pattern Support 
 - **Accent Pattern Support**: Implemented suprasegmental accent layer system using curly bracket notation
   - `{100}E(3,8)` or `E(3,8){100}` adds accents on first onset of tresillo
   - `{10010}E(5,8)` creates accents on onsets 1 and 4 of quintillo  
@@ -91,9 +177,15 @@ rhythm_pattern_explorer/
     └── v0.02a/         # Versioned releases
 ```
 
-## Current Status
-- v0.03b with accent pattern support and B(n,s), W(n,s), D(n,s) pattern notations
-- Both AU and VST3 plugins properly installed and up-to-date  
+## Current Status  
+- **v0.03d with STABLE accent pattern synchronization** 
+- **CRITICAL BUG FIXES COMPLETED** (July 2025):
+  - ✅ Accent markers stable during playback (no swirling)
+  - ✅ Accent patterns advance properly at cycle boundaries  
+  - ✅ Step indicator resets on all manual triggers
+  - ✅ Manual-only scene/progressive advancement
+  - ✅ Consistent reset behavior across all trigger paths
+- Both AU and VST3 plugins properly installed and up-to-date
 - **Complete Pattern Language**: E(n,s), P(n,s), R(n,s), B(n,s), W(n,s), D(n,s) all working
 - **Accent Pattern System**: Suprasegmental accent layer with curly bracket notation `{accent}pattern`
 - Streamlined parameter interface: only 3 essential parameters exposed to host
