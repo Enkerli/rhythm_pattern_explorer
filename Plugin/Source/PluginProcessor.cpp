@@ -1105,9 +1105,9 @@ void RhythmPatternExplorerAudioProcessor::checkMidiInputForTriggers(juce::MidiBu
                 // MIDI triggers manual advancement - handle progressive transformations and scenes together when both present
                 bool triggerNeeded = false;
                 
-                if (hasProgressiveTransformation)
+                if (hasProgressiveTransformation && !hasScenes)
                 {
-                    DBG("RhythmPatternExplorer: MIDI triggered progressive transformation");
+                    DBG("RhythmPatternExplorer: MIDI triggered progressive transformation (no scenes)");
                     // Trigger progressive transformation manually with accent reset
                     parseAndApplyUPI(currentUPIInput, true);
                     triggerNeeded = true;
