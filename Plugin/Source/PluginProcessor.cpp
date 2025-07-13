@@ -377,16 +377,23 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
                 processStep(midiMessages, sample);
                 currentSample -= samplesPerStep; // Subtract instead of reset to maintain fractional timing
                 int newStep = (currentStep.load() + 1) % patternEngine.getStepCount();
-                currentStep.store(newStep);
                 
-                // Trigger progressive offset advancement when pattern completes a cycle
-                // But only for old "@#" syntax, not new ">" syntax
-                if (newStep == 0 && patternEngine.hasProgressiveOffsetEnabled() && !currentUPIInput.contains(">"))
-                {
-                    patternEngine.triggerProgressiveOffset();
-                    // Re-apply the UPI pattern with new progressive offset (preserve accent position)
-                    parseAndApplyUPI(currentUPIInput, false);
+                // DISABLED: Auto-advancing cycle boundary - scenes/progressive should be manual only
+                // The previous code was automatically advancing scenes and progressive transformations
+                // every cycle, which is not the desired behavior. These should only advance when
+                // manually triggered (Enter, Tick, MIDI input).
+                
+                // However, we DO want to update UI accent display at cycle boundaries
+                if (newStep == 0 && hasAccentPattern) {
+                    // Update UI accent offset to match current globalAccentPosition
+                    // This creates stable UI display that updates only at cycle boundaries
+                    uiAccentOffset = globalAccentPosition % currentAccentPattern.size();
+                    patternChanged.store(true); // Notify UI to update accent display
+                    DBG("RhythmPatternExplorer: Cycle boundary - UI accent offset set to " << uiAccentOffset << " (globalPos=" << globalAccentPosition << ")");
                 }
+                
+                // Just do normal step advancement
+                currentStep.store(newStep);
                 
                 // Log step triggers at high BPMs
                 if (currentBPM >= 180.0f) {
@@ -724,6 +731,7 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
     
     // Reset global accent position when setting new UPI input
     globalAccentPosition = 0;
+    uiAccentOffset = 0;
     
     DBG("RhythmPatternExplorerAudioProcessor::setUPIInput called with: '" << upiPattern << "'");
     
@@ -866,6 +874,9 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
         {
             advanceProgressiveOffset();
             
+            // Notify UI that pattern has changed for accent map updates
+            patternChanged.store(true);
+            
             // Debug log advancement
             logDebug(DebugCategory::PROGRESSIVE_OFFSET, 
                 "Advanced offset to: " + juce::String(progressiveOffset));
@@ -914,6 +925,9 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
         {
             advanceProgressiveLengthening();
             
+            // Notify UI that pattern has changed for accent map updates
+            patternChanged.store(true);
+            
             // Debug log advancement
             logDebug(DebugCategory::PROGRESSIVE_LENGTHENING, 
                 "Advanced lengthening - pattern now has " + juce::String(static_cast<int>(baseLengthPattern.size())) + " steps");
@@ -946,7 +960,8 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
         baseLengthPattern.clear();
         scenePatterns.clear();
         currentSceneIndex = 0;
-        parseAndApplyUPI(pattern);
+        parseAndApplyUPI(pattern, true);
+        currentStep.store(0); // Reset step indicator to beginning
     }
     
     currentUPIInput = upiPattern;
@@ -960,6 +975,7 @@ void RhythmPatternExplorerAudioProcessor::parseAndApplyUPI(const juce::String& u
     // Only reset global accent position for truly new patterns
     if (resetAccentPosition) {
         globalAccentPosition = 0;
+        uiAccentOffset = 0;
     }
     
     DBG("parseAndApplyUPI called with: '" + upiPattern + "'");
@@ -1086,51 +1102,44 @@ void RhythmPatternExplorerAudioProcessor::checkMidiInputForTriggers(juce::MidiBu
                 bool hasProgressiveTransformation = currentUPIInput.contains(">"); // New progressive syntax
                 bool hasScenes = currentUPIInput.contains("|");
                 
-                // Skip auto-advancement for progressive transformations with ">" syntax
+                // MIDI triggers manual advancement of progressive transformations and scenes
                 if (hasProgressiveTransformation)
                 {
-                    DBG("RhythmPatternExplorer: MIDI input ignored for progressive transformation - manual trigger only");
-                    // Don't re-parse - progressive transformations should only advance on manual trigger
+                    DBG("RhythmPatternExplorer: MIDI triggered progressive transformation");
+                    // Trigger progressive transformation manually with accent reset
+                    parseAndApplyUPI(currentUPIInput, true);
+                    currentStep.store(0); // Reset step indicator to beginning
+                    patternChanged.store(true);
                 }
-                else if (hasProgressiveOffset || hasProgressiveLengthening || hasOldProgressiveOffset || hasScenes)
+                else if (hasProgressiveOffset || hasProgressiveLengthening || hasOldProgressiveOffset)
                 {
-                    // Trigger progressive pattern advancement
-                    if (hasProgressiveOffset || hasOldProgressiveOffset)
-                    {
-                        // Advance progressive offset first, then re-parse
-                        if (patternEngine.hasProgressiveOffsetEnabled())
-                        {
+                    DBG("RhythmPatternExplorer: MIDI triggered progressive pattern advancement");
+                    if (hasProgressiveOffset || hasOldProgressiveOffset) {
+                        if (patternEngine.hasProgressiveOffsetEnabled()) {
                             patternEngine.triggerProgressiveOffset();
-                            DBG("RhythmPatternExplorer: MIDI triggered progressive offset advancement to " 
-                                << patternEngine.getCurrentOffset());
                         }
                     }
-                    
-                    if (hasProgressiveLengthening)
-                    {
-                        // Advance progressive lengthening
+                    if (hasProgressiveLengthening) {
                         advanceProgressiveLengthening();
-                        DBG("RhythmPatternExplorer: MIDI triggered progressive lengthening advancement");
+                        patternEngine.setPattern(baseLengthPattern);
                     }
-                    
-                    if (hasScenes)
-                    {
-                        // Advance scene cycling and apply the new current scene
-                        advanceScene();
-                        applyCurrentScenePattern();
-                        DBG("RhythmPatternExplorer: MIDI triggered scene advancement to scene " 
-                            << currentSceneIndex);
-                    }
-                    else
-                    {
-                        // Force re-parsing to apply new progressive transformation (preserve accent position)
-                        parseAndApplyUPI(currentUPIInput, false);
-                    }
+                    parseAndApplyUPI(currentUPIInput, true);
+                    currentStep.store(0); // Reset step indicator to beginning
+                    patternChanged.store(true);
+                }
+                else if (hasScenes)
+                {
+                    DBG("RhythmPatternExplorer: MIDI triggered scene advancement");
+                    advanceScene();
+                    applyCurrentScenePattern();
+                    currentStep.store(0); // Reset step indicator to beginning  
+                    patternChanged.store(true);
                 }
                 else
                 {
-                    // Re-parse other UPI patterns to trigger regeneration (preserve accent position)
-                    parseAndApplyUPI(currentUPIInput, false);
+                    // Re-parse other UPI patterns to trigger regeneration with accent reset
+                    parseAndApplyUPI(currentUPIInput, true);
+                    currentStep.store(0); // Reset step indicator to beginning
                 }
             }
             // Pattern updates are handled via UPI only
@@ -1147,41 +1156,18 @@ void RhythmPatternExplorerAudioProcessor::checkMidiInputForTriggers(juce::MidiBu
                 bool hasProgressiveTransformation = currentUPIInput.contains(">"); // New progressive syntax
                 bool hasScenes = currentUPIInput.contains("|");
                 
-                // Skip auto-advancement for progressive transformations with ">" syntax
+                // CYCLE BOUNDARY ADVANCEMENT: Progressive transformations and scenes now only advance at step 0
+                // CC input no longer triggers mid-cycle advancement for better accent synchronization
                 if (hasProgressiveTransformation)
                 {
-                    DBG("RhythmPatternExplorer: CC input ignored for progressive transformation - manual trigger only");
-                    // Don't re-parse - progressive transformations should only advance on manual trigger
+                    DBG("RhythmPatternExplorer: CC input ignored for progressive transformation - cycle boundary advancement only");
+                    // Don't re-parse - progressive transformations advance at cycle boundaries
                 }
                 else if (hasProgressiveOffset || hasProgressiveLengthening || hasOldProgressiveOffset || hasScenes)
                 {
-                    if (hasProgressiveOffset || hasOldProgressiveOffset)
-                    {
-                        if (patternEngine.hasProgressiveOffsetEnabled())
-                        {
-                            patternEngine.triggerProgressiveOffset();
-                            DBG("RhythmPatternExplorer: CC triggered progressive offset advancement to " 
-                                << patternEngine.getCurrentOffset());
-                        }
-                    }
-                    
-                    if (hasProgressiveLengthening)
-                    {
-                        advanceProgressiveLengthening();
-                        DBG("RhythmPatternExplorer: CC triggered progressive lengthening advancement");
-                    }
-                    
-                    if (hasScenes)
-                    {
-                        advanceScene();
-                        applyCurrentScenePattern();
-                        DBG("RhythmPatternExplorer: CC triggered scene advancement to scene " 
-                            << currentSceneIndex);
-                    }
-                    else
-                    {
-                        parseAndApplyUPI(currentUPIInput, false);
-                    }
+                    DBG("RhythmPatternExplorer: CC input ignored for progressive/scene patterns - cycle boundary advancement only");
+                    // Progressive transformations and scenes now advance only at cycle boundaries (step 0)
+                    // This ensures accent maps are properly synchronized from pattern start
                 }
                 else
                 {
@@ -1286,6 +1272,9 @@ void RhythmPatternExplorerAudioProcessor::advanceScene()
         // Then advance to next scene in the sequence, cycling back to 0 when reaching the end
         currentSceneIndex = (currentSceneIndex + 1) % scenePatterns.size();
         
+        // Notify UI that pattern has changed for accent map updates
+        patternChanged.store(true);
+        
         juce::String sceneInfo = "Advanced to scene " + juce::String(currentSceneIndex) + "/" + 
             juce::String(static_cast<int>(scenePatterns.size())) + ": " + scenePatterns[currentSceneIndex];
         if (currentSceneIndex < static_cast<int>(sceneProgressiveSteps.size())) {
@@ -1308,7 +1297,8 @@ void RhythmPatternExplorerAudioProcessor::applyCurrentScenePattern()
     int progressiveLengthening = sceneProgressiveLengthening[currentSceneIndex];
     
     // Parse the base pattern first
-    parseAndApplyUPI(basePattern);
+    parseAndApplyUPI(basePattern, true);
+    currentStep.store(0); // Reset step indicator to beginning
     
     // Apply progressive transformations if any
     if (progressiveOffset != 0)
@@ -1351,6 +1341,38 @@ int RhythmPatternExplorerAudioProcessor::getProgressiveTriggerCount() const
     
     // Fall back to PatternEngine's trigger count for old "@#" syntax
     return patternEngine.getProgressiveTriggerCount();
+}
+
+//==============================================================================
+// Accent Map Generation
+
+std::vector<bool> RhythmPatternExplorerAudioProcessor::getCurrentAccentMap() const
+{
+    // Show stable accent map using UI accent offset (updates only at cycle boundaries)
+    auto pattern = patternEngine.getCurrentPattern();
+    std::vector<bool> accentMap(pattern.size(), false);
+
+    if (!hasAccentPattern || currentAccentPattern.empty()) {
+        return accentMap;
+    }
+
+    // Apply accents starting from stable UI accent offset
+    // This provides stable display that only changes at cycle boundaries
+    int accentLen = static_cast<int>(currentAccentPattern.size());
+    int accentCounter = 0;
+    
+    for (size_t i = 0; i < pattern.size(); ++i)
+    {
+        if (pattern[i])
+        {
+            // Calculate accent position based on stable UI accent offset
+            int accentStep = (uiAccentOffset + accentCounter) % accentLen;
+            accentMap[i] = currentAccentPattern[accentStep];
+            accentCounter++;
+        }
+    }
+    
+    return accentMap;
 }
 
 //==============================================================================

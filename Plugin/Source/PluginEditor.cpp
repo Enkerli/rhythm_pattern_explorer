@@ -167,7 +167,9 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     addAndMakeVisible(analysisLabel);
     
     // Version Editor - copyable and selectable
-    versionEditor.setText("v0.03c", juce::dontSendNotification);
+    // Add timestamp to verify we're testing the right build (clean build 11:16)
+    juce::String buildTimestamp = __DATE__ " " __TIME__;
+    versionEditor.setText("v0.03c-" + buildTimestamp.substring(0, 6) + "-" + buildTimestamp.substring(12, 17), juce::dontSendNotification);
     versionEditor.setMultiLine(false);
     versionEditor.setReadOnly(true);
     versionEditor.setScrollbarsShown(false);
@@ -546,6 +548,14 @@ void RhythmPatternExplorerAudioProcessorEditor::timerCallback()
         // Pattern changed - forcing repaint
     }
     
+    // Check for accent map updates from scene changes or progressive transformations
+    if (audioProcessor.shouldUpdateAccentDisplay())
+    {
+        audioProcessor.clearAccentDisplayUpdate();
+        shouldRepaint = true;
+        // Accent display update needed
+    }
+    
     if (currentStep != lastCurrentStep)
     {
         shouldRepaint = true;
@@ -612,6 +622,10 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
     }
     g.fillEllipse(center.x - outerRadius, center.y - outerRadius, outerRadius * 2, outerRadius * 2);
     
+    // ULTIMATE SIMPLE: Just get the accent map directly, no caching complexity
+    auto* processor = dynamic_cast<RhythmPatternExplorerAudioProcessor*>(&audioProcessor);
+    std::vector<bool> accentMap = processor->getCurrentAccentMap();
+    
     // Draw each slice using the most basic approach possible
     for (int i = 0; i < numSteps; ++i)
     {
@@ -623,43 +637,8 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
         // Only draw onset slices
         if (pattern[i])
         {
-            // Check if this step should be accented - stable per cycle display
-            bool isAccented = false;
-            if (audioProcessor.getHasAccentPattern() && !audioProcessor.getCurrentAccentPattern().empty())
-            {
-                // Find which onset number this step is (count onsets up to current step)
-                int onsetIndex = 0;
-                for (int j = 0; j < i; ++j)
-                {
-                    if (j < pattern.size() && pattern[j])
-                    {
-                        onsetIndex++;
-                    }
-                }
-                
-                // SIMPLIFIED: Use global accent position directly for stable cycle-based display
-                // This bypasses cycle detection issues and uses the processor's global accent state
-                int globalAccentPosition = audioProcessor.getGlobalAccentPosition();
-                
-                // Count total onsets that have occurred before this pattern position
-                int onsetsInPattern = 0;
-                for (bool onset : pattern) {
-                    if (onset) onsetsInPattern++;
-                }
-                
-                // Calculate which cycle we're in based on global accent position
-                int currentAccentCycle = 0;
-                if (onsetsInPattern > 0) {
-                    currentAccentCycle = globalAccentPosition / onsetsInPattern;
-                }
-                
-                // Calculate the accent offset for this cycle
-                int displayAccentOffset = (currentAccentCycle * onsetsInPattern) % audioProcessor.getCurrentAccentPattern().size();
-                
-                // Check if this onset should be accented
-                int accentStep = (displayAccentOffset + onsetIndex) % audioProcessor.getCurrentAccentPattern().size();
-                isAccented = audioProcessor.getCurrentAccentPattern()[accentStep];
-            }
+            // Use the cached accent map (retrieved once per paint, not per step)
+            bool isAccented = (i < static_cast<int>(accentMap.size())) ? accentMap[i] : false;
             
             if (isAccented)
             {
@@ -1142,3 +1121,4 @@ void RhythmPatternExplorerAudioProcessorEditor::mouseDoubleClick(const juce::Mou
     // Double-click anywhere to cycle background colors
     cycleBackgroundColor();
 }
+

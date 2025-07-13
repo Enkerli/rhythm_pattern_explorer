@@ -83,6 +83,13 @@ public:
         return currentAccentPattern[accentStep];
     }
     
+    /** Returns a vector of bools indicating which steps will be accented in the current pattern cycle. */
+    std::vector<bool> getCurrentAccentMap() const;
+    
+    // UI update notification for accent map changes
+    bool shouldUpdateAccentDisplay() const { return patternChanged.load(); }
+    void clearAccentDisplayUpdate() { patternChanged.store(false); }
+    
     // Get accent position for current pattern cycle (updates only at cycle boundaries)
     int getCurrentCycleAccentStart() const {
         // Calculate how many complete pattern cycles we've been through
@@ -220,6 +227,7 @@ private:
     std::vector<bool> currentAccentPattern;
     juce::String currentAccentPatternName;
     int globalAccentPosition = 0;  // Global accent position counter (persists across pattern cycles)
+    int uiAccentOffset = 0;         // Stable accent offset for UI display (updates only at cycle boundaries)
     
     // Progressive offset support (works for any pattern)
     int progressiveOffset = 0;      // Current accumulated offset
@@ -244,6 +252,9 @@ private:
     
     // Thread safety
     juce::CriticalSection processingLock;
+    
+    // Pattern change notification for UI updates
+    std::atomic<bool> patternChanged{false};
     
     // Helper methods
     void updateTiming();
