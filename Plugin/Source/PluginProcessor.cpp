@@ -1102,14 +1102,15 @@ void RhythmPatternExplorerAudioProcessor::checkMidiInputForTriggers(juce::MidiBu
                 bool hasProgressiveTransformation = currentUPIInput.contains(">"); // New progressive syntax
                 bool hasScenes = currentUPIInput.contains("|");
                 
-                // MIDI triggers manual advancement of progressive transformations and scenes
+                // MIDI triggers manual advancement - handle progressive transformations and scenes together when both present
+                bool triggerNeeded = false;
+                
                 if (hasProgressiveTransformation)
                 {
                     DBG("RhythmPatternExplorer: MIDI triggered progressive transformation");
                     // Trigger progressive transformation manually with accent reset
                     parseAndApplyUPI(currentUPIInput, true);
-                    currentStep.store(0); // Reset step indicator to beginning
-                    patternChanged.store(true);
+                    triggerNeeded = true;
                 }
                 else if (hasProgressiveOffset || hasProgressiveLengthening || hasOldProgressiveOffset)
                 {
@@ -1124,23 +1125,27 @@ void RhythmPatternExplorerAudioProcessor::checkMidiInputForTriggers(juce::MidiBu
                         patternEngine.setPattern(baseLengthPattern);
                     }
                     parseAndApplyUPI(currentUPIInput, true);
-                    currentStep.store(0); // Reset step indicator to beginning
-                    patternChanged.store(true);
+                    triggerNeeded = true;
                 }
-                else if (hasScenes)
+                
+                // Handle scenes - can occur together with progressive transformations
+                if (hasScenes)
                 {
                     DBG("RhythmPatternExplorer: MIDI triggered scene advancement");
                     advanceScene();
                     applyCurrentScenePattern();
-                    currentStep.store(0); // Reset step indicator to beginning  
-                    patternChanged.store(true);
+                    triggerNeeded = true;
                 }
-                else
+                
+                if (!triggerNeeded)
                 {
                     // Re-parse other UPI patterns to trigger regeneration with accent reset
                     parseAndApplyUPI(currentUPIInput, true);
-                    currentStep.store(0); // Reset step indicator to beginning
                 }
+                
+                // Reset step indicator and notify UI for any trigger
+                currentStep.store(0);
+                patternChanged.store(true);
             }
             // Pattern updates are handled via UPI only
         }
