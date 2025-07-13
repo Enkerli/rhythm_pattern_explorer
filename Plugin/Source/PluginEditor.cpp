@@ -169,7 +169,7 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     // Version Editor - copyable and selectable
     // Add timestamp to verify we're testing the right build (clean build 11:16)
     juce::String buildTimestamp = __DATE__ " " __TIME__;
-    versionEditor.setText("v0.03c-" + buildTimestamp.substring(0, 6) + "-" + buildTimestamp.substring(12, 17), juce::dontSendNotification);
+    versionEditor.setText("v1.3.5-" + buildTimestamp.substring(0, 6) + "-" + buildTimestamp.substring(12, 17), juce::dontSendNotification);
     versionEditor.setMultiLine(false);
     versionEditor.setReadOnly(true);
     versionEditor.setScrollbarsShown(false);

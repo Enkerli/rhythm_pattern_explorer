@@ -375,16 +375,16 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
             // CRITICAL FIX: Check for multiple steps per buffer at high BPM
             while (currentSample >= samplesPerStep && samplesPerStep > 0)
             {
-                // Calculate exact sample position where this step should occur
-                // stepSamplePosition = current sample - how much we've overshot the step boundary
-                int overshoot = currentSample - samplesPerStep;
-                int stepSamplePosition = sample - overshoot;
+                // TIMING PRECISION FIX: Calculate the exact sample offset when the step should occur
+                // This maintains precise timing while preventing accumulating errors
+                int stepSampleOffset = currentSample - samplesPerStep;
+                int targetSample = sample - stepSampleOffset;
                 
-                // Ensure sample position is within buffer bounds
-                stepSamplePosition = juce::jlimit(0, buffer.getNumSamples() - 1, stepSamplePosition);
+                // Clamp to buffer bounds for safety
+                targetSample = juce::jmax(0, juce::jmin(targetSample, buffer.getNumSamples() - 1));
                 
-                processStep(midiMessages, stepSamplePosition);
-                currentSample -= samplesPerStep; // Subtract instead of reset to maintain fractional timing
+                processStep(midiMessages, targetSample);
+                currentSample = stepSampleOffset; // Set to exact remainder for perfect timing
                 int newStep = (currentStep.load() + 1) % patternEngine.getStepCount();
                 
                 // DISABLED: Auto-advancing cycle boundary - scenes/progressive should be manual only
