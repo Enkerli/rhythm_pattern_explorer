@@ -120,7 +120,10 @@ public:
     juce::AudioParameterFloat* getAccentVelocityParameter() { return accentVelocityParam; }
     juce::AudioParameterFloat* getUnaccentedVelocityParameter() { return unaccentedVelocityParam; }
     juce::AudioParameterChoice* getPatternLengthUnitParameter() { return patternLengthUnitParam; }
-    juce::AudioParameterFloat* getPatternLengthValueParameter() { return patternLengthValueParam; }
+    juce::AudioParameterChoice* getPatternLengthValueParameter() { return patternLengthValueParam; }
+    
+    // Helper to convert pattern length choice to float value
+    float getPatternLengthValue() const;
     
     // Internal state access for editor
     float getCurrentBPM() const { return currentBPM; }
@@ -189,7 +192,7 @@ public:
     
     // Pattern Length parameters for Phase 2 temporal control
     juce::AudioParameterChoice* patternLengthUnitParam;
-    juce::AudioParameterFloat* patternLengthValueParam;
+    juce::AudioParameterChoice* patternLengthValueParam;
 
 private:
     //==============================================================================

@@ -44,7 +44,8 @@ RhythmPatternExplorerAudioProcessor::RhythmPatternExplorerAudioProcessor()
     // Pattern Length parameters for Phase 2 temporal control
     addParameter(patternLengthUnitParam = new juce::AudioParameterChoice("patternLengthUnit", "Pattern Length Unit", 
         juce::StringArray{"Steps", "Beats", "Bars"}, 1)); // Default to "Beats"
-    addParameter(patternLengthValueParam = new juce::AudioParameterFloat("patternLengthValue", "Pattern Length Value", 0.125f, 32.0f, 8.0f));
+    addParameter(patternLengthValueParam = new juce::AudioParameterChoice("patternLengthValue", "Pattern Length Value", 
+        juce::StringArray{"0.125", "0.25", "0.5", "0.75", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32"}, 7)); // Default to "8"
     
     // Initialize pattern engine with default Euclidean pattern
     patternEngine.generateEuclideanPattern(3, 8);
@@ -304,7 +305,7 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
     bool patternLengthChanged = false;
     
     int currentPatternLengthUnit = patternLengthUnitParam->getIndex();
-    float currentPatternLengthValue = patternLengthValueParam->get();
+    float currentPatternLengthValue = getPatternLengthValue();
     
     if (currentPatternLengthUnit != lastPatternLengthUnit || 
         std::abs(currentPatternLengthValue - lastPatternLengthValue) > 0.001f) {
@@ -507,7 +508,7 @@ void RhythmPatternExplorerAudioProcessor::updateTiming()
     
     // Get pattern length parameters for Phase 2 temporal control
     int lengthUnit = patternLengthUnitParam->getIndex(); // 0=Steps, 1=Beats, 2=Bars
-    float lengthValue = patternLengthValueParam->get();
+    float lengthValue = getPatternLengthValue();
     
     // Calculate samples per step using pattern length parameters
     double beatsPerSecond = bpm / 60.0;
@@ -1412,6 +1413,24 @@ const char* RhythmPatternExplorerAudioProcessor::getLogFile(DebugCategory catego
         default:
             return "/tmp/bitwig_debug.log";
     }
+}
+
+//==============================================================================
+// Helper function to convert pattern length choice to float value
+float RhythmPatternExplorerAudioProcessor::getPatternLengthValue() const
+{
+    // Convert choice index to precise float values
+    static const float values[] = {
+        0.125f, 0.25f, 0.5f, 0.75f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f,
+        11.0f, 12.0f, 13.0f, 14.0f, 15.0f, 16.0f, 17.0f, 18.0f, 19.0f, 20.0f, 21.0f, 22.0f, 23.0f,
+        24.0f, 25.0f, 26.0f, 27.0f, 28.0f, 29.0f, 30.0f, 31.0f, 32.0f
+    };
+    
+    int index = patternLengthValueParam->getIndex();
+    if (index >= 0 && index < static_cast<int>(sizeof(values) / sizeof(values[0]))) {
+        return values[index];
+    }
+    return 8.0f; // Default fallback
 }
 
 //==============================================================================
