@@ -355,72 +355,30 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
     static bool processedFirstStepThisBuffer = false;
     if (!isPlaying) processedFirstStepThisBuffer = false; // Reset when not playing
 
-    // TRANSPORT-SYNCHRONIZED TIMING: Use DAW position for perfect beat alignment
-    if (isPlaying && hasValidPosition)
+    // BACK TO BASICS: Use the original timing system that works correctly
+    for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
     {
-        // Calculate step timing based on pattern length parameters
-        int lengthUnit = patternLengthUnitParam->getIndex(); // 0=Steps, 1=Beats, 2=Bars
-        float lengthValue = getPatternLengthValue();
-        
-        // Calculate beats per step based on pattern length
-        double beatsPerStep;
-        switch (lengthUnit) {
-            case 0: // Steps mode - use 16th note subdivisions
-                beatsPerStep = 0.25; // 16th notes
-                break;
-            case 1: // Beats mode 
-                beatsPerStep = lengthValue / patternEngine.getStepCount();
-                break;
-            case 2: // Bars mode
-                beatsPerStep = (lengthValue * 4.0) / patternEngine.getStepCount(); // Assume 4/4 time
-                break;
-            default:
-                beatsPerStep = 0.25; // Default to 16th notes
-                break;
-        }
-        
-        // Calculate which step we should be on based on DAW position
-        double totalSteps = posInfo.ppqPosition / beatsPerStep;
-        int expectedStep = static_cast<int>(std::floor(totalSteps)) % patternEngine.getStepCount();
-        
-        // If we need to advance to the expected step, trigger it at sample 0 (beat boundary)
-        if (expectedStep != currentStep.load() || (!wasPlaying && currentStep.load() == 0))
+        if (isPlaying)
         {
-            // Trigger the step at sample 0 for perfect beat alignment
-            processStep(midiMessages, 0);
-            
-            // Update to the expected step
-            int newStep = expectedStep;
-            
-            // Handle accent pattern updates at cycle boundaries
-            if (newStep == 0 && hasAccentPattern && currentStep.load() != 0) {
-                uiAccentOffset = globalAccentPosition % currentAccentPattern.size();
-                patternChanged.store(true);
-                DBG("RhythmPatternExplorer: Cycle boundary - UI accent offset set to " << uiAccentOffset);
-            }
-            
-            currentStep.store(newStep);
-            
-            // Log transport-synced triggers
-            if (currentBPM >= 180.0f) {
-                juce::String message = juce::String::formatted("TRANSPORT SYNC: ppqPos=%.3f, beatsPerStep=%.3f, expectedStep=%d, triggering at sample 0",
-                    posInfo.ppqPosition, beatsPerStep, expectedStep);
-                logDebug(DebugCategory::STEP_TRIGGER, message);
-            }
-        }
-    }
-    else if (isPlaying)
-    {
-        // Fallback to sample counting if no transport info available
-        for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
-        {
+            // Use the original step timing logic
             while (currentSample >= samplesPerStep && samplesPerStep > 0)
             {
+                // Trigger at sample 0 for best alignment
                 processStep(midiMessages, 0);
+                
+                // Advance naturally through the pattern
                 currentSample -= samplesPerStep;
                 int newStep = (currentStep.load() + 1) % patternEngine.getStepCount();
                 currentStep.store(newStep);
                 
+                // Handle accent pattern updates at cycle boundaries
+                if (newStep == 0 && hasAccentPattern) {
+                    uiAccentOffset = globalAccentPosition % currentAccentPattern.size();
+                    patternChanged.store(true);
+                    DBG("RhythmPatternExplorer: Cycle boundary - UI accent offset set to " << uiAccentOffset);
+                }
+                
+                // Safety break
                 if (samplesPerStep <= 1) break;
             }
             currentSample++;
