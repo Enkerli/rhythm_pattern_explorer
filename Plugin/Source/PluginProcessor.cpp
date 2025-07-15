@@ -359,8 +359,29 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
     // TRANSPORT-SYNCED TIMING: Use DAW's ppqPosition for perfect alignment
     if (isPlaying && hasValidPosition)
     {
-        // Calculate pattern timing based on DAW transport
-        double beatsPerStep = 4.0 / patternEngine.getStepCount(); // 8 steps over 4 beats = 0.5 beats per step
+        // Calculate pattern timing based on DAW transport and pattern length parameters
+        int lengthUnit = patternLengthUnitParam->getIndex(); // 0=Steps, 1=Beats, 2=Bars
+        float lengthValue = getPatternLengthValue();
+        
+        // Calculate pattern length in beats using pattern length parameters
+        double patternLengthInBeats;
+        switch (lengthUnit) {
+            case 0: // Steps mode - use 16th note subdivisions
+                patternLengthInBeats = lengthValue / 4.0; // Steps are 16th notes
+                break;
+            case 1: // Beats mode 
+                patternLengthInBeats = lengthValue; 
+                break;
+            case 2: // Bars mode
+                patternLengthInBeats = lengthValue * 4.0; // Assume 4/4 time
+                break;
+            default:
+                patternLengthInBeats = lengthValue; // Default to beats
+                break;
+        }
+        
+        // Calculate beats per step based on pattern length parameters
+        double beatsPerStep = patternLengthInBeats / patternEngine.getStepCount();
         double currentBeat = posInfo.ppqPosition;
         double stepsFromStart = currentBeat / beatsPerStep;
         
@@ -403,6 +424,45 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
                     uiAccentOffset = globalAccentPosition % currentAccentPattern.size();
                     patternChanged.store(true);
                     DBG("RhythmPatternExplorer: Cycle boundary - UI accent offset set to " << uiAccentOffset);
+                }
+                
+                // CRITICAL FIX: Update uiAccentOffset only at cycle boundaries for transport sync
+                // This preserves the stable accent display design from the original working solution
+                if (hasAccentPattern && !currentAccentPattern.empty()) {
+                    // Only update at cycle boundaries (step 0 of each cycle)
+                    if (targetStep % patternEngine.getCurrentPattern().size() == 0) {
+                        // Calculate how many complete cycles we've been through
+                        auto pattern = patternEngine.getCurrentPattern();
+                        if (!pattern.empty()) {
+                            // Count onsets in the current pattern
+                            int onsetsInPattern = 0;
+                            for (bool onset : pattern) {
+                                if (onset) onsetsInPattern++;
+                            }
+                            
+                            if (onsetsInPattern > 0) {
+                                // Calculate completed cycles based on current step
+                                int completedCycles = targetStep / pattern.size();
+                                
+                                // Count onsets that have occurred before the current cycle
+                                int onsetsBeforeCurrentCycle = completedCycles * onsetsInPattern;
+                                
+                                // Calculate UI accent offset for this cycle - this determines
+                                // which accent pattern position we start from for the current cycle
+                                int newUiAccentOffset = onsetsBeforeCurrentCycle % currentAccentPattern.size();
+                                
+                                // Only update if it has changed to avoid unnecessary UI updates
+                                if (newUiAccentOffset != uiAccentOffset) {
+                                    uiAccentOffset = newUiAccentOffset;
+                                    patternChanged.store(true);
+                                    DBG("RhythmPatternExplorer: Transport sync cycle boundary - UI accent offset updated to " << uiAccentOffset 
+                                        << " (completedCycles=" << completedCycles 
+                                        << ", onsetsBeforeCurrentCycle=" << onsetsBeforeCurrentCycle 
+                                        << ", currentStep=" << targetStep << ")");
+                                }
+                            }
+                        }
+                    }
                 }
                 
                 // DEBUG: Log transport-synced step progression

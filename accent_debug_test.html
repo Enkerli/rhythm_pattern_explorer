@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accent Debug Test - Rhythm Pattern Explorer</title>
+    <style>
+        body { font-family: 'Courier New', monospace; padding: 20px; background-color: #1a1a1a; color: #00ff00; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .test-pattern { background-color: #2d2d2d; border: 2px solid #00ff00; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .debug-instructions { background-color: #3d2d1d; border: 2px solid #ff8800; padding: 15px; margin: 10px 0; border-radius: 5px; color: #ffaa00; }
+        code { background-color: #000; padding: 2px 4px; color: #00ffff; }
+        .highlight { color: #ff4444; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Accent Debug Test</h1>
+        
+        <div class="debug-instructions">
+            <h3>Debug Instructions:</h3>
+            <ol>
+                <li>Load the <strong>DEBUG version</strong> of the VST3 plugin in your DAW</li>
+                <li>Open your DAW's console/debug output (Logic: Window → Show Console)</li>
+                <li>Test the pattern below to track accent map generation</li>
+                <li>Watch for debug messages showing <code>getCurrentAccentMap</code> calls</li>
+                <li>Look for any values that change during playback</li>
+            </ol>
+            <p><strong>Expected:</strong> Accent map should remain <span class="highlight">stable</span> during playback</p>
+            <p><strong>Problem:</strong> If accent markers move every step, debug will show why</p>
+        </div>
+
+        <div class="test-pattern">
+            <h3>Test Pattern: {1000000}E(16,16)</h3>
+            <p><strong>UPI Input:</strong> <code>{1000000}E(16,16)</code></p>
+            <p><strong>Expected Behavior:</strong></p>
+            <ul>
+                <li>Pattern: <code>1111111111111111</code> (16 onsets on 16 steps)</li>
+                <li>Accent Pattern: <code>1000000</code> (accent every 7th onset)</li>
+                <li>Accented Steps: Should be steps 0, 7, 14 (and cycle)</li>
+                <li><span class="highlight">Accent markers should NOT move during playback</span></li>
+            </ul>
+        </div>
+
+        <div class="debug-instructions">
+            <h3>Debug Output to Watch For:</h3>
+            <pre>
+getCurrentAccentMap: 1000000100000010 | accentPattern: 1000000 | step: X | globalAccentPos: Y
+
+Where:
+- First part shows which steps are accented (1) or not (0)
+- accentPattern shows the accent pattern
+- step shows current playback position
+- globalAccentPos shows accent counter
+
+🚨 PROBLEM INDICATORS:
+- If the accent map changes every step during playback
+- If step: or globalAccentPos: values affect the accent map
+- If accent pattern appears to "rotate" during playback
+            </pre>
+        </div>
+
+        <div class="test-pattern">
+            <h3>Additional Test Patterns:</h3>
+            <ul>
+                <li><code>{10}E(8,8)</code> - Alternating accents on every onset</li>
+                <li><code>{100}E(3,8)</code> - Tresillo with accent on first onset only</li>
+                <li><code>{1010}E(4,8)</code> - Alternating accents on 4 onsets over 8 steps</li>
+            </ul>
+        </div>
+
+        <div class="debug-instructions">
+            <h3>Analysis Steps:</h3>
+            <ol>
+                <li><strong>Load pattern</strong> - Check initial accent map generation</li>
+                <li><strong>Start playback</strong> - Monitor if accent map changes during play</li>
+                <li><strong>Let it cycle</strong> - Verify accent map stays stable across multiple cycles</li>
+                <li><strong>Check UI calls</strong> - Look for frequent UI accent queries</li>
+            </ol>
+            <p>The debug logs will reveal if the issue is:</p>
+            <ul>
+                <li>getCurrentAccentMap() being called too often</li>
+                <li>Values changing inside getCurrentAccentMap() due to real-time state</li>
+                <li>UI redrawing causing excessive accent map queries</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hex Trace Test - Step by Step</title>
+    <script src="WebApp/app/pattern-processing.js"></script>
+</head>
+<body>
+    <h1>Hex Conversion Trace</h1>
+    <div id="results"></div>
+    
+    <script>
+        function traceHexConversion() {
+            const pattern = '10010010';
+            const resultsDiv = document.getElementById('results');
+            
+            resultsDiv.innerHTML = `
+                <h2>Tracing: ${pattern}</h2>
+                <h3>Step-by-step nibble processing:</h3>
+            `;
+            
+            let traceOutput = '';
+            
+            // Process in 4-bit groups from left to right
+            let hex = '';
+            const stepCount = pattern.length;
+            
+            for (let groupStart = 0; groupStart < stepCount; groupStart += 4) {
+                let nibbleValue = 0;
+                let groupBits = '';
+                let bitDetails = '';
+                
+                // Process 4 bits in this group
+                for (let bitInGroup = 0; bitInGroup < 4 && (groupStart + bitInGroup) < stepCount; bitInGroup++) {
+                    const bitPos = groupStart + bitInGroup;
+                    const bit = pattern[bitPos];
+                    groupBits += bit;
+                    
+                    if (bit === '1') {
+                        const contribution = (1 << bitInGroup);
+                        nibbleValue |= contribution;
+                        bitDetails += `Bit ${bitPos} (${bit}): contributes 2^${bitInGroup} = ${contribution}<br>`;
+                    } else {
+                        bitDetails += `Bit ${bitPos} (${bit}): contributes 0<br>`;
+                    }
+                }
+                
+                const hexDigit = nibbleValue.toString(16).toUpperCase();
+                hex += hexDigit;
+                
+                traceOutput += `
+                    <div style="border: 1px solid #ccc; margin: 10px 0; padding: 10px;">
+                        <strong>Group ${Math.floor(groupStart/4) + 1}: Bits ${groupStart}-${Math.min(groupStart+3, stepCount-1)}</strong><br>
+                        Binary: ${groupBits}<br>
+                        ${bitDetails}
+                        Nibble Value: ${nibbleValue}<br>
+                        Hex Digit: ${hexDigit}
+                    </div>
+                `;
+            }
+            
+            const finalHex = '0x' + hex;
+            
+            // Also test using our function
+            const webappResult = PatternConverter.toHexFromBinary(pattern);
+            
+            resultsDiv.innerHTML += traceOutput;
+            resultsDiv.innerHTML += `
+                <h3>Results:</h3>
+                <div style="font-size: 18px; margin: 20px 0;">
+                    <strong>Manual calculation: ${finalHex}</strong><br>
+                    <strong>Webapp function: ${webappResult}</strong><br>
+                    <strong>Match: ${finalHex === webappResult ? '✅ YES' : '❌ NO'}</strong>
+                </div>
+            `;
+        }
+        
+        window.onload = traceHexConversion;
+    </script>
+</body>
+</html>

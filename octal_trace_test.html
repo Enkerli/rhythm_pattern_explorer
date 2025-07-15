@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Octal Trace Test</title>
+    <script src="WebApp/app/pattern-processing.js"></script>
+</head>
+<body>
+    <h1>Octal Conversion Trace</h1>
+    <div id="results"></div>
+    
+    <script>
+        function traceOctalConversion() {
+            const testCases = [
+                { pattern: '10001111', pluginResult: 'o163' },
+                { pattern: '10010010', pluginResult: 'o111' }
+            ];
+            
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<h2>Octal Conversion Tests</h2>';
+            
+            testCases.forEach(test => {
+                const pattern = test.pattern;
+                let traceOutput = `<h3>Pattern: ${pattern}</h3>`;
+                
+                // Process in 3-bit groups from left to right
+                let octal = '';
+                const stepCount = pattern.length;
+                
+                for (let groupStart = 0; groupStart < stepCount; groupStart += 3) {
+                    let octalDigit = 0;
+                    let groupBits = '';
+                    let bitDetails = '';
+                    
+                    // Process 3 bits in this group
+                    for (let bitInGroup = 0; bitInGroup < 3 && (groupStart + bitInGroup) < stepCount; bitInGroup++) {
+                        const bitPos = groupStart + bitInGroup;
+                        const bit = pattern[bitPos];
+                        groupBits += bit;
+                        
+                        if (bit === '1') {
+                            const contribution = (1 << bitInGroup);
+                            octalDigit |= contribution;
+                            bitDetails += `Bit ${bitPos} (${bit}): contributes 2^${bitInGroup} = ${contribution}<br>`;
+                        } else {
+                            bitDetails += `Bit ${bitPos} (${bit}): contributes 0<br>`;
+                        }
+                    }
+                    
+                    octal += octalDigit.toString();
+                    
+                    traceOutput += `
+                        <div style="border: 1px solid #ccc; margin: 5px 0; padding: 5px;">
+                            <strong>Group ${Math.floor(groupStart/3) + 1}: Bits ${groupStart}-${Math.min(groupStart+2, stepCount-1)}</strong><br>
+                            Binary: ${groupBits}<br>
+                            ${bitDetails}
+                            Octal Value: ${octalDigit}<br>
+                            Octal Digit: ${octalDigit}
+                        </div>
+                    `;
+                }
+                
+                const finalOctal = 'o' + octal;
+                const webappResult = PatternConverter.toOctalFromBinary(pattern);
+                
+                traceOutput += `
+                    <div style="margin: 10px 0; padding: 10px; background: #f0f0f0;">
+                        <strong>Manual: ${finalOctal}</strong><br>
+                        <strong>Webapp: ${webappResult}</strong><br>
+                        <strong>Plugin: ${test.pluginResult}</strong><br>
+                        <strong>Match Plugin: ${finalOctal === test.pluginResult ? '✅ YES' : '❌ NO'}</strong>
+                    </div>
+                `;
+                
+                resultsDiv.innerHTML += traceOutput;
+            });
+        }
+        
+        window.onload = traceOctalConversion;
+    </script>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Accent Synchronization Test</title>
+    <style>
+        body { font-family: monospace; margin: 20px; }
+        .test-case { border: 1px solid #ccc; margin: 10px 0; padding: 10px; }
+        .correct { color: green; }
+        .incorrect { color: red; }
+        .pattern { font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Accent Pattern Synchronization Test</h1>
+    <p>Testing the issue: <code>{10000}E(16,16)|10101010</code></p>
+    
+    <div class="test-case">
+        <h3>Expected Behavior</h3>
+        <div class="pattern">Scene 1: {10000}E(16,16)</div>
+        <div>✓ Accent pattern: [1,0,0,0,0] applied to 16 onsets</div>
+        <div>✓ Only first onset of each cycle should be accented</div>
+        
+        <div class="pattern">Scene 2: 10101010</div>
+        <div>✓ No accent pattern - should show no accent markers</div>
+        <div>✓ Global accent position continues from previous scene</div>
+    </div>
+    
+    <div class="test-case">
+        <h3>Current Problem</h3>
+        <div class="pattern">Scene Switch Issue:</div>
+        <div class="incorrect">✗ globalAccentPosition resets to 0 on scene switch</div>
+        <div class="incorrect">✗ Display calculation fails with different onset counts</div>
+        <div class="incorrect">✗ Accent markers appear where they shouldn't</div>
+        
+        <div class="pattern">Root Causes:</div>
+        <div>1. <code>applyCurrentScenePattern()</code> calls <code>parseAndApplyUPI(basePattern)</code> with default resetAccentPosition=true</div>
+        <div>2. UI display uses complex cycle math: <code>currentAccentCycle = globalAccentPosition / onsetsInPattern</code></div>
+        <div>3. Scene 1 has 16 onsets, Scene 2 has 4 onsets - math breaks down</div>
+    </div>
+    
+    <div class="test-case">
+        <h3>Proposed Fix</h3>
+        <div class="correct">✓ Change scene switching to preserve globalAccentPosition</div>
+        <div class="correct">✓ Simplify UI calculation to use direct onset-based lookup</div>
+        <div class="correct">✓ Add per-scene accent pattern caching</div>
+        <div class="correct">✓ Defensive checks for edge cases</div>
+    </div>
+    
+    <script>
+        // Simulate the problem
+        function simulateAccentDisplay(globalAccentPos, onsetsInPattern, accentPattern, onsetIndex) {
+            if (!accentPattern || accentPattern.length === 0) return false;
+            
+            // Current broken calculation
+            let currentAccentCycle = Math.floor(globalAccentPos / onsetsInPattern);
+            let displayAccentOffset = (currentAccentCycle * onsetsInPattern) % accentPattern.length;
+            let accentStep = (displayAccentOffset + onsetIndex) % accentPattern.length;
+            
+            return accentPattern[accentStep] === 1;
+        }
+        
+        // Test the broken calculation
+        let accentPattern = [1,0,0,0,0]; // {10000}
+        console.log("Testing broken calculation:");
+        console.log("Scene 1 (16 onsets): globalAccentPos=0, first onset should be accented:", 
+                   simulateAccentDisplay(0, 16, accentPattern, 0));
+        console.log("Scene 2 (4 onsets): globalAccentPos=0 (incorrectly reset), first onset shows as accented:", 
+                   simulateAccentDisplay(0, 4, [], 0)); // Empty accent pattern, should be false
+    </script>
+</body>
+</html>

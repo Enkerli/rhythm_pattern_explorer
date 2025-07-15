@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hex Notation Test</title>
+    <script src="WebApp/app/pattern-processing.js"></script>
+</head>
+<body>
+    <h1>Hex Notation Test - Left-to-Right Implementation</h1>
+    <div id="results"></div>
+    
+    <script>
+        function testHexNotation() {
+            const results = [];
+            
+            // Test cases from CLAUDE.md - strict left-to-right notation
+            const testCases = [
+                { binary: '1000', expectedHex: '0x1', description: 'leftmost bit = LSB' },
+                { binary: '0100', expectedHex: '0x2', description: 'second bit = 2^1' },
+                { binary: '0010', expectedHex: '0x4', description: 'third bit = 2^2' },
+                { binary: '0001', expectedHex: '0x8', description: 'fourth bit = 2^3' },
+                { binary: '1111', expectedHex: '0xF', description: 'all bits in nibble' },
+                { binary: '10001111', expectedHex: '0x1F', description: 'complex pattern (1000=1, 1111=F)' },
+                { binary: '10010010', expectedHex: '0x94', description: 'tresillo pattern (1001=9, 0010=4)' },
+                { binary: '101010101010', expectedHex: '0x555', description: 'alternating pattern (0101=5 each nibble)' }
+            ];
+            
+            testCases.forEach(test => {
+                // Test the new nibble-based conversion
+                const steps = test.binary.split('').map(bit => bit === '1');
+                const hex = PatternConverter.toHexFromBinary(test.binary);
+                const passed = hex === test.expectedHex;
+                
+                // Also test decimal conversion for completeness
+                const decimal = PatternConverter.toDecimal(test.binary);
+                
+                results.push({
+                    binary: test.binary,
+                    decimal: decimal,
+                    hex: hex,
+                    expected: test.expectedHex,
+                    passed: passed,
+                    description: test.description
+                });
+            });
+            
+            // Display results
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<h2>Test Results:</h2>';
+            
+            results.forEach(result => {
+                const status = result.passed ? '✅ PASS' : '❌ FAIL';
+                const color = result.passed ? 'green' : 'red';
+                
+                resultsDiv.innerHTML += `
+                    <div style="margin: 10px 0; padding: 10px; border: 1px solid #ccc;">
+                        <strong style="color: ${color}">${status}</strong><br>
+                        Binary: ${result.binary} (${result.description})<br>
+                        Decimal: ${result.decimal}<br>
+                        Got Hex: ${result.hex}<br>
+                        Expected: ${result.expected}
+                    </div>
+                `;
+            });
+            
+            // Summary
+            const passed = results.filter(r => r.passed).length;
+            const total = results.length;
+            const summaryColor = passed === total ? 'green' : 'red';
+            
+            resultsDiv.innerHTML += `
+                <h3 style="color: ${summaryColor}">
+                    Summary: ${passed}/${total} tests passed
+                </h3>
+            `;
+        }
+        
+        // Run tests when page loads
+        window.onload = testHexNotation;
+    </script>
+</body>
+</html>

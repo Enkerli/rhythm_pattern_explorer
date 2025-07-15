@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Comprehensive Notation Test</title>
+    <script src="WebApp/app/pattern-processing.js"></script>
+</head>
+<body>
+    <h1>Comprehensive Notation Test</h1>
+    <div id="results"></div>
+    
+    <script>
+        function testNotations() {
+            const testCases = [
+                { 
+                    pattern: '10001111', 
+                    pluginHex: '0x1F',
+                    pluginOctal: 'o163',
+                    pluginDecimal: 'd241'
+                },
+                { 
+                    pattern: '10010010', 
+                    pluginHex: '0x94',
+                    pluginOctal: 'o111', 
+                    pluginDecimal: 'd73'
+                }
+            ];
+            
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<h2>Notation Comparison</h2>';
+            
+            testCases.forEach(test => {
+                const pattern = test.pattern;
+                
+                // Test our implementations
+                const decimal = PatternConverter.toDecimal(pattern);
+                const hex = PatternConverter.toHexFromBinary(pattern);
+                const octal = PatternConverter.toOctalFromBinary(pattern);
+                
+                const hexMatch = hex === test.pluginHex;
+                const octalMatch = octal === test.pluginOctal;
+                const decimalMatch = decimal === parseInt(test.pluginDecimal.substring(1));
+                
+                resultsDiv.innerHTML += `
+                    <div style="border: 1px solid #ccc; margin: 10px 0; padding: 10px;">
+                        <h3>Pattern: ${pattern}</h3>
+                        <table style="border-collapse: collapse;">
+                            <tr>
+                                <th style="border: 1px solid #ccc; padding: 5px;">Format</th>
+                                <th style="border: 1px solid #ccc; padding: 5px;">Plugin</th>
+                                <th style="border: 1px solid #ccc; padding: 5px;">Webapp</th>
+                                <th style="border: 1px solid #ccc; padding: 5px;">Match</th>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid #ccc; padding: 5px;"><strong>Decimal</strong></td>
+                                <td style="border: 1px solid #ccc; padding: 5px;">${test.pluginDecimal}</td>
+                                <td style="border: 1px solid #ccc; padding: 5px;">d${decimal}</td>
+                                <td style="border: 1px solid #ccc; padding: 5px; color: ${decimalMatch ? 'green' : 'red'};">${decimalMatch ? '✅' : '❌'}</td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid #ccc; padding: 5px;"><strong>Hex</strong></td>
+                                <td style="border: 1px solid #ccc; padding: 5px;">${test.pluginHex}</td>
+                                <td style="border: 1px solid #ccc; padding: 5px;">${hex}</td>
+                                <td style="border: 1px solid #ccc; padding: 5px; color: ${hexMatch ? 'green' : 'red'};">${hexMatch ? '✅' : '❌'}</td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid #ccc; padding: 5px;"><strong>Octal</strong></td>
+                                <td style="border: 1px solid #ccc; padding: 5px;">${test.pluginOctal}</td>
+                                <td style="border: 1px solid #ccc; padding: 5px;">${octal}</td>
+                                <td style="border: 1px solid #ccc; padding: 5px; color: ${octalMatch ? 'green' : 'red'};">${octalMatch ? '✅' : '❌'}</td>
+                            </tr>
+                        </table>
+                    </div>
+                `;
+            });
+        }
+        
+        window.onload = testNotations;
+    </script>
+</body>
+</html>
