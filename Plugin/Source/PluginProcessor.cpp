@@ -355,81 +355,85 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
     static bool processedFirstStepThisBuffer = false;
     if (!isPlaying) processedFirstStepThisBuffer = false; // Reset when not playing
 
-    // BITWIG HIGH BPM FIX: Process samples with multiple step checking
-    for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
+    // TRANSPORT-SYNCHRONIZED TIMING: Use DAW position for perfect beat alignment
+    if (isPlaying && hasValidPosition)
     {
-        if (isPlaying)
+        // Calculate step timing based on pattern length parameters
+        int lengthUnit = patternLengthUnitParam->getIndex(); // 0=Steps, 1=Beats, 2=Bars
+        float lengthValue = getPatternLengthValue();
+        
+        // Calculate beats per step based on pattern length
+        double beatsPerStep;
+        switch (lengthUnit) {
+            case 0: // Steps mode - use 16th note subdivisions
+                beatsPerStep = 0.25; // 16th notes
+                break;
+            case 1: // Beats mode 
+                beatsPerStep = lengthValue / patternEngine.getStepCount();
+                break;
+            case 2: // Bars mode
+                beatsPerStep = (lengthValue * 4.0) / patternEngine.getStepCount(); // Assume 4/4 time
+                break;
+            default:
+                beatsPerStep = 0.25; // Default to 16th notes
+                break;
+        }
+        
+        // Calculate which step we should be on based on DAW position
+        double totalSteps = posInfo.ppqPosition / beatsPerStep;
+        int expectedStep = static_cast<int>(std::floor(totalSteps)) % patternEngine.getStepCount();
+        
+        // If we need to advance to the expected step, trigger it at sample 0 (beat boundary)
+        if (expectedStep != currentStep.load() || (!wasPlaying && currentStep.load() == 0))
         {
-            // FIRST STEP FIX: Process step 0 immediately when playback starts
-            if (!wasPlaying && currentSample == 0 && currentStep.load() == 0 && !processedFirstStepThisBuffer)
-            {
-                processStep(midiMessages, 0); // First step always at sample 0
-                processedFirstStepThisBuffer = true;
-                // Advance to next step to prevent double-triggering
-                int newStep = (currentStep.load() + 1) % patternEngine.getStepCount();
-                currentStep.store(newStep);
-                // Reset currentSample so normal timing continues correctly
-                currentSample = 0;
+            // Trigger the step at sample 0 for perfect beat alignment
+            processStep(midiMessages, 0);
+            
+            // Update to the expected step
+            int newStep = expectedStep;
+            
+            // Handle accent pattern updates at cycle boundaries
+            if (newStep == 0 && hasAccentPattern && currentStep.load() != 0) {
+                uiAccentOffset = globalAccentPosition % currentAccentPattern.size();
+                patternChanged.store(true);
+                DBG("RhythmPatternExplorer: Cycle boundary - UI accent offset set to " << uiAccentOffset);
             }
             
-            // CRITICAL FIX: Check for multiple steps per buffer at high BPM
+            currentStep.store(newStep);
+            
+            // Log transport-synced triggers
+            if (currentBPM >= 180.0f) {
+                juce::String message = juce::String::formatted("TRANSPORT SYNC: ppqPos=%.3f, beatsPerStep=%.3f, expectedStep=%d, triggering at sample 0",
+                    posInfo.ppqPosition, beatsPerStep, expectedStep);
+                logDebug(DebugCategory::STEP_TRIGGER, message);
+            }
+        }
+    }
+    else if (isPlaying)
+    {
+        // Fallback to sample counting if no transport info available
+        for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
+        {
             while (currentSample >= samplesPerStep && samplesPerStep > 0)
             {
-                // TIMING PRECISION FIX: Calculate the exact sample offset when the step should occur
-                // This maintains precise timing while preventing accumulating errors
-                int stepSampleOffset = currentSample - samplesPerStep;
-                int targetSample = sample - stepSampleOffset;
-                
-                // Clamp to buffer bounds for safety
-                targetSample = juce::jmax(0, juce::jmin(targetSample, buffer.getNumSamples() - 1));
-                
-                processStep(midiMessages, targetSample);
-                currentSample = stepSampleOffset; // Set to exact remainder for perfect timing
+                processStep(midiMessages, 0);
+                currentSample -= samplesPerStep;
                 int newStep = (currentStep.load() + 1) % patternEngine.getStepCount();
-                
-                // DISABLED: Auto-advancing cycle boundary - scenes/progressive should be manual only
-                // The previous code was automatically advancing scenes and progressive transformations
-                // every cycle, which is not the desired behavior. These should only advance when
-                // manually triggered (Enter, Tick, MIDI input).
-                
-                // However, we DO want to update UI accent display at cycle boundaries
-                if (newStep == 0 && hasAccentPattern) {
-                    // Update UI accent offset to match current globalAccentPosition
-                    // This creates stable UI display that updates only at cycle boundaries
-                    uiAccentOffset = globalAccentPosition % currentAccentPattern.size();
-                    patternChanged.store(true); // Notify UI to update accent display
-                    DBG("RhythmPatternExplorer: Cycle boundary - UI accent offset set to " << uiAccentOffset << " (globalPos=" << globalAccentPosition << ")");
-                }
-                
-                // Just do normal step advancement
                 currentStep.store(newStep);
                 
-                // Log step triggers at high BPMs
-                if (currentBPM >= 180.0f) {
-                    juce::String message = juce::String::formatted("BPM=%.1f, Step %d->%d, samplesPerStep=%d, currentSampleBefore=%d, currentSampleAfter=%d, buffer=%d/%d",
-                        currentBPM, currentStep.load(), newStep, samplesPerStep, 
-                        currentSample + samplesPerStep, currentSample, sample, buffer.getNumSamples());
-                    logDebug(DebugCategory::STEP_TRIGGER, message);
-                }
-                
-                // Safety break to prevent infinite loops
-                if (samplesPerStep <= 1) {
-#ifdef DEBUG
-                    std::cout << "HIGH BPM ERROR: samplesPerStep too small (" << samplesPerStep << "), breaking loop" << std::endl;
-#endif
-                    break;
-                }
+                if (samplesPerStep <= 1) break;
             }
             currentSample++;
         }
-        else if (wasPlaying)
-        {
-            // Just stopped playing - reset position
-            currentSample = 0;
-            currentStep.store(0);
-            globalAccentPosition = 0;
-            // Stopped playing - resetting position
-        }
+    }
+    
+    if (wasPlaying && !isPlaying)
+    {
+        // Just stopped playing - reset position
+        currentSample = 0;
+        currentStep.store(0);
+        globalAccentPosition = 0;
+        // Stopped playing - resetting position
     }
     
     wasPlaying = isPlaying;
