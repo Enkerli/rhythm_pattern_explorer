@@ -11,6 +11,7 @@
 #include "PluginEditor.h"
 #include "UPIParser.h"
 #include <ctime>
+#include <fstream>
 
 // Debug output disabled for production performance
 #ifdef DEBUG
@@ -355,33 +356,57 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
     static bool processedFirstStepThisBuffer = false;
     if (!isPlaying) processedFirstStepThisBuffer = false; // Reset when not playing
 
-    // BACK TO BASICS: Use the original timing system that works correctly
-    for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
+    // FIXED TIMING: Accumulate samples across buffers correctly
+    if (isPlaying)
     {
-        if (isPlaying)
+        // Accumulate samples across the entire buffer
+        int oldCurrentSample = currentSample;
+        currentSample += buffer.getNumSamples();
+        
+        // DEBUG: Log accumulation
         {
-            // Use the original step timing logic
-            while (currentSample >= samplesPerStep && samplesPerStep > 0)
+            std::ofstream debugFile("/tmp/rhythm_timing_debug.txt", std::ios::app);
+            debugFile << "ACCUMULATE: oldCurrentSample=" << oldCurrentSample
+                      << ", bufferSize=" << buffer.getNumSamples()
+                      << ", newCurrentSample=" << currentSample
+                      << ", samplesPerStep=" << samplesPerStep
+                      << ", willTrigger=" << (currentSample >= samplesPerStep ? "YES" : "NO") << std::endl;
+            debugFile.close();
+        }
+        
+        // Check if we've reached the next step boundary
+        while (currentSample >= samplesPerStep && samplesPerStep > 0)
+        {
+            // Trigger at sample 0 for best alignment
+            processStep(midiMessages, 0);
+            
+            // Advance naturally through the pattern
+            currentSample -= samplesPerStep;
+            int newStep = (currentStep.load() + 1) % patternEngine.getStepCount();
+            currentStep.store(newStep);
+            
+            // DEBUG: Log step progression
             {
-                // Trigger at sample 0 for best alignment
-                processStep(midiMessages, 0);
-                
-                // Advance naturally through the pattern
-                currentSample -= samplesPerStep;
-                int newStep = (currentStep.load() + 1) % patternEngine.getStepCount();
-                currentStep.store(newStep);
-                
-                // Handle accent pattern updates at cycle boundaries
-                if (newStep == 0 && hasAccentPattern) {
-                    uiAccentOffset = globalAccentPosition % currentAccentPattern.size();
-                    patternChanged.store(true);
-                    DBG("RhythmPatternExplorer: Cycle boundary - UI accent offset set to " << uiAccentOffset);
-                }
-                
-                // Safety break
-                if (samplesPerStep <= 1) break;
+                std::ofstream debugFile("/tmp/rhythm_timing_debug.txt", std::ios::app);
+                debugFile << "STEP TRIGGER: currentStep=" << currentStep.load() 
+                          << ", newStep=" << newStep
+                          << ", currentSample_before=" << (currentSample + samplesPerStep)
+                          << ", currentSample_after=" << currentSample
+                          << ", samplesPerStep=" << samplesPerStep 
+                          << ", bufferSize=" << buffer.getNumSamples() 
+                          << ", should_accumulate_to=" << samplesPerStep << std::endl;
+                debugFile.close();
             }
-            currentSample++;
+            
+            // Handle accent pattern updates at cycle boundaries
+            if (newStep == 0 && hasAccentPattern) {
+                uiAccentOffset = globalAccentPosition % currentAccentPattern.size();
+                patternChanged.store(true);
+                DBG("RhythmPatternExplorer: Cycle boundary - UI accent offset set to " << uiAccentOffset);
+            }
+            
+            // Safety break to prevent infinite loops
+            if (samplesPerStep <= 1) break;
         }
     }
     
@@ -528,6 +553,38 @@ void RhythmPatternExplorerAudioProcessor::updateTiming()
     }
         
     DBG("RhythmPatternExplorer: Updated timing - BPM: " << bpm << ", Samples per step: " << samplesPerStep);
+    
+    // DEBUG: Write detailed timing analysis to file
+    {
+        std::ofstream debugFile("/tmp/rhythm_timing_debug.txt", std::ios::app);
+        debugFile << "=== TIMING DEBUG ===" << std::endl;
+        debugFile << "BPM: " << bpm << std::endl;
+        debugFile << "lengthUnit: " << lengthUnit << " (0=Steps, 1=Beats, 2=Bars)" << std::endl;
+        debugFile << "lengthValue: " << lengthValue << std::endl;
+        debugFile << "patternLengthInBeats: " << patternLengthInBeats << std::endl;
+        debugFile << "patternSteps: " << patternSteps << std::endl;
+        debugFile << "patternDurationInSeconds: " << patternDurationInSeconds << std::endl;
+        debugFile << "stepDurationInSeconds: " << stepDurationInSeconds << std::endl;
+        debugFile << "samplesPerStep: " << samplesPerStep << std::endl;
+        debugFile << "currentSampleRate: " << currentSampleRate << std::endl;
+        debugFile << "Expected beats per step: " << (patternLengthInBeats / patternSteps) << std::endl;
+        debugFile << "Expected seconds per step: " << stepDurationInSeconds << std::endl;
+        debugFile << "Pattern: ";
+        auto pattern = patternEngine.getCurrentPattern();
+        for (int i = 0; i < pattern.size(); ++i) {
+            debugFile << (pattern[i] ? "1" : "0");
+        }
+        debugFile << std::endl;
+        debugFile << "Onset positions: ";
+        for (int i = 0; i < pattern.size(); ++i) {
+            if (pattern[i]) {
+                double beatPosition = i * (patternLengthInBeats / patternSteps);
+                debugFile << "Step" << i << "=Beat" << beatPosition << " ";
+            }
+        }
+        debugFile << std::endl << std::endl;
+        debugFile.close();
+    }
 }
 
 void RhythmPatternExplorerAudioProcessor::processStep(juce::MidiBuffer& midiBuffer, int samplePosition)
