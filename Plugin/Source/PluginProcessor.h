@@ -261,7 +261,7 @@ private:
     
     // Helper methods
     void updateTiming();
-    void processStep(juce::MidiBuffer& midiBuffer, int samplePosition);
+    void processStep(juce::MidiBuffer& midiBuffer, int samplePosition, int stepToProcess);
     void triggerNote(juce::MidiBuffer& midiBuffer, int samplePosition, bool isAccented = false);
     void syncBPMWithHost(const juce::AudioPlayHead::CurrentPositionInfo& posInfo);
     void syncPositionWithHost(const juce::AudioPlayHead::CurrentPositionInfo& posInfo);

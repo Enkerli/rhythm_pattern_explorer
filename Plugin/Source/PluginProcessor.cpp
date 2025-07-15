@@ -356,57 +356,66 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
     static bool processedFirstStepThisBuffer = false;
     if (!isPlaying) processedFirstStepThisBuffer = false; // Reset when not playing
 
-    // FIXED TIMING: Accumulate samples across buffers correctly
-    if (isPlaying)
+    // TRANSPORT-SYNCED TIMING: Use DAW's ppqPosition for perfect alignment
+    if (isPlaying && hasValidPosition)
     {
-        // Accumulate samples across the entire buffer
-        int oldCurrentSample = currentSample;
-        currentSample += buffer.getNumSamples();
+        // Calculate pattern timing based on DAW transport
+        double beatsPerStep = 4.0 / patternEngine.getStepCount(); // 8 steps over 4 beats = 0.5 beats per step
+        double currentBeat = posInfo.ppqPosition;
+        double stepsFromStart = currentBeat / beatsPerStep;
         
-        // DEBUG: Log accumulation
-        {
-            std::ofstream debugFile("/tmp/rhythm_timing_debug.txt", std::ios::app);
-            debugFile << "ACCUMULATE: oldCurrentSample=" << oldCurrentSample
-                      << ", bufferSize=" << buffer.getNumSamples()
-                      << ", newCurrentSample=" << currentSample
-                      << ", samplesPerStep=" << samplesPerStep
-                      << ", willTrigger=" << (currentSample >= samplesPerStep ? "YES" : "NO") << std::endl;
-            debugFile.close();
-        }
+        // Calculate which step should be active
+        int targetStep = static_cast<int>(stepsFromStart) % patternEngine.getStepCount();
         
-        // Check if we've reached the next step boundary
-        while (currentSample >= samplesPerStep && samplesPerStep > 0)
+        // Calculate the exact fractional position within the current step
+        double stepFraction = stepsFromStart - std::floor(stepsFromStart);
+        
+        // Trigger notes at the exact moment they should occur
+        int numSamples = buffer.getNumSamples();
+        double samplesPerBeat = getSampleRate() * 60.0 / posInfo.bpm;
+        double samplesPerStep = samplesPerBeat * beatsPerStep;
+        
+        // Track the last processed step to detect boundaries
+        static int lastProcessedStep = -1;
+        
+        for (int sample = 0; sample < numSamples; ++sample)
         {
-            // Trigger at sample 0 for best alignment
-            processStep(midiMessages, 0);
+            // Calculate the ppqPosition for this sample
+            double sampleBeat = currentBeat + (sample / samplesPerBeat);
+            double sampleStepsFromStart = sampleBeat / beatsPerStep;
+            int sampleStep = static_cast<int>(sampleStepsFromStart) % patternEngine.getStepCount();
             
-            // Advance naturally through the pattern
-            currentSample -= samplesPerStep;
-            int newStep = (currentStep.load() + 1) % patternEngine.getStepCount();
-            currentStep.store(newStep);
-            
-            // DEBUG: Log step progression
+            // Check if we're crossing a step boundary (only trigger once per step)
+            if (sampleStep != lastProcessedStep)
             {
-                std::ofstream debugFile("/tmp/rhythm_timing_debug.txt", std::ios::app);
-                debugFile << "STEP TRIGGER: currentStep=" << currentStep.load() 
-                          << ", newStep=" << newStep
-                          << ", currentSample_before=" << (currentSample + samplesPerStep)
-                          << ", currentSample_after=" << currentSample
-                          << ", samplesPerStep=" << samplesPerStep 
-                          << ", bufferSize=" << buffer.getNumSamples() 
-                          << ", should_accumulate_to=" << samplesPerStep << std::endl;
-                debugFile.close();
+                // Update target step
+                targetStep = sampleStep;
+                lastProcessedStep = sampleStep;
+                
+                // Trigger the step at this exact sample position
+                processStep(midiMessages, sample, targetStep);
+                
+                // Update current step
+                currentStep.store(targetStep);
+                
+                // Handle accent pattern updates at cycle boundaries
+                if (targetStep == 0 && hasAccentPattern) {
+                    uiAccentOffset = globalAccentPosition % currentAccentPattern.size();
+                    patternChanged.store(true);
+                    DBG("RhythmPatternExplorer: Cycle boundary - UI accent offset set to " << uiAccentOffset);
+                }
+                
+                // DEBUG: Log transport-synced step progression
+                {
+                    std::ofstream debugFile("/tmp/rhythm_timing_debug.txt", std::ios::app);
+                    debugFile << "TRANSPORT-SYNCED STEP: triggeredStep=" << targetStep 
+                              << ", sampleBeat=" << sampleBeat
+                              << ", sampleOffset=" << sample
+                              << ", ppqPosition=" << posInfo.ppqPosition
+                              << ", beatsPerStep=" << beatsPerStep << std::endl;
+                    debugFile.close();
+                }
             }
-            
-            // Handle accent pattern updates at cycle boundaries
-            if (newStep == 0 && hasAccentPattern) {
-                uiAccentOffset = globalAccentPosition % currentAccentPattern.size();
-                patternChanged.store(true);
-                DBG("RhythmPatternExplorer: Cycle boundary - UI accent offset set to " << uiAccentOffset);
-            }
-            
-            // Safety break to prevent infinite loops
-            if (samplesPerStep <= 1) break;
         }
     }
     
@@ -587,7 +596,7 @@ void RhythmPatternExplorerAudioProcessor::updateTiming()
     }
 }
 
-void RhythmPatternExplorerAudioProcessor::processStep(juce::MidiBuffer& midiBuffer, int samplePosition)
+void RhythmPatternExplorerAudioProcessor::processStep(juce::MidiBuffer& midiBuffer, int samplePosition, int stepToProcess)
 {
     auto pattern = patternEngine.getCurrentPattern();
     
@@ -598,14 +607,29 @@ void RhythmPatternExplorerAudioProcessor::processStep(juce::MidiBuffer& midiBuff
 #ifdef DEBUG
     if (currentBPM >= 200.0f && ++stepCallCount % 3 == 0) {
         std::cout << "PROCESS STEP: BPM=" << currentBPM << 
-            ", Step=" << currentStep.load() << 
+            ", Step=" << stepToProcess << 
             ", PatternSize=" << pattern.size() << 
-            ", HasOnset=" << (currentStep.load() < pattern.size() && pattern[currentStep.load()] ? "YES" : "NO") << 
+            ", HasOnset=" << (stepToProcess < pattern.size() && pattern[stepToProcess] ? "YES" : "NO") << 
             ", SamplePos=" << samplePosition << std::endl;
     }
 #endif
     
-    if (currentStep < pattern.size() && pattern[currentStep])
+    // DEBUG: Log pattern check
+    {
+        std::ofstream debugFile("/tmp/rhythm_timing_debug.txt", std::ios::app);
+        debugFile << "PATTERN CHECK: step=" << stepToProcess 
+                  << ", pattern[" << stepToProcess << "]=" << (stepToProcess < pattern.size() ? (pattern[stepToProcess] ? "1" : "0") : "OUT_OF_BOUNDS")
+                  << ", willTriggerNote=" << (stepToProcess < pattern.size() && pattern[stepToProcess] ? "YES" : "NO");
+        // Also log the complete pattern for verification
+        debugFile << ", fullPattern=";
+        for (size_t i = 0; i < pattern.size(); ++i) {
+            debugFile << (pattern[i] ? "1" : "0");
+        }
+        debugFile << std::endl;
+        debugFile.close();
+    }
+    
+    if (stepToProcess < pattern.size() && pattern[stepToProcess])
     {
         // Check if this step should be accented
         bool shouldAccent = false;
@@ -619,7 +643,7 @@ void RhythmPatternExplorerAudioProcessor::processStep(juce::MidiBuffer& midiBuff
             globalAccentPosition++;
             
             // Debug accent detection
-            DBG("ACCENT DEBUG: Step=" << currentStep << 
+            DBG("ACCENT DEBUG: Step=" << stepToProcess << 
                 ", GlobalAccentPos=" << (globalAccentPosition - 1) <<
                 ", AccentPatternSize=" << currentAccentPattern.size() <<
                 ", AccentStep=" << accentStep <<
@@ -721,15 +745,16 @@ void RhythmPatternExplorerAudioProcessor::syncPositionWithHost(const juce::Audio
     if (posInfo.ppqPosition >= 0.0)
     {
         // Calculate which step we should be on based on timeline position
-        double beatsPerStep = 0.25; // 16th note = quarter beat
+        // For tresillo: 8 steps over 4 beats = 0.5 beats per step
+        double beatsPerStep = 4.0 / patternEngine.getStepCount(); // Dynamic based on pattern length
         double currentBeat = posInfo.ppqPosition;
         double stepsFromStart = currentBeat / beatsPerStep;
         
         int targetStep = static_cast<int>(stepsFromStart) % patternEngine.getStepCount();
         
-        // CRITICAL FIX: Disable position sync entirely - it interferes with natural step advancement
+        // CRITICAL FIX: Re-enable position sync for perfect DAW timing alignment
         // Use internal currentBPM variable
-        bool allowPositionSync = false;  // DISABLED: Position sync was resetting currentSample constantly
+        bool allowPositionSync = true;  // ENABLED: Position sync needed for tick 1 precision
         
         // CRITICAL FIX: Only sync position when significantly out of sync (not every block)
         int stepDifference = std::abs(targetStep - currentStep.load());
