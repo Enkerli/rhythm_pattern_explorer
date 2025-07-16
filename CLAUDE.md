@@ -21,6 +21,29 @@
 
 ## Recent Issues Resolved  
 
+### CRITICAL: Visual Accent Marker Cycling Fix (July 2025)
+**Problem**: Visual accent markers weren't updating at cycle boundaries for polyrhythmic patterns like `{10}E(3,8)`, causing them to stay fixed instead of cycling as expected.
+
+**Root Cause**: Accent offset calculation used `targetStep / pattern.size()` which always gave 0 at step 0, instead of tracking the actual cycle number from transport position.
+
+**Solution**: Fixed accent offset calculation using absolute transport position:
+```cpp
+// BROKEN - only knew current step within cycle:
+int completedCycles = targetStep / pattern.size(); // Always 0 at step 0
+
+// FIXED - uses absolute transport position:
+int absoluteStep = static_cast<int>(sampleStepsFromStart);
+int currentCycle = absoluteStep / pattern.size();
+int cycleStartAccentPosition = (currentCycle * onsetsPerCycle) % currentAccentPattern.size();
+```
+
+**Result**: `{10}E(3,8)` now properly cycles accent markers between:
+- Cycle 0: accents at steps 0(red), 3(green), 6(red)
+- Cycle 1: accents at steps 0(green), 3(red), 6(green)
+- Creates proper polyrhythmic visual feedback
+
+**CRITICAL PROTECTION**: See `Plugin/Tests/ACCENT_SYSTEM_PRINCIPLES.md` for architecture that MUST be preserved.
+
 ### CRITICAL: MIDI Trigger Logic Fix (July 2025)
 **Problem**: Patterns with both progressive transformations and scenes (like `{1000000}E(1,16)E>16|1010101010101010`) only triggered progressive transformations via MIDI input, never advancing to scenes, unlike Enter key behavior.
 
@@ -178,13 +201,14 @@ rhythm_pattern_explorer/
 ```
 
 ## Current Status  
-- **v0.03d with STABLE accent pattern synchronization** 
+- **v0.03e with STABLE accent pattern cycling at boundaries** 
 - **CRITICAL BUG FIXES COMPLETED** (July 2025):
   - ✅ Accent markers stable during playback (no swirling)
-  - ✅ Accent patterns advance properly at cycle boundaries  
+  - ✅ Accent patterns cycle properly at pattern boundaries (polyrhythmic visual feedback)  
   - ✅ Step indicator resets on all manual triggers
   - ✅ Manual-only scene/progressive advancement
   - ✅ Consistent reset behavior across all trigger paths
+  - ✅ Perfect tick 1 timing with transport synchronization
 - Both AU and VST3 plugins properly installed and up-to-date
 - **Complete Pattern Language**: E(n,s), P(n,s), R(n,s), B(n,s), W(n,s), D(n,s) all working
 - **Accent Pattern System**: Suprasegmental accent layer with curly bracket notation `{accent}pattern`
