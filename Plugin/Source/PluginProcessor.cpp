@@ -413,53 +413,48 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
                 targetStep = sampleStep;
                 lastProcessedStep = sampleStep;
                 
+                // Debug logging for step boundary detection
+                logDebug(DebugCategory::STEP_TRIGGER, 
+                    "Step boundary detected: sample=" + juce::String(sample) + 
+                    ", sampleStep=" + juce::String(sampleStep) + 
+                    ", targetStep=" + juce::String(targetStep) +
+                    ", ppq=" + juce::String(sampleBeat, 3));
+                
                 // Trigger the step at this exact sample position
                 processStep(midiMessages, sample, targetStep);
                 
                 // Update current step
                 currentStep.store(targetStep);
                 
-                // Handle accent pattern updates at cycle boundaries
-                if (targetStep == 0 && hasAccentPattern) {
-                    uiAccentOffset = globalAccentPosition % currentAccentPattern.size();
-                    patternChanged.store(true);
-                    DBG("RhythmPatternExplorer: Cycle boundary - UI accent offset set to " << uiAccentOffset);
-                }
-                
-                // CRITICAL FIX: Update uiAccentOffset only at cycle boundaries for transport sync
-                // This preserves the stable accent display design from the original working solution
+                // CRITICAL FIX: Proper accent offset calculation for transport sync
                 if (hasAccentPattern && !currentAccentPattern.empty()) {
-                    // Only update at cycle boundaries (step 0 of each cycle)
-                    if (targetStep % patternEngine.getCurrentPattern().size() == 0) {
-                        // Calculate how many complete cycles we've been through
-                        auto pattern = patternEngine.getCurrentPattern();
-                        if (!pattern.empty()) {
-                            // Count onsets in the current pattern
-                            int onsetsInPattern = 0;
-                            for (bool onset : pattern) {
-                                if (onset) onsetsInPattern++;
-                            }
-                            
-                            if (onsetsInPattern > 0) {
-                                // Calculate completed cycles based on current step
-                                int completedCycles = targetStep / pattern.size();
-                                
-                                // Count onsets that have occurred before the current cycle
-                                int onsetsBeforeCurrentCycle = completedCycles * onsetsInPattern;
-                                
-                                // Calculate UI accent offset for this cycle - this determines
-                                // which accent pattern position we start from for the current cycle
-                                int newUiAccentOffset = onsetsBeforeCurrentCycle % currentAccentPattern.size();
-                                
-                                // Only update if it has changed to avoid unnecessary UI updates
-                                if (newUiAccentOffset != uiAccentOffset) {
-                                    uiAccentOffset = newUiAccentOffset;
-                                    patternChanged.store(true);
-                                    DBG("RhythmPatternExplorer: Transport sync cycle boundary - UI accent offset updated to " << uiAccentOffset 
-                                        << " (completedCycles=" << completedCycles 
-                                        << ", onsetsBeforeCurrentCycle=" << onsetsBeforeCurrentCycle 
-                                        << ", currentStep=" << targetStep << ")");
-                                }
+                    // Always calculate the correct accent offset based on current position
+                    auto pattern = patternEngine.getCurrentPattern();
+                    if (!pattern.empty()) {
+                        // Use absolute step position to determine which cycle we're in
+                        int absoluteStep = static_cast<int>(sampleStepsFromStart);
+                        int currentCycle = absoluteStep / pattern.size();
+                        int stepInCurrentCycle = targetStep % pattern.size();
+                        
+                        // Count onsets per cycle
+                        int onsetsPerCycle = 0;
+                        for (bool onset : pattern) {
+                            if (onset) onsetsPerCycle++;
+                        }
+                        
+                        // Calculate UI accent offset for the START of this cycle
+                        int cycleStartAccentPosition = (currentCycle * onsetsPerCycle) % currentAccentPattern.size();
+                        
+                        // CRITICAL: Only update at actual cycle boundaries to prevent swirling
+                        // Update when we cross into a new cycle OR hit step 0 (start of cycle)
+                        static int lastCurrentCycle = -1;
+                        if (currentCycle != lastCurrentCycle || targetStep == 0) {
+                            if (cycleStartAccentPosition != uiAccentOffset) {
+                                uiAccentOffset = cycleStartAccentPosition;
+                                patternChanged.store(true);
+                                lastCurrentCycle = currentCycle;
+                                DBG("RhythmPatternExplorer: UI accent offset updated to " << uiAccentOffset 
+                                    << " (cycle: " << currentCycle << ", step=" << targetStep << ")");
                             }
                         }
                     }
@@ -714,6 +709,12 @@ void RhythmPatternExplorerAudioProcessor::processStep(juce::MidiBuffer& midiBuff
             DBG("ACCENT DEBUG: No accent pattern - hasAccentPattern=" << (hasAccentPattern ? "true" : "false") <<
                 ", accentPatternSize=" << currentAccentPattern.size());
         }
+        
+        // Debug logging for note trigger
+        logDebug(DebugCategory::STEP_TRIGGER, 
+            "NOTE TRIGGERED: step=" + juce::String(stepToProcess) + 
+            ", samplePos=" + juce::String(samplePosition) + 
+            ", accented=" + juce::String(shouldAccent ? "YES" : "NO"));
         
         triggerNote(midiBuffer, samplePosition, shouldAccent);
         
