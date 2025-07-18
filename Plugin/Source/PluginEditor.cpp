@@ -17,6 +17,18 @@
 #endif
 
 //==============================================================================
+/**
+ * Constructor for the plugin editor interface.
+ * 
+ * Sets up the GUI components including:
+ * - UPI pattern input field
+ * - Pattern visualization
+ * - Transport controls
+ * - Parameter sliders
+ * - Documentation browser (if available)
+ * 
+ * @param p Reference to the audio processor
+ */
 RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEditor (RhythmPatternExplorerAudioProcessor& p)
     : AudioProcessorEditor (&p), audioProcessor (p)
 {
@@ -296,6 +308,15 @@ RhythmPatternExplorerAudioProcessorEditor::~RhythmPatternExplorerAudioProcessorE
 }
 
 //==============================================================================
+/**
+ * Paints the plugin interface.
+ * 
+ * Renders the background, pattern visualization, and all UI components.
+ * Uses the current background color and handles both pattern and
+ * documentation display modes.
+ * 
+ * @param g Graphics context for drawing
+ */
 void RhythmPatternExplorerAudioProcessorEditor::paint (juce::Graphics& g)
 {
     // Background with color option
@@ -315,6 +336,13 @@ void RhythmPatternExplorerAudioProcessorEditor::paint (juce::Graphics& g)
         drawPatternCircle(g, circleArea);
 }
 
+/**
+ * Handles window resizing and component layout.
+ * 
+ * Repositions all UI components based on the current window size.
+ * Handles both pattern view and documentation view layouts.
+ * Maintains proper spacing and proportions for all elements.
+ */
 void RhythmPatternExplorerAudioProcessorEditor::resized()
 {
     auto area = getLocalBounds();
@@ -504,6 +532,13 @@ void RhythmPatternExplorerAudioProcessorEditor::resized()
 #endif
 }
 
+/**
+ * Timer callback for UI updates.
+ * 
+ * Called periodically to update the pattern display, analysis information,
+ * and step/scene button based on the current audio processor state.
+ * Ensures the UI stays synchronized with the audio processing.
+ */
 void RhythmPatternExplorerAudioProcessorEditor::timerCallback()
 {
     // Update pattern display and animation
@@ -593,6 +628,18 @@ void RhythmPatternExplorerAudioProcessorEditor::timerCallback()
 }
 
 //==============================================================================
+/**
+ * Draws the circular pattern visualization.
+ * 
+ * Renders the current pattern as a circle with:
+ * - Steps positioned around the circumference
+ * - Different colors for onsets, accents, and empty steps
+ * - Current step highlighting
+ * - Progressive scene information if applicable
+ * 
+ * @param g Graphics context for drawing
+ * @param bounds Rectangle bounds for the circle
+ */
 void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics& g, juce::Rectangle<int> bounds)
 {
     auto pattern = audioProcessor.getPatternEngine().getCurrentPattern();
@@ -858,6 +905,12 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
     }
 }
 
+/**
+ * Updates the pattern display visualization.
+ * 
+ * Triggers a repaint of the pattern circle to reflect the current
+ * pattern state, including any changes in onsets, accents, or position.
+ */
 void RhythmPatternExplorerAudioProcessorEditor::updatePatternDisplay()
 {
     juce::String binary = audioProcessor.getPatternEngine().getBinaryString();
@@ -873,6 +926,12 @@ void RhythmPatternExplorerAudioProcessorEditor::updatePatternDisplay()
     patternDisplayEditor.setText(displayText, juce::dontSendNotification);
 }
 
+/**
+ * Updates the analysis information display.
+ * 
+ * Refreshes the pattern analysis text showing current pattern name,
+ * onset count, step count, and other relevant information.
+ */
 void RhythmPatternExplorerAudioProcessorEditor::updateAnalysisDisplay()
 {
     // Balance and center of gravity analysis - COMMENTED OUT per user request for pre-AUv3 state
@@ -886,6 +945,14 @@ void RhythmPatternExplorerAudioProcessorEditor::updateAnalysisDisplay()
 //    analysisLabel.setText(analysis, juce::dontSendNotification);
 }
 
+/**
+ * Updates the step/scene button display.
+ * 
+ * Changes the button text and tooltip based on current mode:
+ * - Scene cycling: shows current scene number
+ * - Progressive patterns: shows progression step
+ * - Regular patterns: shows current step position
+ */
 void RhythmPatternExplorerAudioProcessorEditor::updateStepSceneButton()
 {
     juce::String buttonText;
@@ -919,6 +986,13 @@ void RhythmPatternExplorerAudioProcessorEditor::updateStepSceneButton()
     tickButton.setTooltip(tooltip);
 }
 
+/**
+ * Parses the UPI pattern entered in the text editor.
+ * 
+ * Takes the text from the UPI input field, passes it to the audio processor
+ * for parsing and application, then updates the UI to reflect the changes.
+ * This is called when the user presses Enter or clicks the Parse button.
+ */
 void RhythmPatternExplorerAudioProcessorEditor::parseUPIPattern()
 {
     juce::String upiText = upiTextEditor.getText().trim();
@@ -936,17 +1010,34 @@ void RhythmPatternExplorerAudioProcessorEditor::parseUPIPattern()
     // upiTextEditor.clear();
 }
 
+/**
+ * Handles Parse button clicks.
+ * 
+ * Simply delegates to parseUPIPattern() to process the current UPI input.
+ */
 void RhythmPatternExplorerAudioProcessorEditor::onParseButtonClicked()
 {
     parseUPIPattern();
 }
 
+/**
+ * Gets the current MIDI note number from the slider.
+ * 
+ * @return The MIDI note number (0-127) for pattern output
+ */
 int RhythmPatternExplorerAudioProcessorEditor::getMidiNoteNumber() const
 {
     // Slider already handles range validation (0-127)
     return static_cast<int>(midiNoteSlider.getValue());
 }
 
+/**
+ * Toggles between pattern view and documentation view.
+ * 
+ * Shows or hides the built-in documentation browser and updates
+ * the toggle button text accordingly. Only available when
+ * JUCE_WEB_BROWSER is enabled.
+ */
 void RhythmPatternExplorerAudioProcessorEditor::toggleDocumentation()
 {
 #if JUCE_WEB_BROWSER
@@ -969,6 +1060,13 @@ void RhythmPatternExplorerAudioProcessorEditor::toggleDocumentation()
 #endif
 }
 
+/**
+ * Creates the HTML content for the documentation browser.
+ * 
+ * Builds a comprehensive HTML document with UPI syntax documentation,
+ * pattern examples, and usage guides. Uses dark theme styling to
+ * match the plugin interface.
+ */
 void RhythmPatternExplorerAudioProcessorEditor::createDocumentationHTML()
 {
 #if JUCE_WEB_BROWSER
@@ -1108,6 +1206,12 @@ juce::Colour RhythmPatternExplorerAudioProcessorEditor::getBackgroundColour() co
     }
 }
 
+/**
+ * Cycles through available background colors.
+ * 
+ * Changes the background color and triggers a repaint.
+ * Used for visual customization of the plugin interface.
+ */
 void RhythmPatternExplorerAudioProcessorEditor::cycleBackgroundColor()
 {
     int current = static_cast<int>(currentBackgroundColor);
@@ -1116,6 +1220,14 @@ void RhythmPatternExplorerAudioProcessorEditor::cycleBackgroundColor()
     repaint(); // Trigger redraw with new background color
 }
 
+/**
+ * Handles double-click events on the plugin interface.
+ * 
+ * Currently triggers background color cycling when double-clicking
+ * on the plugin interface.
+ * 
+ * @param event Mouse event information
+ */
 void RhythmPatternExplorerAudioProcessorEditor::mouseDoubleClick(const juce::MouseEvent& event)
 {
     // Double-click anywhere to cycle background colors

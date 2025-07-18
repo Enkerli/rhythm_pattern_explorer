@@ -42,7 +42,6 @@ UPIParser::ParseResult UPIParser::parse(const juce::String& input)
             return createError("Invalid accent pattern: " + accentStr);
         }
         
-        DBG("UPIParser: Found accent pattern: " + accentStr + " -> " + patternToBinary(accentResult.pattern));
     }
     
     // Check for combinations (+ or -) in the base pattern (without accents)
@@ -53,14 +52,12 @@ UPIParser::ParseResult UPIParser::parse(const juce::String& input)
         if (parts.size() >= 2)
         {
             // Special handling for polygon combinations - calculate LCM first
-            DBG("UPIParser: Checking for polygon combination. Parts count: " << parts.size());
             bool allPolygons = true;
             std::vector<int> polygonSizes;
             
             for (const auto& part : parts)
             {
                 juce::String trimmed = part.trim();
-                DBG("UPIParser: Checking part: '" << trimmed << "', isPolygonPattern: " << (isPolygonPattern(trimmed) ? "TRUE" : "FALSE"));
                 if (isPolygonPattern(trimmed))
                 {
                     // Extract the polygon size for LCM calculation
@@ -68,7 +65,6 @@ UPIParser::ParseResult UPIParser::parse(const juce::String& input)
                     std::smatch match;
                     std::string inputStr = trimmed.toStdString();
                     
-                    DBG("UPIParser: Regex matching against: '" << inputStr << "'");
                     if (std::regex_search(inputStr, match, polygonRegex))
                     {
                         int sides = std::stoi(match[1].str());
@@ -84,7 +80,6 @@ UPIParser::ParseResult UPIParser::parse(const juce::String& input)
                 }
                 else
                 {
-                    DBG("UPIParser: Not a polygon pattern: '" << trimmed << "'");
                     allPolygons = false;
                     break;
                 }
@@ -99,7 +94,6 @@ UPIParser::ParseResult UPIParser::parse(const juce::String& input)
                     targetLCM = lcm(targetLCM, polygonSizes[i]);
                 }
                 
-                DBG("UPIParser: Polygon combination detected. PolygonSizes: " << polygonSizes[0] << ", " << polygonSizes[1] << ". LCM: " << targetLCM);
                 
                 // Parse each polygon projected onto the LCM space
                 auto result = parsePolygonForCombination(parts[0].trim(), targetLCM);
@@ -124,7 +118,6 @@ UPIParser::ParseResult UPIParser::parse(const juce::String& input)
             else
             {
                 // Regular combination for non-polygon patterns
-                DBG("UPIParser: Using regular combination (not polygon combination). allPolygons: " << (allPolygons ? "true" : "false") << ", polygonSizes.size(): " << polygonSizes.size());
                 auto result = parsePattern(parts[0].trim());
                 if (!result.isValid()) return result;
                 
@@ -179,7 +172,6 @@ UPIParser::ParseResult UPIParser::parse(const juce::String& input)
             result.hasAccentPattern = true;
             result.accentPattern = accentResult.pattern;
             result.accentPatternName = accentResult.patternName;
-            DBG("UPIParser: Attached accent pattern to result: " + result.accentPatternName);
         }
     }
     return result;
@@ -189,15 +181,8 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
 {
     juce::String cleaned = cleanInput(input);
     
-    DBG("UPIParser::parsePattern called with input: '" << input << "', cleaned: '" << cleaned << "'");
     
-    // Debug logging for pattern recognition
-    juce::File logFile("/tmp/rhythm_debug.log");
-    logFile.appendText("=== parsePattern called ===\n");
-    logFile.appendText("Input: '" + input + "'\n");
-    logFile.appendText("Cleaned: '" + cleaned + "'\n");
-    logFile.appendText("isEuclideanPattern: " + juce::String(isEuclideanPattern(cleaned) ? "true" : "false") + "\n");
-    logFile.appendText("isBinaryPattern: " + juce::String(isBinaryPattern(cleaned) ? "true" : "false") + "\n");
+    // Pattern recognition processing
     
     // Handle transformations first
     if (cleaned.startsWith("~") || cleaned.startsWith("inv "))
@@ -260,15 +245,8 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
             juce::String basePattern = parts[0].trim();
             int targetOnsets = parts[1].trim().getIntValue();
             
-            DBG("Progressive pattern detected: " + cleaned);
-            DBG("   Base pattern (raw): " + basePattern);
-            DBG("   Target onsets: " + juce::String(targetOnsets));
             
-            // Also write to file for debugging
-            juce::File logFile("/tmp/rhythm_debug.log");
-            logFile.appendText("Progressive pattern detected: " + cleaned + "\n");
-            logFile.appendText("Base pattern (raw): " + basePattern + "\n");
-            logFile.appendText("Target onsets: " + juce::String(targetOnsets) + "\n");
+            // Progressive pattern processing
             
             // Extract transformer type (B, W, E, D) and remove it from base pattern
             char transformerType = 'b'; // Default to Barlow
@@ -288,32 +266,15 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
                 }
             }
             
-            DBG("   Transformer type: " + juce::String(transformerType));
-            DBG("   Final base pattern: " + basePattern);
             
-            // Log to file
-            logFile.appendText("Transformer type: " + juce::String(transformerType) + "\n");
-            logFile.appendText("Final base pattern: " + basePattern + "\n");
+            // Progressive transformation setup
             
             auto baseResult = parsePattern(basePattern);
             if (baseResult.isValid())
             {
-                DBG("   Base result pattern: " + patternToBinary(baseResult.pattern));
-                DBG("   Base result onsets: " + juce::String(countOnsets(baseResult.pattern)));
-                
-                // Log to file
-                logFile.appendText("Base result pattern: " + patternToBinary(baseResult.pattern) + "\n");
-                logFile.appendText("Base result onsets: " + juce::String(countOnsets(baseResult.pattern)) + "\n");
                 
                 // Apply progressive transformation with target onset count
                 auto transformed = applyProgressiveTransformation(baseResult.pattern, transformerType, targetOnsets);
-                DBG("   Transformed pattern: " + patternToBinary(transformed));
-                DBG("   Transformed onsets: " + juce::String(countOnsets(transformed)));
-                
-                // Log to file
-                logFile.appendText("Transformed pattern: " + patternToBinary(transformed) + "\n");
-                logFile.appendText("Transformed onsets: " + juce::String(countOnsets(transformed)) + "\n");
-                logFile.appendText("---\n");
                 
                 auto result = createSuccess(transformed, "Progressive: " + cleaned);
                 
@@ -354,13 +315,10 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
             if (hasProgressiveOffset && hasProgressiveOffsetEngine)
             {
                 effectiveOffset = getCurrentProgressiveOffset();
-                DBG("UPIParser: Using progressive offset from engine: " << effectiveOffset);
             }
             else
             {
-                DBG("UPIParser: Using initial offset: " << effectiveOffset << 
-                    " (hasProgressiveOffset=" << (hasProgressiveOffset ? "true" : "false") << 
-                    ", hasEngine=" << (hasProgressiveOffsetEngine ? "true" : "false") << ")");
+                    // Progressive offset calculated
             }
             
             auto pattern = parseEuclidean(onsets, steps, effectiveOffset);
@@ -1294,7 +1252,6 @@ static void cleanupProgressiveStates()
 {
     if (progressivePatterns.size() <= MAX_PROGRESSIVE_STATES) return;
     
-    DBG("Progressive states cleanup: " + juce::String(progressivePatterns.size()) + " states, cleaning up...");
     
     // Find least frequently used patterns
     std::vector<std::pair<int, juce::String>> accessCounts;
@@ -1316,7 +1273,6 @@ static void cleanupProgressiveStates()
         progressiveStepCount.erase(keyToRemove);
     }
     
-    DBG("Progressive states after cleanup: " + juce::String(progressivePatterns.size()) + " states remaining");
 }
 
 /**
@@ -1343,9 +1299,6 @@ std::vector<bool> UPIParser::applyProgressiveTransformation(const std::vector<bo
     // Example: "10000000e8" for E(1,8)E>8
     juce::String patternKey = patternToBinary(basePattern) + juce::String(transformerType) + juce::String(targetOnsets);
     
-    DBG("Progressive transformation called:");
-    DBG("   Pattern key: " + patternKey);
-    DBG("   Target onsets: " + juce::String(targetOnsets));
     
     // Check if cleanup is needed before proceeding
     // Prevents unbounded growth of progressive state maps
@@ -1364,8 +1317,6 @@ std::vector<bool> UPIParser::applyProgressiveTransformation(const std::vector<bo
         // This ensures the user sees the starting pattern on initial trigger
         progressivePatterns[patternKey] = basePattern;
         progressiveStepCount[patternKey] = 1; // UI shows step 1 for base pattern
-        DBG("   First call - returning base pattern: " + patternToBinary(basePattern));
-        DBG("   Step count: " + juce::String(progressiveStepCount[patternKey]));
         return basePattern;
     }
     else
@@ -1373,20 +1324,16 @@ std::vector<bool> UPIParser::applyProgressiveTransformation(const std::vector<bo
         // Get the current state from previous transformation
         // This continues the progressive sequence from where it left off
         currentPattern = progressivePatterns[patternKey];
-        DBG("   Continuing from stored pattern: " + patternToBinary(currentPattern));
     }
     
     int currentOnsets = countOnsets(currentPattern);
-    DBG("   Current onsets: " + juce::String(currentOnsets));
     
     // Check if we've reached the target - if so, loop back to base pattern
     // This creates continuous cycling behavior for live performance
     if (currentOnsets == targetOnsets)
     {
-        DBG("   Target reached! Looping back to base pattern");
         progressivePatterns[patternKey] = basePattern;
         progressiveStepCount[patternKey] = 1; // Reset UI to step 1
-        DBG("   Reset step count: " + juce::String(progressiveStepCount[patternKey]));
         return basePattern;
     }
     
@@ -1395,8 +1342,6 @@ std::vector<bool> UPIParser::applyProgressiveTransformation(const std::vector<bo
     int direction = (targetOnsets > currentOnsets) ? 1 : -1;
     int nextOnsets = currentOnsets + direction;
     
-    DBG("   Direction: " + juce::String(direction));
-    DBG("   Next onsets target: " + juce::String(nextOnsets));
     
     // Clamp to valid range to prevent overshooting the target
     // This ensures we don't go beyond the target onset count
@@ -1409,7 +1354,6 @@ std::vector<bool> UPIParser::applyProgressiveTransformation(const std::vector<bo
         nextOnsets = std::max(nextOnsets, targetOnsets);
     }
     
-    DBG("   Clamped next onsets: " + juce::String(nextOnsets));
     
     // Transform from current pattern to next step
     // Each transformer type uses different algorithms for onset placement/removal
@@ -1462,9 +1406,6 @@ std::vector<bool> UPIParser::applyProgressiveTransformation(const std::vector<bo
     // Step 1 = base pattern, Step 2 = first transformation, etc.
     progressiveStepCount[patternKey]++;
     
-    DBG("   Final result: " + patternToBinary(result));
-    DBG("   Final onsets: " + juce::String(countOnsets(result)));
-    DBG("   Returning step: " + juce::String(progressiveStepCount[patternKey]));
     
     return result;
 }
@@ -1747,7 +1688,6 @@ void UPIParser::resetProgressiveState(const juce::String& patternKey)
 
 void UPIParser::resetAllProgressiveStates()
 {
-    DBG("Resetting ALL progressive states (" + juce::String(progressivePatterns.size()) + " patterns)");
     progressivePatterns.clear();
     progressiveAccessCount.clear();
     progressiveStepCount.clear();
