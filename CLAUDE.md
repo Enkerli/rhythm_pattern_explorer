@@ -128,6 +128,57 @@ currentStep.store(0);             // Reset step indicator
 patternChanged.store(true);       // Notify UI updates
 ```
 
+### Transport Accent Synchronization (July 2025)
+**Problem**: Transport jumps, loops, and start/stop caused desynchronization between visual accent markers and MIDI accent output due to dual tracking systems using different calculation methods.
+
+**Root Cause**: 
+- UI accent display used transport-based absolute position calculation
+- MIDI accent output used sequential `globalAccentPosition` counting
+- Static tracking variables (`lastProcessedStep`, `lastCurrentCycle`) didn't reset on transport jumps
+- Transport discontinuities caused divergence between visual and MIDI accent systems
+
+**Solution**: Implemented comprehensive transport-aware accent synchronization:
+
+**1. Transport Jump Detection** (`PluginProcessor.cpp` lines 381-424):
+```cpp
+// Detect transport jumps by checking for large discontinuities in ppqPosition
+static double lastPpqPosition = -1.0;
+double ppqDelta = std::abs(currentBeat - lastPpqPosition);
+double expectedDelta = (double)numSamples / samplesPerBeat;
+
+if (ppqDelta > expectedDelta * 2.0) {
+    transportJumpDetected = true;
+    // Reset static tracking variables and recalculate globalAccentPosition
+    lastProcessedStep = -1;
+    lastCurrentCycle = -1;
+    // Recalculate globalAccentPosition from transport position
+}
+```
+
+**2. Unified Accent Calculation** (`PluginProcessor.cpp` lines 690-738):
+```cpp
+// UNIFIED: Both MIDI and UI now use transport-based accent calculation
+int transportAccentPosition = ((currentCycle * onsetsPerCycle) + onsetsInCurrentCycle - 1) % currentAccentPattern.size();
+shouldAccent = currentAccentPattern[transportAccentPosition];
+```
+
+**3. Transport-Aware Reset Logic** (`PluginProcessor.cpp` lines 495-519):
+```cpp
+// On transport stop: Reset both accent tracking systems
+globalAccentPosition = 0;
+uiAccentOffset = 0;
+
+// On transport start: Synchronize all tracking variables
+lastProcessedStep = -1;
+lastCurrentCycle = -1;
+```
+
+**Result**: 
+- Perfect accent synchronization across transport jumps, loops, and start/stop
+- Visual accent markers always match MIDI accent output
+- No more accent desynchronization during DAW transport operations
+- Robust polyrhythmic accent cycling maintained across all transport scenarios
+
 ### Legacy Accent Pattern Support 
 - **Accent Pattern Support**: Implemented suprasegmental accent layer system using curly bracket notation
   - `{100}E(3,8)` or `E(3,8){100}` adds accents on first onset of tresillo

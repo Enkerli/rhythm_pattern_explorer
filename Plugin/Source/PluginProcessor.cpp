@@ -378,6 +378,52 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
         // Track the last processed step to detect boundaries
         static int lastProcessedStep = -1;
         
+        // TRANSPORT JUMP DETECTION: Detect discontinuities in transport position
+        static double lastPpqPosition = -1.0;
+        static bool transportJumpDetected = false;
+        
+        // Detect transport jumps by checking for large discontinuities in ppqPosition
+        if (lastPpqPosition >= 0.0) {
+            double ppqDelta = std::abs(currentBeat - lastPpqPosition);
+            double expectedDelta = (double)numSamples / samplesPerBeat;
+            
+            // If the position change is much larger than expected, it's likely a transport jump
+            if (ppqDelta > expectedDelta * 2.0) {
+                transportJumpDetected = true;
+                // Reset static tracking variables on transport jump
+                lastProcessedStep = -1;
+                static int lastCurrentCycle = -1; // Will be reset below
+                lastCurrentCycle = -1;
+                
+                // CRITICAL: Recalculate globalAccentPosition from transport position on jumps
+                if (hasAccentPattern && !currentAccentPattern.empty()) {
+                    auto pattern = patternEngine.getCurrentPattern();
+                    if (!pattern.empty()) {
+                        // Calculate how many onsets have occurred from start of transport to current position
+                        int absoluteStep = static_cast<int>(stepsFromStart);
+                        int totalCycles = absoluteStep / pattern.size();
+                        int currentStepInCycle = absoluteStep % pattern.size();
+                        
+                        // Count onsets per cycle
+                        int onsetsPerCycle = 0;
+                        for (bool onset : pattern) {
+                            if (onset) onsetsPerCycle++;
+                        }
+                        
+                        // Count onsets from start of current cycle to current step
+                        int onsetsInCurrentCycle = 0;
+                        for (int i = 0; i <= currentStepInCycle && i < pattern.size(); ++i) {
+                            if (pattern[i]) onsetsInCurrentCycle++;
+                        }
+                        
+                        // Recalculate globalAccentPosition based on transport position
+                        globalAccentPosition = (totalCycles * onsetsPerCycle) + onsetsInCurrentCycle;
+                    }
+                }
+            }
+        }
+        lastPpqPosition = currentBeat;
+        
         for (int sample = 0; sample < numSamples; ++sample)
         {
             // Calculate the ppqPosition for this sample
@@ -422,6 +468,13 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
                         // CRITICAL: Only update at actual cycle boundaries to prevent swirling
                         // Update when we cross into a new cycle OR hit step 0 (start of cycle)
                         static int lastCurrentCycle = -1;
+                        
+                        // Reset lastCurrentCycle on transport jumps
+                        if (transportJumpDetected) {
+                            lastCurrentCycle = -1;
+                            transportJumpDetected = false; // Reset flag after handling
+                        }
+                        
                         if (currentCycle != lastCurrentCycle || targetStep == 0) {
                             if (cycleStartAccentPosition != uiAccentOffset) {
                                 uiAccentOffset = cycleStartAccentPosition;
@@ -438,13 +491,31 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
         }
     }
     
+    // TRANSPORT-AWARE RESET LOGIC: Handle transport start/stop for accent synchronization
     if (wasPlaying && !isPlaying)
     {
-        // Just stopped playing - reset position
+        // Just stopped playing - reset position and accent tracking
         currentSample = 0;
         currentStep.store(0);
         globalAccentPosition = 0;
-        // Stopped playing - resetting position
+        uiAccentOffset = 0;  // Reset UI accent offset on stop
+        patternChanged.store(true);  // Notify UI to update
+        // Stopped playing - resetting position and accent tracking
+    }
+    else if (!wasPlaying && isPlaying)
+    {
+        // Just started playing - ensure accent tracking is synchronized
+        // Reset static variables to ensure clean start
+        static int lastProcessedStep = -1;
+        static int lastCurrentCycle = -1;
+        lastProcessedStep = -1;
+        lastCurrentCycle = -1;
+        
+        // Reset accent tracking for clean start
+        globalAccentPosition = 0;
+        uiAccentOffset = 0;
+        patternChanged.store(true);  // Notify UI to update
+        // Started playing - accent tracking synchronized
     }
     
     wasPlaying = isPlaying;
@@ -634,14 +705,54 @@ void RhythmPatternExplorerAudioProcessor::processStep(juce::MidiBuffer& midiBuff
         bool shouldAccent = false;
         if (hasAccentPattern && !currentAccentPattern.empty())
         {
-            // Use global accent position (persists across pattern cycles)
-            int accentStep = globalAccentPosition % currentAccentPattern.size();
-            shouldAccent = currentAccentPattern[accentStep];
+            // UNIFIED APPROACH: Use transport-based accent calculation for both MIDI and UI
+            // Calculate accent position based on transport position instead of sequential counting
             
-            // Increment global accent position for next onset
-            globalAccentPosition++;
+            // Get current transport position info
+            auto posInfo = getPlayHead()->getPosition();
+            if (posInfo.hasValue() && posInfo->getPpqPosition().hasValue()) {
+                // Calculate pattern timing parameters
+                int lengthUnit = patternLengthUnitParam->getIndex();
+                float lengthValue = getPatternLengthValue();
+                double patternLengthInBeats;
+                switch (lengthUnit) {
+                    case 0: patternLengthInBeats = lengthValue / 4.0; break;  // Steps
+                    case 1: patternLengthInBeats = lengthValue; break;        // Beats
+                    case 2: patternLengthInBeats = lengthValue * 4.0; break;  // Bars
+                    default: patternLengthInBeats = lengthValue; break;
+                }
+                
+                double beatsPerStep = patternLengthInBeats / pattern.size();
+                double currentBeat = posInfo->getPpqPosition().orFallback(0.0);
+                double stepsFromStart = currentBeat / beatsPerStep;
+                
+                // Calculate absolute step and cycle position
+                int absoluteStep = static_cast<int>(stepsFromStart);
+                int currentCycle = absoluteStep / pattern.size();
+                
+                // Count onsets per cycle
+                int onsetsPerCycle = 0;
+                for (bool onset : pattern) {
+                    if (onset) onsetsPerCycle++;
+                }
+                
+                // Count onsets from start of current cycle to current step
+                int onsetsInCurrentCycle = 0;
+                for (int i = 0; i <= stepToProcess && i < pattern.size(); ++i) {
+                    if (pattern[i]) onsetsInCurrentCycle++;
+                }
+                
+                // Calculate transport-based accent position
+                int transportAccentPosition = ((currentCycle * onsetsPerCycle) + onsetsInCurrentCycle - 1) % currentAccentPattern.size();
+                shouldAccent = currentAccentPattern[transportAccentPosition];
+            } else {
+                // Fallback to sequential method if transport info unavailable
+                int accentStep = globalAccentPosition % currentAccentPattern.size();
+                shouldAccent = currentAccentPattern[accentStep];
+                globalAccentPosition++;
+            }
             
-            // Accent calculated based on global position and accent pattern
+            // Accent calculated based on transport position for consistency with UI
         }
         else
         {
