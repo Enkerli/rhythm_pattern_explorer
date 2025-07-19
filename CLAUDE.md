@@ -1,5 +1,23 @@
 # Claude Code Memory
 
+## CRITICAL: Anti-Swirling Protection
+**NEVER use `globalAccentPosition` in UI accent functions** - it causes accent markers to update every step (swirling effect).
+**ALWAYS use `uiAccentOffset`** for stable UI display that only updates at:
+- Pattern changes (new patterns, progressive transformations, scene switching)  
+- Cycle boundaries (for polymetric patterns)
+- Manual triggers (Enter, MIDI input)
+
+This mistake has been repeated multiple times. The protection is now built into the code with clear warnings.
+
+## CRITICAL: Cycle Boundary Update Protection
+**MUST update UI at cycle boundaries for polymetric patterns** - failure causes accent markers to stick on first cycle.
+**For patterns like `{10}E(3,8)`**: Rhythm cycles every 8 steps, accent cycles every 2 onsets.
+**UI MUST update at step 0** to sync `uiAccentOffset` with current `globalAccentPosition % accentPattern.size()`.
+**Detection**: `targetStep == 0` indicates cycle boundary for rhythm pattern.
+**Action**: `uiAccentOffset = globalAccentPosition % currentAccentPattern.size(); patternChanged.store(true);`
+
+This mistake has been repeated multiple times. The cycle boundary logic must be robust and clearly documented.
+
 ## Project Configuration
 - **Plugin Installation**: Install to user library (`~/Library/Audio/Plug-Ins/`) NOT system library (`/Library/Audio/Plug-Ins/`)
 - **NO STANDALONE APP**: User explicitly does NOT want a standalone application - plugins only (AU/VST3)
@@ -20,6 +38,27 @@
 - File-based delivery (not data URLs) for proper rendering
 
 ## Recent Issues Resolved  
+
+### CRITICAL: Transport Start Off-by-One Error Fix (July 2025)
+**Problem**: Accent markers were wrong from transport start. UI showed correct markers on pattern input but shifted incorrectly when transport began, suggesting an Off-by-One Error in cycle calculation.
+
+**Root Cause**: UI accent offset calculation happened BEFORE MIDI accent position advanced, creating persistent one-cycle offset:
+```cpp
+// BROKEN timing order:
+uiAccentOffset = globalAccentPosition % currentAccentPattern.size(); // Uses old position
+processStep(midiMessages, sample, targetStep); // Advances globalAccentPosition
+```
+
+**Solution**: Fixed timing order so UI syncs to MIDI state AFTER MIDI advancement:
+```cpp  
+// FIXED timing order:
+processStep(midiMessages, sample, targetStep); // 1. MIDI advances globalAccentPosition
+uiAccentOffset = globalAccentPosition % currentAccentPattern.size(); // 2. UI syncs to new state
+```
+
+**Result**: UI accent markers now exactly match MIDI output from transport start.
+
+**CRITICAL PROTECTION**: Added to `Plugin/Tests/ACCENT_SYSTEM_PRINCIPLES.md` - **Transport start Off-by-One Error** must NEVER be repeated.
 
 ### CRITICAL: Visual Accent Marker Cycling Fix (July 2025)
 **Problem**: Visual accent markers weren't updating at cycle boundaries for polyrhythmic patterns like `{10}E(3,8)`, causing them to stay fixed instead of cycling as expected.

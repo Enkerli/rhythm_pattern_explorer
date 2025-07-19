@@ -395,31 +395,9 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
                 static int lastCurrentCycle = -1; // Will be reset below
                 lastCurrentCycle = -1;
                 
-                // CRITICAL: Recalculate globalAccentPosition from transport position on jumps
-                if (hasAccentPattern && !currentAccentPattern.empty()) {
-                    auto pattern = patternEngine.getCurrentPattern();
-                    if (!pattern.empty()) {
-                        // Calculate how many onsets have occurred from start of transport to current position
-                        int absoluteStep = static_cast<int>(stepsFromStart);
-                        int totalCycles = absoluteStep / pattern.size();
-                        int currentStepInCycle = absoluteStep % pattern.size();
-                        
-                        // Count onsets per cycle
-                        int onsetsPerCycle = 0;
-                        for (bool onset : pattern) {
-                            if (onset) onsetsPerCycle++;
-                        }
-                        
-                        // Count onsets from start of current cycle to current step
-                        int onsetsInCurrentCycle = 0;
-                        for (int i = 0; i <= currentStepInCycle && i < pattern.size(); ++i) {
-                            if (pattern[i]) onsetsInCurrentCycle++;
-                        }
-                        
-                        // Recalculate globalAccentPosition based on transport position
-                        globalAccentPosition = (totalCycles * onsetsPerCycle) + onsetsInCurrentCycle;
-                    }
-                }
+                // CONSERVATIVE: Simple reset on transport jumps to preserve MIDI accuracy
+                // Don't try to recalculate - just reset and let sequential logic rebuild
+                globalAccentPosition = 0;
             }
         }
         lastPpqPosition = currentBeat;
@@ -440,51 +418,24 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
                 
                 // Step boundary detected
                 
+                // CYCLE BOUNDARY UPDATE: Sync UI accent offset with MIDI at rhythm cycle boundaries  
+                // CRITICAL PROTECTION: This prevents the second most common bug - accent markers 
+                // sticking on first cycle for polymetric patterns like {10}E(3,8).
+                // 
+                // CRITICAL TIMING: Must happen BEFORE processStep() so UI uses the accent position
+                // that matches the cycle we're about to play, not the position after advancement.
+                if (hasAccentPattern && !currentAccentPattern.empty() && targetStep == 0) {
+                    // At cycle boundary (step 0), capture accent offset for current cycle
+                    uiAccentOffset = globalAccentPosition % currentAccentPattern.size();
+                    patternChanged.store(true); // Trigger UI update with current cycle offset
+                    // UI now shows correct accents for the cycle being played
+                }
+                
                 // Trigger the step at this exact sample position
                 processStep(midiMessages, sample, targetStep);
                 
                 // Update current step
                 currentStep.store(targetStep);
-                
-                // CRITICAL FIX: Proper accent offset calculation for transport sync
-                if (hasAccentPattern && !currentAccentPattern.empty()) {
-                    // Always calculate the correct accent offset based on current position
-                    auto pattern = patternEngine.getCurrentPattern();
-                    if (!pattern.empty()) {
-                        // Use absolute step position to determine which cycle we're in
-                        int absoluteStep = static_cast<int>(sampleStepsFromStart);
-                        int currentCycle = absoluteStep / pattern.size();
-                        int stepInCurrentCycle = targetStep % pattern.size();
-                        
-                        // Count onsets per cycle
-                        int onsetsPerCycle = 0;
-                        for (bool onset : pattern) {
-                            if (onset) onsetsPerCycle++;
-                        }
-                        
-                        // Calculate UI accent offset for the START of this cycle
-                        int cycleStartAccentPosition = (currentCycle * onsetsPerCycle) % currentAccentPattern.size();
-                        
-                        // CRITICAL: Only update at actual cycle boundaries to prevent swirling
-                        // Update when we cross into a new cycle OR hit step 0 (start of cycle)
-                        static int lastCurrentCycle = -1;
-                        
-                        // Reset lastCurrentCycle on transport jumps
-                        if (transportJumpDetected) {
-                            lastCurrentCycle = -1;
-                            transportJumpDetected = false; // Reset flag after handling
-                        }
-                        
-                        if (currentCycle != lastCurrentCycle || targetStep == 0) {
-                            if (cycleStartAccentPosition != uiAccentOffset) {
-                                uiAccentOffset = cycleStartAccentPosition;
-                                patternChanged.store(true);
-                                lastCurrentCycle = currentCycle;
-                                // UI accent offset updated at cycle boundary
-                            }
-                        }
-                    }
-                }
                 
                 // Transport-synced step progression completed
             }
@@ -1068,8 +1019,7 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
         baseLengthPattern.clear();
         scenePatterns.clear();
         currentSceneIndex = 0;
-        parseAndApplyUPI(pattern, true);
-        currentStep.store(0); // Reset step indicator to beginning
+        parseAndApplyUPI(pattern, true); // This now resets currentStep internally
     }
     
     currentUPIInput = upiPattern;
@@ -1089,11 +1039,15 @@ void RhythmPatternExplorerAudioProcessor::parseAndApplyUPI(const juce::String& u
     if (upiPattern.isEmpty())
         return;
     
-    // Only reset global accent position for truly new patterns
+    // SYNCHRONIZED RESET: Always reset accent position and step indicator together
     if (resetAccentPosition) {
         globalAccentPosition = 0;
         uiAccentOffset = 0;
+        currentStep.store(0); // Reset step indicator at same time as accent position
     }
+    
+    // UI UPDATE: Always trigger UI update on pattern changes
+    patternChanged.store(true);
     
     
     // For progressive patterns, always re-parse to advance state
@@ -1511,15 +1465,20 @@ int RhythmPatternExplorerAudioProcessor::getProgressiveTriggerCount() const
 /**
  * Generates the current accent map for UI display.
  * 
- * Creates a vector showing which steps will be accented based on the
- * current accent pattern and stable UI accent offset. This provides
- * a stable display that only updates at cycle boundaries.
+ * CRITICAL ANTI-SWIRLING PROTECTION:
+ * This function MUST NEVER use globalAccentPosition directly as it changes every step.
+ * Using globalAccentPosition causes "swirling" where accent markers move constantly.
  * 
- * @return Vector of boolean values indicating accented steps
+ * ONLY use uiAccentOffset which is stable and only updates at specific synchronization points:
+ * - Pattern changes (new patterns, progressive transformations, scene switching)
+ * - Cycle boundaries (for polymetric patterns)
+ * - Manual triggers (Enter, MIDI input)
+ * 
+ * @return Vector of boolean values indicating accented steps (STABLE, no swirling)
  */
 std::vector<bool> RhythmPatternExplorerAudioProcessor::getCurrentAccentMap() const
 {
-    // Show stable accent map using UI accent offset (updates only at cycle boundaries)
+    // ANTI-SWIRLING: Use ONLY uiAccentOffset, NEVER globalAccentPosition
     auto pattern = patternEngine.getCurrentPattern();
     std::vector<bool> accentMap(pattern.size(), false);
 
@@ -1527,8 +1486,8 @@ std::vector<bool> RhythmPatternExplorerAudioProcessor::getCurrentAccentMap() con
         return accentMap;
     }
 
-    // Apply accents starting from stable UI accent offset
-    // This provides stable display that only changes at cycle boundaries
+    // STABLE UI: Use uiAccentOffset for stable display that doesn't change every step
+    // NEVER use globalAccentPosition here - it causes swirling!
     int accentLen = static_cast<int>(currentAccentPattern.size());
     int accentCounter = 0;
     

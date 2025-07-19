@@ -7,6 +7,7 @@
 3. **Missing manual updates**: Failing to update accent markers when advancing scenes/progressive
 4. **Timeline desync**: Resetting pattern structure at different times for MIDI vs visual
 5. **Step indicator chaos**: Moving orange cursor on its own schedule vs actual playback position
+6. **Transport start Off-by-One Error**: Calculating UI accent offset BEFORE MIDI accent position advances
 
 ## CORRECT Architecture:
 
@@ -19,9 +20,20 @@ int uiAccentOffset = 0;        // For UI display (stable within cycles)
 ### **Update Rules:**
 1. **MIDI accent position**: Advances on every actual MIDI note trigger
 2. **UI accent offset**: Updates ONLY at:
-   - Cycle boundaries (step 0)
+   - Cycle boundaries (step 0) - **AFTER** MIDI processing completes
    - Manual triggers (Enter, MIDI input, scenes, progressive)
    - Transport jumps/resets
+
+### **Critical Timing Order:**
+```cpp
+// CORRECT order at cycle boundaries:
+processStep(midiBuffer, sample, targetStep);  // 1. MIDI advances globalAccentPosition
+uiAccentOffset = globalAccentPosition % size; // 2. UI syncs to new MIDI state
+
+// WRONG order (causes Off-by-One Error):
+uiAccentOffset = globalAccentPosition % size; // 1. UI uses old MIDI state  
+processStep(midiBuffer, sample, targetStep);  // 2. MIDI advances, UI now outdated
+```
 
 ### **Step Indicator:**
 - Must reflect the ACTUAL current playback step
