@@ -12,6 +12,8 @@
 #include "UPIParser.h"
 #include <ctime>
 #include <fstream>
+#include <chrono>
+#include <iomanip>
 
 // Debug output disabled for production performance
 #ifdef DEBUG
@@ -378,43 +380,24 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
         // Track the last processed step to detect boundaries
         static int lastProcessedStep = -1;
         
-        // TRANSPORT JUMP DETECTION: Detect discontinuities in transport position
-        static double lastPpqPosition = -1.0;
-        static bool transportJumpDetected = false;
-        
-        // Detect transport jumps by checking for large discontinuities in ppqPosition
-        if (lastPpqPosition >= 0.0) {
-            double ppqDelta = std::abs(currentBeat - lastPpqPosition);
-            double expectedDelta = (double)numSamples / samplesPerBeat;
-            
-            // If the position change is much larger than expected, it's likely a transport jump
-            if (ppqDelta > expectedDelta * 2.0) {
-                transportJumpDetected = true;
-                // Reset static tracking variables on transport jump
-                lastProcessedStep = -1;
-                static int lastCurrentCycle = -1; // Will be reset below
-                lastCurrentCycle = -1;
-                
-                // CONSERVATIVE: Simple reset on transport jumps to preserve MIDI accuracy
-                // Don't try to recalculate - just reset and let sequential logic rebuild
-                globalAccentPosition = 0;
-            }
-        }
-        lastPpqPosition = currentBeat;
-        
         for (int sample = 0; sample < numSamples; ++sample)
         {
-            // Calculate the ppqPosition for this sample
-            double sampleBeat = currentBeat + (sample / samplesPerBeat);
-            double sampleStepsFromStart = sampleBeat / beatsPerStep;
-            int sampleStep = static_cast<int>(sampleStepsFromStart) % patternEngine.getStepCount();
+            // Calculate step using transport position for precision, but override if manually reset
+            int targetStep;
+            int totalSamples = currentSample + sample;
+            if (totalSamples < samplesPerStep) {
+                // We're still in the first step after a reset - force step 0
+                targetStep = 0;
+            } else {
+                // Use transport timing for precision
+                double sampleStepsFromStart = stepsFromStart + (sample / static_cast<double>(samplesPerStep));
+                targetStep = static_cast<int>(sampleStepsFromStart) % patternEngine.getStepCount();
+            }
             
             // Check if we're crossing a step boundary (only trigger once per step)
-            if (sampleStep != lastProcessedStep)
+            if (targetStep != lastProcessedStep)
             {
-                // Update target step
-                targetStep = sampleStep;
-                lastProcessedStep = sampleStep;
+                lastProcessedStep = targetStep;
                 
                 // Step boundary detected
                 
@@ -425,10 +408,13 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
                 // CRITICAL TIMING: Must happen BEFORE processStep() so UI uses the accent position
                 // that matches the cycle we're about to play, not the position after advancement.
                 if (hasAccentPattern && !currentAccentPattern.empty() && targetStep == 0) {
-                    // At cycle boundary (step 0), capture accent offset for current cycle
+                    // At cycle boundary (step 0), capture both offset and reference position for current cycle
+                    int oldUiOffset = uiAccentOffset;
                     uiAccentOffset = globalAccentPosition % currentAccentPattern.size();
+                    uiAccentStartPosition = globalAccentPosition; // Capture global reference point
                     patternChanged.store(true); // Trigger UI update with current cycle offset
-                    // UI now shows correct accents for the cycle being played
+                    
+                    // UI now uses same reference point as MIDI for this cycle
                 }
                 
                 // Trigger the step at this exact sample position
@@ -449,7 +435,8 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
         currentSample = 0;
         currentStep.store(0);
         globalAccentPosition = 0;
-        uiAccentOffset = 0;  // Reset UI accent offset on stop
+        uiAccentOffset = 0;
+        uiAccentStartPosition = 0;  // Reset UI accent offset on stop
         patternChanged.store(true);  // Notify UI to update
         // Stopped playing - resetting position and accent tracking
     }
@@ -461,6 +448,9 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
     }
     
     wasPlaying = isPlaying;
+    
+    // CRITICAL: Increment currentSample for pattern advancement
+    currentSample += buffer.getNumSamples();
 }
 
 //==============================================================================
@@ -652,6 +642,27 @@ void RhythmPatternExplorerAudioProcessor::processStep(juce::MidiBuffer& midiBuff
             int accentStep = globalAccentPosition % currentAccentPattern.size();
             shouldAccent = currentAccentPattern[accentStep];
             
+            // DEBUG LOGGING: Track MIDI accent output
+            {
+                std::ofstream logFile("/tmp/accent_debug.log", std::ios::app);
+                if (logFile.is_open()) {
+                    auto now = std::chrono::system_clock::now();
+                    auto time_t = std::chrono::system_clock::to_time_t(now);
+                    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
+                    
+                    logFile << "[" << std::put_time(std::localtime(&time_t), "%H:%M:%S") << "." 
+                           << std::setfill('0') << std::setw(3) << ms.count() << "] "
+                           << "MIDI: step=" << stepToProcess 
+                           << " globalPos=" << globalAccentPosition 
+                           << " accentStep=" << accentStep 
+                           << " shouldAccent=" << (shouldAccent ? "YES" : "NO")
+                           << " uiOffset=" << uiAccentOffset
+                           << " currentStep=" << currentStep.load()
+                           << std::endl;
+                    logFile.close();
+                }
+            }
+            
             // Increment global accent position for next onset
             globalAccentPosition++;
             
@@ -767,9 +778,8 @@ void RhythmPatternExplorerAudioProcessor::syncPositionWithHost(const juce::Audio
         
         int targetStep = static_cast<int>(stepsFromStart) % patternEngine.getStepCount();
         
-        // CRITICAL FIX: Re-enable position sync for perfect DAW timing alignment
-        // Use internal currentBPM variable
-        bool allowPositionSync = true;  // ENABLED: Position sync needed for tick 1 precision
+        // DISABLE TRANSPORT SYNC: Use simple sample-based timing to respect manual resets
+        bool allowPositionSync = false;  // DISABLED: Transport sync interferes with manual triggers
         
         // CRITICAL FIX: Only sync position when significantly out of sync (not every block)
         int stepDifference = std::abs(targetStep - currentStep.load());
@@ -1039,11 +1049,14 @@ void RhythmPatternExplorerAudioProcessor::parseAndApplyUPI(const juce::String& u
     if (upiPattern.isEmpty())
         return;
     
-    // SYNCHRONIZED RESET: Always reset accent position and step indicator together
+    // FULL RESTART: Reset all playback state to step 0
     if (resetAccentPosition) {
         globalAccentPosition = 0;
         uiAccentOffset = 0;
-        currentStep.store(0); // Reset step indicator at same time as accent position
+        uiAccentStartPosition = 0;
+        currentStep.store(0);
+        currentSample = 0; // CRITICAL: Reset sample position for actual playback restart
+        
     }
     
     // UI UPDATE: Always trigger UI update on pattern changes
@@ -1191,6 +1204,7 @@ void RhythmPatternExplorerAudioProcessor::checkMidiInputForTriggers(juce::MidiBu
                         advanceProgressiveLengthening();
                         patternEngine.setPattern(baseLengthPattern);
                     }
+                    // FULL RESTART: All triggers reset everything to step 0
                     parseAndApplyUPI(currentUPIInput, true);
                     triggerNeeded = true;
                 }
@@ -1240,7 +1254,8 @@ void RhythmPatternExplorerAudioProcessor::checkMidiInputForTriggers(juce::MidiBu
                 }
                 else
                 {
-                    parseAndApplyUPI(currentUPIInput, false);
+                    // CONSISTENT RESET: All pattern changes reset to step 0 for clean synchronization
+                    parseAndApplyUPI(currentUPIInput, true);
                 }
             }
             // Pattern updates are handled via UPI only
@@ -1366,6 +1381,8 @@ void RhythmPatternExplorerAudioProcessor::advanceScene()
 {
     if (!scenePatterns.isEmpty() && currentSceneIndex < static_cast<int>(sceneProgressiveSteps.size()))
     {
+        int oldSceneIndex = currentSceneIndex;
+        
         // First, advance the progressive state for the current scene if it has progressive syntax
         if (sceneProgressiveSteps[currentSceneIndex] != 0) {
             if (sceneProgressiveOffsets[currentSceneIndex] != 0) {
@@ -1379,6 +1396,26 @@ void RhythmPatternExplorerAudioProcessor::advanceScene()
         
         // Then advance to next scene in the sequence, cycling back to 0 when reaching the end
         currentSceneIndex = (currentSceneIndex + 1) % scenePatterns.size();
+        
+        // DEBUG LOGGING: Track scene changes
+        {
+            std::ofstream logFile("/tmp/accent_debug.log", std::ios::app);
+            if (logFile.is_open()) {
+                auto now = std::chrono::system_clock::now();
+                auto time_t = std::chrono::system_clock::to_time_t(now);
+                auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
+                
+                logFile << "[" << std::put_time(std::localtime(&time_t), "%H:%M:%S") << "." 
+                       << std::setfill('0') << std::setw(3) << ms.count() << "] "
+                       << "SCENE_CHANGE: from=" << oldSceneIndex
+                       << " to=" << currentSceneIndex
+                       << " pattern=" << scenePatterns[currentSceneIndex].toStdString()
+                       << " globalPos=" << globalAccentPosition
+                       << " uiOffset=" << uiAccentOffset
+                       << std::endl;
+                logFile.close();
+            }
+        }
         
         // Notify UI that pattern has changed for accent map updates
         patternChanged.store(true);
@@ -1405,8 +1442,10 @@ void RhythmPatternExplorerAudioProcessor::applyCurrentScenePattern()
     int progressiveOffset = sceneProgressiveOffsets[currentSceneIndex];
     int progressiveLengthening = sceneProgressiveLengthening[currentSceneIndex];
     
-    // Parse the base pattern first (includes accent parsing and resets)
-    parseAndApplyUPI(basePattern, true); // This already resets currentStep internally
+    // Parse the base pattern first (FULL RESTART: scene changes reset everything)
+    parseAndApplyUPI(basePattern, true); // Scene changes trigger full restart
+    
+    // REFERENCE POINT FIX: UI now uses same global reference as MIDI - no sync needed
     
     // Apply progressive transformations if any
     if (progressiveOffset != 0)
@@ -1500,9 +1539,31 @@ std::vector<bool> RhythmPatternExplorerAudioProcessor::getCurrentAccentMap() con
     {
         if (pattern[i])
         {
-            // Calculate accent position based on stable UI accent offset
+            // SIMPLE ALIGNMENT: Since all triggers restart to step 0, use simple offset approach
             int accentStep = (uiAccentOffset + accentCounter) % accentLen;
             accentMap[i] = currentAccentPattern[accentStep];
+            
+            // DEBUG LOGGING: Track UI accent calculation
+            {
+                std::ofstream logFile("/tmp/accent_debug.log", std::ios::app);
+                if (logFile.is_open()) {
+                    auto now = std::chrono::system_clock::now();
+                    auto time_t = std::chrono::system_clock::to_time_t(now);
+                    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
+                    
+                    logFile << "[" << std::put_time(std::localtime(&time_t), "%H:%M:%S") << "." 
+                           << std::setfill('0') << std::setw(3) << ms.count() << "] "
+                           << "UI: step=" << i 
+                           << " uiOffset=" << uiAccentOffset
+                           << " accentCounter=" << accentCounter 
+                           << " accentStep=" << accentStep
+                           << " shouldAccent=" << (accentMap[i] ? "YES" : "NO")
+                           << " currentStep=" << currentStep.load()
+                           << std::endl;
+                    logFile.close();
+                }
+            }
+            
             accentCounter++;
         }
     }

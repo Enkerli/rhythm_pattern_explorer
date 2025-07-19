@@ -231,6 +231,8 @@ private:
     juce::String currentAccentPatternName;
     int globalAccentPosition = 0;  // Global accent position counter (persists across pattern cycles)
     int uiAccentOffset = 0;         // Stable accent offset for UI display (updates only at cycle boundaries)
+    int uiAccentStartPosition = 0;  // Global position when current UI cycle began (for reference alignment)
+    bool sceneChangeSyncNeeded = false; // Flag to sync UI to MIDI position after scene changes
     
     // Progressive offset support (works for any pattern)
     int progressiveOffset = 0;      // Current accumulated offset

@@ -18,6 +18,21 @@ This mistake has been repeated multiple times. The protection is now built into 
 
 This mistake has been repeated multiple times. The cycle boundary logic must be robust and clearly documented.
 
+## CRITICAL: Transport Jump Detection Failure Pattern (July 2025)
+**NEVER add transport jump detection that resets accent positions independently** - this breaks synchronized accent tracking.
+
+**Problem**: Transport jump detection logic was resetting `globalAccentPosition = 0` without correspondingly updating `uiAccentOffset`, causing immediate MIDI/UI desynchronization ("mostly mismatched, from the start").
+
+**Root Cause**: Breaking the fundamental principle that `globalAccentPosition` and `uiAccentOffset` must ALWAYS be kept in sync.
+
+**PROTECTION**: The existing synchronized reset logic already handles all necessary scenarios:
+- Transport stop: Both variables reset together 
+- Pattern changes: Both variables reset together
+- Manual triggers: Both variables reset together  
+- No additional transport jump logic needed - existing system is sufficient
+
+**Failed Approach**: Adding "smart" transport jump detection that resets only one variable
+
 ## Project Configuration
 - **Plugin Installation**: Install to user library (`~/Library/Audio/Plug-Ins/`) NOT system library (`/Library/Audio/Plug-Ins/`)
 - **NO STANDALONE APP**: User explicitly does NOT want a standalone application - plugins only (AU/VST3)
@@ -112,6 +127,22 @@ if (hasScenes) {
 ```
 
 **Result**: MIDI triggers now behave consistently with Enter key for all pattern combinations.
+
+### CRITICAL: Off-by-One Error in Accent Synchronization (July 2025)
+**DISCOVERED FAILURE PATTERN** - Document to prevent recurrence:
+
+**Problem**: Attempted timing-aware fix caused widespread accent mismatches "from the start" because cycle boundary update captured accent position BEFORE MIDI processing increment, creating systematic off-by-one error.
+
+**Root Cause**: In cycle boundary logic:
+```cpp
+// BEFORE processStep() - captures position before increment
+uiAccentOffset = globalAccentPosition % currentAccentPattern.size();
+// THEN processStep() executes and increments globalAccentPosition++
+```
+
+**Result**: UI shows accent positions for where MIDI WAS, not where it IS GOING, causing progressive misalignment within each cycle.
+
+**Protection Strategy**: Any future accent sync fixes must account for the timing relationship between UI capture and MIDI increment. Consider post-increment capture or pre-increment display logic.
 
 ### CRITICAL: Accent Pattern Synchronization (July 2025)
 **SOLUTION ARCHITECTURE** - Protect this implementation at all costs:
