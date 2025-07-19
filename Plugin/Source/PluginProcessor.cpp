@@ -504,18 +504,9 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
     }
     else if (!wasPlaying && isPlaying)
     {
-        // Just started playing - ensure accent tracking is synchronized
-        // Reset static variables to ensure clean start
-        static int lastProcessedStep = -1;
-        static int lastCurrentCycle = -1;
-        lastProcessedStep = -1;
-        lastCurrentCycle = -1;
-        
-        // Reset accent tracking for clean start
-        globalAccentPosition = 0;
-        uiAccentOffset = 0;
-        patternChanged.store(true);  // Notify UI to update
-        // Started playing - accent tracking synchronized
+        // Just started playing - minimal handling to avoid double initialization
+        // The accent positions should already be correct from pattern loading
+        // Started playing - letting existing positions remain
     }
     
     wasPlaying = isPlaying;
@@ -705,54 +696,15 @@ void RhythmPatternExplorerAudioProcessor::processStep(juce::MidiBuffer& midiBuff
         bool shouldAccent = false;
         if (hasAccentPattern && !currentAccentPattern.empty())
         {
-            // UNIFIED APPROACH: Use transport-based accent calculation for both MIDI and UI
-            // Calculate accent position based on transport position instead of sequential counting
+            // SIMPLE SEQUENTIAL APPROACH: Use globalAccentPosition for reliable accent cycling
+            // This approach works correctly and produces accurate MIDI accent patterns
+            int accentStep = globalAccentPosition % currentAccentPattern.size();
+            shouldAccent = currentAccentPattern[accentStep];
             
-            // Get current transport position info
-            auto posInfo = getPlayHead()->getPosition();
-            if (posInfo.hasValue() && posInfo->getPpqPosition().hasValue()) {
-                // Calculate pattern timing parameters
-                int lengthUnit = patternLengthUnitParam->getIndex();
-                float lengthValue = getPatternLengthValue();
-                double patternLengthInBeats;
-                switch (lengthUnit) {
-                    case 0: patternLengthInBeats = lengthValue / 4.0; break;  // Steps
-                    case 1: patternLengthInBeats = lengthValue; break;        // Beats
-                    case 2: patternLengthInBeats = lengthValue * 4.0; break;  // Bars
-                    default: patternLengthInBeats = lengthValue; break;
-                }
-                
-                double beatsPerStep = patternLengthInBeats / pattern.size();
-                double currentBeat = posInfo->getPpqPosition().orFallback(0.0);
-                double stepsFromStart = currentBeat / beatsPerStep;
-                
-                // Calculate absolute step and cycle position
-                int absoluteStep = static_cast<int>(stepsFromStart);
-                int currentCycle = absoluteStep / pattern.size();
-                
-                // Count onsets per cycle
-                int onsetsPerCycle = 0;
-                for (bool onset : pattern) {
-                    if (onset) onsetsPerCycle++;
-                }
-                
-                // Count onsets from start of current cycle to current step
-                int onsetsInCurrentCycle = 0;
-                for (int i = 0; i <= stepToProcess && i < pattern.size(); ++i) {
-                    if (pattern[i]) onsetsInCurrentCycle++;
-                }
-                
-                // Calculate transport-based accent position
-                int transportAccentPosition = ((currentCycle * onsetsPerCycle) + onsetsInCurrentCycle - 1) % currentAccentPattern.size();
-                shouldAccent = currentAccentPattern[transportAccentPosition];
-            } else {
-                // Fallback to sequential method if transport info unavailable
-                int accentStep = globalAccentPosition % currentAccentPattern.size();
-                shouldAccent = currentAccentPattern[accentStep];
-                globalAccentPosition++;
-            }
+            // Increment global accent position for next onset
+            globalAccentPosition++;
             
-            // Accent calculated based on transport position for consistency with UI
+            // Accent calculated based on sequential position
         }
         else
         {
