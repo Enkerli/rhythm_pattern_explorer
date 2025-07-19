@@ -1405,9 +1405,8 @@ void RhythmPatternExplorerAudioProcessor::applyCurrentScenePattern()
     int progressiveOffset = sceneProgressiveOffsets[currentSceneIndex];
     int progressiveLengthening = sceneProgressiveLengthening[currentSceneIndex];
     
-    // Parse the base pattern first
-    parseAndApplyUPI(basePattern, true);
-    currentStep.store(0); // Reset step indicator to beginning
+    // Parse the base pattern first (includes accent parsing and resets)
+    parseAndApplyUPI(basePattern, true); // This already resets currentStep internally
     
     // Apply progressive transformations if any
     if (progressiveOffset != 0)
@@ -1416,6 +1415,9 @@ void RhythmPatternExplorerAudioProcessor::applyCurrentScenePattern()
         auto currentPattern = patternEngine.getCurrentPattern();
         auto rotatedPattern = rotatePatternBySteps(currentPattern, progressiveOffset);
         patternEngine.setPattern(rotatedPattern);
+        
+        // CRITICAL: Trigger UI update after pattern transformation
+        patternChanged.store(true);
         
         // Scene progressive offset applied
     }
@@ -1433,6 +1435,9 @@ void RhythmPatternExplorerAudioProcessor::applyCurrentScenePattern()
         // Apply lengthening to the stored base pattern
         auto lengthenedPattern = lengthenPattern(sceneBaseLengthPatterns[currentSceneIndex], progressiveLengthening);
         patternEngine.setPattern(lengthenedPattern);
+        
+        // CRITICAL: Trigger UI update after pattern transformation
+        patternChanged.store(true);
         
         // Scene progressive lengthening applied
     }
