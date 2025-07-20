@@ -72,27 +72,7 @@ public:
     static std::vector<bool> parseDecimal(int decimal, int stepCount);
     static std::vector<bool> parseMorse(const juce::String& morseStr);
     
-    // Pattern transformations
-    static std::vector<bool> invertPattern(const std::vector<bool>& pattern);
-    static std::vector<bool> reversePattern(const std::vector<bool>& pattern);
-    static std::vector<bool> complementPattern(const std::vector<bool>& pattern);
-    static std::vector<bool> rotatePattern(const std::vector<bool>& pattern, int steps);
-    
-    // Pattern combinations
-    static std::vector<bool> combinePatterns(const std::vector<bool>& pattern1, 
-                                           const std::vector<bool>& pattern2, 
-                                           bool isAddition = true);
-    
-    // Utility functions
-    static std::vector<bool> bjorklundAlgorithm(int onsets, int steps);
-    static int gcd(int a, int b);
-    static int lcm(int a, int b);
-    static std::vector<bool> expandToLCM(const std::vector<bool>& pattern, int targetSize);
-    
-    // Pattern validation and analysis
-    static bool isValidPattern(const std::vector<bool>& pattern);
-    static int countOnsets(const std::vector<bool>& pattern);
-    static juce::String patternToBinary(const std::vector<bool>& pattern);
+    // Pattern transformations and utilities are now centralized in PatternUtils namespace
 
 private:
     // Pattern recognition - table-driven approach

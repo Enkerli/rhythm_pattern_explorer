@@ -10,6 +10,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include "UPIParser.h"
+#include "PatternUtils.h"
 #include <ctime>
 #include <fstream>
 
@@ -1000,7 +1001,7 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
         if (progressiveOffset != 0)
         {
             auto currentPattern = patternEngine.getCurrentPattern();
-            auto rotatedPattern = UPIParser::rotatePattern(currentPattern, progressiveOffset);
+            auto rotatedPattern = PatternUtils::rotatePattern(currentPattern, progressiveOffset);
             patternEngine.setPattern(rotatedPattern);
             
             // Debug log rotation
@@ -1387,7 +1388,7 @@ void RhythmPatternExplorerAudioProcessor::applyCurrentScenePattern()
     {
         // Apply progressive offset by rotating the generated pattern
         auto currentPattern = patternEngine.getCurrentPattern();
-        auto rotatedPattern = UPIParser::rotatePattern(currentPattern, progressiveOffset);
+        auto rotatedPattern = PatternUtils::rotatePattern(currentPattern, progressiveOffset);
         patternEngine.setPattern(rotatedPattern);
         
         logDebug(DebugCategory::SCENE_CYCLING, 

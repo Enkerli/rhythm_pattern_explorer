@@ -8,6 +8,7 @@
 
 #include "UPIParser.h"
 #include "PatternEngine.h"
+#include "PatternUtils.h"
 #include <cmath>
 #include <random>
 #include <algorithm>
@@ -42,7 +43,7 @@ UPIParser::ParseResult UPIParser::parse(const juce::String& input)
             return createError("Invalid accent pattern: " + accentStr);
         }
         
-        DBG("UPIParser: Found accent pattern: " + accentStr + " -> " + patternToBinary(accentResult.pattern));
+        DBG("UPIParser: Found accent pattern: " + accentStr + " -> " + PatternUtils::patternToBinary(accentResult.pattern));
     }
     
     // Check for combinations (+ or -) in the base pattern (without accents)
@@ -96,7 +97,7 @@ UPIParser::ParseResult UPIParser::parse(const juce::String& input)
                 int targetLCM = polygonSizes[0];
                 for (int i = 1; i < polygonSizes.size(); ++i)
                 {
-                    targetLCM = lcm(targetLCM, polygonSizes[i]);
+                    targetLCM = PatternUtils::lcm(targetLCM, polygonSizes[i]);
                 }
                 
                 DBG("UPIParser: Polygon combination detected. PolygonSizes: " << polygonSizes[0] << ", " << polygonSizes[1] << ". LCM: " << targetLCM);
@@ -133,7 +134,7 @@ UPIParser::ParseResult UPIParser::parse(const juce::String& input)
                     auto nextResult = parsePattern(parts[i].trim());
                     if (!nextResult.isValid()) return nextResult;
                     
-                    result.pattern = combinePatterns(result.pattern, nextResult.pattern, true);
+                    result.pattern = PatternUtils::combinePatterns(result.pattern, nextResult.pattern, true);
                 }
                 
                 result.patternName = "Combined: " + cleaned;
@@ -209,7 +210,7 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
         auto baseResult = parsePattern(basePattern);
         if (baseResult.isValid())
         {
-            auto inverted = invertPattern(baseResult.pattern);
+            auto inverted = PatternUtils::invertPattern(baseResult.pattern);
             return createSuccess(inverted, "Inverted " + baseResult.patternName);
         }
     }
@@ -219,7 +220,7 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
         auto baseResult = parsePattern(cleaned.substring(4).trim());
         if (baseResult.isValid())
         {
-            auto reversed = reversePattern(baseResult.pattern);
+            auto reversed = PatternUtils::reversePattern(baseResult.pattern);
             return createSuccess(reversed, "Reversed " + baseResult.patternName);
         }
     }
@@ -229,7 +230,7 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
         auto baseResult = parsePattern(cleaned.substring(5).trim());
         if (baseResult.isValid())
         {
-            auto complement = complementPattern(baseResult.pattern);
+            auto complement = PatternUtils::complementPattern(baseResult.pattern);
             return createSuccess(complement, "Complement " + baseResult.patternName);
         }
     }
@@ -245,7 +246,7 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
             if (baseResult.isValid())
             {
                 // Negate rotation to make positive rotations go clockwise (webapp standard)
-                auto rotated = rotatePattern(baseResult.pattern, -rotationSteps);
+                auto rotated = PatternUtils::rotatePattern(baseResult.pattern, -rotationSteps);
                 return createSuccess(rotated, baseResult.patternName + "@" + juce::String(rotationSteps));
             }
         }
@@ -298,21 +299,21 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
             auto baseResult = parsePattern(basePattern);
             if (baseResult.isValid())
             {
-                DBG("   Base result pattern: " + patternToBinary(baseResult.pattern));
-                DBG("   Base result onsets: " + juce::String(countOnsets(baseResult.pattern)));
+                DBG("   Base result pattern: " + PatternUtils::patternToBinary(baseResult.pattern));
+                DBG("   Base result onsets: " + juce::String(PatternUtils::countOnsets(baseResult.pattern)));
                 
                 // Log to file
-                logFile.appendText("Base result pattern: " + patternToBinary(baseResult.pattern) + "\n");
-                logFile.appendText("Base result onsets: " + juce::String(countOnsets(baseResult.pattern)) + "\n");
+                logFile.appendText("Base result pattern: " + PatternUtils::patternToBinary(baseResult.pattern) + "\n");
+                logFile.appendText("Base result onsets: " + juce::String(PatternUtils::countOnsets(baseResult.pattern)) + "\n");
                 
                 // Apply progressive transformation with target onset count
                 auto transformed = applyProgressiveTransformation(baseResult.pattern, transformerType, targetOnsets);
-                DBG("   Transformed pattern: " + patternToBinary(transformed));
-                DBG("   Transformed onsets: " + juce::String(countOnsets(transformed)));
+                DBG("   Transformed pattern: " + PatternUtils::patternToBinary(transformed));
+                DBG("   Transformed onsets: " + juce::String(PatternUtils::countOnsets(transformed)));
                 
                 // Log to file
-                logFile.appendText("Transformed pattern: " + patternToBinary(transformed) + "\n");
-                logFile.appendText("Transformed onsets: " + juce::String(countOnsets(transformed)) + "\n");
+                logFile.appendText("Transformed pattern: " + PatternUtils::patternToBinary(transformed) + "\n");
+                logFile.appendText("Transformed onsets: " + juce::String(PatternUtils::countOnsets(transformed)) + "\n");
                 logFile.appendText("---\n");
                 
                 auto result = createSuccess(transformed, "Progressive: " + cleaned);
@@ -323,7 +324,7 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
                 result.progressiveOffset = 1;  // Each trigger advances by 1 step
                 
                 // Store the pattern key for step tracking
-                result.progressivePatternKey = patternToBinary(baseResult.pattern) + juce::String(transformerType) + juce::String(targetOnsets);
+                result.progressivePatternKey = PatternUtils::patternToBinary(baseResult.pattern) + juce::String(transformerType) + juce::String(targetOnsets);
                 
                 return result;
             }
@@ -571,11 +572,11 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
 
 std::vector<bool> UPIParser::parseEuclidean(int onsets, int steps, int offset)
 {
-    auto pattern = bjorklundAlgorithm(onsets, steps);
+    auto pattern = PatternUtils::bjorklundAlgorithm(onsets, steps);
     if (offset != 0)
     {
         // Negate offset to make positive offsets go clockwise (webapp standard)
-        pattern = rotatePattern(pattern, -offset);
+        pattern = PatternUtils::rotatePattern(pattern, -offset);
     }
     return pattern;
 }
@@ -750,190 +751,7 @@ std::vector<bool> UPIParser::parseMorse(const juce::String& morseStr)
 }
 
 //==============================================================================
-// Pattern transformations
-
-std::vector<bool> UPIParser::invertPattern(const std::vector<bool>& pattern)
-{
-    std::vector<bool> inverted;
-    inverted.reserve(pattern.size());
-    
-    for (bool step : pattern)
-    {
-        inverted.push_back(!step);
-    }
-    
-    return inverted;
-}
-
-std::vector<bool> UPIParser::reversePattern(const std::vector<bool>& pattern)
-{
-    std::vector<bool> reversed(pattern.rbegin(), pattern.rend());
-    return reversed;
-}
-
-std::vector<bool> UPIParser::complementPattern(const std::vector<bool>& pattern)
-{
-    return invertPattern(pattern); // Same as invert for now
-}
-
-std::vector<bool> UPIParser::rotatePattern(const std::vector<bool>& pattern, int steps)
-{
-    if (pattern.empty()) return pattern;
-    
-    int size = static_cast<int>(pattern.size());
-    steps = ((steps % size) + size) % size; // Handle negative rotation
-    
-    std::vector<bool> rotated;
-    rotated.reserve(size);
-    
-    for (int i = 0; i < size; ++i)
-    {
-        rotated.push_back(pattern[(i + steps) % size]);
-    }
-    
-    return rotated;
-}
-
-std::vector<bool> UPIParser::combinePatterns(const std::vector<bool>& pattern1, 
-                                           const std::vector<bool>& pattern2, 
-                                           bool isAddition)
-{
-    if (pattern1.empty()) return pattern2;
-    if (pattern2.empty()) return pattern1;
-    
-    // Calculate LCM size for proper pattern expansion
-    int size1 = static_cast<int>(pattern1.size());
-    int size2 = static_cast<int>(pattern2.size());
-    int lcmSize = lcm(size1, size2);
-    
-    auto expanded1 = expandToLCM(pattern1, lcmSize);
-    auto expanded2 = expandToLCM(pattern2, lcmSize);
-    
-    std::vector<bool> combined;
-    combined.reserve(lcmSize);
-    
-    for (int i = 0; i < lcmSize; ++i)
-    {
-        if (isAddition)
-        {
-            combined.push_back(expanded1[i] || expanded2[i]); // Logical OR
-        }
-        else
-        {
-            combined.push_back(expanded1[i] && !expanded2[i]); // Subtraction
-        }
-    }
-    
-    return combined;
-}
-
-//==============================================================================
-// Utility functions
-
-std::vector<bool> UPIParser::bjorklundAlgorithm(int beats, int steps)
-{
-    if (beats > steps) beats = steps;
-    if (beats <= 0) return std::vector<bool>(steps, false);
-    if (beats == steps) return std::vector<bool>(steps, true);
-    
-    std::vector<bool> pattern;
-    std::vector<int> counts;
-    std::vector<int> remainders;
-    
-    int divisor = steps - beats;
-    remainders.push_back(beats);
-    int level = 0;
-    
-    do {
-        counts.push_back(divisor / remainders[level]);
-        remainders.push_back(divisor % remainders[level]);
-        divisor = remainders[level];
-        level++;
-    } while (remainders[level] > 1);
-    
-    counts.push_back(divisor);
-    
-    std::function<void(int)> build = [&](int level) {
-        if (level == -1) {
-            pattern.push_back(false);
-        } else if (level == -2) {
-            pattern.push_back(true);
-        } else {
-            for (int i = 0; i < counts[level]; i++) {
-                build(level - 1);
-            }
-            if (remainders[level] != 0) {
-                build(level - 2);
-            }
-        }
-    };
-    
-    build(level);
-    
-    // Ensure we have exactly 'steps' elements
-    while (pattern.size() < static_cast<size_t>(steps)) {
-        pattern.push_back(false);
-    }
-    pattern.resize(steps);
-    
-    // Rotate so first beat is at position 0
-    auto firstBeatIndex = std::find(pattern.begin(), pattern.end(), true);
-    if (firstBeatIndex != pattern.begin() && firstBeatIndex != pattern.end()) {
-        size_t index = std::distance(pattern.begin(), firstBeatIndex);
-        std::vector<bool> rotated;
-        rotated.insert(rotated.end(), pattern.begin() + index, pattern.end());
-        rotated.insert(rotated.end(), pattern.begin(), pattern.begin() + index);
-        pattern = rotated;
-    }
-    
-    return pattern;
-}
-
-int UPIParser::gcd(int a, int b)
-{
-    return b == 0 ? a : gcd(b, a % b);
-}
-
-int UPIParser::lcm(int a, int b)
-{
-    return (a * b) / gcd(a, b);
-}
-
-std::vector<bool> UPIParser::expandToLCM(const std::vector<bool>& pattern, int targetSize)
-{
-    if (pattern.empty()) return std::vector<bool>(targetSize, false);
-    
-    std::vector<bool> expanded;
-    expanded.reserve(targetSize);
-    
-    int originalSize = static_cast<int>(pattern.size());
-    for (int i = 0; i < targetSize; ++i)
-    {
-        expanded.push_back(pattern[i % originalSize]);
-    }
-    
-    return expanded;
-}
-
-bool UPIParser::isValidPattern(const std::vector<bool>& pattern)
-{
-    return !pattern.empty();
-}
-
-int UPIParser::countOnsets(const std::vector<bool>& pattern)
-{
-    return static_cast<int>(std::count(pattern.begin(), pattern.end(), true));
-}
-
-juce::String UPIParser::patternToBinary(const std::vector<bool>& pattern)
-{
-    juce::String binary;
-    for (bool step : pattern)
-    {
-        binary += step ? "1" : "0";
-    }
-    return binary;
-}
+// Pattern transformations and utilities moved to PatternUtils namespace
 
 //==============================================================================
 // Table-driven pattern recognition
@@ -1341,7 +1159,7 @@ std::vector<bool> UPIParser::applyProgressiveTransformation(const std::vector<bo
     // Create a unique key for this progressive pattern
     // Key format: "basePattern + transformerType + targetOnsets"
     // Example: "10000000e8" for E(1,8)E>8
-    juce::String patternKey = patternToBinary(basePattern) + juce::String(transformerType) + juce::String(targetOnsets);
+    juce::String patternKey = PatternUtils::patternToBinary(basePattern) + juce::String(transformerType) + juce::String(targetOnsets);
     
     DBG("Progressive transformation called:");
     DBG("   Pattern key: " + patternKey);
@@ -1364,7 +1182,7 @@ std::vector<bool> UPIParser::applyProgressiveTransformation(const std::vector<bo
         // This ensures the user sees the starting pattern on initial trigger
         progressivePatterns[patternKey] = basePattern;
         progressiveStepCount[patternKey] = 1; // UI shows step 1 for base pattern
-        DBG("   First call - returning base pattern: " + patternToBinary(basePattern));
+        DBG("   First call - returning base pattern: " + PatternUtils::patternToBinary(basePattern));
         DBG("   Step count: " + juce::String(progressiveStepCount[patternKey]));
         return basePattern;
     }
@@ -1373,10 +1191,10 @@ std::vector<bool> UPIParser::applyProgressiveTransformation(const std::vector<bo
         // Get the current state from previous transformation
         // This continues the progressive sequence from where it left off
         currentPattern = progressivePatterns[patternKey];
-        DBG("   Continuing from stored pattern: " + patternToBinary(currentPattern));
+        DBG("   Continuing from stored pattern: " + PatternUtils::patternToBinary(currentPattern));
     }
     
-    int currentOnsets = countOnsets(currentPattern);
+    int currentOnsets = PatternUtils::countOnsets(currentPattern);
     DBG("   Current onsets: " + juce::String(currentOnsets));
     
     // Check if we've reached the target - if so, loop back to base pattern
@@ -1462,8 +1280,8 @@ std::vector<bool> UPIParser::applyProgressiveTransformation(const std::vector<bo
     // Step 1 = base pattern, Step 2 = first transformation, etc.
     progressiveStepCount[patternKey]++;
     
-    DBG("   Final result: " + patternToBinary(result));
-    DBG("   Final onsets: " + juce::String(countOnsets(result)));
+    DBG("   Final result: " + PatternUtils::patternToBinary(result));
+    DBG("   Final onsets: " + juce::String(PatternUtils::countOnsets(result)));
     DBG("   Returning step: " + juce::String(progressiveStepCount[patternKey]));
     
     return result;
@@ -1516,7 +1334,7 @@ std::vector<bool> UPIParser::concentratePattern(const std::vector<bool>& pattern
 std::vector<bool> UPIParser::generateBarlowTransformation(const std::vector<bool>& originalPattern, int targetOnsets, bool wolrabMode)
 {
     int stepCount = static_cast<int>(originalPattern.size());
-    int currentOnsets = countOnsets(originalPattern);
+    int currentOnsets = PatternUtils::countOnsets(originalPattern);
     
     if (currentOnsets == targetOnsets) return originalPattern;
     
@@ -1555,13 +1373,13 @@ std::vector<bool> UPIParser::generateEuclideanTransformation(const std::vector<b
     else if (antiMode)
     {
         // Dilcue (Anti-Euclidean): use complement pattern
-        auto euclideanPattern = bjorklundAlgorithm(stepCount - targetOnsets, stepCount);
-        return invertPattern(euclideanPattern);
+        auto euclideanPattern = PatternUtils::bjorklundAlgorithm(stepCount - targetOnsets, stepCount);
+        return PatternUtils::invertPattern(euclideanPattern);
     }
     else
     {
         // Normal Euclidean using Bjorklund algorithm
-        return bjorklundAlgorithm(targetOnsets, stepCount);
+        return PatternUtils::bjorklundAlgorithm(targetOnsets, stepCount);
     }
 }
 
@@ -1581,7 +1399,7 @@ double UPIParser::calculateBarlowIndispensability(int position, int stepCount)
     double indispensability = 0.0;
     
     // Method 1: GCD-based metric strength (works for composite numbers)
-    int gcd_value = gcd(position, stepCount);
+    int gcd_value = PatternUtils::gcd(position, stepCount);
     if (gcd_value > 1) {
         // Position aligns with a metric subdivision
         indispensability = static_cast<double>(gcd_value) / stepCount * 10.0;
@@ -1657,7 +1475,7 @@ std::vector<bool> UPIParser::diluteByBarlow(const std::vector<bool>& pattern, in
                                            bool wolrabMode)
 {
     int stepCount = static_cast<int>(pattern.size());
-    int currentOnsets = countOnsets(pattern);
+    int currentOnsets = PatternUtils::countOnsets(pattern);
     int onsetsToRemove = currentOnsets - targetOnsets;
     
     // Get all current onset positions with their indispensability
@@ -1700,7 +1518,7 @@ std::vector<bool> UPIParser::concentrateByBarlow(const std::vector<bool>& patter
                                                  bool wolrabMode)
 {
     int stepCount = static_cast<int>(pattern.size());
-    int currentOnsets = countOnsets(pattern);
+    int currentOnsets = PatternUtils::countOnsets(pattern);
     int onsetsToAdd = targetOnsets - currentOnsets;
     
     // Get all empty positions with their indispensability
