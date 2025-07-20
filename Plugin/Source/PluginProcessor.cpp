@@ -392,6 +392,15 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
         // Calculate which step should be active
         int targetStep = static_cast<int>(stepsFromStart) % patternEngine.getStepCount();
         
+        // Debug log to file
+        std::ofstream debugFile("/tmp/rhythm_steps_debug.log", std::ios::app);
+        debugFile << "Step calculation: currentBeat=" << currentBeat 
+                  << ", beatsPerStep=" << beatsPerStep 
+                  << ", stepsFromStart=" << stepsFromStart 
+                  << ", targetStep=" << targetStep 
+                  << ", patternSteps=" << patternEngine.getStepCount() << std::endl;
+        debugFile.close();
+        
         // Calculate the exact fractional position within the current step
         double stepFraction = stepsFromStart - std::floor(stepsFromStart);
         
@@ -541,17 +550,25 @@ void RhythmPatternExplorerAudioProcessor::updateTiming()
     
     // Calculate pattern length based on mode
     switch (lengthUnit) {
-        case 0: // Steps mode - each step represents a subdivision, pattern length is multiplier
+        case 0: // Steps mode - each step represents a subdivision, pattern length is IGNORED
         {
             // Convert subdivision index to beat fraction per step
             double subdivisionBeatsPerStep = getSubdivisionInBeats(subdivisionIndex);
             
-            // Pattern length in Steps mode is a multiplier
-            // Example: 8 steps × 16th notes × 1.0 multiplier = 8 × 0.25 = 2 beats (half note)
-            // Example: 8 steps × 8th notes × 1.0 multiplier = 8 × 0.5 = 4 beats (whole note)
-            patternLengthInBeats = subdivisionBeatsPerStep * patternSteps * lengthValue;
+            // Steps mode: subdivision duration × number of steps (pattern length value ignored)
+            // Example: 8 steps × 16th notes = 8 × 0.25 = 2 beats total
+            // Example: 9 steps × 8th notes = 9 × 0.5 = 4.5 beats total
+            // Example: 9 steps × 8th triplets = 9 × (1/3) = 3 beats total
+            patternLengthInBeats = subdivisionBeatsPerStep * patternSteps;
             
-            DBG("Steps mode: subdivisionIndex=" << subdivisionIndex << ", subdivisionBeatsPerStep=" << subdivisionBeatsPerStep << ", patternSteps=" << patternSteps << ", lengthValue=" << lengthValue << ", result=" << patternLengthInBeats);
+            // Debug log to file
+            std::ofstream debugFile("/tmp/rhythm_steps_debug.log", std::ios::app);
+            debugFile << "Steps mode: subdivisionIndex=" << subdivisionIndex 
+                      << ", subdivisionBeatsPerStep=" << subdivisionBeatsPerStep 
+                      << ", patternSteps=" << patternSteps 
+                      << ", result=" << patternLengthInBeats 
+                      << " (pattern length value IGNORED)" << std::endl;
+            debugFile.close();
             break;
         }
         case 1: // Beats mode - pattern fits in specified number of beats
@@ -725,12 +742,19 @@ void RhythmPatternExplorerAudioProcessor::syncPositionWithHost(const juce::Audio
         // Calculate pattern length based on mode (same logic as updateTiming)
         double patternLengthInBeats;
         switch (lengthUnit) {
-            case 0: // Steps mode - each step represents a subdivision, pattern length is multiplier
+            case 0: // Steps mode - each step represents a subdivision, pattern length is IGNORED
             {
                 double subdivisionBeatsPerStep = getSubdivisionInBeats(subdivisionIndex);
-                patternLengthInBeats = subdivisionBeatsPerStep * patternSteps * lengthValue;
+                patternLengthInBeats = subdivisionBeatsPerStep * patternSteps;
                 
-                DBG("Transport Steps mode: subdivisionIndex=" << subdivisionIndex << ", subdivisionBeatsPerStep=" << subdivisionBeatsPerStep << ", patternSteps=" << patternSteps << ", lengthValue=" << lengthValue << ", result=" << patternLengthInBeats);
+                // Debug log to file
+                std::ofstream debugFile("/tmp/rhythm_steps_debug.log", std::ios::app);
+                debugFile << "Transport Steps mode: subdivisionIndex=" << subdivisionIndex 
+                          << ", subdivisionBeatsPerStep=" << subdivisionBeatsPerStep 
+                          << ", patternSteps=" << patternSteps 
+                          << ", result=" << patternLengthInBeats 
+                          << " (pattern length value IGNORED)" << std::endl;
+                debugFile.close();
                 break;
             }
             case 1: // Beats mode - pattern fits in specified number of beats
@@ -749,6 +773,15 @@ void RhythmPatternExplorerAudioProcessor::syncPositionWithHost(const juce::Audio
         double stepsFromStart = currentBeat / beatsPerStep;
         
         int targetStep = static_cast<int>(stepsFromStart) % patternEngine.getStepCount();
+        
+        // Debug log to file
+        std::ofstream debugFile("/tmp/rhythm_steps_debug.log", std::ios::app);
+        debugFile << "Transport step calculation: currentBeat=" << currentBeat 
+                  << ", beatsPerStep=" << beatsPerStep 
+                  << ", stepsFromStart=" << stepsFromStart 
+                  << ", targetStep=" << targetStep 
+                  << ", patternSteps=" << patternSteps << std::endl;
+        debugFile.close();
         
         // CRITICAL FIX: Re-enable position sync for perfect DAW timing alignment
         // Use internal currentBPM variable
