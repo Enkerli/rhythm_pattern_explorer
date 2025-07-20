@@ -366,13 +366,34 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
         // Calculate pattern timing based on DAW transport and pattern length parameters
         int lengthUnit = patternLengthUnitParam->getIndex(); // 0=Steps, 1=Beats, 2=Bars
         float lengthValue = getPatternLengthValue();
+        int subdivisionIndex = subdivisionParam->getIndex();
+        
+        // Get pattern info for all modes
+        auto pattern = patternEngine.getCurrentPattern();
+        int patternSteps = static_cast<int>(pattern.size());
+        if (patternSteps <= 0) patternSteps = 8; // Fallback
         
         // Calculate pattern length in beats using pattern length parameters
         double patternLengthInBeats;
         switch (lengthUnit) {
-            case 0: // Steps mode - use 16th note subdivisions
-                patternLengthInBeats = lengthValue / 4.0; // Steps are 16th notes
+            case 0: // Steps mode - each step represents a subdivision, pattern length is IGNORED
+            {
+                // Convert subdivision index to beat fraction per step
+                double subdivisionBeatsPerStep = getSubdivisionInBeats(subdivisionIndex);
+                
+                // Steps mode: subdivision duration × number of steps (pattern length value ignored)
+                patternLengthInBeats = subdivisionBeatsPerStep * patternSteps;
+                
+                // Debug log to file
+                std::ofstream debugFile("/tmp/rhythm_steps_debug.log", std::ios::app);
+                debugFile << "MAIN Steps mode: subdivisionIndex=" << subdivisionIndex 
+                          << ", subdivisionBeatsPerStep=" << subdivisionBeatsPerStep 
+                          << ", patternSteps=" << patternSteps 
+                          << ", result=" << patternLengthInBeats 
+                          << " (pattern length value IGNORED)" << std::endl;
+                debugFile.close();
                 break;
+            }
             case 1: // Beats mode 
                 patternLengthInBeats = lengthValue; 
                 break;
