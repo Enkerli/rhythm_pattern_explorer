@@ -250,12 +250,28 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
 
     // Get transport info from host
     juce::AudioPlayHead* playHead = getPlayHead();
-    juce::AudioPlayHead::CurrentPositionInfo posInfo;
+    
+    // Default values for when transport info is not available
     bool hasValidPosition = false;
+    bool isPlaying = false;
+    bool isRecording = false;
+    double ppqPosition = 0.0;
+    double bpm = 120.0;
     
     if (playHead != nullptr)
     {
-        hasValidPosition = playHead->getCurrentPosition(posInfo);
+        if (auto position = playHead->getPosition())
+        {
+            hasValidPosition = true;
+            isPlaying = position->getIsPlaying();
+            isRecording = position->getIsRecording();
+            
+            if (auto ppq = position->getPpqPosition())
+                ppqPosition = *ppq;
+                
+            if (auto tempo = position->getBpm())
+                bpm = *tempo;
+        }
         
         // BITWIG TRANSPORT DEBUG: Log transport details
         // Use internal currentBPM variable
@@ -264,9 +280,9 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
             if (++transportDebugCount % 100 == 0) {
                 juce::String message = juce::String::formatted("hasValidPosition=%s, isPlaying=%s, isRecording=%s, ppqPosition=%.3f, bpm=%.1f",
                     hasValidPosition ? "TRUE" : "FALSE",
-                    posInfo.isPlaying ? "TRUE" : "FALSE", 
-                    posInfo.isRecording ? "TRUE" : "FALSE",
-                    posInfo.ppqPosition, posInfo.bpm);
+                    isPlaying ? "TRUE" : "FALSE", 
+                    isRecording ? "TRUE" : "FALSE",
+                    ppqPosition, bpm);
                 logDebug(DebugCategory::TRANSPORT, message);
             }
         }
@@ -286,19 +302,26 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
     }
 
     // Determine if we should be playing
-    bool isPlaying;
+    bool finalIsPlaying;
     if (useHostTransportParam && useHostTransportParam->get() && hasValidPosition)
     {
         // FIXED: Manual play button should work alongside host transport (OR logic)
-        isPlaying = posInfo.isPlaying || internalPlaying;
+        finalIsPlaying = isPlaying || internalPlaying;
         
         // BITWIG FIX: Always sync BPM, but conditionally sync position
-        syncBPMWithHost(posInfo);
-        syncPositionWithHost(posInfo);
+        // Create temporary PositionInfo for sync functions
+        juce::AudioPlayHead::CurrentPositionInfo tempPosInfo;
+        tempPosInfo.isPlaying = isPlaying;
+        tempPosInfo.isRecording = isRecording;
+        tempPosInfo.ppqPosition = ppqPosition;
+        tempPosInfo.bpm = bpm;
+        
+        syncBPMWithHost(tempPosInfo);
+        syncPositionWithHost(tempPosInfo);
     }
     else
     {
-        isPlaying = internalPlaying;
+        finalIsPlaying = internalPlaying;
     }
 
     // Pattern updates are now handled via UPI input only
@@ -348,7 +371,7 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
         static int playingDebugCount = 0;
         if (++playingDebugCount % 50 == 0) {
             logDebug(DebugCategory::BITWIG_PROCESS, 
-                "PLAYING DEBUG: isPlaying=" + juce::String(isPlaying ? "TRUE" : "FALSE") +
+                "PLAYING DEBUG: isPlaying=" + juce::String(finalIsPlaying ? "TRUE" : "FALSE") +
                 ", hostIsPlaying=" + juce::String(hostIsPlaying ? "TRUE" : "FALSE") + 
                 ", internalPlaying=" + juce::String(internalPlaying ? "TRUE" : "FALSE") +
                 ", useHostTransport=" + juce::String(useHostTransportParam->get() ? "TRUE" : "FALSE"));
@@ -357,10 +380,10 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
 
     // FIRST STEP FIX: Track if we've processed step 0 in this buffer
     static bool processedFirstStepThisBuffer = false;
-    if (!isPlaying) processedFirstStepThisBuffer = false; // Reset when not playing
+    if (!finalIsPlaying) processedFirstStepThisBuffer = false; // Reset when not playing
 
     // TRANSPORT-SYNCED TIMING: Use DAW's ppqPosition for perfect alignment
-    if (isPlaying && hasValidPosition)
+    if (finalIsPlaying && hasValidPosition)
     {
         // Calculate pattern timing based on DAW transport and pattern length parameters
         int lengthUnit = patternLengthUnitParam->getIndex(); // 0=Steps, 1=Beats, 2=Bars
@@ -411,7 +434,7 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
         
         // Calculate beats per step based on pattern length parameters
         double beatsPerStep = patternLengthInBeats / patternEngine.getStepCount();
-        double currentBeat = posInfo.ppqPosition;
+        double currentBeat = ppqPosition;
         double stepsFromStart = currentBeat / beatsPerStep;
         
         // Calculate which step should be active within the current pattern cycle
@@ -422,7 +445,7 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
         
         // Trigger notes at the exact moment they should occur
         int numSamples = buffer.getNumSamples();
-        double samplesPerBeat = getSampleRate() * 60.0 / posInfo.bpm;
+        double samplesPerBeat = getSampleRate() * 60.0 / bpm;
         
         // Track the last processed step to detect boundaries
         static int lastProcessedStep = -1;
@@ -458,7 +481,7 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
         }
     }
     
-    if (wasPlaying && !isPlaying)
+    if (wasPlaying && !finalIsPlaying)
     {
         // Just stopped playing - reset position
         currentSample = 0;
@@ -467,7 +490,7 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
         // Stopped playing - resetting position
     }
     
-    wasPlaying = isPlaying;
+    wasPlaying = finalIsPlaying;
 }
 
 //==============================================================================
@@ -607,9 +630,8 @@ void RhythmPatternExplorerAudioProcessor::processStep(juce::MidiBuffer& midiBuff
     
     // BITWIG 210 DEBUG: Log pattern state at high BPMs
     // Use internal currentBPM variable
-    static int stepCallCount = 0;
-    
 #ifdef DEBUG
+    static int stepCallCount = 0;
     if (currentBPM >= 200.0f && ++stepCallCount % 3 == 0) {
         std::cout << "PROCESS STEP: BPM=" << currentBPM << 
             ", Step=" << stepToProcess << 
