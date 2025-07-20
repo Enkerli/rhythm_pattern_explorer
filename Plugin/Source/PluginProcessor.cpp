@@ -384,14 +384,6 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
                 // Steps mode: subdivision duration × number of steps (pattern length value ignored)
                 patternLengthInBeats = subdivisionBeatsPerStep * patternSteps;
                 
-                // Debug log to file
-                std::ofstream debugFile("/tmp/rhythm_steps_debug.log", std::ios::app);
-                debugFile << "MAIN Steps mode: subdivisionIndex=" << subdivisionIndex 
-                          << ", subdivisionBeatsPerStep=" << subdivisionBeatsPerStep 
-                          << ", patternSteps=" << patternSteps 
-                          << ", result=" << patternLengthInBeats 
-                          << " (pattern length value IGNORED)" << std::endl;
-                debugFile.close();
                 break;
             }
             case 1: // Beats mode 
@@ -415,15 +407,6 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
         double stepsInCurrentCycle = fmod(stepsFromStart, patternEngine.getStepCount());
         int targetStep = static_cast<int>(stepsInCurrentCycle);
         
-        // Debug log to file
-        std::ofstream debugFile("/tmp/rhythm_steps_debug.log", std::ios::app);
-        debugFile << "Step calculation: currentBeat=" << currentBeat 
-                  << ", beatsPerStep=" << beatsPerStep 
-                  << ", stepsFromStart=" << stepsFromStart 
-                  << ", stepsInCurrentCycle=" << stepsInCurrentCycle
-                  << ", targetStep=" << targetStep 
-                  << ", patternSteps=" << patternEngine.getStepCount() << std::endl;
-        debugFile.close();
         
         // Calculate the exact fractional position within the current step
         double stepFraction = stepsFromStart - std::floor(stepsFromStart);
@@ -585,14 +568,6 @@ void RhythmPatternExplorerAudioProcessor::updateTiming()
             // Example: 9 steps × 8th triplets = 9 × (1/3) = 3 beats total
             patternLengthInBeats = subdivisionBeatsPerStep * patternSteps;
             
-            // Debug log to file
-            std::ofstream debugFile("/tmp/rhythm_steps_debug.log", std::ios::app);
-            debugFile << "Steps mode: subdivisionIndex=" << subdivisionIndex 
-                      << ", subdivisionBeatsPerStep=" << subdivisionBeatsPerStep 
-                      << ", patternSteps=" << patternSteps 
-                      << ", result=" << patternLengthInBeats 
-                      << " (pattern length value IGNORED)" << std::endl;
-            debugFile.close();
             break;
         }
         case 1: // Beats mode - pattern fits in specified number of beats
@@ -771,14 +746,6 @@ void RhythmPatternExplorerAudioProcessor::syncPositionWithHost(const juce::Audio
                 double subdivisionBeatsPerStep = getSubdivisionInBeats(subdivisionIndex);
                 patternLengthInBeats = subdivisionBeatsPerStep * patternSteps;
                 
-                // Debug log to file
-                std::ofstream debugFile("/tmp/rhythm_steps_debug.log", std::ios::app);
-                debugFile << "Transport Steps mode: subdivisionIndex=" << subdivisionIndex 
-                          << ", subdivisionBeatsPerStep=" << subdivisionBeatsPerStep 
-                          << ", patternSteps=" << patternSteps 
-                          << ", result=" << patternLengthInBeats 
-                          << " (pattern length value IGNORED)" << std::endl;
-                debugFile.close();
                 break;
             }
             case 1: // Beats mode - pattern fits in specified number of beats
@@ -800,15 +767,6 @@ void RhythmPatternExplorerAudioProcessor::syncPositionWithHost(const juce::Audio
         double stepsInCurrentCycle = fmod(stepsFromStart, patternSteps);
         int targetStep = static_cast<int>(stepsInCurrentCycle);
         
-        // Debug log to file
-        std::ofstream debugFile("/tmp/rhythm_steps_debug.log", std::ios::app);
-        debugFile << "Transport step calculation: currentBeat=" << currentBeat 
-                  << ", beatsPerStep=" << beatsPerStep 
-                  << ", stepsFromStart=" << stepsFromStart 
-                  << ", stepsInCurrentCycle=" << stepsInCurrentCycle
-                  << ", targetStep=" << targetStep 
-                  << ", patternSteps=" << patternSteps << std::endl;
-        debugFile.close();
         
         // CRITICAL FIX: Re-enable position sync for perfect DAW timing alignment
         // Use internal currentBPM variable
