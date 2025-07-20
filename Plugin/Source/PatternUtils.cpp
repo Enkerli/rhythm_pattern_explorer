@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <numeric>
 #include <cmath>
+#include <functional>
 
 namespace PatternUtils
 {
@@ -96,61 +97,63 @@ namespace PatternUtils
     // Pattern Generation Core Functions
     //==============================================================================
     
-    std::vector<bool> bjorklundAlgorithm(int onsets, int steps)
+    std::vector<bool> bjorklundAlgorithm(int beats, int steps)
     {
-        if (steps <= 0 || onsets <= 0) return std::vector<bool>(steps, false);
-        if (onsets >= steps) return std::vector<bool>(steps, true);
+        if (beats > steps) beats = steps;
+        if (beats <= 0) return std::vector<bool>(steps, false);
+        if (beats == steps) return std::vector<bool>(steps, true);
         
-        // Bjorklund algorithm implementation
-        std::vector<std::vector<bool>> groups;
+        std::vector<bool> pattern;
+        std::vector<int> counts;
+        std::vector<int> remainders;
         
-        // Initialize with individual elements
-        for (int i = 0; i < onsets; ++i)
-        {
-            groups.push_back({true});
-        }
-        for (int i = 0; i < steps - onsets; ++i)
-        {
-            groups.push_back({false});
-        }
+        int divisor = steps - beats;
+        remainders.push_back(beats);
+        int level = 0;
         
-        // Apply Bjorklund grouping algorithm
-        while (groups.size() > 1)
-        {
-            int minCount = std::min(onsets, steps - onsets);
-            int maxCount = std::max(onsets, steps - onsets);
-            
-            if (minCount <= 1) break;
-            
-            // Combine groups
-            std::vector<std::vector<bool>> newGroups;
-            
-            for (int i = 0; i < minCount; ++i)
-            {
-                auto combined = groups[i];
-                combined.insert(combined.end(), groups[maxCount + i].begin(), groups[maxCount + i].end());
-                newGroups.push_back(combined);
+        do {
+            counts.push_back(divisor / remainders[level]);
+            remainders.push_back(divisor % remainders[level]);
+            divisor = remainders[level];
+            level++;
+        } while (remainders[level] > 1);
+        
+        counts.push_back(divisor);
+        
+        std::function<void(int)> build = [&](int level) {
+            if (level == -1) {
+                pattern.push_back(false);
+            } else if (level == -2) {
+                pattern.push_back(true);
+            } else {
+                for (int i = 0; i < counts[level]; i++) {
+                    build(level - 1);
+                }
+                if (remainders[level] != 0) {
+                    build(level - 2);
+                }
             }
-            
-            // Add remaining groups
-            for (int i = minCount + maxCount; i < groups.size(); ++i)
-            {
-                newGroups.push_back(groups[i]);
-            }
-            
-            groups = newGroups;
-            onsets = minCount;
-            steps = static_cast<int>(groups.size());
+        };
+        
+        build(level);
+        
+        // Ensure we have exactly 'steps' elements
+        while (pattern.size() < static_cast<size_t>(steps)) {
+            pattern.push_back(false);
+        }
+        pattern.resize(steps);
+        
+        // Rotate so first beat is at position 0
+        auto firstBeatIndex = std::find(pattern.begin(), pattern.end(), true);
+        if (firstBeatIndex != pattern.begin() && firstBeatIndex != pattern.end()) {
+            size_t index = std::distance(pattern.begin(), firstBeatIndex);
+            std::vector<bool> rotated;
+            rotated.insert(rotated.end(), pattern.begin() + index, pattern.end());
+            rotated.insert(rotated.end(), pattern.begin(), pattern.begin() + index);
+            pattern = rotated;
         }
         
-        // Flatten result
-        std::vector<bool> result;
-        for (const auto& group : groups)
-        {
-            result.insert(result.end(), group.begin(), group.end());
-        }
-        
-        return result;
+        return pattern;
     }
     
     std::vector<bool> expandToLCM(const std::vector<bool>& pattern, int targetSize)
@@ -287,7 +290,7 @@ namespace PatternUtils
             return "0x0";
         
         // Convert pattern to hex using strict left-to-right notation
-        // Process in 4-bit groups from left to right, where 1000 = 0x1, 0100 = 0x2, etc.
+        // Process in 4-bit groups from left to right
         juce::String hex;
         int stepCount = static_cast<int>(pattern.size());
         
@@ -296,12 +299,12 @@ namespace PatternUtils
         {
             int nibbleValue = 0;
             
-            // Process 4 bits in this group (or fewer if at the end)
+            // Process 4 bits in this group (or fewer if at the end)  
             for (int bitInGroup = 0; bitInGroup < 4 && (groupStart + bitInGroup) < stepCount; ++bitInGroup)
             {
                 if (pattern[groupStart + bitInGroup])
                 {
-                    // Left-to-right: first bit in group is LSB of this nibble
+                    // Left-to-right: each bit position maps directly to bit position in nibble
                     nibbleValue |= (1 << bitInGroup);
                 }
             }
@@ -332,7 +335,7 @@ namespace PatternUtils
             {
                 if (pattern[groupStart + bitInGroup])
                 {
-                    // Left-to-right: first bit in group is LSB of this octal digit
+                    // Left-to-right: each bit position maps directly to bit position in octal digit
                     octalDigit |= (1 << bitInGroup);
                 }
             }

@@ -19,7 +19,67 @@
 - HTML documentation includes comprehensive UPI syntax guide
 - File-based delivery (not data URLs) for proper rendering
 
+## Pattern Notation System
+
+### Hex and Octal Notation (Critical Implementation Details)
+**STRICT LEFT-TO-RIGHT BIT ORDERING**: The plugin implements a unique left-to-right bit ordering system where the leftmost bit represents the least significant bit (LSB). This is opposite to standard computer science notation but provides intuitive pattern input.
+
+**Hex Notation Rules**:
+- Each hex digit represents 4 consecutive pattern steps (one nibble)
+- Leftmost bit in each nibble = LSB (bit 0)
+- Hex digits are processed right-to-left during input parsing
+- Display uses normal left-to-right digit order
+
+**Examples**:
+- `0x1:4` → `1000` (LSB=1, others=0)
+- `0x8:4` → `0001` (MSB=1, others=0) 
+- `0x4:4` → `0010` (bit 2=1, others=0)
+- `0x94:8` → `10010010` (tresillo pattern)
+
+**Implementation Details**:
+```cpp
+// Input parsing: Reverse hex digits for left-to-right mapping
+for (int i = content.length() - 1; i >= 0; --i) {
+    decimal = (decimal << 4) | hexDigit;
+}
+
+// Pattern generation: LSB-first bit ordering  
+for (int i = 0; i < stepCount; ++i) {
+    pattern[i] = (decimal & (1 << i)) != 0;  // Bit i → position i
+}
+
+// Display: Normal left-to-right nibble processing
+for (int groupStart = 0; groupStart < stepCount; groupStart += 4) {
+    nibbleValue |= (1 << bitInGroup);  // Direct bit mapping
+}
+```
+
+**Octal Notation**: Same principles apply using 3-bit groups instead of 4-bit nibbles.
+
+**Critical Files**:
+- `UPIParser.cpp`: Input parsing with digit reversal
+- `PatternUtils.cpp`: Display generation with normal digit order
+
+**Test Coverage** (July 2025):
+- `Plugin/Tests/HexOctalCoreTests.cpp`: Comprehensive test suite with 48 critical tests
+- `Plugin/Tests/BUILD_INTEGRATION.md`: Build integration instructions for Xcode and Make
+- `Plugin/Tests/Makefile`: Complete build integration that refuses to build if tests fail
+- `Plugin/Tests/run_critical_tests.sh`: Automated test runner for build systems
+- **CRITICAL**: These tests MUST pass for all builds to prevent user data loss
+
 ## Recent Issues Resolved  
+
+### CRITICAL: Hex/Octal Bit Ordering Fix (July 2025)
+**Problem**: Hex and octal input parsing produced incorrect patterns. User's strict left-to-right notation `0x94:8` was not producing the expected tresillo pattern `10010010`.
+
+**Root Cause**: Input parsing used standard hex interpretation instead of user's reversed-digit notation where hex digits map left-to-right to pattern positions.
+
+**Solution**: 
+1. **Input Parsing**: Process hex digits in reverse order to handle user's notation
+2. **Display Logic**: Maintain normal digit order for correct visual representation
+3. **Consistent LSB-First**: Both input and display use leftmost bit = LSB principle
+
+**Result**: Round-trip parsing now works correctly - `0x94:8` input produces `10010010` pattern and displays as `0x94`.
 
 ### CRITICAL: Steps Mode Implementation (July 2025)
 **Problem**: Steps mode was broken - step indicator jumped around and subdivision parameter had no effect.

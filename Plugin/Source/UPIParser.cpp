@@ -1048,10 +1048,16 @@ UPIParser::ParseResult UPIParser::parseNumericPattern(const juce::String& input,
             break;
             
         case NumericBase::Octal:
-            for (int i = 0; i < content.length(); ++i)
+            // Parse octal with strict left-to-right notation where octal digits are reversed
+            decimal = 0;
+            
+            // Process octal digits in reverse order for left-to-right bit mapping
+            for (int i = content.length() - 1; i >= 0; --i)
             {
-                decimal *= 8;
-                decimal += (content[i] - '0');
+                int octalDigit = content[i] - '0';
+                
+                // Shift previous digits and add this one
+                decimal = (decimal << 3) | octalDigit;
             }
             break;
             
@@ -1060,7 +1066,26 @@ UPIParser::ParseResult UPIParser::parseNumericPattern(const juce::String& input,
             break;
             
         case NumericBase::Hexadecimal:
-            decimal = content.getHexValue32();
+            // Parse hex with strict left-to-right notation where hex digits are reversed
+            // So 0x94 becomes 0x49 to produce left-to-right bit interpretation 
+            decimal = 0;
+            
+            // Process hex digits in reverse order for left-to-right bit mapping
+            for (int i = content.length() - 1; i >= 0; --i)
+            {
+                int hexDigit;
+                if (content[i] >= '0' && content[i] <= '9')
+                    hexDigit = content[i] - '0';
+                else if (content[i] >= 'A' && content[i] <= 'F')
+                    hexDigit = content[i] - 'A' + 10;
+                else if (content[i] >= 'a' && content[i] <= 'f')
+                    hexDigit = content[i] - 'a' + 10;
+                else
+                    continue;
+                
+                // Shift previous digits and add this one
+                decimal = (decimal << 4) | hexDigit;
+            }
             break;
     }
     

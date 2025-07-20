@@ -129,6 +129,28 @@ P(5,12,0)                 # Pentagon rhythm: 5 vertices in 12 steps with 0 offse
 R(4,8,42)                 # Random: 4 onsets in 8 steps with seed 42
 ```
 
+#### Numeric Pattern Input (Strict Left-to-Right Notation)
+```
+# Binary patterns
+10010010                  # Direct binary: tresillo pattern
+101010                    # Binary: alternating pattern
+
+# Hex patterns (LSB-first, digit-reversed input)
+0x94:8                    # Hex: 10010010 (tresillo)
+0x1:4                     # Hex: 1000 (leftmost bit = LSB)
+0x8:4                     # Hex: 0001 (rightmost bit = MSB)
+
+# Octal patterns (same LSB-first principle)
+o12:6                     # Octal: 100010 (using 3-bit groups)
+o7:3                      # Octal: 111 (all bits set)
+
+# Decimal patterns  
+d73:8                     # Decimal: 10010010 (same as 0x94:8)
+d85:8                     # Decimal: 10101010 (alternating)
+```
+
+**Important**: Hex and octal use **reversed digit order** during input parsing to maintain strict left-to-right bit ordering where the leftmost position represents the least significant bit (LSB).
+
 #### Progressive Transformations
 ```
 E(1,8)E>8                 # Progressive Euclidean: 1→8 onsets (manual trigger)
