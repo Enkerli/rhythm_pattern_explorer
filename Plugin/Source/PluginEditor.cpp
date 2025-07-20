@@ -81,7 +81,7 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     upiTextEditor.setMultiLine(false);
     upiTextEditor.setReturnKeyStartsNewLine(false);
     upiTextEditor.setTextToShowWhenEmpty("Enter pattern: E(3,8), P(5,0), etc.", juce::Colours::grey);
-    upiTextEditor.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 14.0f, juce::Font::plain));
+    upiTextEditor.setFont(juce::Font(juce::FontOptions(juce::Font::getDefaultMonospacedFontName(), 14.0f, juce::Font::plain)));
     upiTextEditor.onReturnKey = [this]() { parseUPIPattern(); };
     addAndMakeVisible(upiTextEditor);
     
@@ -94,7 +94,7 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     instanceNameEditor.setCaretVisible(true);
     instanceNameEditor.setPopupMenuEnabled(true);
     instanceNameEditor.setText("Rhythm", juce::dontSendNotification);
-    instanceNameEditor.setFont(juce::Font(12.0f));
+    instanceNameEditor.setFont(juce::FontOptions(12.0f));
     instanceNameEditor.setJustification(juce::Justification::centredLeft);
     addAndMakeVisible(instanceNameEditor);
     
@@ -153,7 +153,7 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     patternDisplayEditor.setScrollbarsShown(false);
     patternDisplayEditor.setCaretVisible(false);
     patternDisplayEditor.setJustification(juce::Justification::centred);
-    patternDisplayEditor.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 14.0f, juce::Font::plain));
+    patternDisplayEditor.setFont(juce::Font(juce::FontOptions(juce::Font::getDefaultMonospacedFontName(), 14.0f, juce::Font::plain)));
     patternDisplayEditor.setColour(juce::TextEditor::textColourId, juce::Colours::white);
     patternDisplayEditor.setColour(juce::TextEditor::backgroundColourId, juce::Colour(0xff1a1a1a));
     patternDisplayEditor.setColour(juce::TextEditor::outlineColourId, juce::Colours::transparentBlack);
@@ -162,7 +162,7 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     
     // Analysis Label - improved readability
     analysisLabel.setJustificationType(juce::Justification::centred);
-    analysisLabel.setFont(juce::Font(13.0f));
+    analysisLabel.setFont(juce::FontOptions(13.0f));
     analysisLabel.setColour(juce::Label::textColourId, juce::Colours::lightgrey);
     addAndMakeVisible(analysisLabel);
     
@@ -175,7 +175,7 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     versionEditor.setScrollbarsShown(false);
     versionEditor.setCaretVisible(false);
     versionEditor.setJustification(juce::Justification::centredLeft);
-    versionEditor.setFont(juce::Font(14.0f, juce::Font::bold));
+    versionEditor.setFont(juce::FontOptions(14.0f).withStyle("Bold"));
     versionEditor.setColour(juce::TextEditor::textColourId, juce::Colours::white);
     versionEditor.setColour(juce::TextEditor::backgroundColourId, juce::Colour(0xff1a1a1a));
     versionEditor.setColour(juce::TextEditor::outlineColourId, juce::Colour(0xff4a5568));
@@ -305,7 +305,7 @@ void RhythmPatternExplorerAudioProcessorEditor::paint (juce::Graphics& g)
     if (!minimalMode)
     {
         g.setColour (juce::Colours::white);
-        g.setFont (juce::Font(18.0f, juce::Font::bold));
+        g.setFont (juce::FontOptions(18.0f).withStyle("Bold"));
         g.drawText ("Rhythm Pattern Explorer", 0, 10, getWidth(), 30, 
                     juce::Justification::centred);
     }
@@ -507,7 +507,7 @@ void RhythmPatternExplorerAudioProcessorEditor::resized()
 void RhythmPatternExplorerAudioProcessorEditor::timerCallback()
 {
     // Update pattern display and animation
-    static int lastUpdateHash = 0;
+    static auto lastUpdateHash = std::hash<std::string>{}("");
     static int lastCurrentStep = -1;
     static bool lastPlayingState = false;
     static int frameCount = 0;
@@ -528,7 +528,7 @@ void RhythmPatternExplorerAudioProcessorEditor::timerCallback()
     // Update step/scene button text
     updateStepSceneButton();
     
-    int currentHash = std::hash<std::string>{}(audioProcessor.getPatternEngine().getBinaryString().toStdString());
+    auto currentHash = std::hash<std::string>{}(audioProcessor.getPatternEngine().getBinaryString().toStdString());
     int currentStep = audioProcessor.getCurrentStep();
     bool isPlaying = audioProcessor.isCurrentlyPlaying();
     
@@ -760,7 +760,7 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
         float sliceAngle = 2.0f * juce::MathConstants<float>::pi / numSteps;
         // Use same alignment as main slices: start at 12 o'clock and center slice 0 there
         float startAngle = (highlightStep * sliceAngle) - juce::MathConstants<float>::halfPi - (sliceAngle * 0.5f);
-        float endAngle = startAngle + sliceAngle;
+        // float endAngle = startAngle + sliceAngle; // Unused variable removed
         
         // Create highlight sector same way as regular slices
         juce::Path highlightSlice;

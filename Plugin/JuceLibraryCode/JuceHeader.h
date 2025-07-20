@@ -43,7 +43,7 @@ namespace ProjectInfo
 {
     const char* const  projectName    = "Rhythm Pattern Explorer";
     const char* const  companyName    = "Rhythm Pattern Explorer";
-    const char* const  versionString  = "1.0.0";
-    const int          versionNumber  = 0x10000;
+    const char* const  versionString  = "1.3.5";
+    const int          versionNumber  = 0x10305;
 }
 #endif
