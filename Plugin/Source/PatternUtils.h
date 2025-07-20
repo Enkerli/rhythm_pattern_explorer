@@ -72,6 +72,9 @@ namespace PatternUtils
     /** Calculates metric strength using Barlow theory */
     double calculateBarlowIndispensability(int position, int stepCount);
     
+    /** Calculate greatest common divisor (helper for Barlow algorithm) */
+    int gcd(int a, int b);
+    
     //==============================================================================
     // Pattern Utility Functions  
     //==============================================================================
