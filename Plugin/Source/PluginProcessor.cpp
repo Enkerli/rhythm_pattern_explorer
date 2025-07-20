@@ -420,13 +420,8 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
         int targetStep = static_cast<int>(stepsInCurrentCycle);
         
         
-        // Calculate the exact fractional position within the current step
-        double stepFraction = stepsFromStart - std::floor(stepsFromStart);
-        
         // Trigger notes at the exact moment they should occur
         int numSamples = buffer.getNumSamples();
-        double samplesPerBeat = getSampleRate() * 60.0 / posInfo.bpm;
-        double samplesPerStep = samplesPerBeat * beatsPerStep;
         
         // Track the last processed step to detect boundaries
         static int lastProcessedStep = -1;
@@ -1121,10 +1116,7 @@ void RhythmPatternExplorerAudioProcessor::parseAndApplyUPI(const juce::String& u
         }
         
         // Update parameters to reflect the new pattern
-        int onsets = UPIParser::countOnsets(parseResult.pattern);
-        int steps = static_cast<int>(parseResult.pattern.size());
-        
-        DBG("   Onsets: " + juce::String(onsets) + ", Steps: " + juce::String(steps));
+        DBG("   Onsets: " + juce::String(UPIParser::countOnsets(parseResult.pattern)) + ", Steps: " + juce::String(parseResult.pattern.size()));
         
         // Pattern applied successfully via UPI
         

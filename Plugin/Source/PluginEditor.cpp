@@ -354,7 +354,7 @@ void RhythmPatternExplorerAudioProcessorEditor::resized()
     // NORMAL MODE: Full UI layout
     
     // Title area
-    auto titleArea = area.removeFromTop(50);
+    area.removeFromTop(50);
     
     // Control area - compact layout with UPI input and controls
     auto controlArea = area.removeFromTop(70);
@@ -511,7 +511,6 @@ void RhythmPatternExplorerAudioProcessorEditor::timerCallback()
     static int lastCurrentStep = -1;
     static bool lastPlayingState = false;
     static int frameCount = 0;
-    static int testStepCounter = 0;
     
     frameCount++;
     
@@ -632,7 +631,6 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
         float sliceAngle = 2.0f * juce::MathConstants<float>::pi / numSteps;
         // Start at 12 o'clock (north) and center slice 0 there: offset by half slice angle
         float startAngle = (i * sliceAngle) - juce::MathConstants<float>::halfPi - (sliceAngle * 0.5f);
-        float endAngle = startAngle + sliceAngle;
         
         // Only draw onset slices
         if (pattern[i])
