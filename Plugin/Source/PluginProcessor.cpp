@@ -389,14 +389,17 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
         double currentBeat = posInfo.ppqPosition;
         double stepsFromStart = currentBeat / beatsPerStep;
         
-        // Calculate which step should be active
-        int targetStep = static_cast<int>(stepsFromStart) % patternEngine.getStepCount();
+        // Calculate which step should be active within the current pattern cycle
+        // Use modulo on the raw step count to handle patterns that don't start at beat 0
+        double stepsInCurrentCycle = fmod(stepsFromStart, patternEngine.getStepCount());
+        int targetStep = static_cast<int>(stepsInCurrentCycle);
         
         // Debug log to file
         std::ofstream debugFile("/tmp/rhythm_steps_debug.log", std::ios::app);
         debugFile << "Step calculation: currentBeat=" << currentBeat 
                   << ", beatsPerStep=" << beatsPerStep 
                   << ", stepsFromStart=" << stepsFromStart 
+                  << ", stepsInCurrentCycle=" << stepsInCurrentCycle
                   << ", targetStep=" << targetStep 
                   << ", patternSteps=" << patternEngine.getStepCount() << std::endl;
         debugFile.close();
@@ -772,13 +775,16 @@ void RhythmPatternExplorerAudioProcessor::syncPositionWithHost(const juce::Audio
         double currentBeat = posInfo.ppqPosition;
         double stepsFromStart = currentBeat / beatsPerStep;
         
-        int targetStep = static_cast<int>(stepsFromStart) % patternEngine.getStepCount();
+        // Calculate which step should be active within the current pattern cycle
+        double stepsInCurrentCycle = fmod(stepsFromStart, patternSteps);
+        int targetStep = static_cast<int>(stepsInCurrentCycle);
         
         // Debug log to file
         std::ofstream debugFile("/tmp/rhythm_steps_debug.log", std::ios::app);
         debugFile << "Transport step calculation: currentBeat=" << currentBeat 
                   << ", beatsPerStep=" << beatsPerStep 
                   << ", stepsFromStart=" << stepsFromStart 
+                  << ", stepsInCurrentCycle=" << stepsInCurrentCycle
                   << ", targetStep=" << targetStep 
                   << ", patternSteps=" << patternSteps << std::endl;
         debugFile.close();
