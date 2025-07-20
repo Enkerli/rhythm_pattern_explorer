@@ -544,41 +544,34 @@ void RhythmPatternExplorerAudioProcessor::updateTiming()
     double beatsPerSecond = bpm / 60.0;
     double patternLengthInBeats;
     
-    // Check if we're in subdivision mode 
-    // For now, use subdivision mode when pattern length unit is "Steps" (index 0)
-    bool useSubdivisionMode = (lengthUnit == 0); // Steps mode uses subdivision parameter
-    
-    if (useSubdivisionMode) {
-        // Subdivision mode: each step matches a transport subdivision
-        auto pattern = patternEngine.getCurrentPattern();
-        int patternSteps = static_cast<int>(pattern.size());
-        if (patternSteps <= 0) patternSteps = 8; // Fallback
-        
-        // Convert subdivision index to beat fraction
-        double subdivisionBeats = getSubdivisionInBeats(subdivisionIndex);
-        patternLengthInBeats = subdivisionBeats * patternSteps;
-    } else {
-        // Pattern length modes
-        switch (lengthUnit) {
-            case 0: // Steps mode - use 16th note subdivisions (default behavior)
-                patternLengthInBeats = lengthValue / 4.0; // Steps are 16th notes
-                break;
-            case 1: // Beats mode 
-                patternLengthInBeats = lengthValue; 
-                break;
-            case 2: // Bars mode
-                patternLengthInBeats = lengthValue * 4.0; // Assume 4/4 time
-                break;
-            default:
-                patternLengthInBeats = lengthValue; // Default to beats
-                break;
-        }
-    }
-    
-    // Calculate timing for entire pattern, then divide by number of steps
+    // Get pattern info for all modes
     auto pattern = patternEngine.getCurrentPattern();
     int patternSteps = static_cast<int>(pattern.size());
     if (patternSteps <= 0) patternSteps = 8; // Fallback
+    
+    // Calculate pattern length based on mode
+    switch (lengthUnit) {
+        case 0: // Steps mode - each step represents a subdivision, pattern length is multiplier
+        {
+            // Convert subdivision index to beat fraction per step
+            double subdivisionBeatsPerStep = getSubdivisionInBeats(subdivisionIndex);
+            
+            // Pattern length in Steps mode is a multiplier
+            // Example: 8 steps × 16th notes × 1.0 multiplier = 8 × 0.25 = 2 beats (half note)
+            // Example: 8 steps × 8th notes × 1.0 multiplier = 8 × 0.5 = 4 beats (whole note)
+            patternLengthInBeats = subdivisionBeatsPerStep * patternSteps * lengthValue;
+            break;
+        }
+        case 1: // Beats mode - pattern fits in specified number of beats
+            patternLengthInBeats = lengthValue; 
+            break;
+        case 2: // Bars mode - pattern fits in specified number of bars
+            patternLengthInBeats = lengthValue * 4.0; // Assume 4/4 time
+            break;
+        default:
+            patternLengthInBeats = lengthValue; // Default to beats
+            break;
+    }
     
     double patternDurationInSeconds = patternLengthInBeats / beatsPerSecond;
     double stepDurationInSeconds = patternDurationInSeconds / patternSteps;
