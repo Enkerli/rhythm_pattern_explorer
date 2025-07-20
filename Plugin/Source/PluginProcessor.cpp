@@ -422,6 +422,7 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
         
         // Trigger notes at the exact moment they should occur
         int numSamples = buffer.getNumSamples();
+        double samplesPerBeat = getSampleRate() * 60.0 / posInfo.bpm;
         
         // Track the last processed step to detect boundaries
         static int lastProcessedStep = -1;
@@ -1129,7 +1130,7 @@ void RhythmPatternExplorerAudioProcessor::parseAndApplyUPI(const juce::String& u
         }
         
         DBG("RhythmPatternExplorer: Parsed UPI pattern '" << upiPattern << "' -> " 
-            << onsets << " onsets in " << steps << " steps");
+            << UPIParser::countOnsets(parseResult.pattern) << " onsets in " << parseResult.pattern.size() << " steps");
         DBG("Binary: " << UPIParser::patternToBinary(parseResult.pattern));
     }
     else
