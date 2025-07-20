@@ -430,16 +430,6 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
                     DBG("RhythmPatternExplorer: Cycle boundary - UI accent offset set to " << uiAccentOffset);
                 }
                 
-                // DEBUG: Log transport-synced step progression
-                {
-                    std::ofstream debugFile("/tmp/rhythm_timing_debug.txt", std::ios::app);
-                    debugFile << "TRANSPORT-SYNCED STEP: triggeredStep=" << targetStep 
-                              << ", sampleBeat=" << sampleBeat
-                              << ", sampleOffset=" << sample
-                              << ", ppqPosition=" << posInfo.ppqPosition
-                              << ", beatsPerStep=" << beatsPerStep << std::endl;
-                    debugFile.close();
-                }
             }
         }
     }
@@ -560,6 +550,8 @@ void RhythmPatternExplorerAudioProcessor::updateTiming()
             // Example: 8 steps × 16th notes × 1.0 multiplier = 8 × 0.25 = 2 beats (half note)
             // Example: 8 steps × 8th notes × 1.0 multiplier = 8 × 0.5 = 4 beats (whole note)
             patternLengthInBeats = subdivisionBeatsPerStep * patternSteps * lengthValue;
+            
+            DBG("Steps mode: subdivisionIndex=" << subdivisionIndex << ", subdivisionBeatsPerStep=" << subdivisionBeatsPerStep << ", patternSteps=" << patternSteps << ", lengthValue=" << lengthValue << ", result=" << patternLengthInBeats);
             break;
         }
         case 1: // Beats mode - pattern fits in specified number of beats
@@ -603,20 +595,6 @@ void RhythmPatternExplorerAudioProcessor::processStep(juce::MidiBuffer& midiBuff
     }
 #endif
     
-    // DEBUG: Log pattern check
-    {
-        std::ofstream debugFile("/tmp/rhythm_timing_debug.txt", std::ios::app);
-        debugFile << "PATTERN CHECK: step=" << stepToProcess 
-                  << ", pattern[" << stepToProcess << "]=" << (stepToProcess < pattern.size() ? (pattern[stepToProcess] ? "1" : "0") : "OUT_OF_BOUNDS")
-                  << ", willTriggerNote=" << (stepToProcess < pattern.size() && pattern[stepToProcess] ? "YES" : "NO");
-        // Also log the complete pattern for verification
-        debugFile << ", fullPattern=";
-        for (size_t i = 0; i < pattern.size(); ++i) {
-            debugFile << (pattern[i] ? "1" : "0");
-        }
-        debugFile << std::endl;
-        debugFile.close();
-    }
     
     if (stepToProcess < pattern.size() && pattern[stepToProcess])
     {
@@ -733,9 +711,40 @@ void RhythmPatternExplorerAudioProcessor::syncPositionWithHost(const juce::Audio
     // Calculate pattern position based on host timeline
     if (posInfo.ppqPosition >= 0.0)
     {
-        // Calculate which step we should be on based on timeline position
-        // For tresillo: 8 steps over 4 beats = 0.5 beats per step
-        double beatsPerStep = 4.0 / patternEngine.getStepCount(); // Dynamic based on pattern length
+        // Calculate which step we should be on based on timeline position using pattern length parameters
+        // Get pattern length parameters
+        int lengthUnit = patternLengthUnitParam->getIndex();
+        float lengthValue = getPatternLengthValue();
+        int subdivisionIndex = subdivisionParam->getIndex();
+        
+        // Get pattern info
+        auto pattern = patternEngine.getCurrentPattern();
+        int patternSteps = static_cast<int>(pattern.size());
+        if (patternSteps <= 0) patternSteps = 8; // Fallback
+        
+        // Calculate pattern length based on mode (same logic as updateTiming)
+        double patternLengthInBeats;
+        switch (lengthUnit) {
+            case 0: // Steps mode - each step represents a subdivision, pattern length is multiplier
+            {
+                double subdivisionBeatsPerStep = getSubdivisionInBeats(subdivisionIndex);
+                patternLengthInBeats = subdivisionBeatsPerStep * patternSteps * lengthValue;
+                
+                DBG("Transport Steps mode: subdivisionIndex=" << subdivisionIndex << ", subdivisionBeatsPerStep=" << subdivisionBeatsPerStep << ", patternSteps=" << patternSteps << ", lengthValue=" << lengthValue << ", result=" << patternLengthInBeats);
+                break;
+            }
+            case 1: // Beats mode - pattern fits in specified number of beats
+                patternLengthInBeats = lengthValue; 
+                break;
+            case 2: // Bars mode - pattern fits in specified number of bars
+                patternLengthInBeats = lengthValue * 4.0; // Assume 4/4 time
+                break;
+            default:
+                patternLengthInBeats = lengthValue; // Default to beats
+                break;
+        }
+        
+        double beatsPerStep = patternLengthInBeats / patternSteps;
         double currentBeat = posInfo.ppqPosition;
         double stepsFromStart = currentBeat / beatsPerStep;
         
