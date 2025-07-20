@@ -16,7 +16,6 @@ PatternEngine::PatternEngine()
     // Initialize with a simple pattern
     currentPattern = {true, false, false, true, false, false, true, false};
     
-    DBG("PatternEngine: Initialized with default pattern");
 }
 
 PatternEngine::~PatternEngine()
@@ -28,7 +27,6 @@ void PatternEngine::generateEuclideanPattern(int onsets, int steps, int offset)
 {
     if (steps <= 0 || onsets < 0 || onsets > steps)
     {
-        DBG("PatternEngine: Invalid Euclidean parameters: onsets=" << onsets << ", steps=" << steps);
         return;
     }
     
@@ -39,14 +37,12 @@ void PatternEngine::generateEuclideanPattern(int onsets, int steps, int offset)
         currentPattern = UPIParser::rotatePattern(currentPattern, offset);
     }
     
-    DBG("PatternEngine: Generated Euclidean pattern E(" << onsets << "," << steps << "," << offset << ")");
 }
 
 void PatternEngine::generatePolygonPattern(int vertices, int steps, int offset)
 {
     if (vertices <= 0 || steps <= 0)
     {
-        DBG("PatternEngine: Invalid polygon parameters: vertices=" << vertices << ", steps=" << steps);
         return;
     }
     
@@ -67,14 +63,12 @@ void PatternEngine::generatePolygonPattern(int vertices, int steps, int offset)
         }
     }
     
-    DBG("PatternEngine: Generated polygon pattern P(" << vertices << "," << offset << ") with " << steps << " steps");
 }
 
 void PatternEngine::generateRandomPattern(int onsets, int steps)
 {
     if (steps <= 0 || onsets < 0 || onsets > steps)
     {
-        DBG("PatternEngine: Invalid random parameters: onsets=" << onsets << ", steps=" << steps);
         return;
     }
     
@@ -102,14 +96,12 @@ void PatternEngine::generateRandomPattern(int onsets, int steps)
         currentPattern[positions[i]] = true;
     }
     
-    DBG("PatternEngine: Generated random pattern with " << actualOnsets << " onsets in " << steps << " steps");
 }
 
 void PatternEngine::generateBinaryPattern(int binaryValue, int steps)
 {
     if (steps <= 0 || steps > 32)
     {
-        DBG("PatternEngine: Invalid binary parameters: value=" << binaryValue << ", steps=" << steps);
         return;
     }
     
@@ -122,14 +114,12 @@ void PatternEngine::generateBinaryPattern(int binaryValue, int steps)
         currentPattern[i] = (binaryValue & (1 << (steps - 1 - i))) != 0;
     }
     
-    DBG("PatternEngine: Generated binary pattern " << binaryValue << " with " << steps << " steps");
 }
 
 //==============================================================================
 void PatternEngine::setPattern(const std::vector<bool>& pattern)
 {
     currentPattern = pattern;
-    DBG("PatternEngine: Set custom pattern with " << pattern.size() << " steps");
 }
 
 int PatternEngine::getOnsetCount() const
@@ -374,8 +364,6 @@ void PatternEngine::setProgressiveOffset(bool enabled, int initial, int progress
     currentOffset = initial;
     triggerCount = 0;
     
-    DBG("PatternEngine: Progressive offset " << (enabled ? "enabled" : "disabled") 
-        << " - initial=" << initial << ", progressive=" << progressive);
 }
 
 void PatternEngine::triggerProgressiveOffset()
@@ -386,6 +374,4 @@ void PatternEngine::triggerProgressiveOffset()
     triggerCount++;
     currentOffset = initialOffset + (triggerCount * progressiveOffset);
     
-    DBG("PatternEngine: Progressive offset triggered - count=" << triggerCount 
-        << ", new offset=" << currentOffset);
 }

@@ -48,6 +48,10 @@ RhythmPatternExplorerAudioProcessor::RhythmPatternExplorerAudioProcessor()
     addParameter(patternLengthValueParam = new juce::AudioParameterChoice("patternLengthValue", "Pattern Length Value", 
         juce::StringArray{"0.125", "0.25", "0.5", "0.75", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32"}, 7)); // Default to "8"
     
+    // Subdivision parameter for transport subdivision matching
+    addParameter(subdivisionParam = new juce::AudioParameterChoice("subdivision", "Subdivision", 
+        juce::StringArray{"64th Triplet", "64th", "32nd Triplet", "32nd", "16th Triplet", "16th", "8th Triplet", "8th", "Quarter Triplet", "Quarter", "Half Triplet", "Half", "Whole"}, 5)); // Default to "16th"
+    
     // Initialize pattern engine with default Euclidean pattern
     patternEngine.generateEuclideanPattern(3, 8);
     
@@ -359,8 +363,29 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
     // TRANSPORT-SYNCED TIMING: Use DAW's ppqPosition for perfect alignment
     if (isPlaying && hasValidPosition)
     {
-        // Calculate pattern timing based on DAW transport
-        double beatsPerStep = 4.0 / patternEngine.getStepCount(); // 8 steps over 4 beats = 0.5 beats per step
+        // Calculate pattern timing based on DAW transport and pattern length parameters
+        int lengthUnit = patternLengthUnitParam->getIndex(); // 0=Steps, 1=Beats, 2=Bars
+        float lengthValue = getPatternLengthValue();
+        
+        // Calculate pattern length in beats using pattern length parameters
+        double patternLengthInBeats;
+        switch (lengthUnit) {
+            case 0: // Steps mode - use 16th note subdivisions
+                patternLengthInBeats = lengthValue / 4.0; // Steps are 16th notes
+                break;
+            case 1: // Beats mode 
+                patternLengthInBeats = lengthValue; 
+                break;
+            case 2: // Bars mode
+                patternLengthInBeats = lengthValue * 4.0; // Assume 4/4 time
+                break;
+            default:
+                patternLengthInBeats = lengthValue; // Default to beats
+                break;
+        }
+        
+        // Calculate beats per step based on pattern length parameters
+        double beatsPerStep = patternLengthInBeats / patternEngine.getStepCount();
         double currentBeat = posInfo.ppqPosition;
         double stepsFromStart = currentBeat / beatsPerStep;
         
@@ -511,26 +536,43 @@ void RhythmPatternExplorerAudioProcessor::updateTiming()
     float bpm = currentBPM;
     
     // Get pattern length parameters for Phase 2 temporal control
-    int lengthUnit = patternLengthUnitParam->getIndex(); // 0=Steps, 1=Beats, 2=Bars
+    int lengthUnit = patternLengthUnitParam->getIndex(); // 0=Steps, 1=Beats, 2=Bars, 3=Subdivision
     float lengthValue = getPatternLengthValue();
+    int subdivisionIndex = subdivisionParam->getIndex();
     
     // Calculate samples per step using pattern length parameters
     double beatsPerSecond = bpm / 60.0;
     double patternLengthInBeats;
     
-    switch (lengthUnit) {
-        case 0: // Steps mode - use 16th note subdivisions (default behavior)
-            patternLengthInBeats = lengthValue / 4.0; // Steps are 16th notes
-            break;
-        case 1: // Beats mode 
-            patternLengthInBeats = lengthValue; 
-            break;
-        case 2: // Bars mode
-            patternLengthInBeats = lengthValue * 4.0; // Assume 4/4 time
-            break;
-        default:
-            patternLengthInBeats = lengthValue; // Default to beats
-            break;
+    // Check if we're in subdivision mode 
+    // For now, use subdivision mode when pattern length unit is "Steps" (index 0)
+    bool useSubdivisionMode = (lengthUnit == 0); // Steps mode uses subdivision parameter
+    
+    if (useSubdivisionMode) {
+        // Subdivision mode: each step matches a transport subdivision
+        auto pattern = patternEngine.getCurrentPattern();
+        int patternSteps = static_cast<int>(pattern.size());
+        if (patternSteps <= 0) patternSteps = 8; // Fallback
+        
+        // Convert subdivision index to beat fraction
+        double subdivisionBeats = getSubdivisionInBeats(subdivisionIndex);
+        patternLengthInBeats = subdivisionBeats * patternSteps;
+    } else {
+        // Pattern length modes
+        switch (lengthUnit) {
+            case 0: // Steps mode - use 16th note subdivisions (default behavior)
+                patternLengthInBeats = lengthValue / 4.0; // Steps are 16th notes
+                break;
+            case 1: // Beats mode 
+                patternLengthInBeats = lengthValue; 
+                break;
+            case 2: // Bars mode
+                patternLengthInBeats = lengthValue * 4.0; // Assume 4/4 time
+                break;
+            default:
+                patternLengthInBeats = lengthValue; // Default to beats
+                break;
+        }
     }
     
     // Calculate timing for entire pattern, then divide by number of steps
@@ -542,58 +584,12 @@ void RhythmPatternExplorerAudioProcessor::updateTiming()
     double stepDurationInSeconds = patternDurationInSeconds / patternSteps;
     samplesPerStep = static_cast<int>(currentSampleRate * stepDurationInSeconds);
     
-    // HIGH BPM FIX: Enhanced timing validation for Bitwig testing
+    // Timing validation
     if (samplesPerStep <= 0) {
-#ifdef DEBUG
-        std::cout << "HIGH BPM ERROR: Invalid samplesPerStep=" << samplesPerStep << " at BPM=" << bpm << 
-            " sampleRate=" << currentSampleRate << std::endl;
-#endif
         samplesPerStep = static_cast<int>(currentSampleRate / 60.0); // Default to 1Hz fallback
-    } else if (samplesPerStep < 10) {
-#ifdef DEBUG
-        std::cout << "HIGH BPM CRITICAL: Extremely fast timing - samplesPerStep=" << samplesPerStep << 
-            " at BPM=" << bpm << " (>" << (60.0 * currentSampleRate / (samplesPerStep * 4)) << " BPM equivalent)" << std::endl;
-#endif
-    } else if (samplesPerStep < 100) {
-#ifdef DEBUG
-        std::cout << "HIGH BPM WARNING: Very fast timing - samplesPerStep=" << samplesPerStep << 
-            " at BPM=" << bpm << " (" << (60.0 * currentSampleRate / (samplesPerStep * 4)) << " BPM equivalent)" << std::endl;
-#endif
     }
         
     DBG("RhythmPatternExplorer: Updated timing - BPM: " << bpm << ", Samples per step: " << samplesPerStep);
-    
-    // DEBUG: Write detailed timing analysis to file
-    {
-        std::ofstream debugFile("/tmp/rhythm_timing_debug.txt", std::ios::app);
-        debugFile << "=== TIMING DEBUG ===" << std::endl;
-        debugFile << "BPM: " << bpm << std::endl;
-        debugFile << "lengthUnit: " << lengthUnit << " (0=Steps, 1=Beats, 2=Bars)" << std::endl;
-        debugFile << "lengthValue: " << lengthValue << std::endl;
-        debugFile << "patternLengthInBeats: " << patternLengthInBeats << std::endl;
-        debugFile << "patternSteps: " << patternSteps << std::endl;
-        debugFile << "patternDurationInSeconds: " << patternDurationInSeconds << std::endl;
-        debugFile << "stepDurationInSeconds: " << stepDurationInSeconds << std::endl;
-        debugFile << "samplesPerStep: " << samplesPerStep << std::endl;
-        debugFile << "currentSampleRate: " << currentSampleRate << std::endl;
-        debugFile << "Expected beats per step: " << (patternLengthInBeats / patternSteps) << std::endl;
-        debugFile << "Expected seconds per step: " << stepDurationInSeconds << std::endl;
-        debugFile << "Pattern: ";
-        auto pattern = patternEngine.getCurrentPattern();
-        for (int i = 0; i < pattern.size(); ++i) {
-            debugFile << (pattern[i] ? "1" : "0");
-        }
-        debugFile << std::endl;
-        debugFile << "Onset positions: ";
-        for (int i = 0; i < pattern.size(); ++i) {
-            if (pattern[i]) {
-                double beatPosition = i * (patternLengthInBeats / patternSteps);
-                debugFile << "Step" << i << "=Beat" << beatPosition << " ";
-            }
-        }
-        debugFile << std::endl << std::endl;
-        debugFile.close();
-    }
 }
 
 void RhythmPatternExplorerAudioProcessor::processStep(juce::MidiBuffer& midiBuffer, int samplePosition, int stepToProcess)
@@ -1483,6 +1479,32 @@ float RhythmPatternExplorerAudioProcessor::getPatternLengthValue() const
         return values[index];
     }
     return 8.0f; // Default fallback
+}
+
+double RhythmPatternExplorerAudioProcessor::getSubdivisionInBeats(int subdivisionIndex) const
+{
+    // Convert subdivision choice to beat fractions
+    // Subdivision choices: {"64th Triplet", "64th", "32nd Triplet", "32nd", "16th Triplet", "16th", "8th Triplet", "8th", "Quarter Triplet", "Quarter", "Half Triplet", "Half", "Whole"}
+    static const double subdivisionBeats[] = {
+        1.0/24.0,  // 64th Triplet (1/64 * 2/3 = 1/96, but musically 1/24 makes more sense)
+        1.0/16.0,  // 64th
+        1.0/12.0,  // 32nd Triplet (1/32 * 2/3 = 1/48, but musically 1/12 makes more sense)
+        1.0/8.0,   // 32nd
+        1.0/6.0,   // 16th Triplet (1/16 * 2/3 = 1/24, but musically 1/6 makes more sense)
+        1.0/4.0,   // 16th (default)
+        1.0/3.0,   // 8th Triplet (1/8 * 2/3 = 1/12, but musically 1/3 makes more sense)
+        1.0/2.0,   // 8th
+        2.0/3.0,   // Quarter Triplet (1/4 * 2/3 = 1/6, but musically 2/3 makes more sense)
+        1.0,       // Quarter
+        4.0/3.0,   // Half Triplet (1/2 * 2/3 = 1/3, but musically 4/3 makes more sense)
+        2.0,       // Half
+        4.0        // Whole
+    };
+    
+    if (subdivisionIndex >= 0 && subdivisionIndex < static_cast<int>(sizeof(subdivisionBeats) / sizeof(subdivisionBeats[0]))) {
+        return subdivisionBeats[subdivisionIndex];
+    }
+    return 1.0/4.0; // Default to 16th note
 }
 
 //==============================================================================
