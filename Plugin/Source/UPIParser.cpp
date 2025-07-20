@@ -1307,7 +1307,7 @@ static void cleanupProgressiveStates()
     std::sort(accessCounts.begin(), accessCounts.end());
     
     // Remove the least used patterns (keep only the most recent half)
-    int toRemove = progressivePatterns.size() - (MAX_PROGRESSIVE_STATES / 2);
+    int toRemove = static_cast<int>(progressivePatterns.size()) - (MAX_PROGRESSIVE_STATES / 2);
     for (int i = 0; i < toRemove && i < accessCounts.size(); ++i)
     {
         const juce::String& keyToRemove = accessCounts[i].second;

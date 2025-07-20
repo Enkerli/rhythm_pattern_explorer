@@ -183,6 +183,10 @@ PatternEngine::BalanceAnalysis PatternEngine::analyzeBalance() const
 //        analysis.balanceRating = "Poor";
 //    
 //    return analysis;
+    
+    // Function disabled - return empty analysis
+    BalanceAnalysis analysis;
+    return analysis;
 }
 
 double PatternEngine::calculateCenterOfGravityAngle() const
@@ -225,6 +229,9 @@ double PatternEngine::calculateCenterOfGravityAngle() const
 //        angleDegrees += 360.0;
 //    
 //    return angleDegrees;
+    
+    // Function disabled - return 0.0
+    return 0.0;
 }
 
 //==============================================================================
