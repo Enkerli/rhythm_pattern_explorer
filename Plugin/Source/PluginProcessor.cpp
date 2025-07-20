@@ -12,7 +12,6 @@
 #include "UPIParser.h"
 #include "PatternUtils.h"
 #include <ctime>
-#include <fstream>
 
 // Debug output disabled for production performance
 #ifdef DEBUG
@@ -62,7 +61,7 @@ RhythmPatternExplorerAudioProcessor::RhythmPatternExplorerAudioProcessor()
     DBG("RhythmPatternExplorer: Plugin initialized");
     
     // Debug logging for plugin initialization
-    logDebug(DebugCategory::BITWIG_INIT, "Plugin constructor called! Debug version v0.03a4.DBG active.");
+    DBG("Plugin constructor called! Debug version v0.03a4.DBG active.");
 }
 
 
@@ -233,7 +232,7 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
     if (shouldLog || std::abs(currentBPM - lastLoggedBPM) > 2) {
         juce::String message = juce::String::formatted("BPM=%.1f, SamplesPerStep=%d, BufferSize=%d, CurrentSample=%d, CurrentStep=%d, SampleRate=%.0f, CallCount=%d",
             currentBPM, samplesPerStep, currentBufferSize, currentSample, currentStep.load(), currentSampleRate, debugCallCount);
-        logDebug(DebugCategory::BITWIG_PROCESS, message);
+        DBG(message);
         lastLoggedBPM = currentBPM;
     }
     
@@ -284,7 +283,7 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
                     isPlaying ? "TRUE" : "FALSE", 
                     isRecording ? "TRUE" : "FALSE",
                     ppqPosition, bpm);
-                logDebug(DebugCategory::TRANSPORT, message);
+                DBG(message);
             }
         }
         
@@ -297,7 +296,7 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
         if (currentBPM >= 200.0f) {
             static int noPlayheadCount = 0;
             if (++noPlayheadCount % 100 == 0) {
-                logDebug(DebugCategory::TRANSPORT, "Bitwig not providing transport info");
+                DBG("Bitwig not providing transport info");
             }
         }
     }
@@ -356,7 +355,7 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
         if (bpmChanged && currentBPM >= 180.0f) {
             juce::String message = juce::String::formatted("%.1f->%.1f, sampleRatio=%.3f, newCurrentSample=%d, newSamplesPerStep=%d",
                 lastBPM, currentBPM, sampleRatio, currentSample, samplesPerStep);
-            logDebug(DebugCategory::BPM_SYNC, message);
+            DBG(message);
         }
     }
     
@@ -371,8 +370,7 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
     if (currentBPM >= 180.0f) {
         static int playingDebugCount = 0;
         if (++playingDebugCount % 50 == 0) {
-            logDebug(DebugCategory::BITWIG_PROCESS, 
-                "PLAYING DEBUG: isPlaying=" + juce::String(finalIsPlaying ? "TRUE" : "FALSE") +
+            DBG("PLAYING DEBUG: isPlaying=" + juce::String(finalIsPlaying ? "TRUE" : "FALSE") +
                 ", hostIsPlaying=" + juce::String(hostIsPlaying ? "TRUE" : "FALSE") + 
                 ", internalPlaying=" + juce::String(internalPlaying ? "TRUE" : "FALSE") +
                 ", useHostTransport=" + juce::String(useHostTransportParam->get() ? "TRUE" : "FALSE"));
@@ -731,7 +729,7 @@ void RhythmPatternExplorerAudioProcessor::syncBPMWithHost(const juce::AudioPlayH
         
         // BITWIG BPM SYNC DEBUG: Log BPM sync attempts  
         if (hostBPM >= 200.0f) {
-            logDebug(DebugCategory::BPM_SYNC, 
+            DBG(
                 "BPM SYNC: hostBPM=" + juce::String(hostBPM, 1) + 
                 ", currentBPM=" + juce::String(currentBPMValue, 1) + 
                 ", diff=" + juce::String(std::abs(currentBPMValue - hostBPM), 3));
@@ -745,7 +743,7 @@ void RhythmPatternExplorerAudioProcessor::syncBPMWithHost(const juce::AudioPlayH
             
             // Log successful BPM updates
             if (hostBPM >= 200.0f) {
-                logDebug(DebugCategory::BPM_SYNC, 
+                DBG(
                     "BPM UPDATED: " + juce::String(currentBPMValue, 1) + "->" + 
                     juce::String(hostBPM, 1) + ", newSamplesPerStep=" + juce::String(samplesPerStep));
             }
@@ -815,7 +813,7 @@ void RhythmPatternExplorerAudioProcessor::syncPositionWithHost(const juce::Audio
         else if (!allowPositionSync && currentBPM >= 180.0f)
         {
             // Log that we're skipping position sync at high BPM
-            logDebug(DebugCategory::POSITION_SYNC, 
+            DBG(
                 "POSITION SYNC DISABLED: BPM=" + juce::String(currentBPM, 1) + 
                 ", targetStep=" + juce::String(targetStep) + 
                 ", currentStep=" + juce::String(currentStep.load()));
@@ -862,7 +860,7 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
         for (int i = 0; i < scenes.size(); ++i) {
             sceneList += juce::String::formatted("  Scene %d: %s\n", i, scenes[i].trim().toRawUTF8());
         }
-        logDebug(DebugCategory::SCENE_CYCLING, juce::String::formatted("Scene cycling detected: %d scenes\n%s", static_cast<int>(scenes.size()), sceneList.toRawUTF8()));
+        DBG(juce::String::formatted("Scene cycling detected: %d scenes\n%s", static_cast<int>(scenes.size()), sceneList.toRawUTF8()));
         
         // Check if this is the same scene sequence or a new one
         bool isSameSequence = (scenes.size() == scenePatterns.size());
@@ -881,7 +879,7 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
             advanceScene();
             
             // Debug log advancement
-            logDebug(DebugCategory::SCENE_CYCLING, 
+            DBG(
                 "Advanced to scene " + juce::String(currentSceneIndex) + ": " + scenePatterns[currentSceneIndex]);
         }
         else
@@ -950,7 +948,7 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
             for (int i = 0; i < scenePatterns.size(); ++i) {
                 scenesInfo += "\n  Scene " + juce::String(i) + ": " + scenePatterns[i] + " (base: " + sceneBasePatterns[i] + ", step: " + juce::String(sceneProgressiveSteps[i]) + ")";
             }
-            logDebug(DebugCategory::SCENE_CYCLING, scenesInfo);
+            DBG(scenesInfo);
         }
         
         // Parse and apply the current scene pattern using per-scene progressive state
@@ -967,7 +965,7 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
         int newStep = stepStr.getIntValue();
         
         // Progressive offset debug logging
-        logDebug(DebugCategory::PROGRESSIVE_OFFSET, 
+        DBG(
             "Progressive offset detected: " + pattern + " (base: " + newBasePattern + ", step: +" + juce::String(newStep) + ")");
         
         // If same base pattern, advance offset; if different, reset
@@ -979,7 +977,7 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
             patternChanged.store(true);
             
             // Debug log advancement
-            logDebug(DebugCategory::PROGRESSIVE_OFFSET, 
+            DBG(
                 "Advanced offset to: " + juce::String(progressiveOffset));
         }
         else
@@ -990,7 +988,7 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
             progressiveOffset = newStep; // Start with first offset
             
             // Debug log reset
-            logDebug(DebugCategory::PROGRESSIVE_OFFSET, 
+            DBG(
                 "New progressive pattern - reset offset to: " + juce::String(progressiveOffset));
         }
         
@@ -1005,7 +1003,7 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
             patternEngine.setPattern(rotatedPattern);
             
             // Debug log rotation
-            logDebug(DebugCategory::PROGRESSIVE_OFFSET, 
+            DBG(
                 "Applied rotation: offset=" + juce::String(progressiveOffset));
         }
     }
@@ -1018,7 +1016,7 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
         int newLengthening = lengthStr.getIntValue();
         
         // Progressive lengthening debug logging
-        logDebug(DebugCategory::PROGRESSIVE_LENGTHENING, 
+        DBG(
             "Progressive lengthening detected: " + pattern + " (base: " + newBasePattern + ", add: *" + juce::String(newLengthening) + ")");
         
         // If same base pattern, advance lengthening; if different, reset
@@ -1030,7 +1028,7 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
             patternChanged.store(true);
             
             // Debug log advancement
-            logDebug(DebugCategory::PROGRESSIVE_LENGTHENING, 
+            DBG(
                 "Advanced lengthening - pattern now has " + juce::String(static_cast<int>(baseLengthPattern.size())) + " steps");
         }
         else
@@ -1044,7 +1042,7 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
             baseLengthPattern = patternEngine.getCurrentPattern();
             
             // Debug log reset
-            logDebug(DebugCategory::PROGRESSIVE_LENGTHENING, 
+            DBG(
                 "New progressive lengthening - starting with " + juce::String(static_cast<int>(baseLengthPattern.size())) + " steps");
         }
         
@@ -1293,7 +1291,7 @@ void RhythmPatternExplorerAudioProcessor::advanceProgressiveLengthening()
         // Append the random steps to the pattern
         baseLengthPattern.insert(baseLengthPattern.end(), randomSteps.begin(), randomSteps.end());
         
-        logDebug(DebugCategory::PROGRESSIVE_LENGTHENING, 
+        DBG(
             "Added " + juce::String(progressiveLengthening) + " random steps, total length now: " + 
             juce::String(static_cast<int>(baseLengthPattern.size())));
     }
@@ -1364,7 +1362,7 @@ void RhythmPatternExplorerAudioProcessor::advanceScene()
             sceneInfo += "\n  Scene progressive state - offset: " + juce::String(sceneProgressiveOffsets[currentSceneIndex]) + 
                         ", lengthening: " + juce::String(sceneProgressiveLengthening[currentSceneIndex]);
         }
-        logDebug(DebugCategory::SCENE_CYCLING, sceneInfo);
+        DBG(sceneInfo);
     }
 }
 
@@ -1391,7 +1389,7 @@ void RhythmPatternExplorerAudioProcessor::applyCurrentScenePattern()
         auto rotatedPattern = PatternUtils::rotatePattern(currentPattern, progressiveOffset);
         patternEngine.setPattern(rotatedPattern);
         
-        logDebug(DebugCategory::SCENE_CYCLING, 
+        DBG(
             "Applied scene " + juce::String(currentSceneIndex) + " progressive offset: " + juce::String(progressiveOffset));
     }
     else if (progressiveLengthening != 0)
@@ -1409,7 +1407,7 @@ void RhythmPatternExplorerAudioProcessor::applyCurrentScenePattern()
         auto lengthenedPattern = lengthenPattern(sceneBaseLengthPatterns[currentSceneIndex], progressiveLengthening);
         patternEngine.setPattern(lengthenedPattern);
         
-        logDebug(DebugCategory::SCENE_CYCLING, 
+        DBG(
             "Applied scene " + juce::String(currentSceneIndex) + " progressive lengthening: " + juce::String(progressiveLengthening) + " steps");
     }
 }
@@ -1458,39 +1456,6 @@ std::vector<bool> RhythmPatternExplorerAudioProcessor::getCurrentAccentMap() con
     return accentMap;
 }
 
-//==============================================================================
-// Centralized Debug Logging Utility
-
-void RhythmPatternExplorerAudioProcessor::logDebug(DebugCategory category, const juce::String& message) {
-    // Debug logging disabled for production performance
-    juce::ignoreUnused(category, message);
-}
-
-const char* RhythmPatternExplorerAudioProcessor::getCategoryName(DebugCategory category) {
-    switch (category) {
-        case DebugCategory::BITWIG_INIT: return "BITWIG_INIT";
-        case DebugCategory::BITWIG_PROCESS: return "BITWIG_PROCESS";
-        case DebugCategory::TRANSPORT: return "TRANSPORT";
-        case DebugCategory::BPM_SYNC: return "BPM_SYNC";
-        case DebugCategory::STEP_TRIGGER: return "STEP_TRIGGER";
-        case DebugCategory::POSITION_SYNC: return "POSITION_SYNC";
-        case DebugCategory::SCENE_CYCLING: return "SCENE_CYCLING";
-        case DebugCategory::PROGRESSIVE_OFFSET: return "PROGRESSIVE_OFFSET";
-        case DebugCategory::PROGRESSIVE_LENGTHENING: return "PROGRESSIVE_LENGTHENING";
-        default: return "UNKNOWN";
-    }
-}
-
-const char* RhythmPatternExplorerAudioProcessor::getLogFile(DebugCategory category) {
-    switch (category) {
-        case DebugCategory::SCENE_CYCLING:
-        case DebugCategory::PROGRESSIVE_OFFSET:
-        case DebugCategory::PROGRESSIVE_LENGTHENING:
-            return "/tmp/rhythm_progressive_debug.log";
-        default:
-            return "/tmp/bitwig_debug.log";
-    }
-}
 
 //==============================================================================
 // Helper function to convert pattern length choice to float value

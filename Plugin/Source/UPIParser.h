@@ -120,10 +120,6 @@ private:
     
     // Progressive transformation helpers
     static std::vector<bool> applyProgressiveTransformation(const std::vector<bool>& basePattern, char transformerType, int targetOnsets);
-    static std::vector<bool> dilatePattern(const std::vector<bool>& pattern, int newSteps);
-    static std::vector<bool> concentratePattern(const std::vector<bool>& pattern, int newSteps);
-    static std::vector<bool> generateBarlowTransformation(const std::vector<bool>& originalPattern, int targetOnsets, bool wolrabMode);
-    static std::vector<bool> generateEuclideanTransformation(const std::vector<bool>& originalPattern, int targetOnsets, bool antiMode);
     static std::vector<bool> diluteByBarlow(const std::vector<bool>& pattern, int targetOnsets, const std::vector<std::pair<int, double>>& indispensabilityTable, bool wolrabMode);
     static std::vector<bool> concentrateByBarlow(const std::vector<bool>& pattern, int targetOnsets, const std::vector<std::pair<int, double>>& indispensabilityTable, bool wolrabMode);
     static double calculateBarlowIndispensability(int position, int stepCount);

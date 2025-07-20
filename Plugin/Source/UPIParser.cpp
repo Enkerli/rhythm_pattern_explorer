@@ -192,13 +192,6 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
     
     DBG("UPIParser::parsePattern called with input: '" << input << "', cleaned: '" << cleaned << "'");
     
-    // Debug logging for pattern recognition
-    juce::File logFile("/tmp/rhythm_debug.log");
-    logFile.appendText("=== parsePattern called ===\n");
-    logFile.appendText("Input: '" + input + "'\n");
-    logFile.appendText("Cleaned: '" + cleaned + "'\n");
-    logFile.appendText("isEuclideanPattern: " + juce::String(isEuclideanPattern(cleaned) ? "true" : "false") + "\n");
-    logFile.appendText("isBinaryPattern: " + juce::String(isBinaryPattern(cleaned) ? "true" : "false") + "\n");
     
     // Handle transformations first
     if (cleaned.startsWith("~") || cleaned.startsWith("inv "))
@@ -265,11 +258,6 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
             DBG("   Base pattern (raw): " + basePattern);
             DBG("   Target onsets: " + juce::String(targetOnsets));
             
-            // Also write to file for debugging
-            juce::File logFile("/tmp/rhythm_debug.log");
-            logFile.appendText("Progressive pattern detected: " + cleaned + "\n");
-            logFile.appendText("Base pattern (raw): " + basePattern + "\n");
-            logFile.appendText("Target onsets: " + juce::String(targetOnsets) + "\n");
             
             // Extract transformer type (B, W, E, D) and remove it from base pattern
             char transformerType = 'b'; // Default to Barlow
@@ -292,9 +280,6 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
             DBG("   Transformer type: " + juce::String(transformerType));
             DBG("   Final base pattern: " + basePattern);
             
-            // Log to file
-            logFile.appendText("Transformer type: " + juce::String(transformerType) + "\n");
-            logFile.appendText("Final base pattern: " + basePattern + "\n");
             
             auto baseResult = parsePattern(basePattern);
             if (baseResult.isValid())
@@ -302,19 +287,12 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
                 DBG("   Base result pattern: " + PatternUtils::patternToBinary(baseResult.pattern));
                 DBG("   Base result onsets: " + juce::String(PatternUtils::countOnsets(baseResult.pattern)));
                 
-                // Log to file
-                logFile.appendText("Base result pattern: " + PatternUtils::patternToBinary(baseResult.pattern) + "\n");
-                logFile.appendText("Base result onsets: " + juce::String(PatternUtils::countOnsets(baseResult.pattern)) + "\n");
                 
                 // Apply progressive transformation with target onset count
                 auto transformed = applyProgressiveTransformation(baseResult.pattern, transformerType, targetOnsets);
                 DBG("   Transformed pattern: " + PatternUtils::patternToBinary(transformed));
                 DBG("   Transformed onsets: " + juce::String(PatternUtils::countOnsets(transformed)));
                 
-                // Log to file
-                logFile.appendText("Transformed pattern: " + PatternUtils::patternToBinary(transformed) + "\n");
-                logFile.appendText("Transformed onsets: " + juce::String(PatternUtils::countOnsets(transformed)) + "\n");
-                logFile.appendText("---\n");
                 
                 auto result = createSuccess(transformed, "Progressive: " + cleaned);
                 
@@ -499,7 +477,7 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
             std::vector<bool> basePattern(steps, false);
             basePattern[0] = true; // Start with downbeat
             
-            auto pattern = generateBarlowTransformation(basePattern, onsets, false);
+            auto pattern = PatternUtils::generateBarlowTransformation(basePattern, onsets, false);
             return createSuccess(pattern, "B(" + juce::String(onsets) + "," + juce::String(steps) + ")");
         }
     }
@@ -520,7 +498,7 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
             std::vector<bool> basePattern(steps, false);
             basePattern[0] = true; // Start with downbeat
             
-            auto pattern = generateBarlowTransformation(basePattern, onsets, true); // true = Wolrab mode
+            auto pattern = PatternUtils::generateBarlowTransformation(basePattern, onsets, true); // true = Wolrab mode
             return createSuccess(pattern, "W(" + juce::String(onsets) + "," + juce::String(steps) + ")");
         }
     }
@@ -537,7 +515,7 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
             int onsets = std::stoi(match[1].str());
             int steps = std::stoi(match[2].str());
             
-            auto pattern = generateEuclideanTransformation(std::vector<bool>(steps, false), onsets, true); // true = anti-Euclidean
+            auto pattern = PatternUtils::generateEuclideanTransformation(std::vector<bool>(steps, false), onsets, true); // true = anti-Euclidean
             return createSuccess(pattern, "D(" + juce::String(onsets) + "," + juce::String(steps) + ")");
         }
     }
@@ -1264,28 +1242,28 @@ std::vector<bool> UPIParser::applyProgressiveTransformation(const std::vector<bo
         {
             // Uses indispensability theory for musically intelligent onset placement
             // Higher indispensability = more likely to have onsets
-            result = generateBarlowTransformation(currentPattern, nextOnsets, false);
+            result = PatternUtils::generateBarlowTransformation(currentPattern, nextOnsets, false);
             break;
         }
         case 'w': // Wolrab (anti-Barlow) transformation
         {
             // Inverts Barlow logic: lower indispensability = more likely to have onsets
             // Creates anti-metrical, groove-oriented patterns
-            result = generateBarlowTransformation(currentPattern, nextOnsets, true);
+            result = PatternUtils::generateBarlowTransformation(currentPattern, nextOnsets, true);
             break;
         }
         case 'e': // Euclidean transformation
         {
             // Uses Euclidean algorithm for even distribution
             // Maintains rhythmic regularity during transformation
-            result = generateEuclideanTransformation(currentPattern, nextOnsets, false);
+            result = PatternUtils::generateEuclideanTransformation(currentPattern, nextOnsets, false);
             break;
         }
         case 'd': // Dilcue (anti-Euclidean) transformation
         {
             // Inverts Euclidean logic for more irregular patterns
             // Creates syncopated, unexpected rhythmic structures
-            result = generateEuclideanTransformation(currentPattern, nextOnsets, true);
+            result = PatternUtils::generateEuclideanTransformation(currentPattern, nextOnsets, true);
             break;
         }
         default:
@@ -1308,275 +1286,6 @@ std::vector<bool> UPIParser::applyProgressiveTransformation(const std::vector<bo
     DBG("   Final result: " + PatternUtils::patternToBinary(result));
     DBG("   Final onsets: " + juce::String(PatternUtils::countOnsets(result)));
     DBG("   Returning step: " + juce::String(progressiveStepCount[patternKey]));
-    
-    return result;
-}
-
-std::vector<bool> UPIParser::dilatePattern(const std::vector<bool>& pattern, int newSteps)
-{
-    if (newSteps <= static_cast<int>(pattern.size()))
-        return pattern;
-    
-    std::vector<bool> dilated(newSteps, false);
-    int originalSteps = static_cast<int>(pattern.size());
-    
-    // Map each onset to the new time grid
-    for (int i = 0; i < originalSteps; ++i)
-    {
-        if (pattern[i])
-        {
-            int newPos = (i * newSteps) / originalSteps;
-            if (newPos < newSteps)
-                dilated[newPos] = true;
-        }
-    }
-    
-    return dilated;
-}
-
-std::vector<bool> UPIParser::concentratePattern(const std::vector<bool>& pattern, int newSteps)
-{
-    if (newSteps >= static_cast<int>(pattern.size()))
-        return pattern;
-    
-    std::vector<bool> concentrated(newSteps, false);
-    int originalSteps = static_cast<int>(pattern.size());
-    
-    // Map onsets to the new compressed time grid
-    for (int i = 0; i < originalSteps; ++i)
-    {
-        if (pattern[i])
-        {
-            int newPos = (i * newSteps) / originalSteps;
-            if (newPos < newSteps)
-                concentrated[newPos] = true;
-        }
-    }
-    
-    return concentrated;
-}
-
-std::vector<bool> UPIParser::generateBarlowTransformation(const std::vector<bool>& originalPattern, int targetOnsets, bool wolrabMode)
-{
-    int stepCount = static_cast<int>(originalPattern.size());
-    int currentOnsets = PatternUtils::countOnsets(originalPattern);
-    
-    if (currentOnsets == targetOnsets) return originalPattern;
-    
-    // Calculate Barlow indispensability for all positions
-    std::vector<std::pair<int, double>> allPositions;
-    for (int i = 0; i < stepCount; ++i)
-    {
-        double indispensability = calculateBarlowIndispensability(i, stepCount);
-        allPositions.push_back({i, indispensability});
-    }
-    
-    if (targetOnsets < currentOnsets)
-    {
-        // Dilution: remove onsets
-        return diluteByBarlow(originalPattern, targetOnsets, allPositions, wolrabMode);
-    }
-    else
-    {
-        // Concentration: add onsets
-        return concentrateByBarlow(originalPattern, targetOnsets, allPositions, wolrabMode);
-    }
-}
-
-std::vector<bool> UPIParser::generateEuclideanTransformation(const std::vector<bool>& originalPattern, int targetOnsets, bool antiMode)
-{
-    int stepCount = static_cast<int>(originalPattern.size());
-    
-    if (targetOnsets == 0)
-    {
-        return std::vector<bool>(stepCount, false);
-    }
-    else if (targetOnsets == stepCount)
-    {
-        return std::vector<bool>(stepCount, true);
-    }
-    else if (antiMode)
-    {
-        // Dilcue (Anti-Euclidean): use complement pattern
-        auto euclideanPattern = PatternUtils::bjorklundAlgorithm(stepCount - targetOnsets, stepCount);
-        return PatternUtils::invertPattern(euclideanPattern);
-    }
-    else
-    {
-        // Normal Euclidean using Bjorklund algorithm
-        return PatternUtils::bjorklundAlgorithm(targetOnsets, stepCount);
-    }
-}
-
-double UPIParser::calculateBarlowIndispensability(int position, int stepCount)
-{
-    // Authentic Barlow indispensability based on Clarence Barlow's theory
-    // Uses algorithmic approach that works for ALL step counts including primes
-    
-    if (position == 0) {
-        // Downbeat always has maximum indispensability
-        return 10.0;
-    }
-    
-    // Calculate indispensability using metric strength theory
-    // This creates proper hierarchy even for prime step counts
-    
-    double indispensability = 0.0;
-    
-    // Method 1: GCD-based metric strength (works for composite numbers)
-    int gcd_value = PatternUtils::gcd(position, stepCount);
-    if (gcd_value > 1) {
-        // Position aligns with a metric subdivision
-        indispensability = static_cast<double>(gcd_value) / stepCount * 10.0;
-    }
-    
-    // Method 2: Fractional position strength (works for ALL numbers including primes)
-    // Calculate how this position relates to common musical subdivisions
-    double positionRatio = static_cast<double>(position) / stepCount;
-    
-    // Check alignment with common musical fractions
-    double fractionStrengths[] = {
-        1.0/2.0,  // Half (strongest secondary accent)
-        1.0/4.0, 3.0/4.0,  // Quarters
-        1.0/3.0, 2.0/3.0,  // Thirds
-        1.0/8.0, 3.0/8.0, 5.0/8.0, 7.0/8.0,  // Eighths
-        1.0/6.0, 5.0/6.0,  // Sixths
-    };
-    
-    double fractionValues[] = {
-        5.0,      // Half gets strong accent
-        3.0, 3.0, // Quarters
-        2.5, 2.5, // Thirds  
-        1.5, 1.5, 1.5, 1.5, // Eighths
-        1.0, 1.0  // Sixths
-    };
-    
-    // Find closest musical fraction and assign its strength
-    double closestDistance = 1.0;
-    double fractionStrength = 0.0;
-    
-    for (int i = 0; i < 11; ++i) {
-        double distance = std::abs(positionRatio - fractionStrengths[i]);
-        if (distance < closestDistance) {
-            closestDistance = distance;
-            fractionStrength = fractionValues[i];
-        }
-    }
-    
-    // Apply fraction strength if it's close enough (tolerance for discrete positions)
-    double tolerance = 0.5 / stepCount; // Half a step tolerance
-    if (closestDistance <= tolerance) {
-        indispensability = std::max(indispensability, fractionStrength);
-    }
-    
-    // Method 3: Position-based weighting for remaining positions
-    // Creates hierarchy based on distance from strong positions
-    if (indispensability < 0.5) {
-        // Distance from center (creates symmetrical hierarchy)
-        double centerDistance = std::abs(position - stepCount / 2.0) / (stepCount / 2.0);
-        
-        // Distance from edges (pickup and anacrusis effects)
-        double edgeDistance = std::min(position, stepCount - position) / (stepCount / 2.0);
-        
-        // Combine for unique values that avoid sequential filling
-        indispensability = (1.0 - centerDistance * 0.3) + (edgeDistance * 0.2);
-        
-        // Add small position-dependent variation to break ties
-        indispensability += (position % 3) * 0.01 + (position % 5) * 0.005;
-    }
-    
-    // Special position bonuses
-    if (position == stepCount - 1) {
-        // Pickup beat (last position) gets high indispensability
-        indispensability = std::max(indispensability, 7.0);
-    }
-    
-    // Ensure all positions have unique values and avoid sequential patterns
-    return std::max(indispensability, 0.1 + (position * 0.001));
-}
-
-std::vector<bool> UPIParser::diluteByBarlow(const std::vector<bool>& pattern, int targetOnsets, 
-                                           const std::vector<std::pair<int, double>>& indispensabilityTable, 
-                                           bool wolrabMode)
-{
-    int stepCount = static_cast<int>(pattern.size());
-    int currentOnsets = PatternUtils::countOnsets(pattern);
-    int onsetsToRemove = currentOnsets - targetOnsets;
-    
-    // Get all current onset positions with their indispensability
-    std::vector<std::pair<int, double>> onsetPositions;
-    for (int i = 0; i < stepCount; ++i)
-    {
-        if (pattern[i])
-        {
-            onsetPositions.push_back({i, indispensabilityTable[i].second});
-        }
-    }
-    
-    // Sort by indispensability 
-    std::sort(onsetPositions.begin(), onsetPositions.end(), 
-        [wolrabMode](const std::pair<int, double>& a, const std::pair<int, double>& b) {
-            if (wolrabMode)
-            {
-                // Wolrab: remove most indispensable first (reverse Barlow)
-                return a.second > b.second;
-            }
-            else
-            {
-                // Normal Barlow: remove least indispensable first
-                return a.second < b.second;
-            }
-        });
-    
-    // Create new pattern and remove onsets
-    std::vector<bool> result = pattern;
-    for (int i = 0; i < std::min(onsetsToRemove, static_cast<int>(onsetPositions.size())); ++i)
-    {
-        result[onsetPositions[i].first] = false;
-    }
-    
-    return result;
-}
-
-std::vector<bool> UPIParser::concentrateByBarlow(const std::vector<bool>& pattern, int targetOnsets,
-                                                 const std::vector<std::pair<int, double>>& indispensabilityTable,
-                                                 bool wolrabMode)
-{
-    int stepCount = static_cast<int>(pattern.size());
-    int currentOnsets = PatternUtils::countOnsets(pattern);
-    int onsetsToAdd = targetOnsets - currentOnsets;
-    
-    // Get all empty positions with their indispensability
-    std::vector<std::pair<int, double>> emptyPositions;
-    for (int i = 0; i < stepCount; ++i)
-    {
-        if (!pattern[i])
-        {
-            emptyPositions.push_back({i, indispensabilityTable[i].second});
-        }
-    }
-    
-    // Sort by indispensability
-    std::sort(emptyPositions.begin(), emptyPositions.end(),
-        [wolrabMode](const std::pair<int, double>& a, const std::pair<int, double>& b) {
-            if (wolrabMode)
-            {
-                // Wolrab: add least indispensable first (reverse Barlow)
-                return a.second < b.second;
-            }
-            else
-            {
-                // Normal Barlow: add most indispensable first
-                return a.second > b.second;
-            }
-        });
-    
-    // Create new pattern and add onsets
-    std::vector<bool> result = pattern;
-    for (int i = 0; i < std::min(onsetsToAdd, static_cast<int>(emptyPositions.size())); ++i)
-    {
-        result[emptyPositions[i].first] = true;
-    }
     
     return result;
 }

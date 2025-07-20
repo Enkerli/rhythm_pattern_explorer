@@ -272,22 +272,6 @@ private:
     void syncPositionWithHost(const juce::AudioPlayHead::CurrentPositionInfo& posInfo);
     void checkMidiInputForTriggers(juce::MidiBuffer& midiMessages);
     
-    // Centralized debug logging utility
-    enum class DebugCategory {
-        BITWIG_INIT,
-        BITWIG_PROCESS, 
-        TRANSPORT,
-        BPM_SYNC,
-        STEP_TRIGGER,
-        POSITION_SYNC,
-        SCENE_CYCLING,
-        PROGRESSIVE_OFFSET,
-        PROGRESSIVE_LENGTHENING
-    };
-    
-    void logDebug(DebugCategory category, const juce::String& message);
-    static const char* getCategoryName(DebugCategory category);
-    static const char* getLogFile(DebugCategory category);
     
     // Pattern manipulation
     std::vector<bool> generateBellCurveRandomSteps(int numSteps);
