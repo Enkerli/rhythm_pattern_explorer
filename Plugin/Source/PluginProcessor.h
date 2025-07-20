@@ -290,7 +290,6 @@ private:
     static const char* getLogFile(DebugCategory category);
     
     // Pattern manipulation
-    std::vector<bool> rotatePatternBySteps(const std::vector<bool>& pattern, int steps);
     std::vector<bool> generateBellCurveRandomSteps(int numSteps);
     std::vector<bool> lengthenPattern(const std::vector<bool>& pattern, int additionalSteps);
     

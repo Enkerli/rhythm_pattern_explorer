@@ -87,6 +87,36 @@ python3 -m http.server 8000
 - **Visual Feedback**: Red for accented onsets, green for regular onsets
 - **Universal Support**: Works with all pattern types (E, P, R, B, W, D)
 
+### Pattern Timing Modes (v0.03e+)
+Three distinct modes for controlling pattern timing and duration:
+
+#### **Steps Mode** (Microrhythm Control)
+- **Function**: Each step represents a specific subdivision (16th, 8th, 8th triplet, etc.)
+- **Subdivision Parameter**: Determines what each step represents
+- **Pattern Length**: **Completely ignored** - only subdivision and pattern size matter
+- **Calculation**: `subdivision_duration × pattern_steps = total_duration`
+
+**Examples:**
+```
+8 steps × 16th notes = 8 × 0.25 = 2 beats (half note duration)
+9 steps × 8th notes = 9 × 0.5 = 4.5 beats total
+9 steps × 8th triplets = 9 × (1/3) = 3 beats total
+```
+
+**Use Case**: Create microrhythmic variations by changing subdivision while keeping the same pattern.
+
+#### **Beats Mode** (Divisive Timing)
+- **Function**: Pattern fits exactly within specified number of beats
+- **Pattern Length**: Determines total duration in beats
+- **Calculation**: `pattern_fits_in_X_beats`
+- **Use Case**: Ensure patterns align with specific beat durations
+
+#### **Bars Mode** (Metric Timing)  
+- **Function**: Pattern fits exactly within specified number of bars (assumes 4/4 time)
+- **Pattern Length**: Determines total duration in bars
+- **Calculation**: `pattern_fits_in_X_bars × 4_beats_per_bar`
+- **Use Case**: Create patterns that span multiple bars precisely
+
 ### UPI (Universal Pattern Input) Notation
 
 #### Basic Pattern Generation

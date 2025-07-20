@@ -21,6 +21,31 @@
 
 ## Recent Issues Resolved  
 
+### CRITICAL: Steps Mode Implementation (July 2025)
+**Problem**: Steps mode was broken - step indicator jumped around and subdivision parameter had no effect.
+
+**Root Cause**: Multiple issues:
+1. Two different Steps mode calculations with inconsistent logic
+2. Main timing calculation used old logic: `patternLengthInBeats = lengthValue / 4.0` (wrong)  
+3. Transport sync used correct logic: `patternLengthInBeats = subdivisionBeatsPerStep * patternSteps` (right)
+4. Step calculation used wrong modulo approach causing jumping
+
+**Solution**: 
+1. **Unified Steps Mode Logic**: Both main and transport calculations now use identical logic
+2. **Pattern Length Ignored**: In Steps mode, pattern length value is completely ignored
+3. **Subdivision Control**: Each step represents selected subdivision (16th, 8th, 8th triplet, etc.)
+4. **Fixed Step Calculation**: Used `fmod()` for proper pattern cycling instead of integer modulo
+5. **Removed Debug File I/O**: Eliminated performance-killing debug operations from audio callbacks
+
+**Steps Mode Formula**: `total_pattern_duration = subdivision_duration × pattern_steps`
+
+**Examples**:
+- 8 steps × 16th notes = 8 × 0.25 = 2 beats (half note duration)
+- 9 steps × 8th notes = 9 × 0.5 = 4.5 beats total
+- 9 steps × 8th triplets = 9 × (1/3) = 3 beats total
+
+**Result**: Steps mode now provides proper "microrhythm" functionality where the same pattern can be played at different rhythmic resolutions.
+
 ### CRITICAL: MIDI Trigger Logic Fix (July 2025)
 **Problem**: Patterns with both progressive transformations and scenes (like `{1000000}E(1,16)E>16|1010101010101010`) only triggered progressive transformations via MIDI input, never advancing to scenes, unlike Enter key behavior.
 

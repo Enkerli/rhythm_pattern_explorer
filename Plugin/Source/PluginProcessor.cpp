@@ -220,7 +220,6 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
     
     // Log every 50 calls or when BPM changes, with focus on 200+ BPM
     debugCallCount++;
-    int currentBPMInt = static_cast<int>(currentBPM);
     
     // More frequent logging at high BPMs
     bool shouldLog = false;
@@ -378,6 +377,19 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
         switch (lengthUnit) {
             case 0: // Steps mode - each step represents a subdivision, pattern length is IGNORED
             {
+                // STEPS MODE DOCUMENTATION:
+                // In Steps mode, each step represents a specific subdivision (16th, 8th, 8th triplet, etc.)
+                // The subdivision parameter determines what each step represents.
+                // Pattern length value is completely ignored - only subdivision and pattern size matter.
+                //
+                // Examples:
+                // - 8 steps × 16th notes = 8 × 0.25 = 2 beats total (half note duration)
+                // - 9 steps × 8th notes = 9 × 0.5 = 4.5 beats total  
+                // - 9 steps × 8th triplets = 9 × (1/3) = 3 beats total
+                //
+                // This creates "microrhythm" functionality where the same pattern can be
+                // played at different rhythmic resolutions by changing the subdivision.
+                
                 // Convert subdivision index to beat fraction per step
                 double subdivisionBeatsPerStep = getSubdivisionInBeats(subdivisionIndex);
                 
@@ -743,6 +755,7 @@ void RhythmPatternExplorerAudioProcessor::syncPositionWithHost(const juce::Audio
         switch (lengthUnit) {
             case 0: // Steps mode - each step represents a subdivision, pattern length is IGNORED
             {
+                // Steps mode: Same logic as main calculation - subdivision determines step duration
                 double subdivisionBeatsPerStep = getSubdivisionInBeats(subdivisionIndex);
                 patternLengthInBeats = subdivisionBeatsPerStep * patternSteps;
                 
@@ -969,7 +982,7 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
         if (progressiveOffset != 0)
         {
             auto currentPattern = patternEngine.getCurrentPattern();
-            auto rotatedPattern = rotatePatternBySteps(currentPattern, progressiveOffset);
+            auto rotatedPattern = UPIParser::rotatePattern(currentPattern, progressiveOffset);
             patternEngine.setPattern(rotatedPattern);
             
             // Debug log rotation
@@ -1253,26 +1266,6 @@ void RhythmPatternExplorerAudioProcessor::checkMidiInputForTriggers(juce::MidiBu
     }
 }
 
-std::vector<bool> RhythmPatternExplorerAudioProcessor::rotatePatternBySteps(const std::vector<bool>& pattern, int steps)
-{
-    if (pattern.empty()) 
-        return pattern;
-    
-    std::vector<bool> rotated(pattern.size());
-    int size = static_cast<int>(pattern.size());
-    
-    // Normalize steps to be within pattern size
-    steps = steps % size;
-    if (steps < 0) steps += size;
-    
-    for (int i = 0; i < size; ++i)
-    {
-        int newIndex = (i + steps) % size;
-        rotated[newIndex] = pattern[i];
-    }
-    
-    return rotated;
-}
 
 void RhythmPatternExplorerAudioProcessor::advanceProgressiveLengthening()
 {
@@ -1379,7 +1372,7 @@ void RhythmPatternExplorerAudioProcessor::applyCurrentScenePattern()
     {
         // Apply progressive offset by rotating the generated pattern
         auto currentPattern = patternEngine.getCurrentPattern();
-        auto rotatedPattern = rotatePatternBySteps(currentPattern, progressiveOffset);
+        auto rotatedPattern = UPIParser::rotatePattern(currentPattern, progressiveOffset);
         patternEngine.setPattern(rotatedPattern);
         
         logDebug(DebugCategory::SCENE_CYCLING, 
@@ -1503,8 +1496,19 @@ float RhythmPatternExplorerAudioProcessor::getPatternLengthValue() const
 
 double RhythmPatternExplorerAudioProcessor::getSubdivisionInBeats(int subdivisionIndex) const
 {
-    // Convert subdivision choice to beat fractions
+    // SUBDIVISION PARAMETER DOCUMENTATION:
+    // This function converts subdivision parameter choices to beat fractions for Steps mode.
+    // Each subdivision represents how much of a beat one step occupies.
+    //
     // Subdivision choices: {"64th Triplet", "64th", "32nd Triplet", "32nd", "16th Triplet", "16th", "8th Triplet", "8th", "Quarter Triplet", "Quarter", "Half Triplet", "Half", "Whole"}
+    // Default: index 5 = "16th" = 0.25 beats per step
+    //
+    // Examples:
+    // - 16th notes: 0.25 beats per step (4 steps = 1 beat)
+    // - 8th notes: 0.5 beats per step (2 steps = 1 beat)  
+    // - 8th triplets: 1/3 beats per step (3 steps = 1 beat)
+    // - Quarter notes: 1.0 beats per step (1 step = 1 beat)
+    
     static const double subdivisionBeats[] = {
         1.0/24.0,  // 64th Triplet (1/64 * 2/3 = 1/96, but musically 1/24 makes more sense)
         1.0/16.0,  // 64th
