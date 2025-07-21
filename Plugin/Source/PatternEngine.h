@@ -73,6 +73,7 @@ public:
     int getCurrentOffset() const { return currentOffset; }
     bool hasProgressiveOffsetEnabled() const { return hasProgressiveOffset; }
     int getProgressiveTriggerCount() const { return triggerCount; }
+    int getProgressiveOffsetValue() const { return progressiveOffset; }
 
 private:
     //==============================================================================

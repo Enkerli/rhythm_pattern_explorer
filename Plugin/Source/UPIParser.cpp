@@ -47,6 +47,50 @@ UPIParser::ParseResult UPIParser::parse(const juce::String& input)
     }
     
     // Check for combinations (+ or -) in the base pattern (without accents)
+    // BUT first check if + represents a progressive offset (pattern+number)
+    if (basePattern.contains("+") || basePattern.contains("-"))
+    {
+        // Check if this is a progressive offset pattern (pattern+N) rather than pattern combination
+        if (basePattern.contains("+") && basePattern.lastIndexOf("+") > 0)
+        {
+            int lastPlusIndex = basePattern.lastIndexOf("+");
+            juce::String afterPlus = basePattern.substring(lastPlusIndex + 1).trim();
+            if (afterPlus.containsOnly("0123456789-") && afterPlus.isNotEmpty())
+            {
+                // This is a progressive offset pattern - don't treat as combination
+                // Extract base pattern and offset value
+                juce::String basePatternOnly = basePattern.substring(0, lastPlusIndex).trim();
+                int offsetValue = afterPlus.getIntValue();
+                
+                DBG("UPIParser: Detected progressive offset pattern. Base: '" << basePatternOnly 
+                    << "', Offset: " << offsetValue);
+                
+                // Parse the base pattern
+                auto baseResult = parsePattern(basePatternOnly);
+                if (baseResult.isValid())
+                {
+                    // Don't apply the offset here - that's handled by the PatternEngine
+                    // Just mark it as a progressive pattern
+                    baseResult.hasProgressiveOffset = true;
+                    baseResult.initialOffset = 0; // Progressive offsets start at 0
+                    baseResult.progressiveOffset = offsetValue;
+                    baseResult.patternName += "+" + juce::String(offsetValue);
+                    
+                    // Combine with accent pattern if present
+                    if (accentResult.isValid())
+                    {
+                        baseResult.hasAccentPattern = true;
+                        baseResult.accentPattern = accentResult.pattern;
+                        baseResult.patternName = "{" + PatternUtils::patternToBinary(accentResult.pattern) + "}" + baseResult.patternName;
+                    }
+                    
+                    return baseResult;
+                }
+            }
+        }
+    }
+    
+    // If we get here, it's not a progressive offset, so check for pattern combinations
     if (basePattern.contains("+") || basePattern.contains("-"))
     {
         // Handle pattern combinations - support multiple additions
@@ -694,11 +738,68 @@ std::vector<bool> UPIParser::parseMorse(const juce::String& morseStr)
     // Simple morse code mapping
     juce::String processed = morseStr.toLowerCase();
     
-    // Handle common morse patterns
+    // Handle common morse patterns and letter-to-morse conversion
     if (processed == "sos")
         processed = "...---...";
     else if (processed == "cq")
         processed = "-.-.--.-";
+    else {
+        // Multi-character letter sequence conversion
+        juce::String morseCode = "";
+        bool hasValidLetters = false;
+        
+        for (int i = 0; i < processed.length(); ++i) {
+            char letter = processed[i];
+            juce::String letterMorse = "";
+            
+            switch (letter) {
+                case 'a': letterMorse = ".-"; break;
+                case 'b': letterMorse = "-..."; break;
+                case 'c': letterMorse = "-.-."; break;
+                case 'd': letterMorse = "-.."; break;
+                case 'e': letterMorse = "."; break;
+                case 'f': letterMorse = "..-."; break;
+                case 'g': letterMorse = "--."; break;
+                case 'h': letterMorse = "...."; break;
+                case 'i': letterMorse = ".."; break;
+                case 'j': letterMorse = ".---"; break;
+                case 'k': letterMorse = "-.-"; break;
+                case 'l': letterMorse = ".-.."; break;
+                case 'm': letterMorse = "--"; break;
+                case 'n': letterMorse = "-."; break;
+                case 'o': letterMorse = "---"; break;
+                case 'p': letterMorse = ".--."; break;
+                case 'q': letterMorse = "--.-"; break;
+                case 'r': letterMorse = ".-."; break;
+                case 's': letterMorse = "..."; break;
+                case 't': letterMorse = "-"; break;
+                case 'u': letterMorse = "..-"; break;
+                case 'v': letterMorse = "...-"; break;
+                case 'w': letterMorse = ".--"; break;
+                case 'x': letterMorse = "-..-"; break;
+                case 'y': letterMorse = "-.--"; break;
+                case 'z': letterMorse = "--.."; break;
+                default: 
+                    // Keep non-letters as-is (for direct morse like '.-')
+                    letterMorse = juce::String::charToString(letter);
+                    break;
+            }
+            
+            if (letterMorse != juce::String::charToString(letter)) {
+                hasValidLetters = true;
+            }
+            
+            morseCode += letterMorse;
+            
+            // Note: No spaces between letters for direct concatenation
+            // This allows patterns like "AL" -> ".-" + ".-.." = "110" + "11011" = "11011011"
+        }
+        
+        // Only use converted morse if we found valid letters
+        if (hasValidLetters) {
+            processed = morseCode;
+        }
+    }
     
     // Convert morse to pattern (. = short onset, - = long onset, space = rest)
     for (int i = 0; i < processed.length(); ++i)
@@ -719,11 +820,7 @@ std::vector<bool> UPIParser::parseMorse(const juce::String& morseStr)
         }
     }
     
-    // Ensure minimum length
-    if (pattern.size() < 4)
-    {
-        pattern.resize(8, false);
-    }
+    // Allow natural Morse code length without forced padding
     
     return pattern;
 }

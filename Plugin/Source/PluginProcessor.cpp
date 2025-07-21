@@ -843,8 +843,8 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
     if (!isScenes && pattern.contains("+") && pattern.lastIndexOf("+") > 0) {
         int lastPlusIndex = pattern.lastIndexOf("+");
         juce::String afterPlus = pattern.substring(lastPlusIndex + 1).trim();
-        // Progressive offset if what follows + is purely numeric
-        isProgressiveOffset = afterPlus.containsOnly("0123456789");
+        // Progressive offset if what follows + is purely numeric (including negative numbers)
+        isProgressiveOffset = afterPlus.containsOnly("0123456789-") && afterPlus.isNotEmpty();
     }
     
     bool isProgressiveLengthening = !isScenes && pattern.contains("*") && pattern.lastIndexOf("*") > 0;
@@ -999,7 +999,8 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
         if (progressiveOffset != 0)
         {
             auto currentPattern = patternEngine.getCurrentPattern();
-            auto rotatedPattern = PatternUtils::rotatePattern(currentPattern, progressiveOffset);
+            // Use negative rotation for clockwise progression (positive offset = clockwise)
+            auto rotatedPattern = PatternUtils::rotatePattern(currentPattern, -progressiveOffset);
             patternEngine.setPattern(rotatedPattern);
             
             // Debug log rotation
@@ -1040,6 +1041,9 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
             // Parse base pattern and store for lengthening
             parseAndApplyUPI(basePattern);
             baseLengthPattern = patternEngine.getCurrentPattern();
+            
+            // Apply initial lengthening immediately (don't wait for second trigger)
+            advanceProgressiveLengthening();
             
             // Debug log reset
             DBG(
@@ -1104,9 +1108,18 @@ void RhythmPatternExplorerAudioProcessor::parseAndApplyUPI(const juce::String& u
         // Set up progressive offset if present
         if (parseResult.hasProgressiveOffset)
         {
-            patternEngine.setProgressiveOffset(true, parseResult.initialOffset, parseResult.progressiveOffset);
-            DBG("   Progressive offset enabled: initial=" << parseResult.initialOffset 
-                << ", progressive=" << parseResult.progressiveOffset);
+            // Only set progressive offset if not already configured with the same values
+            // This preserves the triggerCount for MIDI advancement
+            bool needsProgressiveSetup = !patternEngine.hasProgressiveOffsetEnabled() ||
+                                       patternEngine.getProgressiveOffsetValue() != parseResult.progressiveOffset;
+            
+            if (needsProgressiveSetup) {
+                patternEngine.setProgressiveOffset(true, parseResult.initialOffset, parseResult.progressiveOffset);
+                DBG("   Progressive offset enabled: initial=" << parseResult.initialOffset 
+                    << ", progressive=" << parseResult.progressiveOffset);
+            } else {
+                DBG("   Progressive offset already configured correctly - preserving triggerCount");
+            }
                 
             // Store progressive pattern key for step tracking
             if (!parseResult.progressivePatternKey.isEmpty())
@@ -1188,60 +1201,11 @@ void RhythmPatternExplorerAudioProcessor::checkMidiInputForTriggers(juce::MidiBu
                 DBG("RhythmPatternExplorer: Captured MIDI note " << noteNumber << " for output");
             }
             
-            // Any MIDI note input triggers pattern regeneration for progressive/random patterns
+            // Any MIDI note input triggers pattern regeneration - use same logic as Enter key/Tick button
             if (!currentUPIInput.isEmpty())
             {
-                // Check for progressive patterns and scenes
-                bool hasProgressiveOffset = currentUPIInput.contains("+") && currentUPIInput.lastIndexOf("+") > 0;
-                bool hasProgressiveLengthening = currentUPIInput.contains("*") && currentUPIInput.lastIndexOf("*") > 0;
-                bool hasOldProgressiveOffset = currentUPIInput.contains("#");
-                bool hasProgressiveTransformation = currentUPIInput.contains(">"); // New progressive syntax
-                bool hasScenes = currentUPIInput.contains("|");
-                
-                // MIDI triggers manual advancement - handle progressive transformations and scenes together when both present
-                bool triggerNeeded = false;
-                
-                if (hasProgressiveTransformation && !hasScenes)
-                {
-                    DBG("RhythmPatternExplorer: MIDI triggered progressive transformation (no scenes)");
-                    // Trigger progressive transformation manually with accent reset
-                    parseAndApplyUPI(currentUPIInput, true);
-                    triggerNeeded = true;
-                }
-                else if (hasProgressiveOffset || hasProgressiveLengthening || hasOldProgressiveOffset)
-                {
-                    DBG("RhythmPatternExplorer: MIDI triggered progressive pattern advancement");
-                    if (hasProgressiveOffset || hasOldProgressiveOffset) {
-                        if (patternEngine.hasProgressiveOffsetEnabled()) {
-                            patternEngine.triggerProgressiveOffset();
-                        }
-                    }
-                    if (hasProgressiveLengthening) {
-                        advanceProgressiveLengthening();
-                        patternEngine.setPattern(baseLengthPattern);
-                    }
-                    parseAndApplyUPI(currentUPIInput, true);
-                    triggerNeeded = true;
-                }
-                
-                // Handle scenes - can occur together with progressive transformations
-                if (hasScenes)
-                {
-                    DBG("RhythmPatternExplorer: MIDI triggered scene advancement");
-                    advanceScene();
-                    applyCurrentScenePattern();
-                    triggerNeeded = true;
-                }
-                
-                if (!triggerNeeded)
-                {
-                    // Re-parse other UPI patterns to trigger regeneration with accent reset
-                    parseAndApplyUPI(currentUPIInput, true);
-                }
-                
-                // Reset step indicator and notify UI for any trigger
-                currentStep.store(0);
-                patternChanged.store(true);
+                DBG("RhythmPatternExplorer: MIDI triggered pattern advancement - using setUPIInput like Enter key");
+                setUPIInput(currentUPIInput);
             }
             // Pattern updates are handled via UPI only
         }
@@ -1303,12 +1267,20 @@ std::vector<bool> RhythmPatternExplorerAudioProcessor::generateBellCurveRandomSt
     
     if (numSteps <= 0) return randomSteps;
     
-    // Use bell curve distribution to determine number of onsets (avoid extremes)
-    std::normal_distribution<double> distribution(numSteps / 2.0, (numSteps - 1) / 6.0);
-    int onsets = static_cast<int>(std::round(distribution(randomGenerator)));
+    int onsets;
     
-    // Clamp to valid range [1, numSteps-1] to avoid empty or full patterns
-    onsets = juce::jmax(1, juce::jmin(numSteps - 1, onsets));
+    if (numSteps == 1) {
+        // Special case for *1: randomly choose 0 or 1 onset (50/50 chance)
+        std::uniform_int_distribution<int> coinFlip(0, 1);
+        onsets = coinFlip(randomGenerator);
+    } else {
+        // Use bell curve distribution to determine number of onsets (avoid extremes)
+        std::normal_distribution<double> distribution(numSteps / 2.0, (numSteps - 1) / 6.0);
+        onsets = static_cast<int>(std::round(distribution(randomGenerator)));
+        
+        // Clamp to valid range [0, numSteps] to allow empty or full patterns
+        onsets = juce::jmax(0, juce::jmin(numSteps, onsets));
+    }
     
     // Randomly distribute the onsets
     std::vector<int> positions;
@@ -1386,7 +1358,8 @@ void RhythmPatternExplorerAudioProcessor::applyCurrentScenePattern()
     {
         // Apply progressive offset by rotating the generated pattern
         auto currentPattern = patternEngine.getCurrentPattern();
-        auto rotatedPattern = PatternUtils::rotatePattern(currentPattern, progressiveOffset);
+        // Use negative rotation for clockwise progression (positive offset = clockwise)
+        auto rotatedPattern = PatternUtils::rotatePattern(currentPattern, -progressiveOffset);
         patternEngine.setPattern(rotatedPattern);
         
         DBG(

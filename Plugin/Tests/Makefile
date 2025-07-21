@@ -1,41 +1,78 @@
-# Critical Test Integration for Rhythm Pattern Explorer Plugin
-# Ensures hex/octal notation tests pass before building
+# Rhythm Pattern Explorer - Comprehensive Test Suite
+# Ensures all critical fixes are working before allowing builds
 
-.PHONY: test-critical build-with-tests clean
+CXX = g++
+CXXFLAGS = -std=c++17 -Wall -Wextra -O2
 
-# Default target - run tests then suggest next steps
-all: test-critical
-	@echo ""
-	@echo "🎉 Critical tests passed! You can now build safely:"
-	@echo "  make build-au    # Build AU component"
-	@echo "  make build-vst3  # Build VST3 plugin"
-	@echo "  make build-all   # Build both formats"
+# Test executables
+HEX_OCTAL_TESTS = HexOctalCoreTests
+BARLOW_TESTS = TestRestoredBarlowAlgorithm
+CRITICAL_FIXES_TESTS = CriticalFixesTests
+TEST_RUNNER = TestRunner
 
-# Run critical tests - MUST pass for build to proceed
+.PHONY: all test-comprehensive test-fixes test-critical test-barlow clean build-au build-vst3 dev dev-quick install help
+
+# Default target runs comprehensive test suite
+all: test-comprehensive
+
+# Comprehensive test suite with detailed reporting
+test-comprehensive: $(TEST_RUNNER)
+	@echo "🔬 Running Comprehensive Test Suite"
+	@echo "==================================="
+	./$(TEST_RUNNER)
+
+# Critical fixes tests (new comprehensive suite)
+test-fixes: $(CRITICAL_FIXES_TESTS)
+	@echo "🔬 Running Critical Fixes Tests"
+	@echo "==============================="
+	./$(CRITICAL_FIXES_TESTS)
+	@echo "✅ All critical fixes validated!"
+
+# Legacy critical tests (hex/octal) - kept for compatibility
 test-critical:
-	@echo "🔬 Running Critical Hex/Octal Notation Tests"
-	@echo "============================================="
+	@echo "🔬 Running Legacy Critical Tests"
+	@echo "================================"
 	@./run_critical_tests.sh
 
-# Build AU with mandatory test validation
-build-au: test-critical
+# Barlow algorithm verification tests
+test-barlow: $(BARLOW_TESTS)
+	@echo "🔬 Testing Barlow Algorithm"
+	@echo "=========================="
+	./$(BARLOW_TESTS)
+
+# Build test executables
+$(HEX_OCTAL_TESTS): HexOctalCoreTests.cpp
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+$(BARLOW_TESTS): TestRestoredBarlowAlgorithm.cpp
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+$(CRITICAL_FIXES_TESTS): CriticalFixesTests.cpp
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+$(TEST_RUNNER): TestRunner.cpp
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+# Plugin builds - require comprehensive tests to pass
+build-au: test-comprehensive
 	@echo ""
-	@echo "🔨 Building AU Component (tests passed)"
-	@echo "======================================="
+	@echo "🔨 Building AU Component (comprehensive tests passed)"
+	@echo "===================================================="
 	cd ../Builds/MacOSX && xcodebuild -scheme "Rhythm Pattern Explorer - AU" -configuration Release build
+	@echo "✅ AU plugin build complete!"
 
-# Build VST3 with mandatory test validation  
-build-vst3: test-critical
+build-vst3: test-comprehensive
 	@echo ""
-	@echo "🔨 Building VST3 Plugin (tests passed)"
-	@echo "======================================"
+	@echo "🔨 Building VST3 Plugin (comprehensive tests passed)"
+	@echo "==================================================="  
 	cd ../Builds/MacOSX && xcodebuild -scheme "Rhythm Pattern Explorer - VST3" -configuration Release build
+	@echo "✅ VST3 plugin build complete!"
 
-# Build both formats with mandatory test validation
-build-all: test-critical
+# Build both formats with comprehensive test validation
+build-all: test-comprehensive
 	@echo ""
-	@echo "🔨 Building All Plugin Formats (tests passed)"
-	@echo "=============================================="
+	@echo "🔨 Building All Plugin Formats (comprehensive tests passed)"
+	@echo "=========================================================="
 	cd ../Builds/MacOSX && xcodebuild -scheme "Rhythm Pattern Explorer - AU" -configuration Release build
 	cd ../Builds/MacOSX && xcodebuild -scheme "Rhythm Pattern Explorer - VST3" -configuration Release build
 
@@ -48,27 +85,48 @@ install: build-all
 	cp -R "../Builds/MacOSX/build/Release/Rhythm Pattern Explorer.vst3" ~/Library/Audio/Plug-Ins/VST3/
 	@echo "✅ Plugins installed successfully"
 
-# Clean build artifacts
+# Development target for comprehensive workflow
+dev: test-comprehensive build-all install
+	@echo ""
+	@echo "🚀 Development build complete with full test coverage!"
+	@echo "✅ All tests passed, plugins built and installed"
+
+# Quick development build for debugging (legacy tests only)
+dev-quick: test-critical build-vst3
+	@echo ""
+	@echo "🚀 Quick development build complete!"
+	@echo "✅ Legacy tests passed, VST3 plugin built"
+
+# Clean up test executables and build artifacts
 clean:
-	@echo "🧹 Cleaning build artifacts"
+	@echo "🧹 Cleaning test executables and build artifacts"
+	rm -f $(HEX_OCTAL_TESTS) $(BARLOW_TESTS) $(CRITICAL_FIXES_TESTS) $(TEST_RUNNER)
 	rm -rf build/
 	cd ../Builds/MacOSX && xcodebuild -scheme "Rhythm Pattern Explorer - AU" -configuration Release clean
 	cd ../Builds/MacOSX && xcodebuild -scheme "Rhythm Pattern Explorer - VST3" -configuration Release clean
 
-# Development workflow - test, build, and install in one command
-dev: test-critical build-all install
-	@echo ""
-	@echo "🚀 Development build complete!"
-	@echo "✅ Tests passed, plugins built and installed"
-
 # Show help
 help:
 	@echo "Available targets:"
-	@echo "  test-critical  - Run critical hex/octal notation tests"
-	@echo "  build-au      - Build AU component (with test validation)"
-	@echo "  build-vst3    - Build VST3 plugin (with test validation)"
-	@echo "  build-all     - Build both plugin formats (with test validation)"
-	@echo "  install       - Install built plugins to user library"
-	@echo "  dev           - Complete development workflow (test + build + install)"
-	@echo "  clean         - Clean build artifacts"
-	@echo "  help          - Show this help message"
+	@echo ""
+	@echo "Testing:"
+	@echo "  test-comprehensive - Run full test suite with detailed reporting (default)"
+	@echo "  test-fixes         - Run critical fixes validation tests"
+	@echo "  test-critical      - Run legacy hex/octal tests (compatibility)"
+	@echo "  test-barlow        - Run Barlow algorithm verification tests"
+	@echo ""
+	@echo "Building:"
+	@echo "  build-au           - Build AU component (comprehensive tests required)"
+	@echo "  build-vst3         - Build VST3 plugin (comprehensive tests required)"
+	@echo "  build-all          - Build both plugin formats (comprehensive tests required)"
+	@echo ""
+	@echo "Development:"
+	@echo "  dev                - Full workflow: test + build + install (recommended)"
+	@echo "  dev-quick          - Quick workflow: legacy tests + VST3 build only"
+	@echo "  install            - Install built plugins to user library"
+	@echo ""
+	@echo "Maintenance:"
+	@echo "  clean              - Remove test executables and build artifacts"
+	@echo "  help               - Show this help message"
+	@echo ""
+	@echo "🔬 Test-driven development: All builds require passing tests to prevent regressions"
