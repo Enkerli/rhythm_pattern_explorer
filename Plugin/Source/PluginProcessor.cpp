@@ -11,6 +11,11 @@
 #include "PluginEditor.h"
 #include "UPIParser.h"
 #include "PatternUtils.h"
+// Manager implementations should be added to Xcode project as separate source files
+// instead of being included here. For now, we include them temporarily:
+#include "SceneManager.cpp"  // TODO: Add to Xcode project properly
+#include "ProgressiveManager.cpp"  // TODO: Add to Xcode project properly  
+#include "AccentManager.cpp"  // TODO: Add to Xcode project properly
 #include <ctime>
 
 // Debug output disabled for production performance
@@ -57,6 +62,11 @@ RhythmPatternExplorerAudioProcessor::RhythmPatternExplorerAudioProcessor()
     
     // Set up progressive offset engine for UPI parser
     UPIParser::setProgressiveOffsetEngine(&patternEngine);
+    
+    // Initialize encapsulated managers - TRANSITION: Running parallel with legacy for safety
+    sceneManager = std::make_unique<SceneManager>();
+    progressiveManager = std::make_unique<ProgressiveManager>();
+    accentManager = std::make_unique<AccentManager>();
     
     DBG("RhythmPatternExplorer: Plugin initialized");
     
@@ -949,6 +959,12 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
                 scenesInfo += "\n  Scene " + juce::String(i) + ": " + scenePatterns[i] + " (base: " + sceneBasePatterns[i] + ", step: " + juce::String(sceneProgressiveSteps[i]) + ")";
             }
             DBG(scenesInfo);
+            
+            // TRANSITION: Initialize SceneManager with same data as legacy system
+            if (sceneManager) {
+                sceneManager->initializeScenes(scenes);
+                DBG("SceneManager initialized in parallel with legacy system");
+            }
         }
         
         // Parse and apply the current scene pattern using per-scene progressive state
@@ -1063,6 +1079,11 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
         baseLengthPattern.clear();
         scenePatterns.clear();
         currentSceneIndex = 0;
+        
+        // TRANSITION: Reset SceneManager in parallel with legacy system
+        if (sceneManager) {
+            sceneManager->resetScenes();
+        }
         parseAndApplyUPI(pattern, true);
         currentStep.store(0); // Reset step indicator to beginning
     }
@@ -1309,8 +1330,33 @@ std::vector<bool> RhythmPatternExplorerAudioProcessor::lengthenPattern(const std
 
 void RhythmPatternExplorerAudioProcessor::advanceScene()
 {
-    if (!scenePatterns.isEmpty() && currentSceneIndex < static_cast<int>(sceneProgressiveSteps.size()))
+    // TRANSITION: Use SceneManager if available, with legacy fallback for safety
+    if (sceneManager && sceneManager->hasScenes()) 
     {
+        // NEW: Use SceneManager
+        sceneManager->advanceScene();
+        
+        // Keep legacy system in sync for transition safety
+        currentSceneIndex = sceneManager->getCurrentSceneIndex();
+        
+        // Update legacy vectors to match SceneManager state (for safety during transition)
+        if (currentSceneIndex < static_cast<int>(sceneProgressiveSteps.size()) && 
+            currentSceneIndex < scenePatterns.size()) 
+        {
+            // This ensures legacy system stays in sync if anything still uses it
+            // The progressive state is managed by SceneManager now
+        }
+        
+        // Notify UI that pattern has changed for accent map updates
+        patternChanged.store(true);
+        
+        juce::String sceneInfo = "Advanced to scene (SceneManager) " + juce::String(currentSceneIndex) + "/" + 
+            juce::String(sceneManager->getSceneCount()) + ": " + sceneManager->getCurrentScenePattern();
+        DBG(sceneInfo);
+    }
+    else if (!scenePatterns.isEmpty() && currentSceneIndex < static_cast<int>(sceneProgressiveSteps.size()))
+    {
+        // LEGACY: Fall back to original logic if SceneManager not available or no scenes
         // First, advance the progressive state for the current scene if it has progressive syntax
         if (sceneProgressiveSteps[currentSceneIndex] != 0) {
             if (sceneProgressiveOffsets[currentSceneIndex] != 0) {
@@ -1328,7 +1374,7 @@ void RhythmPatternExplorerAudioProcessor::advanceScene()
         // Notify UI that pattern has changed for accent map updates
         patternChanged.store(true);
         
-        juce::String sceneInfo = "Advanced to scene " + juce::String(currentSceneIndex) + "/" + 
+        juce::String sceneInfo = "Advanced to scene (Legacy) " + juce::String(currentSceneIndex) + "/" + 
             juce::String(static_cast<int>(scenePatterns.size())) + ": " + scenePatterns[currentSceneIndex];
         if (currentSceneIndex < static_cast<int>(sceneProgressiveSteps.size())) {
             sceneInfo += "\n  Scene progressive state - offset: " + juce::String(sceneProgressiveOffsets[currentSceneIndex]) + 
@@ -1340,48 +1386,98 @@ void RhythmPatternExplorerAudioProcessor::advanceScene()
 
 void RhythmPatternExplorerAudioProcessor::applyCurrentScenePattern()
 {
-    // Apply the current scene pattern using per-scene progressive state
-    if (currentSceneIndex >= static_cast<int>(sceneBasePatterns.size())) {
-        return; // Safety check
-    }
-    
-    juce::String basePattern = sceneBasePatterns[currentSceneIndex];
-    int progressiveOffset = sceneProgressiveOffsets[currentSceneIndex];
-    int progressiveLengthening = sceneProgressiveLengthening[currentSceneIndex];
-    
-    // Parse the base pattern first
-    parseAndApplyUPI(basePattern, true);
-    currentStep.store(0); // Reset step indicator to beginning
-    
-    // Apply progressive transformations if any
-    if (progressiveOffset != 0)
+    // TRANSITION: Use SceneManager data if available, fall back to legacy
+    if (sceneManager && sceneManager->hasScenes())
     {
-        // Apply progressive offset by rotating the generated pattern
-        auto currentPattern = patternEngine.getCurrentPattern();
-        // Use negative rotation for clockwise progression (positive offset = clockwise)
-        auto rotatedPattern = PatternUtils::rotatePattern(currentPattern, -progressiveOffset);
-        patternEngine.setPattern(rotatedPattern);
+        // NEW: Use SceneManager for scene pattern application
+        juce::String basePattern = sceneManager->getCurrentSceneBasePattern();
+        int progressiveOffset = sceneManager->getCurrentSceneProgressiveOffset();
+        int progressiveLengthening = sceneManager->getCurrentSceneProgressiveLengthening();
         
-        DBG(
-            "Applied scene " + juce::String(currentSceneIndex) + " progressive offset: " + juce::String(progressiveOffset));
+        // Parse the base pattern first
+        parseAndApplyUPI(basePattern, true);
+        currentStep.store(0); // Reset step indicator to beginning
+        
+        // Apply progressive transformations if any
+        if (progressiveOffset != 0)
+        {
+            // Apply progressive offset by rotating the generated pattern
+            auto currentPattern = patternEngine.getCurrentPattern();
+            // Use negative rotation for clockwise progression (positive offset = clockwise)
+            auto rotatedPattern = PatternUtils::rotatePattern(currentPattern, -progressiveOffset);
+            patternEngine.setPattern(rotatedPattern);
+            
+            DBG(
+                "Applied scene (SceneManager) " + juce::String(sceneManager->getCurrentSceneIndex()) + 
+                " progressive offset: " + juce::String(progressiveOffset));
+        }
+        else if (progressiveLengthening != 0)
+        {
+            // Apply progressive lengthening
+            auto currentPattern = patternEngine.getCurrentPattern();
+            
+            // Store or retrieve the base pattern for this scene
+            auto sceneBaseLengthPattern = sceneManager->getCurrentSceneBaseLengthPattern();
+            if (sceneBaseLengthPattern.empty()) {
+                // First time - store the base pattern in SceneManager
+                sceneManager->setCurrentSceneBaseLengthPattern(currentPattern);
+                sceneBaseLengthPattern = currentPattern;
+            }
+            
+            // Apply lengthening to the stored base pattern
+            auto lengthenedPattern = lengthenPattern(sceneBaseLengthPattern, progressiveLengthening);
+            patternEngine.setPattern(lengthenedPattern);
+            
+            DBG(
+                "Applied scene (SceneManager) " + juce::String(sceneManager->getCurrentSceneIndex()) + 
+                " progressive lengthening: " + juce::String(progressiveLengthening) + " steps");
+        }
     }
-    else if (progressiveLengthening != 0)
+    else
     {
-        // Apply progressive lengthening
-        auto currentPattern = patternEngine.getCurrentPattern();
-        
-        // Store or retrieve the base pattern for this scene
-        if (sceneBaseLengthPatterns[currentSceneIndex].empty()) {
-            // First time - store the base pattern
-            sceneBaseLengthPatterns[currentSceneIndex] = currentPattern;
+        // LEGACY: Fall back to original logic
+        if (currentSceneIndex >= static_cast<int>(sceneBasePatterns.size())) {
+            return; // Safety check
         }
         
-        // Apply lengthening to the stored base pattern
-        auto lengthenedPattern = lengthenPattern(sceneBaseLengthPatterns[currentSceneIndex], progressiveLengthening);
-        patternEngine.setPattern(lengthenedPattern);
+        juce::String basePattern = sceneBasePatterns[currentSceneIndex];
+        int progressiveOffset = sceneProgressiveOffsets[currentSceneIndex];
+        int progressiveLengthening = sceneProgressiveLengthening[currentSceneIndex];
         
-        DBG(
-            "Applied scene " + juce::String(currentSceneIndex) + " progressive lengthening: " + juce::String(progressiveLengthening) + " steps");
+        // Parse the base pattern first
+        parseAndApplyUPI(basePattern, true);
+        currentStep.store(0); // Reset step indicator to beginning
+        
+        // Apply progressive transformations if any
+        if (progressiveOffset != 0)
+        {
+            // Apply progressive offset by rotating the generated pattern
+            auto currentPattern = patternEngine.getCurrentPattern();
+            // Use negative rotation for clockwise progression (positive offset = clockwise)
+            auto rotatedPattern = PatternUtils::rotatePattern(currentPattern, -progressiveOffset);
+            patternEngine.setPattern(rotatedPattern);
+            
+            DBG(
+                "Applied scene (Legacy) " + juce::String(currentSceneIndex) + " progressive offset: " + juce::String(progressiveOffset));
+        }
+        else if (progressiveLengthening != 0)
+        {
+            // Apply progressive lengthening
+            auto currentPattern = patternEngine.getCurrentPattern();
+            
+            // Store or retrieve the base pattern for this scene
+            if (sceneBaseLengthPatterns[currentSceneIndex].empty()) {
+                // First time - store the base pattern
+                sceneBaseLengthPatterns[currentSceneIndex] = currentPattern;
+            }
+            
+            // Apply lengthening to the stored base pattern
+            auto lengthenedPattern = lengthenPattern(sceneBaseLengthPatterns[currentSceneIndex], progressiveLengthening);
+            patternEngine.setPattern(lengthenedPattern);
+            
+            DBG(
+                "Applied scene (Legacy) " + juce::String(currentSceneIndex) + " progressive lengthening: " + juce::String(progressiveLengthening) + " steps");
+        }
     }
 }
 

@@ -12,6 +12,9 @@
 #include <JuceHeader.h>
 #include "PatternEngine.h"
 #include "UPIParser.h"
+#include "SceneManager.h"
+#include "ProgressiveManager.h"
+#include "AccentManager.h"
 
 //==============================================================================
 /**
@@ -69,13 +72,31 @@ public:
     PatternEngine& getPatternEngine() { return patternEngine; }
     
     // Accent Pattern Access
-    bool getHasAccentPattern() const { return hasAccentPattern; }
-    const std::vector<bool>& getCurrentAccentPattern() const { return currentAccentPattern; }
-    const juce::String& getCurrentAccentPatternName() const { return currentAccentPatternName; }
-    int getGlobalAccentPosition() const { return globalAccentPosition; }
+    bool getHasAccentPattern() const { 
+        // TRANSITION: Use AccentManager if available, fallback to legacy for safety
+        return accentManager ? accentManager->hasAccentPattern() : hasAccentPattern; 
+    }
+    const std::vector<bool>& getCurrentAccentPattern() const { 
+        // TRANSITION: Use AccentManager if available, fallback to legacy for safety
+        return accentManager ? accentManager->getCurrentAccentPattern() : currentAccentPattern; 
+    }
+    const juce::String& getCurrentAccentPatternName() const { 
+        // TRANSITION: Use AccentManager if available, fallback to legacy for safety
+        return accentManager ? accentManager->getCurrentAccentPatternName() : currentAccentPatternName; 
+    }
+    int getGlobalAccentPosition() const { 
+        // TRANSITION: Use AccentManager if available, fallback to legacy for safety
+        return accentManager ? accentManager->getGlobalAccentPosition() : globalAccentPosition; 
+    }
     
     // Check if a specific onset should be accented based on current global accent position
     bool shouldOnsetBeAccented(int onsetIndex) const {
+        // TRANSITION: Use AccentManager if available, fallback to legacy for safety
+        if (accentManager) {
+            return accentManager->shouldOnsetBeAccented(onsetIndex);
+        }
+        
+        // Legacy fallback
         if (!hasAccentPattern || currentAccentPattern.empty()) return false;
         
         // Calculate what the global accent position will be for this onset
@@ -87,8 +108,17 @@ public:
     std::vector<bool> getCurrentAccentMap() const;
     
     // UI update notification for accent map changes
-    bool shouldUpdateAccentDisplay() const { return patternChanged.load(); }
-    void clearAccentDisplayUpdate() { patternChanged.store(false); }
+    bool shouldUpdateAccentDisplay() const { 
+        // TRANSITION: Use AccentManager if available, fallback to legacy for safety
+        return accentManager ? accentManager->shouldUpdateAccentDisplay() : patternChanged.load(); 
+    }
+    void clearAccentDisplayUpdate() { 
+        // TRANSITION: Use AccentManager if available, fallback to legacy for safety
+        if (accentManager) {
+            accentManager->clearAccentDisplayUpdate();
+        }
+        patternChanged.store(false); // Legacy fallback
+    }
     
     // Get accent position for current pattern cycle (updates only at cycle boundaries)
     int getCurrentCycleAccentStart() const {
@@ -158,20 +188,53 @@ public:
     void applyCurrentScenePattern();
     
     // Progressive offset support (universal for all patterns)
-    void resetProgressiveOffset() { progressiveOffset = 0; }
-    void advanceProgressiveOffset() { progressiveOffset += progressiveStep; }
-    int getProgressiveOffset() const { return progressiveOffset; }
+    void resetProgressiveOffset() { 
+        if (progressiveManager) {
+            progressiveManager->resetProgressiveOffset(currentUPIInput);
+        }
+        progressiveOffset = 0; // Legacy fallback
+    }
+    void advanceProgressiveOffset() { 
+        if (progressiveManager) {
+            progressiveManager->triggerProgressive(currentUPIInput, patternEngine);
+        }
+        progressiveOffset += progressiveStep; // Legacy fallback
+    }
+    int getProgressiveOffset() const { 
+        // TRANSITION: Use ProgressiveManager if available, fallback to legacy for safety
+        if (progressiveManager && progressiveManager->hasProgressiveState(currentUPIInput)) {
+            return progressiveManager->getProgressiveOffsetValue(currentUPIInput);
+        }
+        return progressiveOffset; // Legacy fallback
+    }
     
     // Scene information access for UI
-    int getCurrentSceneIndex() const { return currentSceneIndex; }
-    int getSceneCount() const { return scenePatterns.size(); }
+    int getCurrentSceneIndex() const { 
+        // TRANSITION: Use SceneManager if available, fallback to legacy for safety
+        return sceneManager ? sceneManager->getCurrentSceneIndex() : currentSceneIndex; 
+    }
+    int getSceneCount() const { 
+        // TRANSITION: Use SceneManager if available, fallback to legacy for safety
+        return sceneManager ? sceneManager->getSceneCount() : static_cast<int>(scenePatterns.size()); 
+    }
     
     // Progressive transformation access for UI  
     int getProgressiveTriggerCount() const;
-    bool hasProgressiveOffset() const { return patternEngine.hasProgressiveOffsetEnabled(); }
+    bool hasProgressiveOffset() const { 
+        // TRANSITION: Use ProgressiveManager if available, fallback to legacy for safety
+        if (progressiveManager && progressiveManager->hasProgressiveState(currentUPIInput)) {
+            return progressiveManager->hasProgressiveOffset(currentUPIInput);
+        }
+        return patternEngine.hasProgressiveOffsetEnabled(); // Legacy fallback
+    }
     
     // Progressive lengthening support (universal for all patterns)
-    void resetProgressiveLengthening() { progressiveLengthening = 0; baseLengthPattern.clear(); }
+    void resetProgressiveLengthening() { 
+        if (progressiveManager) {
+            progressiveManager->resetProgressiveLengthening(currentUPIInput);
+        }
+        progressiveLengthening = 0; baseLengthPattern.clear(); // Legacy fallback
+    }
     void advanceProgressiveLengthening();
     
     // Scene cycling support (universal for all patterns)
@@ -248,15 +311,20 @@ private:
     std::mt19937 randomGenerator;   // For bell curve random step generation
     
     // Scene cycling support (works for any pattern)
-    juce::StringArray scenePatterns; // List of patterns to cycle through
-    int currentSceneIndex = 0;      // Current scene position
+    juce::StringArray scenePatterns; // List of patterns to cycle through - LEGACY, being replaced
+    int currentSceneIndex = 0;      // Current scene position - LEGACY, being replaced
     
-    // Per-scene progressive state tracking
+    // Per-scene progressive state tracking - LEGACY, being replaced
     std::vector<int> sceneProgressiveOffsets;     // Current offset for each scene
     std::vector<int> sceneProgressiveSteps;       // Step size for each scene
     std::vector<juce::String> sceneBasePatterns;  // Base pattern for each scene
     std::vector<int> sceneProgressiveLengthening; // Current lengthening for each scene
     std::vector<std::vector<bool>> sceneBaseLengthPatterns; // Base patterns for lengthening
+    
+    // New encapsulated management - TRANSITION: Running parallel with legacy for safety
+    std::unique_ptr<SceneManager> sceneManager;
+    std::unique_ptr<ProgressiveManager> progressiveManager;
+    std::unique_ptr<AccentManager> accentManager;
     
     // Thread safety
     juce::CriticalSection processingLock;
