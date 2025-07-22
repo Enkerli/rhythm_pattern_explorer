@@ -11,11 +11,7 @@
 #include "PluginEditor.h"
 #include "UPIParser.h"
 #include "PatternUtils.h"
-// Manager implementations should be added to Xcode project as separate source files
-// instead of being included here. For now, we include them temporarily:
-#include "SceneManager.cpp"  // TODO: Add to Xcode project properly
-#include "ProgressiveManager.cpp"  // TODO: Add to Xcode project properly  
-#include "AccentManager.cpp"  // TODO: Add to Xcode project properly
+// Manager implementations now properly referenced from Source directory in Xcode project
 #include <ctime>
 
 // Debug output disabled for production performance
