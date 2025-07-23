@@ -249,19 +249,6 @@ public:
         sceneBaseLengthPatterns.clear();
     }
     void advanceScene();
-    
-    // Parameters - accessible to editor
-    juce::AudioParameterBool* useHostTransportParam;
-    juce::AudioParameterInt* midiNoteParam;
-    juce::AudioParameterBool* tickParam;
-    juce::AudioParameterInt* accentPitchOffsetParam;
-    juce::AudioParameterFloat* accentVelocityParam;
-    juce::AudioParameterFloat* unaccentedVelocityParam;
-    
-    // Pattern Length parameters for Phase 2 temporal control
-    juce::AudioParameterChoice* patternLengthUnitParam;
-    juce::AudioParameterChoice* patternLengthValueParam;
-    juce::AudioParameterChoice* subdivisionParam;
 
 private:
     //==============================================================================
@@ -332,6 +319,17 @@ private:
     
     // Pattern change notification for UI updates
     std::atomic<bool> patternChanged{false};
+    
+    // Parameters - implementation details
+    juce::AudioParameterBool* useHostTransportParam;
+    juce::AudioParameterInt* midiNoteParam;
+    juce::AudioParameterBool* tickParam;
+    juce::AudioParameterInt* accentPitchOffsetParam;
+    juce::AudioParameterFloat* accentVelocityParam;
+    juce::AudioParameterFloat* unaccentedVelocityParam;
+    juce::AudioParameterChoice* patternLengthUnitParam;
+    juce::AudioParameterChoice* patternLengthValueParam;
+    juce::AudioParameterChoice* subdivisionParam;
     
     // Helper methods
     void updateTiming();
