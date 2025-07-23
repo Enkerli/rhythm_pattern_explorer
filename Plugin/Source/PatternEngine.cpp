@@ -133,19 +133,6 @@ int PatternEngine::getOnsetCount() const
     return count;
 }
 
-//==============================================================================
-PatternEngine::BalanceAnalysis PatternEngine::analyzeBalance() const
-{
-    // Function disabled - return empty analysis
-    BalanceAnalysis analysis;
-    return analysis;
-}
-
-double PatternEngine::calculateCenterOfGravityAngle() const
-{
-    // Function disabled - return 0.0
-    return 0.0;
-}
 
 //==============================================================================
 juce::String PatternEngine::getPatternDescription() const

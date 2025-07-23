@@ -45,18 +45,7 @@ public:
     int getStepCount() const { return static_cast<int>(currentPattern.size()); }
     int getOnsetCount() const;
     
-    //==============================================================================
-    // Pattern Analysis (simplified versions from web app)
-    struct BalanceAnalysis
-    {
-        double magnitude = 0.0;
-        double normalizedMagnitude = 0.0;
-        bool isPerfectlyBalanced = false;
-        juce::String balanceRating = "Unknown";
-    };
     
-    BalanceAnalysis analyzeBalance() const;
-    double calculateCenterOfGravityAngle() const;
     
     //==============================================================================
     // Pattern Information

@@ -873,15 +873,7 @@ void RhythmPatternExplorerAudioProcessorEditor::updatePatternDisplay()
 
 void RhythmPatternExplorerAudioProcessorEditor::updateAnalysisDisplay()
 {
-    // Balance and center of gravity analysis - COMMENTED OUT per user request for pre-AUv3 state
-//    auto balance = audioProcessor.getPatternEngine().analyzeBalance();
-//    double cogAngle = audioProcessor.getPatternEngine().calculateCenterOfGravityAngle();
-//    
-//    juce::String analysis = "Balance: " + balance.balanceRating + 
-//                           juce::String::formatted(" (%.3f)", balance.magnitude) +
-//                           "\nCenter of Gravity: " + juce::String::formatted("%.1f°", cogAngle);
-//    
-//    analysisLabel.setText(analysis, juce::dontSendNotification);
+    // Analysis functionality removed - methods no longer available
 }
 
 void RhythmPatternExplorerAudioProcessorEditor::updateStepSceneButton()
