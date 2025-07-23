@@ -109,10 +109,10 @@ public:
     
     /**
      * Get accent map for entire current pattern cycle
-     * @param patternSize Size of rhythm pattern
+     * @param rhythmPattern The rhythm pattern showing which steps contain onsets
      * @return Vector indicating which steps are accented in current cycle
      */
-    std::vector<bool> getCurrentAccentMap(int patternSize) const;
+    std::vector<bool> getCurrentAccentMap(const std::vector<bool>& rhythmPattern) const;
     
     /**
      * Get accent position for current pattern cycle (for UI display)

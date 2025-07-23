@@ -88,20 +88,26 @@ bool AccentManager::shouldOnsetBeAccented(int onsetIndex) const
     return currentAccentPattern[accentStep];
 }
 
-std::vector<bool> AccentManager::getCurrentAccentMap(int patternSize) const
+std::vector<bool> AccentManager::getCurrentAccentMap(const std::vector<bool>& rhythmPattern) const
 {
-    std::vector<bool> accentMap(patternSize, false);
+    std::vector<bool> accentMap(rhythmPattern.size(), false);
     
     if (!hasActiveAccentPattern || currentAccentPattern.empty())
         return accentMap;
     
-    // Use stable UI accent offset for display
+    // Apply accents only to onsets, not all steps
     int accentLen = static_cast<int>(currentAccentPattern.size());
+    int onsetCounter = 0;
     
-    for (int i = 0; i < patternSize; ++i)
+    for (size_t i = 0; i < rhythmPattern.size(); ++i)
     {
-        int accentStep = (uiAccentOffset + i) % accentLen; // Use uiAccentOffset for stable display
-        accentMap[i] = currentAccentPattern[accentStep];
+        if (rhythmPattern[i]) // Only process steps that contain onsets
+        {
+            int accentStep = (uiAccentOffset + onsetCounter) % accentLen;
+            accentMap[i] = currentAccentPattern[accentStep];
+            onsetCounter++;
+        }
+        // Steps without onsets remain false (unaccented)
     }
     
     return accentMap;

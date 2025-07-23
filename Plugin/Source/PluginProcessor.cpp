@@ -1515,7 +1515,7 @@ std::vector<bool> RhythmPatternExplorerAudioProcessor::getCurrentAccentMap() con
     
     if (accentManager) {
         // Use AccentManager for consistent accent mapping
-        return accentManager->getCurrentAccentMap(static_cast<int>(pattern.size()));
+        return accentManager->getCurrentAccentMap(pattern);
     } else {
         // Legacy fallback implementation
         std::vector<bool> accentMap(pattern.size(), false);
