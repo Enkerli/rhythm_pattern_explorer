@@ -138,7 +138,11 @@ void RhythmPatternExplorerAudioProcessor::prepareToPlay (double sampleRate, int 
     // Reset sequencer state
     currentSample = 0;
     currentStep = 0;
-    globalAccentPosition = 0;
+    if (accentManager) {
+        accentManager->resetAccentPositions();
+    } else {
+        globalAccentPosition = 0;
+    }
     wasPlaying = false;
     
     // Force early initialization to work around Logic Pro loading order issues
@@ -469,10 +473,15 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
                 currentStep.store(targetStep);
                 
                 // Handle accent pattern updates at cycle boundaries
-                if (targetStep == 0 && hasAccentPattern) {
-                    uiAccentOffset = globalAccentPosition % currentAccentPattern.size();
-                    patternChanged.store(true);
-                    DBG("RhythmPatternExplorer: Cycle boundary - UI accent offset set to " << uiAccentOffset);
+                if (targetStep == 0 && getHasAccentPattern()) {
+                    if (accentManager) {
+                        auto pattern = patternEngine.getCurrentPattern();
+                        accentManager->updateUIAccentOffsetAtCycleBoundary(targetStep, static_cast<int>(pattern.size()), PatternUtils::countOnsets(pattern));
+                        patternChanged.store(true);
+                    } else {
+                        uiAccentOffset = globalAccentPosition % currentAccentPattern.size();
+                        patternChanged.store(true);
+                    }
                 }
                 
             }
@@ -484,7 +493,11 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
         // Just stopped playing - reset position
         currentSample = 0;
         currentStep.store(0);
-        globalAccentPosition = 0;
+        if (accentManager) {
+            accentManager->resetAccentPositions();
+        } else {
+            globalAccentPosition = 0;
+        }
         // Stopped playing - resetting position
     }
     
@@ -644,26 +657,20 @@ void RhythmPatternExplorerAudioProcessor::processStep(juce::MidiBuffer& midiBuff
     {
         // Check if this step should be accented
         bool shouldAccent = false;
-        if (hasAccentPattern && !currentAccentPattern.empty())
+        if (getHasAccentPattern())
         {
-            // Use global accent position (persists across pattern cycles)
-            int accentStep = globalAccentPosition % currentAccentPattern.size();
-            shouldAccent = currentAccentPattern[accentStep];
-            
-            // Increment global accent position for next onset
-            globalAccentPosition++;
-            
-            // Debug accent detection
-            DBG("ACCENT DEBUG: Step=" << stepToProcess << 
-                ", GlobalAccentPos=" << (globalAccentPosition - 1) <<
-                ", AccentPatternSize=" << currentAccentPattern.size() <<
-                ", AccentStep=" << accentStep <<
-                ", ShouldAccent=" << (shouldAccent ? "YES" : "NO"));
-        }
-        else
-        {
-            DBG("ACCENT DEBUG: No accent pattern - hasAccentPattern=" << (hasAccentPattern ? "true" : "false") <<
-                ", accentPatternSize=" << currentAccentPattern.size());
+            if (accentManager) {
+                // Use AccentManager for consistent accent handling
+                shouldAccent = accentManager->shouldOnsetBeAccented(0); // Current onset (no offset)
+                accentManager->advanceGlobalAccentPosition();
+            } else {
+                // Legacy fallback logic
+                if (!currentAccentPattern.empty()) {
+                    int accentStep = globalAccentPosition % currentAccentPattern.size();
+                    shouldAccent = currentAccentPattern[accentStep];
+                    globalAccentPosition++;
+                }
+            }
         }
         
         triggerNote(midiBuffer, samplePosition, shouldAccent);
@@ -827,9 +834,13 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
 {
     juce::ScopedLock lock(processingLock);
     
-    // Reset global accent position when setting new UPI input
-    globalAccentPosition = 0;
-    uiAccentOffset = 0;
+    // Reset accent positions when setting new UPI input
+    if (accentManager) {
+        accentManager->resetAccentPositions();
+    } else {
+        globalAccentPosition = 0;
+        uiAccentOffset = 0;
+    }
     
     DBG("RhythmPatternExplorerAudioProcessor::setUPIInput called with: '" << upiPattern << "'");
     
@@ -1085,10 +1096,14 @@ void RhythmPatternExplorerAudioProcessor::parseAndApplyUPI(const juce::String& u
     if (upiPattern.isEmpty())
         return;
     
-    // Only reset global accent position for truly new patterns
+    // Only reset accent positions for truly new patterns  
     if (resetAccentPosition) {
-        globalAccentPosition = 0;
-        uiAccentOffset = 0;
+        if (accentManager) {
+            accentManager->resetAccentPositions();
+        } else {
+            globalAccentPosition = 0;
+            uiAccentOffset = 0;
+        }
     }
     
     DBG("parseAndApplyUPI called with: '" + upiPattern + "'");
@@ -1147,17 +1162,26 @@ void RhythmPatternExplorerAudioProcessor::parseAndApplyUPI(const juce::String& u
         // Set up accent pattern if present
         if (parseResult.hasAccentPattern)
         {
-            hasAccentPattern = true;
-            currentAccentPattern = parseResult.accentPattern;
-            currentAccentPatternName = parseResult.accentPatternName;
-            DBG("   Accent pattern enabled: " << currentAccentPatternName << 
-                " (" << UPIParser::patternToBinary(currentAccentPattern) << ")");
+            if (accentManager) {
+                // Use AccentManager for consistent accent handling
+                accentManager->parseAccentPattern(upiPattern);
+            } else {
+                // Legacy fallback
+                hasAccentPattern = true;
+                currentAccentPattern = parseResult.accentPattern;
+                currentAccentPatternName = parseResult.accentPatternName;
+            }
         }
         else
         {
-            hasAccentPattern = false;
-            currentAccentPattern.clear();
-            currentAccentPatternName.clear();
+            if (accentManager) {
+                accentManager->clearAccentPattern();
+            } else {
+                // Legacy fallback
+                hasAccentPattern = false;
+                currentAccentPattern.clear();
+                currentAccentPatternName.clear();
+            }
         }
         
         // Update parameters to reflect the new pattern
@@ -1487,31 +1511,35 @@ int RhythmPatternExplorerAudioProcessor::getProgressiveTriggerCount() const
 
 std::vector<bool> RhythmPatternExplorerAudioProcessor::getCurrentAccentMap() const
 {
-    // Show stable accent map using UI accent offset (updates only at cycle boundaries)
     auto pattern = patternEngine.getCurrentPattern();
-    std::vector<bool> accentMap(pattern.size(), false);
+    
+    if (accentManager) {
+        // Use AccentManager for consistent accent mapping
+        return accentManager->getCurrentAccentMap(static_cast<int>(pattern.size()));
+    } else {
+        // Legacy fallback implementation
+        std::vector<bool> accentMap(pattern.size(), false);
 
-    if (!hasAccentPattern || currentAccentPattern.empty()) {
+        if (!hasAccentPattern || currentAccentPattern.empty()) {
+            return accentMap;
+        }
+
+        // Apply accents starting from stable UI accent offset
+        int accentLen = static_cast<int>(currentAccentPattern.size());
+        int accentCounter = 0;
+        
+        for (size_t i = 0; i < pattern.size(); ++i)
+        {
+            if (pattern[i])
+            {
+                int accentStep = (uiAccentOffset + accentCounter) % accentLen;
+                accentMap[i] = currentAccentPattern[accentStep];
+                accentCounter++;
+            }
+        }
+        
         return accentMap;
     }
-
-    // Apply accents starting from stable UI accent offset
-    // This provides stable display that only changes at cycle boundaries
-    int accentLen = static_cast<int>(currentAccentPattern.size());
-    int accentCounter = 0;
-    
-    for (size_t i = 0; i < pattern.size(); ++i)
-    {
-        if (pattern[i])
-        {
-            // Calculate accent position based on stable UI accent offset
-            int accentStep = (uiAccentOffset + accentCounter) % accentLen;
-            accentMap[i] = currentAccentPattern[accentStep];
-            accentCounter++;
-        }
-    }
-    
-    return accentMap;
 }
 
 

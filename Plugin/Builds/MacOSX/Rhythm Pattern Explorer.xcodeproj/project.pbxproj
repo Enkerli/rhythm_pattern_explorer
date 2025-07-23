@@ -466,6 +466,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 72573A882A2323B30C599AC9 /* Build configuration list for PBXNativeTarget "Rhythm Pattern Explorer - AU" */;
 			buildPhases = (
+				FA375ED22E30958C00D39344 /* Critical Tests Validation */,
 				194D5AB1002C746686A9A728 /* Resources */,
 				205DF328CA7D84E573BC4A63 /* Sources */,
 				0F5B895E7F4270C1B11E21BD /* Frameworks */,
@@ -501,6 +502,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = CFB5B5BB879099FB2C4843D1 /* Build configuration list for PBXNativeTarget "Rhythm Pattern Explorer - VST3" */;
 			buildPhases = (
+				FA375ED32E30964400D39344 /* Critical Tests Validation */,
 				C086242DF158352A48D75F2B /* Resources */,
 				40EBD4C51605560C84AE70B3 /* Sources */,
 				9039288EB21C054F208D97FA /* Frameworks */,
@@ -724,6 +726,42 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "set -euo pipefail\n\nif [[ \"${CONFIGURATION}\" == \"Debug\" ]]; then\n  destinationPlugin=\"${HOME}/Library/Audio/Plug-Ins/Components//$(basename \"${TARGET_BUILD_DIR}/${WRAPPER_NAME}\")\"\n  echo Running rm -rf \\\"${destinationPlugin}\\\"\n  rm -rf \"${destinationPlugin}\"\n  echo Running ditto \\\"${TARGET_BUILD_DIR}/${WRAPPER_NAME}\\\" \\\"${destinationPlugin}\\\"\n  ditto \"${TARGET_BUILD_DIR}/${WRAPPER_NAME}\" \"${destinationPlugin}\"\n\n  if [[ -n \"${EXPANDED_CODE_SIGN_IDENTITY-}\" ]]; then\n    if [[ -n \"${CODE_SIGN_ENTITLEMENTS-}\" ]]; then\n      entitlementsArg=(--entitlements \"${CODE_SIGN_ENTITLEMENTS}\")\n    fi\n\n    echo Signing Identity: \\\"${EXPANDED_CODE_SIGN_IDENTITY_NAME}\\\"\n    echo Running codesign --verbose=4 --force --sign \\\"${EXPANDED_CODE_SIGN_IDENTITY}\\\" ${entitlementsArg[*]-} ${OTHER_CODE_SIGN_FLAGS-} \\\"${HOME}/Library/Audio/Plug-Ins/Components//${WRAPPER_NAME}\\\"\n    codesign --verbose=4 --force --sign \"${EXPANDED_CODE_SIGN_IDENTITY}\" ${entitlementsArg[*]-} ${OTHER_CODE_SIGN_FLAGS-} \"${HOME}/Library/Audio/Plug-Ins/Components//${WRAPPER_NAME}\"\n  fi\nfi\n\nif [[ \"${CONFIGURATION}\" == \"Release\" ]]; then\n  destinationPlugin=\"${HOME}/Library/Audio/Plug-Ins/Components//$(basename \"${TARGET_BUILD_DIR}/${WRAPPER_NAME}\")\"\n  echo Running rm -rf \\\"${destinationPlugin}\\\"\n  rm -rf \"${destinationPlugin}\"\n  echo Running ditto \\\"${TARGET_BUILD_DIR}/${WRAPPER_NAME}\\\" \\\"${destinationPlugin}\\\"\n  ditto \"${TARGET_BUILD_DIR}/${WRAPPER_NAME}\" \"${destinationPlugin}\"\n\n  if [[ -n \"${EXPANDED_CODE_SIGN_IDENTITY-}\" ]]; then\n    if [[ -n \"${CODE_SIGN_ENTITLEMENTS-}\" ]]; then\n      entitlementsArg=(--entitlements \"${CODE_SIGN_ENTITLEMENTS}\")\n    fi\n\n    echo Signing Identity: \\\"${EXPANDED_CODE_SIGN_IDENTITY_NAME}\\\"\n    echo Running codesign --verbose=4 --force --sign \\\"${EXPANDED_CODE_SIGN_IDENTITY}\\\" ${entitlementsArg[*]-} ${OTHER_CODE_SIGN_FLAGS-} \\\"${HOME}/Library/Audio/Plug-Ins/Components//${WRAPPER_NAME}\\\"\n    codesign --verbose=4 --force --sign \"${EXPANDED_CODE_SIGN_IDENTITY}\" ${entitlementsArg[*]-} ${OTHER_CODE_SIGN_FLAGS-} \"${HOME}/Library/Audio/Plug-Ins/Components//${WRAPPER_NAME}\"\n  fi\nfi\n";
+		};
+		FA375ED22E30958C00D39344 /* Critical Tests Validation */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Critical Tests Validation";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = " #!/bin/bash\n  set -e  # Exit on error\n\n  echo \"🔬 Running Critical Tests for AU Build\"\n  echo \"======================================\"\n  echo \"SRCROOT: ${SRCROOT}\"\n  echo \"PWD: $(pwd)\"\n\n  # The Tests directory is two levels up from SRCROOT\n  # SRCROOT = /path/to/Plugin/Builds/MacOSX\n  # Tests = /path/to/Plugin/Tests\n  TESTS_DIR=\"${SRCROOT}/../../Tests\"\n  echo \"Looking for Tests at: ${TESTS_DIR}\"\n\n  if [ ! -d \"${TESTS_DIR}\" ]; then\n      echo \"❌ ERROR: Tests directory not found at ${TESTS_DIR}\"\n      echo \"Trying alternative paths...\"\n\n      # Try other possible locations\n      if [ -d \"${SRCROOT}/../Tests\" ]; then\n          TESTS_DIR=\"${SRCROOT}/../Tests\"\n          echo \"✅ Found Tests at: ${TESTS_DIR}\"\n      else\n          echo \"❌ ERROR: Cannot find Tests directory\"\n          echo \"SRCROOT parent contents:\"\n          ls -la \"${SRCROOT}/..\"\n          exit 1\n      fi\n  fi\n\n  # Navigate to Tests directory\n  echo \"Navigating to: ${TESTS_DIR}\"\n  cd \"${TESTS_DIR}\" || {\n      echo \"❌ ERROR: Cannot navigate to Tests directory\"\n      exit 1\n  }\n\n  echo \"✅ Found Tests directory: $(pwd)\"\n\n  # Check for test script\n  if [ ! -f \"run_critical_tests.sh\" ]; then\n      echo \"❌ ERROR: run_critical_tests.sh not found\"\n      echo \"Tests directory contents:\"\n      ls -la\n      exit 1\n  fi\n\n  # Run tests\n  echo \"Running critical tests...\"\n  chmod +x run_critical_tests.sh\n  ./run_critical_tests.sh\n\n  if [ $? -eq 0 ]; then\n      echo \"\"\n      echo \"✅ All tests passed - AU build proceeding\"\n      echo \"✅ Critical systems validated\"\n  else\n      echo \"\"\n      echo \"❌ Tests failed - AU build aborted\"\n      exit 1\n  fi\n";
+		};
+		FA375ED32E30964400D39344 /* Critical Tests Validation */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Critical Tests Validation";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = " #!/bin/bash\n  set -e  # Exit on error\n\n  echo \"🔬 Running Critical Tests for VST3 Build\"\n  echo \"======================================\"\n  echo \"SRCROOT: ${SRCROOT}\"\n  echo \"PWD: $(pwd)\"\n\n  # The Tests directory is two levels up from SRCROOT\n  # SRCROOT = /path/to/Plugin/Builds/MacOSX\n  # Tests = /path/to/Plugin/Tests\n  TESTS_DIR=\"${SRCROOT}/../../Tests\"\n  echo \"Looking for Tests at: ${TESTS_DIR}\"\n\n  if [ ! -d \"${TESTS_DIR}\" ]; then\n      echo \"❌ ERROR: Tests directory not found at ${TESTS_DIR}\"\n      echo \"Trying alternative paths...\"\n\n      # Try other possible locations\n      if [ -d \"${SRCROOT}/../Tests\" ]; then\n          TESTS_DIR=\"${SRCROOT}/../Tests\"\n          echo \"✅ Found Tests at: ${TESTS_DIR}\"\n      else\n          echo \"❌ ERROR: Cannot find Tests directory\"\n          echo \"SRCROOT parent contents:\"\n          ls -la \"${SRCROOT}/..\"\n          exit 1\n      fi\n  fi\n\n  # Navigate to Tests directory\n  echo \"Navigating to: ${TESTS_DIR}\"\n  cd \"${TESTS_DIR}\" || {\n      echo \"❌ ERROR: Cannot navigate to Tests directory\"\n      exit 1\n  }\n\n  echo \"✅ Found Tests directory: $(pwd)\"\n\n  # Check for test script\n  if [ ! -f \"run_critical_tests.sh\" ]; then\n      echo \"❌ ERROR: run_critical_tests.sh not found\"\n      echo \"Tests directory contents:\"\n      ls -la\n      exit 1\n  fi\n\n  # Run tests\n  echo \"Running critical tests...\"\n  chmod +x run_critical_tests.sh\n  ./run_critical_tests.sh\n\n  if [ $? -eq 0 ]; then\n      echo \"\"\n      echo \"✅ All tests passed - AU build proceeding\"\n      echo \"✅ Critical systems validated\"\n  else\n      echo \"\"\n      echo \"❌ Tests failed - AU build aborted\"\n      exit 1\n  fi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
