@@ -1235,11 +1235,31 @@ void RhythmPatternExplorerAudioProcessor::checkMidiInputForTriggers(juce::MidiBu
                 DBG("RhythmPatternExplorer: Captured MIDI note " << noteNumber << " for output");
             }
             
-            // Any MIDI note input triggers pattern regeneration - use same logic as Enter key/Tick button
+            // Any MIDI note input triggers pattern regeneration
             if (!currentUPIInput.isEmpty())
             {
-                DBG("RhythmPatternExplorer: MIDI triggered pattern advancement - using setUPIInput like Enter key");
-                setUPIInput(currentUPIInput);
+                // Check for progressive patterns - handle them specially to preserve accent continuity
+                bool hasProgressiveTransformation = currentUPIInput.contains(">");
+                bool hasScenes = currentUPIInput.contains("|");
+                
+                if (hasProgressiveTransformation)
+                {
+                    DBG("RhythmPatternExplorer: MIDI triggered progressive transformation - preserving accent positions");
+                    // For progressive transformations, advance without resetting accent positions
+                    parseAndApplyUPI(currentUPIInput, false); // false = don't reset accent positions
+                }
+                else if (hasScenes)
+                {
+                    DBG("RhythmPatternExplorer: MIDI triggered scene advancement - preserving accent positions"); 
+                    // For scenes, advance without resetting accent positions
+                    parseAndApplyUPI(currentUPIInput, false); // false = don't reset accent positions
+                }
+                else
+                {
+                    DBG("RhythmPatternExplorer: MIDI triggered pattern change - resetting accent positions");
+                    // For new patterns, reset accent positions like Enter key
+                    setUPIInput(currentUPIInput);
+                }
             }
             // Pattern updates are handled via UPI only
         }
