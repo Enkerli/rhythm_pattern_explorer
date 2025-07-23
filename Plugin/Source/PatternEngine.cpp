@@ -142,9 +142,6 @@ juce::String PatternEngine::getPatternDescription() const
     
     juce::String description = "Pattern: " + juce::String(onsets) + "/" + juce::String(steps);
     
-//    auto balance = analyzeBalance();
-//    description += " | Balance: " + balance.balanceRating;
-    
     return description;
 }
 

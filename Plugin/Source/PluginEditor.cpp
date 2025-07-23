@@ -25,53 +25,6 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     setResizable(true, true);
     setResizeLimits(150, 150, 1200, 1000); // min width, min height, max width, max height - small min for Easter egg
     
-    // BPM Slider - COMMENTED OUT for clean interface
-    /*
-    bpmSlider.setSliderStyle(juce::Slider::LinearHorizontal);
-    bpmSlider.setRange(60.0, 180.0, 1.0);
-    bpmSlider.setValue(120.0);
-    bpmSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 50, 20);
-    addAndMakeVisible(bpmSlider);
-    
-    bpmLabel.setText("BPM", juce::dontSendNotification);
-    bpmLabel.attachToComponent(&bpmSlider, true);
-    addAndMakeVisible(bpmLabel);
-    
-    // Pattern Type ComboBox
-    patternTypeComboBox.addItem("Euclidean", 1);
-    patternTypeComboBox.addItem("Polygon", 2);
-    patternTypeComboBox.addItem("Random", 3);
-    patternTypeComboBox.addItem("Binary", 4);
-    patternTypeComboBox.setSelectedId(1);
-    addAndMakeVisible(patternTypeComboBox);
-    
-    patternTypeLabel.setText("Pattern Type", juce::dontSendNotification);
-    patternTypeLabel.attachToComponent(&patternTypeComboBox, true);
-    addAndMakeVisible(patternTypeLabel);
-    
-    // Onsets Slider
-    onsetsSlider.setSliderStyle(juce::Slider::LinearHorizontal);
-    onsetsSlider.setRange(1.0, 16.0, 1.0);
-    onsetsSlider.setValue(3.0);
-    onsetsSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 50, 20);
-    addAndMakeVisible(onsetsSlider);
-    
-    onsetsLabel.setText("Onsets", juce::dontSendNotification);
-    onsetsLabel.attachToComponent(&onsetsSlider, true);
-    addAndMakeVisible(onsetsLabel);
-    
-    // Steps Slider
-    stepsSlider.setSliderStyle(juce::Slider::LinearHorizontal);
-    stepsSlider.setRange(4.0, 32.0, 1.0);
-    stepsSlider.setValue(8.0);
-    stepsSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 50, 20);
-    addAndMakeVisible(stepsSlider);
-    
-    stepsLabel.setText("Steps", juce::dontSendNotification);
-    stepsLabel.attachToComponent(&stepsSlider, true);
-    addAndMakeVisible(stepsLabel);
-    
-    */
     
     // UPI Pattern Input
     upiLabel.setText("UPI:", juce::dontSendNotification);
@@ -199,40 +152,6 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     
     // Step Counter Display - removed for clean production interface
     
-    // Connect sliders to parameters - COMMENTED OUT for clean interface
-    /*
-    bpmSlider.onValueChange = [this]()
-    {
-        audioProcessor.getBpmParameter()->setValueNotifyingHost(
-            audioProcessor.getBpmParameter()->convertTo0to1(static_cast<float>(bpmSlider.getValue()))
-        );
-    };
-    
-    patternTypeComboBox.onChange = [this]()
-    {
-        int selectedIndex = patternTypeComboBox.getSelectedId() - 1;
-        audioProcessor.getPatternTypeParameter()->setValueNotifyingHost(
-            static_cast<float>(selectedIndex) / (audioProcessor.getPatternTypeParameter()->choices.size() - 1)
-        );
-        
-        // Show/hide generate button for random patterns
-        generateButton.setVisible(selectedIndex == 2);
-    };
-    
-    onsetsSlider.onValueChange = [this]()
-    {
-        audioProcessor.getOnsetsParameter()->setValueNotifyingHost(
-            audioProcessor.getOnsetsParameter()->convertTo0to1(static_cast<int>(onsetsSlider.getValue()))
-        );
-    };
-    
-    stepsSlider.onValueChange = [this]()
-    {
-        audioProcessor.getStepsParameter()->setValueNotifyingHost(
-            audioProcessor.getStepsParameter()->convertTo0to1(static_cast<int>(stepsSlider.getValue()))
-        );
-    };
-    */
     
     // Connect essential parameters
     midiNoteSlider.onValueChange = [this]()

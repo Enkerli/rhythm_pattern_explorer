@@ -23,7 +23,6 @@
  * - Regular polygon patterns
  * - Random patterns with bell curve distribution
  * - Binary pattern representation
- * - Perfect balance analysis (Milne's theory)
  */
 class PatternEngine
 {
