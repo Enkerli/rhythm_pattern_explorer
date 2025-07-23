@@ -63,9 +63,10 @@ void AccentManager::updateUIAccentOffsetAtCycleBoundary(int currentStep, int pat
     // Update UI accent offset only at cycle boundaries (step 0)
     if (currentStep == 0 && hasActiveAccentPattern && !currentAccentPattern.empty() && onsetsPerCycle > 0)
     {
-        // Calculate how many complete pattern cycles we've been through
-        // Use globalAccentPosition to determine UI offset for this cycle
-        uiAccentOffset = globalAccentPosition % currentAccentPattern.size();
+        // Calculate UI offset based on accent position at START of current cycle
+        // globalAccentPosition has been advanced by current cycle's onsets, so subtract them
+        int cycleStartAccentPos = globalAccentPosition - onsetsPerCycle;
+        uiAccentOffset = cycleStartAccentPos % currentAccentPattern.size();
         markPatternChanged();
     }
 }
