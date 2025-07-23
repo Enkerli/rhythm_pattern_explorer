@@ -69,6 +69,7 @@ public:
 
     //==============================================================================
     // Pattern Engine Access
+    const PatternEngine& getPatternEngine() const { return patternEngine; }
     PatternEngine& getPatternEngine() { return patternEngine; }
     
     // Accent Pattern Access
@@ -143,15 +144,15 @@ public:
     }
     
     // Parameter access for editor
-    juce::AudioParameterBool* getUseHostTransportParameter() { return useHostTransportParam; }
-    juce::AudioParameterInt* getMidiNoteParameter() { return midiNoteParam; }
-    juce::AudioParameterBool* getTickParameter() { return tickParam; }
-    juce::AudioParameterInt* getAccentPitchOffsetParameter() { return accentPitchOffsetParam; }
-    juce::AudioParameterFloat* getAccentVelocityParameter() { return accentVelocityParam; }
-    juce::AudioParameterFloat* getUnaccentedVelocityParameter() { return unaccentedVelocityParam; }
-    juce::AudioParameterChoice* getPatternLengthUnitParameter() { return patternLengthUnitParam; }
-    juce::AudioParameterChoice* getPatternLengthValueParameter() { return patternLengthValueParam; }
-    juce::AudioParameterChoice* getSubdivisionParameter() { return subdivisionParam; }
+    juce::AudioParameterBool* getUseHostTransportParameter() const { return useHostTransportParam; }
+    juce::AudioParameterInt* getMidiNoteParameter() const { return midiNoteParam; }
+    juce::AudioParameterBool* getTickParameter() const { return tickParam; }
+    juce::AudioParameterInt* getAccentPitchOffsetParameter() const { return accentPitchOffsetParam; }
+    juce::AudioParameterFloat* getAccentVelocityParameter() const { return accentVelocityParam; }
+    juce::AudioParameterFloat* getUnaccentedVelocityParameter() const { return unaccentedVelocityParam; }
+    juce::AudioParameterChoice* getPatternLengthUnitParameter() const { return patternLengthUnitParam; }
+    juce::AudioParameterChoice* getPatternLengthValueParameter() const { return patternLengthValueParam; }
+    juce::AudioParameterChoice* getSubdivisionParameter() const { return subdivisionParam; }
     
     // Helper to convert pattern length choice to float value
     float getPatternLengthValue() const;
