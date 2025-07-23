@@ -9,6 +9,7 @@
 #include "UPIParser.h"
 #include "PatternEngine.h"
 #include "PatternUtils.h"
+#include "DebugConfig.h"
 #include <cmath>
 #include <random>
 #include <algorithm>

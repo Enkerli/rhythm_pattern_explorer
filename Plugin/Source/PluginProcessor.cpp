@@ -11,16 +11,9 @@
 #include "PluginEditor.h"
 #include "UPIParser.h"
 #include "PatternUtils.h"
+#include "DebugConfig.h"
 // Manager implementations now properly referenced from Source directory in Xcode project
 #include <ctime>
-
-// Debug output disabled for production performance
-#ifdef DEBUG
-    // Keep debug output in debug builds
-#else
-    #undef DBG
-    #define DBG(textToWrite) do { } while (false)
-#endif
 
 //==============================================================================
 RhythmPatternExplorerAudioProcessor::RhythmPatternExplorerAudioProcessor()
