@@ -237,9 +237,9 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     // Connect essential parameters
     midiNoteSlider.onValueChange = [this]()
     {
-        if (audioProcessor.midiNoteParam) {
-            audioProcessor.midiNoteParam->setValueNotifyingHost(
-                audioProcessor.midiNoteParam->convertTo0to1(static_cast<int>(midiNoteSlider.getValue()))
+        if (audioProcessor.getMidiNoteParameter()) {
+            audioProcessor.getMidiNoteParameter()->setValueNotifyingHost(
+                audioProcessor.getMidiNoteParameter()->convertTo0to1(static_cast<int>(midiNoteSlider.getValue()))
             );
         }
     };
@@ -247,17 +247,17 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     // Connect accent parameters
     accentPitchOffsetSlider.onValueChange = [this]()
     {
-        if (audioProcessor.accentPitchOffsetParam) {
-            audioProcessor.accentPitchOffsetParam->setValueNotifyingHost(
-                audioProcessor.accentPitchOffsetParam->convertTo0to1(static_cast<int>(accentPitchOffsetSlider.getValue()))
+        if (audioProcessor.getAccentPitchOffsetParameter()) {
+            audioProcessor.getAccentPitchOffsetParameter()->setValueNotifyingHost(
+                audioProcessor.getAccentPitchOffsetParameter()->convertTo0to1(static_cast<int>(accentPitchOffsetSlider.getValue()))
             );
         }
     };
     
     accentVelocitySlider.onValueChange = [this]()
     {
-        if (audioProcessor.accentVelocityParam) {
-            audioProcessor.accentVelocityParam->setValueNotifyingHost(
+        if (audioProcessor.getAccentVelocityParameter()) {
+            audioProcessor.getAccentVelocityParameter()->setValueNotifyingHost(
                 static_cast<float>(accentVelocitySlider.getValue())
             );
         }
@@ -265,8 +265,8 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     
     unaccentedVelocitySlider.onValueChange = [this]()
     {
-        if (audioProcessor.unaccentedVelocityParam) {
-            audioProcessor.unaccentedVelocityParam->setValueNotifyingHost(
+        if (audioProcessor.getUnaccentedVelocityParameter()) {
+            audioProcessor.getUnaccentedVelocityParameter()->setValueNotifyingHost(
                 static_cast<float>(unaccentedVelocitySlider.getValue())
             );
         }
@@ -275,8 +275,8 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     tickButton.onClick = [this]()
     {
         // Only trigger the parameter - this will handle the advancement properly
-        if (audioProcessor.tickParam) {
-            audioProcessor.tickParam->setValueNotifyingHost(1.0f); // Trigger tick parameter
+        if (audioProcessor.getTickParameter()) {
+            audioProcessor.getTickParameter()->setValueNotifyingHost(1.0f); // Trigger tick parameter
         }
         // Note: parseUPIPattern() removed to avoid double-triggering
         // The parameter change will handle the advancement through the host
@@ -515,14 +515,14 @@ void RhythmPatternExplorerAudioProcessorEditor::timerCallback()
     frameCount++;
     
     // Sync UI sliders with parameter values (for host automation support)
-    if (audioProcessor.midiNoteParam) {
-        midiNoteSlider.setValue(audioProcessor.midiNoteParam->get(), juce::dontSendNotification);
+    if (audioProcessor.getMidiNoteParameter()) {
+        midiNoteSlider.setValue(audioProcessor.getMidiNoteParameter()->get(), juce::dontSendNotification);
     }
-    if (audioProcessor.accentPitchOffsetParam) {
-        accentPitchOffsetSlider.setValue(audioProcessor.accentPitchOffsetParam->get(), juce::dontSendNotification);
+    if (audioProcessor.getAccentPitchOffsetParameter()) {
+        accentPitchOffsetSlider.setValue(audioProcessor.getAccentPitchOffsetParameter()->get(), juce::dontSendNotification);
     }
-    if (audioProcessor.accentVelocityParam) {
-        accentVelocitySlider.setValue(audioProcessor.accentVelocityParam->get(), juce::dontSendNotification);
+    if (audioProcessor.getAccentVelocityParameter()) {
+        accentVelocitySlider.setValue(audioProcessor.getAccentVelocityParameter()->get(), juce::dontSendNotification);
     }
     
     // Update step/scene button text
