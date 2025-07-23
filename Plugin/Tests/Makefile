@@ -8,9 +8,10 @@ CXXFLAGS = -std=c++17 -Wall -Wextra -O2
 HEX_OCTAL_TESTS = HexOctalCoreTests
 BARLOW_TESTS = TestRestoredBarlowAlgorithm
 CRITICAL_FIXES_TESTS = CriticalFixesTests
+ACCENT_MAPPING_TESTS = AccentMappingTests
 TEST_RUNNER = TestRunner
 
-.PHONY: all test-comprehensive test-fixes test-critical test-barlow clean build-au build-vst3 dev dev-quick install help
+.PHONY: all test-comprehensive test-fixes test-critical test-barlow test-accent clean build-au build-vst3 dev dev-quick install help
 
 # Default target runs comprehensive test suite
 all: test-comprehensive
@@ -40,6 +41,12 @@ test-barlow: $(BARLOW_TESTS)
 	@echo "=========================="
 	./$(BARLOW_TESTS)
 
+# Accent mapping core logic tests
+test-accent: $(ACCENT_MAPPING_TESTS)
+	@echo "🔬 Testing Accent Mapping Logic"
+	@echo "==============================="
+	./$(ACCENT_MAPPING_TESTS)
+
 # Build test executables
 $(HEX_OCTAL_TESTS): HexOctalCoreTests.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $<
@@ -48,6 +55,9 @@ $(BARLOW_TESTS): TestRestoredBarlowAlgorithm.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
 $(CRITICAL_FIXES_TESTS): CriticalFixesTests.cpp
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+$(ACCENT_MAPPING_TESTS): AccentMappingTests.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
 $(TEST_RUNNER): TestRunner.cpp
@@ -100,7 +110,7 @@ dev-quick: test-critical build-vst3
 # Clean up test executables and build artifacts
 clean:
 	@echo "🧹 Cleaning test executables and build artifacts"
-	rm -f $(HEX_OCTAL_TESTS) $(BARLOW_TESTS) $(CRITICAL_FIXES_TESTS) $(TEST_RUNNER)
+	rm -f $(HEX_OCTAL_TESTS) $(BARLOW_TESTS) $(CRITICAL_FIXES_TESTS) $(ACCENT_MAPPING_TESTS) $(TEST_RUNNER)
 	rm -rf build/
 	cd ../Builds/MacOSX && xcodebuild -scheme "Rhythm Pattern Explorer - AU" -configuration Release clean
 	cd ../Builds/MacOSX && xcodebuild -scheme "Rhythm Pattern Explorer - VST3" -configuration Release clean
@@ -114,6 +124,7 @@ help:
 	@echo "  test-fixes         - Run critical fixes validation tests"
 	@echo "  test-critical      - Run legacy hex/octal tests (compatibility)"
 	@echo "  test-barlow        - Run Barlow algorithm verification tests"
+	@echo "  test-accent        - Run accent mapping core logic tests"
 	@echo ""
 	@echo "Building:"
 	@echo "  build-au           - Build AU component (comprehensive tests required)"

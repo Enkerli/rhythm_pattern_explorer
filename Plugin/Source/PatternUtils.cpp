@@ -97,53 +97,92 @@ namespace PatternUtils
     // Pattern Generation Core Functions
     //==============================================================================
     
+    /**
+     * BJORKLUND ALGORITHM - Euclidean Pattern Generation
+     * 
+     * Implements the Bjorklund algorithm for generating maximally even sequences,
+     * which correspond to Euclidean rhythms in music. The algorithm distributes
+     * onsets as evenly as possible across the available time steps.
+     * 
+     * MATHEMATICAL BASIS:
+     * - Uses the Euclidean algorithm (GCD calculation) to achieve maximal evenness
+     * - Minimizes variance between inter-onset intervals
+     * - Creates patterns found in traditional music worldwide (tresillo, cinquillo, etc.)
+     * - Equivalent to distributing points evenly around a circle
+     * 
+     * ALGORITHM APPROACH:
+     * The algorithm builds a binary tree structure where:
+     * - Each level represents a division step in the Euclidean algorithm
+     * - Leaf nodes represent pattern elements (true=onset, false=rest)
+     * - The recursive build function constructs the final pattern
+     * 
+     * EXAMPLES:
+     * - bjorklundAlgorithm(3, 8) → 10010010 (tresillo rhythm)
+     * - bjorklundAlgorithm(5, 8) → 10101010 (cinquillo rhythm)
+     * - bjorklundAlgorithm(3, 4) → 1011 (maximally even 3-in-4)
+     * 
+     * @param beats Number of onsets to distribute (must be ≤ steps)
+     * @param steps Total number of positions in the pattern
+     * @return Binary pattern with beats distributed as evenly as possible
+     */
     std::vector<bool> bjorklundAlgorithm(int beats, int steps)
     {
+        // Edge case handling
         if (beats > steps) beats = steps;
         if (beats <= 0) return std::vector<bool>(steps, false);
         if (beats == steps) return std::vector<bool>(steps, true);
         
         std::vector<bool> pattern;
-        std::vector<int> counts;
-        std::vector<int> remainders;
+        std::vector<int> counts;     // Number of repetitions at each level
+        std::vector<int> remainders; // Remainder values from Euclidean algorithm
         
+        // Initialize Euclidean algorithm: divide (steps-beats) by beats
+        // This is equivalent to the standard GCD algorithm
         int divisor = steps - beats;
         remainders.push_back(beats);
         int level = 0;
         
+        // Execute Euclidean algorithm divisions, building the tree structure
         do {
-            counts.push_back(divisor / remainders[level]);
-            remainders.push_back(divisor % remainders[level]);
+            counts.push_back(divisor / remainders[level]);    // How many complete divisions
+            remainders.push_back(divisor % remainders[level]); // What's left over
             divisor = remainders[level];
             level++;
         } while (remainders[level] > 1);
         
-        counts.push_back(divisor);
+        counts.push_back(divisor); // Final count for the deepest level
         
+        // Recursive function to build the binary pattern from the tree structure
+        // This is the core of the Bjorklund algorithm - it traverses the division tree
         std::function<void(int)> build = [&](int level) {
             if (level == -1) {
+                // Base case: add a rest (silence)
                 pattern.push_back(false);
             } else if (level == -2) {
+                // Base case: add an onset (beat)
                 pattern.push_back(true);
             } else {
+                // Recursive case: add the required number of sublevel patterns
                 for (int i = 0; i < counts[level]; i++) {
-                    build(level - 1);
+                    build(level - 1);  // Add the main pattern
                 }
                 if (remainders[level] != 0) {
-                    build(level - 2);
+                    build(level - 2);  // Add the remainder pattern if it exists
                 }
             }
         };
         
+        // Start the recursive build from the deepest level
         build(level);
         
-        // Ensure we have exactly 'steps' elements
+        // Ensure we have exactly 'steps' elements (handle edge cases)
         while (pattern.size() < static_cast<size_t>(steps)) {
             pattern.push_back(false);
         }
         pattern.resize(steps);
         
-        // Rotate so first beat is at position 0
+        // CRITICAL: Rotate pattern so first onset appears at position 0
+        // This ensures musical patterns start on the downbeat, not mid-phrase
         auto firstBeatIndex = std::find(pattern.begin(), pattern.end(), true);
         if (firstBeatIndex != pattern.begin() && firstBeatIndex != pattern.end()) {
             size_t index = std::distance(pattern.begin(), firstBeatIndex);
@@ -284,6 +323,36 @@ namespace PatternUtils
         return patternToBinary(pattern);
     }
     
+    /**
+     * LEFT-TO-RIGHT HEX NOTATION SYSTEM
+     * 
+     * Converts a binary pattern to hexadecimal using the plugin's unique left-to-right
+     * bit ordering system. This is the OPPOSITE of standard computer science notation
+     * but provides intuitive pattern input for musicians.
+     * 
+     * BIT ORDERING CONVENTION:
+     * - Leftmost bit = Least Significant Bit (LSB) 
+     * - Rightmost bit = Most Significant Bit (MSB)
+     * - Each hex digit represents 4 consecutive pattern steps
+     * 
+     * CRITICAL EXAMPLES:
+     * - Pattern 1000 → 0x1 (leftmost bit is LSB, so bit 0 = 1)
+     * - Pattern 0100 → 0x2 (second bit is bit 1, so 2^1 = 2)
+     * - Pattern 0010 → 0x4 (third bit is bit 2, so 2^2 = 4)  
+     * - Pattern 0001 → 0x8 (rightmost bit is MSB, so 2^3 = 8)
+     * - Pattern 10010010 → 0x94 (tresillo: 1*1 + 0*2 + 0*4 + 1*8 = 9, then 0*1 + 0*2 + 1*4 + 0*8 = 4)
+     * 
+     * USER WORKFLOW:
+     * 1. User types: 0x94:8
+     * 2. Input parser uses digit-reversal to handle left-to-right convention  
+     * 3. Pattern engine generates: 10010010
+     * 4. This function displays: 0x94 (using normal digit order)
+     * 
+     * This ensures round-trip consistency: input notation matches display notation.
+     * 
+     * @param pattern Binary pattern to convert
+     * @return Hex string in 0xABCD format using left-to-right bit ordering
+     */
     juce::String getHexString(const std::vector<bool>& pattern)
     {
         if (pattern.empty())
@@ -294,7 +363,7 @@ namespace PatternUtils
         juce::String hex;
         int stepCount = static_cast<int>(pattern.size());
         
-        // Process pattern in 4-bit groups from left to right
+        // Process pattern in 4-bit groups from left to right (normal digit order for display)
         for (int groupStart = 0; groupStart < stepCount; groupStart += 4)
         {
             int nibbleValue = 0;
@@ -304,11 +373,16 @@ namespace PatternUtils
             {
                 if (pattern[groupStart + bitInGroup])
                 {
-                    // Left-to-right: each bit position maps directly to bit position in nibble
+                    // CRITICAL: Left-to-right mapping - bit position maps directly to nibble bit
+                    // groupStart=0, bitInGroup=0 → pattern[0] → nibble bit 0 (LSB)
+                    // groupStart=0, bitInGroup=1 → pattern[1] → nibble bit 1
+                    // groupStart=0, bitInGroup=2 → pattern[2] → nibble bit 2  
+                    // groupStart=0, bitInGroup=3 → pattern[3] → nibble bit 3 (MSB of nibble)
                     nibbleValue |= (1 << bitInGroup);
                 }
             }
             
+            // Convert nibble to hex and append (normal left-to-right digit order)
             hex += juce::String::toHexString(nibbleValue).toUpperCase();
         }
         
