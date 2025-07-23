@@ -136,55 +136,6 @@ int PatternEngine::getOnsetCount() const
 //==============================================================================
 PatternEngine::BalanceAnalysis PatternEngine::analyzeBalance() const
 {
-//    BalanceAnalysis analysis;
-//    
-//    if (currentPattern.empty())
-//    {
-//        return analysis;
-//    }
-//    
-//    // Calculate balance using Milne's perfect balance theory
-//    // Sum of onset vectors in complex plane
-//    double realSum = 0.0;
-//    double imagSum = 0.0;
-//    int onsetCount = 0;
-//    
-//    for (int i = 0; i < currentPattern.size(); ++i)
-//    {
-//        if (currentPattern[i])
-//        {
-//            double angle = 2.0 * juce::MathConstants<double>::pi * i / currentPattern.size();
-//            realSum += std::cos(angle);
-//            imagSum += std::sin(angle);
-//            onsetCount++;
-//        }
-//    }
-//    
-//    // Calculate magnitude
-//    analysis.magnitude = std::sqrt(realSum * realSum + imagSum * imagSum);
-//    
-//    if (onsetCount > 0)
-//    {
-//        analysis.normalizedMagnitude = analysis.magnitude / onsetCount;
-//    }
-//    
-//    // Determine if perfectly balanced (magnitude very close to 0)
-//    analysis.isPerfectlyBalanced = analysis.magnitude < 0.001;
-//    
-//    // Balance rating based on normalized magnitude
-//    if (analysis.isPerfectlyBalanced)
-//        analysis.balanceRating = "Perfect";
-//    else if (analysis.normalizedMagnitude < 0.1)
-//        analysis.balanceRating = "Excellent";
-//    else if (analysis.normalizedMagnitude < 0.3)
-//        analysis.balanceRating = "Good";
-//    else if (analysis.normalizedMagnitude < 0.6)
-//        analysis.balanceRating = "Fair";
-//    else
-//        analysis.balanceRating = "Poor";
-//    
-//    return analysis;
-    
     // Function disabled - return empty analysis
     BalanceAnalysis analysis;
     return analysis;
@@ -192,45 +143,6 @@ PatternEngine::BalanceAnalysis PatternEngine::analyzeBalance() const
 
 double PatternEngine::calculateCenterOfGravityAngle() const
 {
-//    if (currentPattern.empty())
-//    {
-//        return 0.0;
-//    }
-//    
-//    double realSum = 0.0;
-//    double imagSum = 0.0;
-//    int onsetCount = 0;
-//    
-//    for (int i = 0; i < currentPattern.size(); ++i)
-//    {
-//        if (currentPattern[i])
-//        {
-//            double angle = 2.0 * juce::MathConstants<double>::pi * i / currentPattern.size();
-//            realSum += std::cos(angle);
-//            imagSum += std::sin(angle);
-//            onsetCount++;
-//        }
-//    }
-//    
-//    if (onsetCount == 0)
-//    {
-//        return 0.0;
-//    }
-//    
-//    // Normalize by onset count to get center of gravity
-//    realSum /= onsetCount;
-//    imagSum /= onsetCount;
-//    
-//    // Calculate angle in degrees
-//    double angleRadians = std::atan2(imagSum, realSum);
-//    double angleDegrees = angleRadians * 180.0 / juce::MathConstants<double>::pi;
-//    
-//    // Normalize to 0-360 range
-//    if (angleDegrees < 0)
-//        angleDegrees += 360.0;
-//    
-//    return angleDegrees;
-    
     // Function disabled - return 0.0
     return 0.0;
 }
