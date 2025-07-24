@@ -23,7 +23,6 @@
 #define RPE_DEBUG_PATTERNS      (RPE_DEBUG_BUILD && 1)  // Pattern parsing/generation
 #define RPE_DEBUG_PROGRESSIVE   (RPE_DEBUG_BUILD && 1)  // Progressive transformations
 #define RPE_DEBUG_SCENES        (RPE_DEBUG_BUILD && 1)  // Scene management
-#define RPE_DEBUG_ACCENTS       (RPE_DEBUG_BUILD && 1)  // Accent patterns
 #define RPE_DEBUG_GENERAL       (RPE_DEBUG_BUILD && 1)  // General plugin operations
 
 // Centralized debug macros
@@ -33,7 +32,6 @@
     #define RPE_DBG_PATTERNS(text)  do { if (RPE_DEBUG_PATTERNS)  { DBG("[PATTERNS] " << text); } } while(0)
     #define RPE_DBG_PROGRESSIVE(text) do { if (RPE_DEBUG_PROGRESSIVE) { DBG("[PROGRESSIVE] " << text); } } while(0)
     #define RPE_DBG_SCENES(text)    do { if (RPE_DEBUG_SCENES)    { DBG("[SCENES] " << text); } } while(0)
-    #define RPE_DBG_ACCENTS(text)   do { if (RPE_DEBUG_ACCENTS)   { DBG("[ACCENTS] " << text); } } while(0)
     #define RPE_DBG_GENERAL(text)   do { if (RPE_DEBUG_GENERAL)   { DBG("[GENERAL] " << text); } } while(0)
 #else
     // Release builds - all debug output compiled out
@@ -41,7 +39,6 @@
     #define RPE_DBG_PATTERNS(text)  do { } while(0)
     #define RPE_DBG_PROGRESSIVE(text) do { } while(0)
     #define RPE_DBG_SCENES(text)    do { } while(0)
-    #define RPE_DBG_ACCENTS(text)   do { } while(0)
     #define RPE_DBG_GENERAL(text)   do { } while(0)
 #endif
 

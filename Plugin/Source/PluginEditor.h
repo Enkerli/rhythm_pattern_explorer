@@ -73,13 +73,6 @@ private:
     juce::Slider midiNoteSlider;
     juce::Label midiNoteLabel;
     
-    // Accent Parameters
-    juce::Slider accentPitchOffsetSlider;
-    juce::Label accentPitchOffsetLabel;
-    juce::Slider accentVelocitySlider;
-    juce::Label accentVelocityLabel;
-    juce::Slider unaccentedVelocitySlider;
-    juce::Label unaccentedVelocityLabel;
     
     // Tick Button
     juce::TextButton tickButton;

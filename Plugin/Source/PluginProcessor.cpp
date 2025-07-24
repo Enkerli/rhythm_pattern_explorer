@@ -1044,7 +1044,7 @@ void RhythmPatternExplorerAudioProcessor::parseAndApplyUPI(const juce::String& u
     if (parseResult.isValid())
     {
         DBG("Parse successful in processor");
-        DBG("   Pattern: " + UPIParser::patternToBinary(parseResult.pattern));
+        DBG("   Pattern: " + PatternUtils::patternToBinary(parseResult.pattern));
         DBG("   Name: " + parseResult.patternName);
         
         // Apply the parsed pattern to the engine
@@ -1081,7 +1081,7 @@ void RhythmPatternExplorerAudioProcessor::parseAndApplyUPI(const juce::String& u
         
         
         // Update parameters to reflect the new pattern
-        DBG("   Onsets: " + juce::String(UPIParser::countOnsets(parseResult.pattern)) + ", Steps: " + juce::String(parseResult.pattern.size()));
+        DBG("   Onsets: " + juce::String(PatternUtils::countOnsets(parseResult.pattern)) + ", Steps: " + juce::String(parseResult.pattern.size()));
         
         // Pattern applied successfully via UPI
         
@@ -1094,8 +1094,8 @@ void RhythmPatternExplorerAudioProcessor::parseAndApplyUPI(const juce::String& u
         }
         
         DBG("RhythmPatternExplorer: Parsed UPI pattern '" << upiPattern << "' -> " 
-            << UPIParser::countOnsets(parseResult.pattern) << " onsets in " << parseResult.pattern.size() << " steps");
-        DBG("Binary: " << UPIParser::patternToBinary(parseResult.pattern));
+            << PatternUtils::countOnsets(parseResult.pattern) << " onsets in " << parseResult.pattern.size() << " steps");
+        DBG("Binary: " << PatternUtils::patternToBinary(parseResult.pattern));
     }
     else
     {

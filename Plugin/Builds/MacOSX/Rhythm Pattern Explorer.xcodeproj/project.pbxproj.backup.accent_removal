@@ -97,10 +97,13 @@
 		FAFCEDEC2E2F38F5005AE45C /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 211992BE4FA11C8EB8FDBD47 /* MetalKit.framework */; };
 		FAFCEE102E2FAD8A005AE45C /* ProgressiveManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FAFCEE0E2E2FAD8A005AE45C /* ProgressiveManager.cpp */; };
 		FAFCEE112E2FAD8A005AE45C /* SceneManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FAFCEE0F2E2FAD8A005AE45C /* SceneManager.cpp */; };
+		FAFCEE122E2FAD8A005AE45C /* AccentManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FAFCEE0D2E2FAD8A005AE45C /* AccentManager.cpp */; };
 		FAFCEE132E2FAD8A005AE45C /* ProgressiveManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FAFCEE0E2E2FAD8A005AE45C /* ProgressiveManager.cpp */; };
 		FAFCEE142E2FAD8A005AE45C /* SceneManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FAFCEE0F2E2FAD8A005AE45C /* SceneManager.cpp */; };
+		FAFCEE152E2FAD8A005AE45C /* AccentManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FAFCEE0D2E2FAD8A005AE45C /* AccentManager.cpp */; };
 		FAFCEE162E2FAD8A005AE45C /* ProgressiveManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FAFCEE0E2E2FAD8A005AE45C /* ProgressiveManager.cpp */; };
 		FAFCEE172E2FAD8A005AE45C /* SceneManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FAFCEE0F2E2FAD8A005AE45C /* SceneManager.cpp */; };
+		FAFCEE182E2FAD8A005AE45C /* AccentManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FAFCEE0D2E2FAD8A005AE45C /* AccentManager.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -222,6 +225,7 @@
 		EDFD0AC25164B805B5051DC3 /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
 		EF8A01A5EF2FDCDE7CAEC1C5 /* juce_graphics */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_graphics; path = /Users/alex/JUCE/modules/juce_graphics; sourceTree = "<absolute>"; };
 		F3C0ACCE97C599B7A953AE08 /* include_juce_audio_formats.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_audio_formats.mm; path = ../../JuceLibraryCode/include_juce_audio_formats.mm; sourceTree = SOURCE_ROOT; };
+		FAFCEE0D2E2FAD8A005AE45C /* AccentManager.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = AccentManager.cpp; path = /Users/alex/Documents/Coding/rhythm_pattern_explorer/Plugin/Source/AccentManager.cpp; sourceTree = "<absolute>"; };
 		FAFCEE0E2E2FAD8A005AE45C /* ProgressiveManager.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = ProgressiveManager.cpp; path = /Users/alex/Documents/Coding/rhythm_pattern_explorer/Plugin/Source/ProgressiveManager.cpp; sourceTree = "<absolute>"; };
 		FAFCEE0F2E2FAD8A005AE45C /* SceneManager.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = SceneManager.cpp; path = /Users/alex/Documents/Coding/rhythm_pattern_explorer/Plugin/Source/SceneManager.cpp; sourceTree = "<absolute>"; };
 		FC8AF65B92A3884E691EF0AF /* PatternUtils.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = PatternUtils.cpp; path = ../../Source/PatternUtils.cpp; sourceTree = SOURCE_ROOT; };
@@ -300,6 +304,7 @@
 		1710AE00CC26BBA6DBC9A4A7 /* Source */ = {
 			isa = PBXGroup;
 			children = (
+				FAFCEE0D2E2FAD8A005AE45C /* AccentManager.cpp */,
 				FAFCEE0E2E2FAD8A005AE45C /* ProgressiveManager.cpp */,
 				FAFCEE0F2E2FAD8A005AE45C /* SceneManager.cpp */,
 				561D7427C5647BA3838426EB /* PluginProcessor.cpp */,
@@ -768,6 +773,7 @@
 				AD76E0B7EA1595F3B3161F31 /* include_juce_audio_plugin_client_AU_1.mm in Sources */,
 				FAFCEE162E2FAD8A005AE45C /* ProgressiveManager.cpp in Sources */,
 				FAFCEE172E2FAD8A005AE45C /* SceneManager.cpp in Sources */,
+				FAFCEE182E2FAD8A005AE45C /* AccentManager.cpp in Sources */,
 				BFE2B14656943CB96B579B4E /* include_juce_audio_plugin_client_AU_2.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -778,6 +784,7 @@
 			files = (
 				FAFCEE132E2FAD8A005AE45C /* ProgressiveManager.cpp in Sources */,
 				FAFCEE142E2FAD8A005AE45C /* SceneManager.cpp in Sources */,
+				FAFCEE152E2FAD8A005AE45C /* AccentManager.cpp in Sources */,
 				23891F01D350B6F91809EC53 /* include_juce_audio_plugin_client_VST3.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -808,6 +815,7 @@
 				A572E463541342F93B5B6918 /* include_juce_audio_processors_lv2_libs.cpp in Sources */,
 				FAFCEE102E2FAD8A005AE45C /* ProgressiveManager.cpp in Sources */,
 				FAFCEE112E2FAD8A005AE45C /* SceneManager.cpp in Sources */,
+				FAFCEE122E2FAD8A005AE45C /* AccentManager.cpp in Sources */,
 				6E1BB752C83AA2F72FF4C32D /* include_juce_audio_utils.mm in Sources */,
 				3F972FD71D496EEA12D0150A /* include_juce_core.mm in Sources */,
 				5581306D405FA26FD7774C11 /* include_juce_core_CompilationTime.cpp in Sources */,
