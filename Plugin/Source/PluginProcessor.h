@@ -14,7 +14,6 @@
 #include "UPIParser.h"
 #include "SceneManager.h"
 #include "ProgressiveManager.h"
-#include "AccentManager.h"
 
 //==============================================================================
 /**
@@ -72,84 +71,11 @@ public:
     const PatternEngine& getPatternEngine() const { return patternEngine; }
     PatternEngine& getPatternEngine() { return patternEngine; }
     
-    // Accent Pattern Access
-    bool getHasAccentPattern() const { 
-        // TRANSITION: Use AccentManager if available, fallback to legacy for safety
-        return accentManager ? accentManager->hasAccentPattern() : hasAccentPattern; 
-    }
-    const std::vector<bool>& getCurrentAccentPattern() const { 
-        // TRANSITION: Use AccentManager if available, fallback to legacy for safety
-        return accentManager ? accentManager->getCurrentAccentPattern() : currentAccentPattern; 
-    }
-    const juce::String& getCurrentAccentPatternName() const { 
-        // TRANSITION: Use AccentManager if available, fallback to legacy for safety
-        return accentManager ? accentManager->getCurrentAccentPatternName() : currentAccentPatternName; 
-    }
-    int getGlobalAccentPosition() const { 
-        // TRANSITION: Use AccentManager if available, fallback to legacy for safety
-        return accentManager ? accentManager->getGlobalAccentPosition() : globalAccentPosition; 
-    }
-    
-    // Check if a specific onset should be accented based on current global accent position
-    bool shouldOnsetBeAccented(int onsetIndex) const {
-        // TRANSITION: Use AccentManager if available, fallback to legacy for safety
-        if (accentManager) {
-            return accentManager->shouldOnsetBeAccented(onsetIndex);
-        }
-        
-        // Legacy fallback
-        if (!hasAccentPattern || currentAccentPattern.empty()) return false;
-        
-        // Calculate what the global accent position will be for this onset
-        int accentStep = (globalAccentPosition + onsetIndex) % currentAccentPattern.size();
-        return currentAccentPattern[accentStep];
-    }
-    
-    /** Returns a vector of bools indicating which steps will be accented in the current pattern cycle. */
-    std::vector<bool> getCurrentAccentMap() const;
-    
-    // UI update notification for accent map changes
-    bool shouldUpdateAccentDisplay() const { 
-        // TRANSITION: Use AccentManager if available, fallback to legacy for safety
-        return accentManager ? accentManager->shouldUpdateAccentDisplay() : patternChanged.load(); 
-    }
-    void clearAccentDisplayUpdate() { 
-        // TRANSITION: Use AccentManager if available, fallback to legacy for safety
-        if (accentManager) {
-            accentManager->clearAccentDisplayUpdate();
-        }
-        patternChanged.store(false); // Legacy fallback
-    }
-    
-    // Get accent position for current pattern cycle (updates only at cycle boundaries)
-    int getCurrentCycleAccentStart() const {
-        // Calculate how many complete pattern cycles we've been through
-        const auto& pattern = patternEngine.getCurrentPattern();
-        if (pattern.empty()) return 0;
-        
-        // Count total onsets that have occurred before current cycle
-        int onsetsInPattern = 0;
-        for (bool onset : pattern) {
-            if (onset) onsetsInPattern++;
-        }
-        
-        if (onsetsInPattern == 0) return 0;
-        
-        // Calculate completed cycles and accent offset for this cycle
-        int currentStep = getCurrentStep();
-        int completedCycles = currentStep / pattern.size();
-        int cycleAccentOffset = (completedCycles * onsetsInPattern) % currentAccentPattern.size();
-        
-        return cycleAccentOffset;
-    }
     
     // Parameter access for editor
     juce::AudioParameterBool* getUseHostTransportParameter() const { return useHostTransportParam; }
     juce::AudioParameterInt* getMidiNoteParameter() const { return midiNoteParam; }
     juce::AudioParameterBool* getTickParameter() const { return tickParam; }
-    juce::AudioParameterInt* getAccentPitchOffsetParameter() const { return accentPitchOffsetParam; }
-    juce::AudioParameterFloat* getAccentVelocityParameter() const { return accentVelocityParam; }
-    juce::AudioParameterFloat* getUnaccentedVelocityParameter() const { return unaccentedVelocityParam; }
     juce::AudioParameterChoice* getPatternLengthUnitParameter() const { return patternLengthUnitParam; }
     juce::AudioParameterChoice* getPatternLengthValueParameter() const { return patternLengthValueParam; }
     juce::AudioParameterChoice* getSubdivisionParameter() const { return subdivisionParam; }
@@ -281,12 +207,6 @@ private:
     juce::String lastParsedUPI;
     juce::String currentProgressivePatternKey; // Track current progressive pattern for step counting
     
-    // Accent pattern support
-    bool hasAccentPattern = false;
-    std::vector<bool> currentAccentPattern;
-    juce::String currentAccentPatternName;
-    int globalAccentPosition = 0;  // Global accent position counter (persists across pattern cycles)
-    int uiAccentOffset = 0;         // Stable accent offset for UI display (updates only at cycle boundaries)
     
     // Progressive offset support (works for any pattern)
     int progressiveOffset = 0;      // Current accumulated offset
@@ -312,7 +232,6 @@ private:
     // New encapsulated management - TRANSITION: Running parallel with legacy for safety
     std::unique_ptr<SceneManager> sceneManager;
     std::unique_ptr<ProgressiveManager> progressiveManager;
-    std::unique_ptr<AccentManager> accentManager;
     
     // Thread safety
     juce::CriticalSection processingLock;
@@ -324,9 +243,6 @@ private:
     juce::AudioParameterBool* useHostTransportParam;
     juce::AudioParameterInt* midiNoteParam;
     juce::AudioParameterBool* tickParam;
-    juce::AudioParameterInt* accentPitchOffsetParam;
-    juce::AudioParameterFloat* accentVelocityParam;
-    juce::AudioParameterFloat* unaccentedVelocityParam;
     juce::AudioParameterChoice* patternLengthUnitParam;
     juce::AudioParameterChoice* patternLengthValueParam;
     juce::AudioParameterChoice* subdivisionParam;
