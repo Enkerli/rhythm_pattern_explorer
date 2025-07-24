@@ -954,6 +954,105 @@ bool UPIParser::hasTransformationPrefix(const juce::String& input)
 }
 
 //==============================================================================
+// Accent pattern utilities
+
+/**
+ * Checks if input contains accent pattern notation.
+ * 
+ * Accent patterns use curly bracket notation: {accent}pattern or pattern{accent}
+ * Examples: {100}E(3,8), {10010}E(5,8), {E(2,5)}B(3,13)
+ * 
+ * @param input The UPI string to check
+ * @return true if contains { and } characters
+ */
+bool UPIParser::hasAccentPattern(const juce::String& input)
+{
+    return input.contains("{") && input.contains("}");
+}
+
+/**
+ * Extracts the accent pattern from curly brackets.
+ * 
+ * From "{100}E(3,8)" extracts "100"
+ * From "{E(2,5)}B(3,13)" extracts "E(2,5)"
+ * 
+ * @param input UPI string containing accent pattern
+ * @return Content between { and } characters, or empty string if not found
+ */
+juce::String UPIParser::extractAccentPattern(const juce::String& input)
+{
+    int start = input.indexOfChar('{');
+    int end = input.indexOfChar('}');
+    
+    if (start >= 0 && end > start)
+    {
+        return input.substring(start + 1, end);
+    }
+    
+    return "";
+}
+
+juce::String UPIParser::removeAccentPattern(const juce::String& input)
+{
+    int start = input.indexOfChar('{');
+    int end = input.indexOfChar('}');
+    
+    if (start >= 0 && end > start)
+    {
+        // Remove the entire {accent} portion
+        return input.substring(0, start) + input.substring(end + 1);
+    }
+    
+    return input;
+}
+
+/**
+ * Parses accent pattern string into binary pattern.
+ * 
+ * Accent patterns support the same notation as rhythm patterns:
+ * - Binary: "100", "10010", "101"
+ * - Algorithmic: "E(2,5)", "P(3,0)", "B(3,8)"
+ * - Numeric: "0x5:8", "42:8", "[0,2]:8"
+ * 
+ * Design Decision: Accent patterns are independent of rhythm patterns
+ * and cycle when different lengths (polyrhythmic accents).
+ * 
+ * @param accentStr The accent pattern string to parse
+ * @return ParseResult with binary accent pattern
+ */
+UPIParser::ParseResult UPIParser::parseAccentPattern(const juce::String& accentStr)
+{
+    if (accentStr.isEmpty())
+        return createError("Empty accent pattern");
+    
+    // Accent patterns can use any of the same notations as rhythm patterns
+    // Binary patterns like "100", "10010", etc.
+    if (accentStr.containsOnly("01"))
+    {
+        std::vector<bool> pattern;
+        for (int i = 0; i < accentStr.length(); ++i)
+        {
+            pattern.push_back(accentStr[i] == '1');
+        }
+        
+        auto result = createSuccess(pattern, "accent_" + accentStr);
+        result.patternName = "accent_" + accentStr;
+        return result;
+    }
+    
+    // For other pattern types, recursively parse using the main pattern parser
+    // This allows accent patterns like {E(3,8)}, {P(5,0)}, etc.
+    auto result = parsePattern(accentStr);
+    if (result.isValid())
+    {
+        result.patternName = "accent_" + accentStr;
+        return result;
+    }
+    
+    return createError("Invalid accent pattern format: " + accentStr);
+}
+
+//==============================================================================
 // Generic numeric pattern handler
 
 bool UPIParser::isNumericPattern(const juce::String& input, const NumericPatternInfo& info)

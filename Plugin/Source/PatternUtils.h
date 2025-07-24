@@ -117,18 +117,6 @@ namespace PatternUtils
     /** Converts pattern to decimal string */
     juce::String getDecimalString(const std::vector<bool>& pattern);
     
-    //==============================================================================
-    // Accent Pattern Functions
-    //==============================================================================
-    
-    /** Checks if input contains accent pattern notation */
-    bool hasAccentPattern(const juce::String& input);
-    
-    /** Extracts accent pattern from curly brackets */
-    juce::String extractAccentPattern(const juce::String& input);
-    
-    /** Removes accent pattern notation from input */
-    juce::String removeAccentPattern(const juce::String& input);
     
     //==============================================================================
     // String Processing Utilities

@@ -444,40 +444,6 @@ namespace PatternUtils
         return "d" + juce::String(decimal);
     }
     
-    //==============================================================================
-    // Accent Pattern Functions
-    //==============================================================================
-    
-    bool hasAccentPattern(const juce::String& input)
-    {
-        return input.contains("{") && input.contains("}");
-    }
-    
-    juce::String extractAccentPattern(const juce::String& input)
-    {
-        int startPos = input.indexOf("{");
-        int endPos = input.indexOf("}");
-        
-        if (startPos != -1 && endPos != -1 && endPos > startPos)
-        {
-            return input.substring(startPos + 1, endPos);
-        }
-        
-        return "";
-    }
-    
-    juce::String removeAccentPattern(const juce::String& input)
-    {
-        int startPos = input.indexOf("{");
-        int endPos = input.indexOf("}");
-        
-        if (startPos != -1 && endPos != -1 && endPos > startPos)
-        {
-            return input.substring(0, startPos) + input.substring(endPos + 1);
-        }
-        
-        return input;
-    }
     
     //==============================================================================
     // String Processing Utilities

@@ -47,10 +47,6 @@ public:
         int initialOffset = 0;
         int progressiveOffset = 0;
         
-        // Accent pattern support
-        bool hasAccentPattern = false;
-        std::vector<bool> accentPattern;
-        juce::String accentPatternName;
         
         // Progressive transformation tracking
         juce::String progressivePatternKey;
@@ -140,11 +136,6 @@ public:
     static juce::StringArray tokenize(const juce::String& input, const juce::String& delimiter);
     static bool hasTransformationPrefix(const juce::String& input);
     
-    // Accent pattern utilities
-    static bool hasAccentPattern(const juce::String& input);
-    static juce::String extractAccentPattern(const juce::String& input);
-    static juce::String removeAccentPattern(const juce::String& input);
-    static ParseResult parseAccentPattern(const juce::String& accentStr);
     
     // Error handling
     static ParseResult createError(const juce::String& message);
