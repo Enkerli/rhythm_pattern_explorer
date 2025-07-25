@@ -53,6 +53,9 @@ public:
     
     // Background color access
     BackgroundColor getCurrentBackgroundColor() const { return currentBackgroundColor; }
+    
+    // Accent controls management
+    void updateAccentControlsVisibility();
 
 private:
     //==============================================================================
@@ -77,6 +80,16 @@ private:
     // UPI Pattern Input
     juce::TextEditor upiTextEditor;
     juce::Label upiLabel;
+    
+    // Accent Controls (collapsible, appears when accent patterns detected)
+    juce::GroupComponent accentGroupBox;
+    juce::Slider accentVelocitySlider;
+    juce::Label accentVelocityLabel;
+    juce::Slider unaccentedVelocitySlider;
+    juce::Label unaccentedVelocityLabel;
+    juce::Slider accentPitchOffsetSlider;
+    juce::Label accentPitchOffsetLabel;
+    bool accentControlsVisible = false;
     
     // Instance Name
     juce::TextEditor instanceNameEditor;
