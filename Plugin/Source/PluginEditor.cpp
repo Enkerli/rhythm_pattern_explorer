@@ -323,6 +323,15 @@ void RhythmPatternExplorerAudioProcessorEditor::resized()
         docsToggleButton.setVisible(!minimalMode);
         versionEditor.setVisible(!minimalMode);
         
+        // Hide accent controls in minimal mode
+        accentGroupBox.setVisible(false);
+        accentVelocityLabel.setVisible(false);
+        accentVelocitySlider.setVisible(false);
+        unaccentedVelocityLabel.setVisible(false);
+        unaccentedVelocitySlider.setVisible(false);
+        accentPitchOffsetLabel.setVisible(false);
+        accentPitchOffsetSlider.setVisible(false);
+        
     }
     
     if (minimalMode)
@@ -415,33 +424,48 @@ void RhythmPatternExplorerAudioProcessorEditor::resized()
     upiTextEditor.setBounds(upiRow.reduced(5));
     
     // Accent Controls (collapsible section when accent patterns are active)
-    if (accentControlsVisible && !minimalMode)
+    if (accentControlsVisible && !minimalMode && area.getHeight() > 120) // Ensure enough space available
     {
-        auto accentArea = area.removeFromTop(80); // Height for accent controls
-        accentArea.reduce(10, 5); // Margins
+        auto accentArea = area.removeFromTop(75); // Reduced height to prevent overlap
+        accentArea.reduce(15, 5); // More horizontal margin for breathing room
         
         // Group box encompasses the entire area
         accentGroupBox.setBounds(accentArea);
         
         // Layout accent controls in a horizontal row inside the group box
-        auto controlsArea = accentArea.reduced(10, 20); // Leave space for group box border and title
+        auto controlsArea = accentArea.reduced(15, 18); // Leave adequate space for group box border and title  
         
-        int controlWidth = controlsArea.getWidth() / 3; // Three controls side by side
+        // Ensure minimum width per control
+        int minControlWidth = 60;
+        int availableWidth = controlsArea.getWidth();
         
-        // Accent Velocity Control
-        auto accentVelArea = controlsArea.removeFromLeft(controlWidth).reduced(5);
-        accentVelocityLabel.setBounds(accentVelArea.removeFromTop(15));
-        accentVelocitySlider.setBounds(accentVelArea);
-        
-        // Unaccented Velocity Control  
-        auto unaccentedVelArea = controlsArea.removeFromLeft(controlWidth).reduced(5);
-        unaccentedVelocityLabel.setBounds(unaccentedVelArea.removeFromTop(15));
-        unaccentedVelocitySlider.setBounds(unaccentedVelArea);
-        
-        // Accent Pitch Offset Control
-        auto pitchArea = controlsArea.reduced(5);
-        accentPitchOffsetLabel.setBounds(pitchArea.removeFromTop(15));
-        accentPitchOffsetSlider.setBounds(pitchArea);
+        if (availableWidth >= minControlWidth * 3) {
+            int controlWidth = availableWidth / 3; // Three controls side by side
+            
+            // Accent Velocity Control
+            auto accentVelArea = controlsArea.removeFromLeft(controlWidth).reduced(3);
+            accentVelocityLabel.setBounds(accentVelArea.removeFromTop(12));
+            accentVelocitySlider.setBounds(accentVelArea);
+            
+            // Unaccented Velocity Control  
+            auto unaccentedVelArea = controlsArea.removeFromLeft(controlWidth).reduced(3);
+            unaccentedVelocityLabel.setBounds(unaccentedVelArea.removeFromTop(12));
+            unaccentedVelocitySlider.setBounds(unaccentedVelArea);
+            
+            // Accent Pitch Offset Control
+            auto pitchArea = controlsArea.reduced(3);
+            accentPitchOffsetLabel.setBounds(pitchArea.removeFromTop(12));
+            accentPitchOffsetSlider.setBounds(pitchArea);
+        } else {
+            // Not enough space - hide controls gracefully
+            accentGroupBox.setVisible(false);
+            accentVelocityLabel.setVisible(false);
+            accentVelocitySlider.setVisible(false);
+            unaccentedVelocityLabel.setVisible(false);
+            unaccentedVelocitySlider.setVisible(false);
+            accentPitchOffsetLabel.setVisible(false);
+            accentPitchOffsetSlider.setVisible(false);
+        }
     }
     
     // Pattern display area (text results) - readable size
@@ -502,6 +526,19 @@ void RhythmPatternExplorerAudioProcessorEditor::timerCallback()
     // Sync UI sliders with parameter values (for host automation support)
     if (audioProcessor.getMidiNoteParameter()) {
         midiNoteSlider.setValue(audioProcessor.getMidiNoteParameter()->get(), juce::dontSendNotification);
+    }
+    
+    // Sync accent control values with parameters (only when visible to avoid unnecessary updates)
+    if (accentControlsVisible) {
+        if (auto* param = audioProcessor.getAccentVelocityParameter()) {
+            accentVelocitySlider.setValue(param->get(), juce::dontSendNotification);
+        }
+        if (auto* param = audioProcessor.getUnaccentedVelocityParameter()) {
+            unaccentedVelocitySlider.setValue(param->get(), juce::dontSendNotification);
+        }
+        if (auto* param = audioProcessor.getAccentPitchOffsetParameter()) {
+            accentPitchOffsetSlider.setValue(param->get(), juce::dontSendNotification);
+        }
     }
     
     // Update step/scene button text
@@ -892,6 +929,9 @@ void RhythmPatternExplorerAudioProcessorEditor::parseUPIPattern()
     updatePatternDisplay();
     updateAnalysisDisplay();
     
+    // Update accent controls visibility immediately after pattern parsing
+    updateAccentControlsVisibility();
+    
     // Clear the text editor for next input (optional)
     // upiTextEditor.clear();
 }
@@ -1087,16 +1127,7 @@ void RhythmPatternExplorerAudioProcessorEditor::updateAccentControlsVisibility()
         accentPitchOffsetLabel.setVisible(accentControlsVisible && !minimalMode);
         accentPitchOffsetSlider.setVisible(accentControlsVisible && !minimalMode);
         
-        // Update slider values to match current parameters
-        if (accentControlsVisible)
-        {
-            if (auto* param = audioProcessor.getAccentVelocityParameter())
-                accentVelocitySlider.setValue(param->get(), juce::dontSendNotification);
-            if (auto* param = audioProcessor.getUnaccentedVelocityParameter())
-                unaccentedVelocitySlider.setValue(param->get(), juce::dontSendNotification);
-            if (auto* param = audioProcessor.getAccentPitchOffsetParameter())
-                accentPitchOffsetSlider.setValue(param->get(), juce::dontSendNotification);
-        }
+        // Note: Slider values are now synchronized in timerCallback() for better performance
         
         // Force layout update when visibility changes
         resized();
