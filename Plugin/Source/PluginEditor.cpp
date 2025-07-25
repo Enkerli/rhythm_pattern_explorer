@@ -438,7 +438,10 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
     }
     g.fillEllipse(center.x - outerRadius, center.y - outerRadius, outerRadius * 2, outerRadius * 2);
     
-    // Simple visualization: draw all onsets in green without accent support
+    // Get accent map for educational visualization (single source of truth)
+    auto accentMap = audioProcessor.getCurrentAccentMap();
+    
+    // Pattern visualization with accent support
     for (int i = 0; i < numSteps; ++i)
     {
         float sliceAngle = 2.0f * juce::MathConstants<float>::pi / numSteps;
@@ -472,7 +475,13 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
             }
             slice.closeSubPath();
             
-            g.setColour(juce::Colour(0xff48bb78));  // Green for all onsets
+            // Use accent-aware colors for educational feedback
+            bool isAccented = (i < accentMap.size()) ? accentMap[i] : false;
+            if (isAccented) {
+                g.setColour(juce::Colour(0xffdc143c));  // Red for accented onsets
+            } else {
+                g.setColour(juce::Colour(0xff48bb78));  // Green for regular onsets
+            }
             g.fillPath(slice);
         }
     }

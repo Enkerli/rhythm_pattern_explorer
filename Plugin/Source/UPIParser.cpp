@@ -28,8 +28,28 @@ UPIParser::ParseResult UPIParser::parse(const juce::String& input)
     
     juce::String cleaned = cleanInput(input);
     
-    // No accent pattern support - use original pattern as-is
+    // Check for accent pattern in curly braces
+    ParseResult result;
     juce::String basePattern = cleaned;
+    
+    if (cleaned.contains("{") && cleaned.contains("}"))
+    {
+        int braceStart = cleaned.indexOf("{");
+        int braceEnd = cleaned.indexOf("}");
+        
+        if (braceStart < braceEnd && braceStart >= 0 && braceEnd >= 0)
+        {
+            // Extract accent pattern
+            juce::String accentSection = cleaned.substring(braceStart + 1, braceEnd);
+            result.hasAccentPattern = true;
+            result.accentPattern = parseAccentPattern(accentSection);
+            result.accentPatternName = "{" + accentSection + "}";
+            
+            // Remove accent section from base pattern
+            basePattern = cleaned.substring(0, braceStart) + cleaned.substring(braceEnd + 1);
+            basePattern = basePattern.trim();
+        }
+    }
     
     // Check for combinations (+ or -) in the base pattern (without accents)
     // BUT first check if + represents a progressive offset (pattern+number)
@@ -191,13 +211,20 @@ UPIParser::ParseResult UPIParser::parse(const juce::String& input)
     }
     
     // Parse as single pattern (using basePattern without accents)
-    auto result = parsePattern(basePattern);
-    if (result.isValid())
+    auto patternResult = parsePattern(basePattern);
+    if (patternResult.isValid())
     {
-        result.type = ParseResult::Single;
+        patternResult.type = ParseResult::Single;
         
+        // Merge accent information with pattern result
+        if (result.hasAccentPattern)
+        {
+            patternResult.hasAccentPattern = result.hasAccentPattern;
+            patternResult.accentPattern = result.accentPattern;
+            patternResult.accentPatternName = result.accentPatternName;
+        }
     }
-    return result;
+    return patternResult;
 }
 
 UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
@@ -1321,4 +1348,79 @@ int UPIParser::getCurrentProgressiveOffset()
         return progressiveOffsetEngine->getCurrentOffset();
     }
     return 0;
+}
+
+//==============================================================================
+std::vector<bool> UPIParser::parseAccentPattern(const juce::String& accentStr)
+{
+    juce::String trimmed = accentStr.trim();
+    
+    if (trimmed.isEmpty())
+        return {};
+    
+    // Handle Euclidean accent patterns: E(3,8)
+    if (trimmed.startsWith("E(") && trimmed.endsWith(")"))
+    {
+        auto content = trimmed.substring(2, trimmed.length() - 1);
+        auto parts = juce::StringArray::fromTokens(content, ",", "");
+        
+        if (parts.size() >= 2)
+        {
+            int onsets = parts[0].trim().getIntValue();
+            int steps = parts[1].trim().getIntValue();
+            return parseEuclidean(onsets, steps);
+        }
+    }
+    
+    // Handle Barlow accent patterns: B(3,8)
+    if (trimmed.startsWith("B(") && trimmed.endsWith(")"))
+    {
+        auto content = trimmed.substring(2, trimmed.length() - 1);
+        auto parts = juce::StringArray::fromTokens(content, ",", "");
+        
+        if (parts.size() >= 2)
+        {
+            int onsets = parts[0].trim().getIntValue();
+            int steps = parts[1].trim().getIntValue();
+            
+            // Create base pattern with single onset and transform to target using Barlow
+            std::vector<bool> basePattern(steps, false);
+            basePattern[0] = true; // Start with downbeat
+            
+            return PatternUtils::generateBarlowTransformation(basePattern, onsets, false);
+        }
+    }
+    
+    // Handle Morse code: .-- or .-.
+    if (trimmed.containsAnyOf(".-"))
+    {
+        return parseMorse(trimmed);
+    }
+    
+    // Handle hex patterns: 0x1A
+    if (trimmed.startsWith("0x") || trimmed.startsWith("0X"))
+    {
+        auto hexPart = trimmed.substring(2);
+        if (hexPart.containsOnly("0123456789ABCDEFabcdef"))
+        {
+            int decimal = hexPart.getHexValue32();
+            int bits = hexPart.length() * 4; // Each hex digit = 4 bits
+            return parseDecimal(decimal, bits);
+        }
+    }
+    
+    // Handle binary string: 101010
+    if (trimmed.containsOnly("01"))
+    {
+        return parseBinary(trimmed);
+    }
+    
+    // Default: treat as binary string, convert invalid chars to 0
+    std::vector<bool> pattern;
+    for (int i = 0; i < trimmed.length(); ++i)
+    {
+        pattern.push_back(trimmed[i] == '1');
+    }
+    
+    return pattern;
 }

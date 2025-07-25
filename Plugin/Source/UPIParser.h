@@ -51,6 +51,11 @@ public:
         // Progressive transformation tracking
         juce::String progressivePatternKey;
         
+        // Accent pattern support
+        bool hasAccentPattern = false;
+        std::vector<bool> accentPattern;
+        juce::String accentPatternName;
+        
         bool isValid() const { return type != Error; }
     };
     
@@ -67,6 +72,9 @@ public:
     static std::vector<bool> parseRandom(int onsets, int steps);
     static std::vector<bool> parseDecimal(int decimal, int stepCount);
     static std::vector<bool> parseMorse(const juce::String& morseStr);
+    
+    // Accent pattern parsing
+    static std::vector<bool> parseAccentPattern(const juce::String& accentStr);
     
     // Pattern transformations and utilities are now centralized in PatternUtils namespace
 

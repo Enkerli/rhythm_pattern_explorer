@@ -80,6 +80,11 @@ public:
     juce::AudioParameterChoice* getPatternLengthValueParameter() const { return patternLengthValueParam; }
     juce::AudioParameterChoice* getSubdivisionParameter() const { return subdivisionParam; }
     
+    // Accent parameter access for editor
+    juce::AudioParameterFloat* getAccentVelocityParameter() const { return accentVelocityParam; }
+    juce::AudioParameterFloat* getUnaccentedVelocityParameter() const { return unaccentedVelocityParam; }
+    juce::AudioParameterInt* getAccentPitchOffsetParameter() const { return accentPitchOffsetParam; }
+    
     // Helper to convert pattern length choice to float value
     float getPatternLengthValue() const;
     
@@ -175,6 +180,14 @@ public:
         sceneBaseLengthPatterns.clear();
     }
     void advanceScene();
+    
+    // Accent system access for UI and processing
+    bool getHasAccentPattern() const { return hasAccentPattern; }
+    const std::vector<bool>& getCurrentAccentPattern() const { return currentAccentPattern; }
+    int getGlobalOnsetCounter() const { return globalOnsetCounter; }
+    bool shouldOnsetBeAccented(int onsetNumber) const;
+    std::vector<bool> getCurrentAccentMap() const;
+    void resetAccentSystem();
 
 private:
     //==============================================================================
@@ -239,6 +252,12 @@ private:
     // Pattern change notification for UI updates
     std::atomic<bool> patternChanged{false};
     
+    // Accent system - single source of truth
+    bool hasAccentPattern = false;
+    std::vector<bool> currentAccentPattern;
+    int globalOnsetCounter = 0;           // Single source of truth: counts all onsets since pattern start
+    int uiAccentOffset = 0;               // Stable accent offset for UI display (updates only at cycle boundaries)
+    
     // Parameters - implementation details
     juce::AudioParameterBool* useHostTransportParam;
     juce::AudioParameterInt* midiNoteParam;
@@ -246,6 +265,11 @@ private:
     juce::AudioParameterChoice* patternLengthUnitParam;
     juce::AudioParameterChoice* patternLengthValueParam;
     juce::AudioParameterChoice* subdivisionParam;
+    
+    // Accent parameters
+    juce::AudioParameterFloat* accentVelocityParam;
+    juce::AudioParameterFloat* unaccentedVelocityParam;
+    juce::AudioParameterInt* accentPitchOffsetParam;
     
     // Helper methods
     void updateTiming();

@@ -43,6 +43,11 @@ RhythmPatternExplorerAudioProcessor::RhythmPatternExplorerAudioProcessor()
     addParameter(subdivisionParam = new juce::AudioParameterChoice("subdivision", "Subdivision", 
         juce::StringArray{"64th Triplet", "64th", "32nd Triplet", "32nd", "16th Triplet", "16th", "8th Triplet", "8th", "Quarter Triplet", "Quarter", "Half Triplet", "Half", "Whole"}, 5)); // Default to "16th"
     
+    // Accent parameters
+    addParameter(accentVelocityParam = new juce::AudioParameterFloat("accentVelocity", "Accent Velocity", 0.0f, 1.0f, 1.0f));
+    addParameter(unaccentedVelocityParam = new juce::AudioParameterFloat("unaccentedVelocity", "Unaccented Velocity", 0.0f, 1.0f, 0.8f));
+    addParameter(accentPitchOffsetParam = new juce::AudioParameterInt("accentPitchOffset", "Accent Pitch Offset", -12, 12, 5));
+    
     // Initialize pattern engine with default Euclidean pattern
     patternEngine.generateEuclideanPattern(3, 8);
     
@@ -630,24 +635,61 @@ void RhythmPatternExplorerAudioProcessor::processStep(juce::MidiBuffer& midiBuff
     
     if (stepToProcess < pattern.size() && pattern[stepToProcess])
     {
-        triggerNote(midiBuffer, samplePosition, false);
+        // This step has an onset - determine if it should be accented
+        bool isAccented = shouldOnsetBeAccented(globalOnsetCounter);
+        
+        // Trigger MIDI note
+        triggerNote(midiBuffer, samplePosition, isAccented);
+        
+        // Advance the global onset counter (single source of truth)
+        globalOnsetCounter++;
         
 #ifdef DEBUG
         // Log note triggers at high BPM
         if (currentBPM >= 200.0f) {
             std::cout << "NOTE TRIGGERED: Step=" << currentStep.load() << 
                 ", BPM=" << currentBPM << 
-                ", SamplePos=" << samplePosition << std::endl;
+                ", SamplePos=" << samplePosition << 
+                ", Accented=" << (isAccented ? "YES" : "NO") <<
+                ", OnsetCount=" << (globalOnsetCounter - 1) << std::endl;
         }
 #endif
     }
+    
+    // Notify UI of cycle completion for pattern change updates
+    int nextStep = (stepToProcess + 1) % static_cast<int>(pattern.size());
+    if (nextStep == 0)
+    {
+        // Update stable UI accent offset at cycle boundaries
+        if (hasAccentPattern && !currentAccentPattern.empty())
+        {
+            uiAccentOffset = globalOnsetCounter % static_cast<int>(currentAccentPattern.size());
+        }
+        patternChanged.store(true); // UI can refresh at cycle boundaries
+    }
 }
 
-void RhythmPatternExplorerAudioProcessor::triggerNote(juce::MidiBuffer& midiBuffer, int samplePosition, bool)
+void RhythmPatternExplorerAudioProcessor::triggerNote(juce::MidiBuffer& midiBuffer, int samplePosition, bool isAccented)
 {
-    // Get base MIDI note number from parameter (set by incoming MIDI)
-    int noteNumber = midiNoteParam ? midiNoteParam->get() : 36; // Default kick drum note
-    float velocity = 0.8f; // Fixed velocity, no accents
+    // Get base MIDI note number from parameter
+    int baseNoteNumber = midiNoteParam ? midiNoteParam->get() : 36; // Default kick drum note
+    
+    // Apply accent parameters if accented
+    int noteNumber = baseNoteNumber;
+    float velocity = 0.8f; // Default unaccented velocity
+    
+    if (isAccented && hasAccentPattern)
+    {
+        // Use accent parameters
+        velocity = accentVelocityParam ? accentVelocityParam->get() : 1.0f;
+        int pitchOffset = accentPitchOffsetParam ? accentPitchOffsetParam->get() : 5;
+        noteNumber = baseNoteNumber + pitchOffset;
+    }
+    else
+    {
+        // Use unaccented velocity parameter
+        velocity = unaccentedVelocityParam ? unaccentedVelocityParam->get() : 0.8f;
+    }
     
     // Send MIDI note
     juce::MidiMessage noteOn = juce::MidiMessage::noteOn(1, noteNumber, velocity);
@@ -658,7 +700,8 @@ void RhythmPatternExplorerAudioProcessor::triggerNote(juce::MidiBuffer& midiBuff
     
     // MIDI effect mode - no audio synthesis
     
-    DBG("RhythmPatternExplorer: Note " << noteNumber << " triggered at step " << currentStep.load() << " with velocity " << velocity);
+    DBG("RhythmPatternExplorer: Note " << noteNumber << " triggered at step " << currentStep.load() 
+        << " with velocity " << velocity << (isAccented ? " [ACCENTED]" : " [normal]"));
 }
 
 void RhythmPatternExplorerAudioProcessor::syncBPMWithHost(const juce::AudioPlayHead::CurrentPositionInfo& posInfo)
@@ -1049,6 +1092,23 @@ void RhythmPatternExplorerAudioProcessor::parseAndApplyUPI(const juce::String& u
         
         // Apply the parsed pattern to the engine
         patternEngine.setPattern(parseResult.pattern);
+        
+        // Set up accent pattern if present
+        if (parseResult.hasAccentPattern)
+        {
+            hasAccentPattern = true;
+            currentAccentPattern = parseResult.accentPattern;
+            DBG("   Accent pattern enabled: " + PatternUtils::patternToBinary(currentAccentPattern));
+        }
+        else
+        {
+            hasAccentPattern = false;
+            currentAccentPattern.clear();
+        }
+        
+        // Reset global onset counter and UI accent offset (fresh start)
+        globalOnsetCounter = 0;
+        uiAccentOffset = 0;
         
         // Set up progressive offset if present
         if (parseResult.hasProgressiveOffset)
@@ -1457,6 +1517,58 @@ double RhythmPatternExplorerAudioProcessor::getSubdivisionInBeats(int subdivisio
         return subdivisionBeats[subdivisionIndex];
     }
     return 1.0/4.0; // Default to 16th note
+}
+
+//==============================================================================
+// Accent system implementation - single source of truth
+
+bool RhythmPatternExplorerAudioProcessor::shouldOnsetBeAccented(int onsetNumber) const
+{
+    if (!hasAccentPattern || currentAccentPattern.empty())
+        return false;
+    
+    // Simple layered cycle: which position in accent pattern cycle?
+    int accentPosition = onsetNumber % static_cast<int>(currentAccentPattern.size());
+    return currentAccentPattern[accentPosition];
+}
+
+std::vector<bool> RhythmPatternExplorerAudioProcessor::getCurrentAccentMap() const
+{
+    // For UI visualization - calculate accents for current rhythm cycle
+    std::vector<bool> accentMap;
+    auto currentPattern = patternEngine.getCurrentPattern();
+    
+    if (!hasAccentPattern || currentAccentPattern.empty())
+    {
+        // No accents - return all false
+        accentMap.resize(currentPattern.size(), false);
+        return accentMap;
+    }
+    
+    // Calculate which onsets will occur in this cycle and their accent status
+    // Use stable UI offset that only updates at cycle boundaries
+    int onsetNumber = uiAccentOffset; // Start from stable UI accent position
+    accentMap.resize(currentPattern.size(), false);
+    
+    for (int stepInCycle = 0; stepInCycle < static_cast<int>(currentPattern.size()); ++stepInCycle)
+    {
+        if (currentPattern[stepInCycle])
+        {
+            // This step will have an onset - will it be accented?
+            accentMap[stepInCycle] = shouldOnsetBeAccented(onsetNumber);
+            onsetNumber++;
+        }
+        // else: No onset at this step, accentMap[stepInCycle] remains false
+    }
+    
+    return accentMap;
+}
+
+void RhythmPatternExplorerAudioProcessor::resetAccentSystem()
+{
+    globalOnsetCounter = 0;
+    uiAccentOffset = 0;
+    patternChanged.store(true);
 }
 
 //==============================================================================
