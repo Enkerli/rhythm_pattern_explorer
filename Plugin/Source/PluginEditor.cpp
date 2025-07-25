@@ -16,6 +16,24 @@
 #define DBG(textToWrite) do { } while (false)
 #endif
 
+// Sophisticated Color Schemes for Pattern Visualization
+namespace PatternColors {
+    // Current Scheme: Cool Blue & Warm Amber (professional, no "Christmas lights")
+    const juce::Colour UNACCENTED = juce::Colour(0xff4a90e2);  // Cool blue
+    const juce::Colour ACCENTED = juce::Colour(0xfff5a623);    // Warm amber
+    
+    // Alternative Schemes (comment/uncomment to switch):
+    // Option 2: Slate & Electric Blue
+    // const juce::Colour UNACCENTED = juce::Colour(0xff6c7b7f);  // Slate blue
+    // const juce::Colour ACCENTED = juce::Colour(0xff00d4ff);    // Electric blue
+    
+    // Option 3: Teal & Coral  
+    // const juce::Colour UNACCENTED = juce::Colour(0xff2dd4bf);  // Deep teal
+    // const juce::Colour ACCENTED = juce::Colour(0xffff6b6b);    // Coral pink
+    
+    const juce::Colour ACCENT_OUTLINE = juce::Colours::white;   // White outline for maximum contrast
+}
+
 //==============================================================================
 RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEditor (RhythmPatternExplorerAudioProcessor& p)
     : AudioProcessorEditor (&p), audioProcessor (p)
@@ -508,11 +526,11 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
                 }
                 innerHalf.closeSubPath();
                 
-                // Fill inner half with green
-                g.setColour(juce::Colour(0xff48bb78));  // Green like unaccented
+                // Fill inner half with sophisticated base color
+                g.setColour(PatternColors::UNACCENTED);  // Cool blue - professional and calming
                 g.fillPath(innerHalf);
                 
-                // Outer half: High contrast accent color (bright orange/red)
+                // Outer half: Warm amber accent color
                 juce::Path outerHalf;
                 outerHalf.startNewSubPath(center.x + midRadius * std::cos(startAngle), 
                                          center.y + midRadius * std::sin(startAngle));
@@ -535,17 +553,17 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
                 }
                 outerHalf.closeSubPath();
                 
-                // Fill outer half with bright accent color
-                g.setColour(juce::Colour(0xffff4500));  // Bright orange-red for high contrast
+                // Fill outer half with sophisticated accent color
+                g.setColour(PatternColors::ACCENTED);  // Warm amber - sophisticated attention-grabbing
                 g.fillPath(outerHalf);
                 
                 // Bold outline for accented onsets - draw after filling
-                g.setColour(juce::Colour(0xffffffff));  // White outline for maximum contrast
+                g.setColour(PatternColors::ACCENT_OUTLINE);  // White outline for maximum contrast
                 g.strokePath(slice, juce::PathStrokeType(3.0f));  // Thick outline
                 
             } else {
-                // UNACCENTED ONSET: Solid green as before
-                g.setColour(juce::Colour(0xff48bb78));  // Green for regular onsets
+                // UNACCENTED ONSET: Solid sophisticated base color
+                g.setColour(PatternColors::UNACCENTED);  // Cool blue for regular onsets
                 g.fillPath(slice);
             }
         }
