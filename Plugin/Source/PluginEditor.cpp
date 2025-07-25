@@ -475,14 +475,79 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
             }
             slice.closeSubPath();
             
-            // Use accent-aware colors for educational feedback
+            // Enhanced accent visualization with radial split and bold outline
             bool isAccented = (i < accentMap.size()) ? accentMap[i] : false;
+            
             if (isAccented) {
-                g.setColour(juce::Colour(0xffdc143c));  // Red for accented onsets
+                // ACCENTED ONSET: Radial split with contrasting colors
+                
+                // Calculate mid-radius for split
+                float midRadius = (innerRadius + outerRadius) * 0.5f;
+                
+                // Inner half: Green (same as unaccented)
+                juce::Path innerHalf;
+                innerHalf.startNewSubPath(center.x + innerRadius * std::cos(startAngle), 
+                                         center.y + innerRadius * std::sin(startAngle));
+                
+                int numSegments = std::max(8, int(sliceAngle * 20));
+                for (int seg = 0; seg <= numSegments; ++seg)
+                {
+                    float angle = startAngle + (sliceAngle * seg / numSegments);
+                    float x = center.x + midRadius * std::cos(angle);
+                    float y = center.y + midRadius * std::sin(angle);
+                    innerHalf.lineTo(x, y);
+                }
+                
+                // Back along inner arc
+                for (int seg = numSegments; seg >= 0; --seg)
+                {
+                    float angle = startAngle + (sliceAngle * seg / numSegments);
+                    float x = center.x + innerRadius * std::cos(angle);
+                    float y = center.y + innerRadius * std::sin(angle);
+                    innerHalf.lineTo(x, y);
+                }
+                innerHalf.closeSubPath();
+                
+                // Fill inner half with green
+                g.setColour(juce::Colour(0xff48bb78));  // Green like unaccented
+                g.fillPath(innerHalf);
+                
+                // Outer half: High contrast accent color (bright orange/red)
+                juce::Path outerHalf;
+                outerHalf.startNewSubPath(center.x + midRadius * std::cos(startAngle), 
+                                         center.y + midRadius * std::sin(startAngle));
+                
+                for (int seg = 0; seg <= numSegments; ++seg)
+                {
+                    float angle = startAngle + (sliceAngle * seg / numSegments);
+                    float x = center.x + outerRadius * std::cos(angle);
+                    float y = center.y + outerRadius * std::sin(angle);
+                    outerHalf.lineTo(x, y);
+                }
+                
+                // Back along mid arc
+                for (int seg = numSegments; seg >= 0; --seg)
+                {
+                    float angle = startAngle + (sliceAngle * seg / numSegments);
+                    float x = center.x + midRadius * std::cos(angle);
+                    float y = center.y + midRadius * std::sin(angle);
+                    outerHalf.lineTo(x, y);
+                }
+                outerHalf.closeSubPath();
+                
+                // Fill outer half with bright accent color
+                g.setColour(juce::Colour(0xffff4500));  // Bright orange-red for high contrast
+                g.fillPath(outerHalf);
+                
+                // Bold outline for accented onsets - draw after filling
+                g.setColour(juce::Colour(0xffffffff));  // White outline for maximum contrast
+                g.strokePath(slice, juce::PathStrokeType(3.0f));  // Thick outline
+                
             } else {
+                // UNACCENTED ONSET: Solid green as before
                 g.setColour(juce::Colour(0xff48bb78));  // Green for regular onsets
+                g.fillPath(slice);
             }
-            g.fillPath(slice);
         }
     }
     
