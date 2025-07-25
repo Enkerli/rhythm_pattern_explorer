@@ -21,17 +21,25 @@ namespace PatternColors {
     // Current Scheme: Cool Blue & Warm Amber (professional, no "Christmas lights")
     const juce::Colour UNACCENTED = juce::Colour(0xff4a90e2);  // Cool blue
     const juce::Colour ACCENTED = juce::Colour(0xfff5a623);    // Warm amber
+    const juce::Colour ACCENT_OUTLINE = juce::Colours::white;   // White outline for maximum contrast
+    
+    // UI Elements (designed to contrast well with blue onsets)
+    const juce::Colour SEPARATOR_LINES = juce::Colour(0xff7a7a7a);  // Light grey - contrasts with blue
+    const juce::Colour STEP_MARKERS = juce::Colour(0xff2d3748);     // Dark slate - matches background
+    const juce::Colour STEP_MARKER_TEXT = juce::Colours::white;     // White text on dark markers
     
     // Alternative Schemes (comment/uncomment to switch):
     // Option 2: Slate & Electric Blue
     // const juce::Colour UNACCENTED = juce::Colour(0xff6c7b7f);  // Slate blue
     // const juce::Colour ACCENTED = juce::Colour(0xff00d4ff);    // Electric blue
+    // const juce::Colour SEPARATOR_LINES = juce::Colour(0xff9ca3af);
+    // const juce::Colour STEP_MARKERS = juce::Colour(0xff374151);
     
     // Option 3: Teal & Coral  
     // const juce::Colour UNACCENTED = juce::Colour(0xff2dd4bf);  // Deep teal
     // const juce::Colour ACCENTED = juce::Colour(0xffff6b6b);    // Coral pink
-    
-    const juce::Colour ACCENT_OUTLINE = juce::Colours::white;   // White outline for maximum contrast
+    // const juce::Colour SEPARATOR_LINES = juce::Colour(0xff6b7280);
+    // const juce::Colour STEP_MARKERS = juce::Colour(0xff1f2937);
 }
 
 //==============================================================================
@@ -623,7 +631,7 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
     }
     
     // Draw slice separator lines AFTER filling
-    g.setColour(juce::Colour(0xff4a5568));
+    g.setColour(PatternColors::SEPARATOR_LINES);
     for (int i = 0; i < numSteps; ++i)
     {
         float sliceAngle = 2.0f * juce::MathConstants<float>::pi / numSteps;
@@ -638,7 +646,7 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
     }
     
     // Draw outer and inner circle outlines
-    g.setColour(juce::Colour(0xff4a5568));
+    g.setColour(PatternColors::SEPARATOR_LINES);
     g.drawEllipse(center.x - outerRadius, center.y - outerRadius, outerRadius * 2, outerRadius * 2, 2.0f);
     if (innerRadius > 0)
         g.drawEllipse(center.x - innerRadius, center.y - innerRadius, innerRadius * 2, innerRadius * 2, 2.0f);
@@ -671,13 +679,13 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
             float y = center.y + markerRadius * std::sin(centerAngle);
             
             // Draw step marker circles
-            g.setColour(juce::Colour(0xff4a5568));
+            g.setColour(PatternColors::STEP_MARKERS);
             g.fillEllipse(x - 8, y - 8, 16, 16);
             
             // Draw step numbers (show actual step index for larger patterns)
             juce::String stepNumber = juce::String(stepIndex);
             g.setFont(juce::FontOptions(12.0f, juce::Font::bold));
-            g.setColour(juce::Colours::white);
+            g.setColour(PatternColors::STEP_MARKER_TEXT);
             
             // Center the text in the marker
             juce::Rectangle<float> textBounds(x - 8, y - 6, 16, 12);
