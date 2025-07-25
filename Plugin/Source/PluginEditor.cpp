@@ -16,30 +16,55 @@
 #define DBG(textToWrite) do { } while (false)
 #endif
 
-// Sophisticated Color Schemes for Pattern Visualization
+// Adaptive Color Schemes for Pattern Visualization
 namespace PatternColors {
-    // Current Scheme: Cool Blue & Warm Amber (professional, no "Christmas lights")
-    const juce::Colour UNACCENTED = juce::Colour(0xff4a90e2);  // Cool blue
-    const juce::Colour ACCENTED = juce::Colour(0xfff5a623);    // Warm amber
-    const juce::Colour ACCENT_OUTLINE = juce::Colours::white;   // White outline for maximum contrast
     
-    // UI Elements (designed to contrast well with blue onsets)
-    const juce::Colour SEPARATOR_LINES = juce::Colour(0xff7a7a7a);  // Light grey - contrasts with blue
-    const juce::Colour STEP_MARKERS = juce::Colour(0xff2d3748);     // Dark slate - matches background
-    const juce::Colour STEP_MARKER_TEXT = juce::Colours::white;     // White text on dark markers
+    // Get adaptive colors based on current background
+    inline juce::Colour getUnaccentedColor(RhythmPatternExplorerAudioProcessorEditor::BackgroundColor bgColor) {
+        switch (bgColor) {
+            case RhythmPatternExplorerAudioProcessorEditor::BackgroundColor::Blue:
+                // Blue background: use warm orange for strong contrast
+                return juce::Colour(0xfff97316);  // Warm orange - high contrast with blue bg
+            case RhythmPatternExplorerAudioProcessorEditor::BackgroundColor::Green:
+                // Green background: use deep purple for contrast  
+                return juce::Colour(0xff7c3aed);  // Deep purple - contrasts with green
+            case RhythmPatternExplorerAudioProcessorEditor::BackgroundColor::Orange:
+                // Orange background: use deep blue for contrast
+                return juce::Colour(0xff1e40af);  // Deep blue - contrasts with orange
+            case RhythmPatternExplorerAudioProcessorEditor::BackgroundColor::Purple:
+                // Purple background: use yellow-green for contrast
+                return juce::Colour(0xff65a30d);  // Yellow-green - contrasts with purple
+            default:
+                // Dark/White backgrounds: use our standard cool blue
+                return juce::Colour(0xff4a90e2);  // Cool blue - works on dark/white
+        }
+    }
     
-    // Alternative Schemes (comment/uncomment to switch):
-    // Option 2: Slate & Electric Blue
-    // const juce::Colour UNACCENTED = juce::Colour(0xff6c7b7f);  // Slate blue
-    // const juce::Colour ACCENTED = juce::Colour(0xff00d4ff);    // Electric blue
-    // const juce::Colour SEPARATOR_LINES = juce::Colour(0xff9ca3af);
-    // const juce::Colour STEP_MARKERS = juce::Colour(0xff374151);
+    inline juce::Colour getAccentedColor(RhythmPatternExplorerAudioProcessorEditor::BackgroundColor bgColor) {
+        switch (bgColor) {
+            case RhythmPatternExplorerAudioProcessorEditor::BackgroundColor::Blue:
+                // Blue background: use bright yellow for maximum accent contrast
+                return juce::Colour(0xfffbbf24);  // Bright yellow - maximum visibility on blue
+            case RhythmPatternExplorerAudioProcessorEditor::BackgroundColor::Green:
+                // Green background: use bright pink for accent
+                return juce::Colour(0xffec4899);  // Bright pink - high contrast accent
+            case RhythmPatternExplorerAudioProcessorEditor::BackgroundColor::Orange:
+                // Orange background: use cyan for accent  
+                return juce::Colour(0xff06b6d4);  // Cyan - complementary accent
+            case RhythmPatternExplorerAudioProcessorEditor::BackgroundColor::Purple:
+                // Purple background: use bright lime for accent
+                return juce::Colour(0xff84cc16);  // Bright lime - high visibility accent
+            default:
+                // Dark/White backgrounds: use our standard warm amber
+                return juce::Colour(0xfff5a623);  // Warm amber - works on dark/white
+        }
+    }
     
-    // Option 3: Teal & Coral  
-    // const juce::Colour UNACCENTED = juce::Colour(0xff2dd4bf);  // Deep teal
-    // const juce::Colour ACCENTED = juce::Colour(0xffff6b6b);    // Coral pink
-    // const juce::Colour SEPARATOR_LINES = juce::Colour(0xff6b7280);
-    // const juce::Colour STEP_MARKERS = juce::Colour(0xff1f2937);
+    // Static colors that work on all backgrounds
+    const juce::Colour ACCENT_OUTLINE = juce::Colours::white;       // White outline for maximum contrast
+    const juce::Colour SEPARATOR_LINES = juce::Colour(0xff7a7a7a);  // Light grey - neutral
+    const juce::Colour STEP_MARKERS = juce::Colour(0xff2d3748);     // Dark slate - neutral  
+    const juce::Colour STEP_MARKER_TEXT = juce::Colours::white;     // White text - readable on dark
 }
 
 //==============================================================================
@@ -534,8 +559,8 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
                 }
                 innerHalf.closeSubPath();
                 
-                // Fill inner half with sophisticated base color
-                g.setColour(PatternColors::UNACCENTED);  // Cool blue - professional and calming
+                // Fill inner half with adaptive base color  
+                g.setColour(PatternColors::getUnaccentedColor(getCurrentBackgroundColor()));
                 g.fillPath(innerHalf);
                 
                 // Outer half: Warm amber accent color
@@ -561,8 +586,8 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
                 }
                 outerHalf.closeSubPath();
                 
-                // Fill outer half with sophisticated accent color
-                g.setColour(PatternColors::ACCENTED);  // Warm amber - sophisticated attention-grabbing
+                // Fill outer half with adaptive accent color
+                g.setColour(PatternColors::getAccentedColor(getCurrentBackgroundColor()));
                 g.fillPath(outerHalf);
                 
                 // Bold outline for accented onsets - draw after filling
@@ -570,8 +595,8 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
                 g.strokePath(slice, juce::PathStrokeType(3.0f));  // Thick outline
                 
             } else {
-                // UNACCENTED ONSET: Solid sophisticated base color
-                g.setColour(PatternColors::UNACCENTED);  // Cool blue for regular onsets
+                // UNACCENTED ONSET: Solid adaptive base color
+                g.setColour(PatternColors::getUnaccentedColor(getCurrentBackgroundColor()));
                 g.fillPath(slice);
             }
         }

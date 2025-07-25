@@ -40,6 +40,19 @@ public:
     
     // MIDI note access
     int getMidiNoteNumber() const;
+    
+    // Background color options (public enum for color functions)
+    enum class BackgroundColor {
+        Dark = 0,     // Current dark background (0xff2d3748)
+        White = 1,    // White background
+        Green = 2,    // Same as onset color (0xff48bb78)
+        Orange = 3,   // Same as highlight color (0xffff6b35)
+        Blue = 4,     // Contrasting blue (0xff4299e1)
+        Purple = 5    // Contrasting purple (0xff9f7aea)
+    };
+    
+    // Background color access
+    BackgroundColor getCurrentBackgroundColor() const { return currentBackgroundColor; }
 
 private:
     //==============================================================================
@@ -90,15 +103,7 @@ private:
     bool minimalMode = false;
     static constexpr int MINIMAL_MODE_THRESHOLD = 250; // Width/height threshold for minimal mode
     
-    // Background color options
-    enum class BackgroundColor {
-        Dark = 0,     // Current dark background (0xff2d3748)
-        White = 1,    // White background
-        Green = 2,    // Same as onset color (0xff48bb78)
-        Orange = 3,   // Same as highlight color (0xffff6b35)
-        Blue = 4,     // Contrasting blue (0xff4299e1)
-        Purple = 5    // Contrasting purple (0xff9f7aea)
-    };
+    // Background color state
     BackgroundColor currentBackgroundColor = BackgroundColor::Dark;
     
     // Parameter attachments for essential parameters only
