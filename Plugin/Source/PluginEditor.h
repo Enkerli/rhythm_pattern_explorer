@@ -108,6 +108,14 @@ private:
     // Background color state
     BackgroundColor currentBackgroundColor = BackgroundColor::Dark;
     
+    // Hover state for visual feedback
+    int hoveredStepIndex = -1;  // -1 means no step is hovered
+    bool isMouseInCircleArea = false;
+    
+    // Click animation state
+    int clickedStepIndex = -1;  // -1 means no step is being animated
+    int clickAnimationFrames = 0;
+    
     // Parameter attachments for essential parameters only
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> midiNoteAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> tickAttachment;
@@ -124,6 +132,8 @@ private:
     // Mouse interaction
     void mouseDoubleClick(const juce::MouseEvent& event) override;
     void mouseDown(const juce::MouseEvent& event) override;
+    void mouseMove(const juce::MouseEvent& event) override;
+    void mouseExit(const juce::MouseEvent& event) override;
     
     // Pattern editing via mouse clicks
     int getStepIndexFromCoordinates(int mouseX, int mouseY, juce::Rectangle<int> circleArea) const;

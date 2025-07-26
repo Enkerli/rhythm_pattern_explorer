@@ -397,6 +397,17 @@ void RhythmPatternExplorerAudioProcessorEditor::timerCallback()
     
     frameCount++;
     
+    // Handle click animation countdown
+    if (clickAnimationFrames > 0)
+    {
+        clickAnimationFrames--;
+        if (clickAnimationFrames == 0)
+        {
+            clickedStepIndex = -1; // Clear animation state
+        }
+        repaint(); // Trigger redraw for animation
+    }
+    
     // Sync UI sliders with parameter values (for host automation support)
     if (audioProcessor.getMidiNoteParameter()) {
         midiNoteSlider.setValue(audioProcessor.getMidiNoteParameter()->get(), juce::dontSendNotification);
@@ -532,6 +543,8 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
             
             // Enhanced accent visualization with radial split and bold outline
             bool isAccented = (i < accentMap.size()) ? accentMap[i] : false;
+            bool isHovered = (hoveredStepIndex == i);
+            bool isClicked = (clickedStepIndex == i && clickAnimationFrames > 0);
             
             if (isAccented) {
                 // ACCENTED ONSET: Radial split with contrasting colors
@@ -563,8 +576,16 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
                 }
                 innerHalf.closeSubPath();
                 
-                // Fill inner half with adaptive base color  
-                g.setColour(PatternColors::getUnaccentedColor(getCurrentBackgroundColor()));
+                // Fill inner half with adaptive base color (brightened if hovered or clicked)
+                juce::Colour innerColor = PatternColors::getUnaccentedColor(getCurrentBackgroundColor());
+                if (isClicked) {
+                    // Click animation: bright flash that fades
+                    float intensity = (float)clickAnimationFrames / 8.0f;
+                    innerColor = innerColor.brighter(0.6f * intensity);
+                } else if (isHovered) {
+                    innerColor = innerColor.brighter(0.3f);
+                }
+                g.setColour(innerColor);
                 g.fillPath(innerHalf);
                 
                 // Outer half: Warm amber accent color
@@ -590,8 +611,16 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
                 }
                 outerHalf.closeSubPath();
                 
-                // Fill outer half with adaptive accent color
-                g.setColour(PatternColors::getAccentedColor(getCurrentBackgroundColor()));
+                // Fill outer half with adaptive accent color (brightened if hovered or clicked)
+                juce::Colour accentColor = PatternColors::getAccentedColor(getCurrentBackgroundColor());
+                if (isClicked) {
+                    // Click animation: bright flash that fades
+                    float intensity = (float)clickAnimationFrames / 8.0f;
+                    accentColor = accentColor.brighter(0.6f * intensity);
+                } else if (isHovered) {
+                    accentColor = accentColor.brighter(0.3f);
+                }
+                g.setColour(accentColor);
                 g.fillPath(outerHalf);
                 
                 // Bold outline for accented onsets - draw after filling
@@ -599,10 +628,59 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
                 g.strokePath(slice, juce::PathStrokeType(3.0f));  // Thick outline
                 
             } else {
-                // UNACCENTED ONSET: Solid adaptive base color
-                g.setColour(PatternColors::getUnaccentedColor(getCurrentBackgroundColor()));
+                // UNACCENTED ONSET: Solid adaptive base color (brightened if hovered or clicked)
+                juce::Colour unaccentedColor = PatternColors::getUnaccentedColor(getCurrentBackgroundColor());
+                if (isClicked) {
+                    // Click animation: bright flash that fades
+                    float intensity = (float)clickAnimationFrames / 8.0f;
+                    unaccentedColor = unaccentedColor.brighter(0.6f * intensity);
+                } else if (isHovered) {
+                    unaccentedColor = unaccentedColor.brighter(0.3f);
+                }
+                g.setColour(unaccentedColor);
                 g.fillPath(slice);
             }
+        }
+        
+        // Draw hover highlighting for rest steps (empty slices)
+        if (!pattern[i] && (hoveredStepIndex == i || (clickedStepIndex == i && clickAnimationFrames > 0)))
+        {
+            // Create slice path for rest step
+            juce::Path restSlice;
+            restSlice.startNewSubPath(center.x + innerRadius * std::cos(startAngle), 
+                                     center.y + innerRadius * std::sin(startAngle));
+            
+            int numSegments = std::max(8, int(sliceAngle * 20));
+            for (int seg = 0; seg <= numSegments; ++seg)
+            {
+                float angle = startAngle + (sliceAngle * seg / numSegments);
+                float x = center.x + outerRadius * std::cos(angle);
+                float y = center.y + outerRadius * std::sin(angle);
+                restSlice.lineTo(x, y);
+            }
+            
+            // Back along inner arc
+            for (int seg = numSegments; seg >= 0; --seg)
+            {
+                float angle = startAngle + (sliceAngle * seg / numSegments);
+                float x = center.x + innerRadius * std::cos(angle);
+                float y = center.y + innerRadius * std::sin(angle);
+                restSlice.lineTo(x, y);
+            }
+            restSlice.closeSubPath();
+            
+            // Subtle highlight for hovered/clicked rest steps - semi-transparent overlay
+            juce::Colour restColor = PatternColors::getUnaccentedColor(getCurrentBackgroundColor());
+            if (clickedStepIndex == i && clickAnimationFrames > 0) {
+                // Click animation: bright flash that fades
+                float intensity = (float)clickAnimationFrames / 8.0f;
+                restColor = restColor.brighter(0.4f * intensity).withAlpha(0.6f * intensity);
+            } else {
+                // Regular hover: subtle semi-transparent
+                restColor = restColor.withAlpha(0.3f);
+            }
+            g.setColour(restColor);
+            g.fillPath(restSlice);
         }
     }
     
@@ -998,11 +1076,71 @@ void RhythmPatternExplorerAudioProcessorEditor::mouseDown(const juce::MouseEvent
             // Valid step clicked - toggle the pattern step
             audioProcessor.togglePatternStep(stepIndex);
             
+            // Start click animation
+            clickedStepIndex = stepIndex;
+            clickAnimationFrames = 8; // Animation duration in frames
+            
             // Force immediate UI update
             repaint();
             
             DBG("Mouse click: toggled step " << stepIndex);
         }
+    }
+}
+
+void RhythmPatternExplorerAudioProcessorEditor::mouseMove(const juce::MouseEvent& event)
+{
+    // Update hover state for visual feedback
+    if (!circleArea.isEmpty())
+    {
+        int mouseX = event.x;
+        int mouseY = event.y;
+        
+        // Check if mouse is within the circle area and get step index
+        int stepIndex = getStepIndexFromCoordinates(mouseX, mouseY, circleArea);
+        
+        bool wasInCircleArea = isMouseInCircleArea;
+        int previousHoveredStep = hoveredStepIndex;
+        
+        if (stepIndex >= 0)
+        {
+            // Mouse is over a valid step
+            isMouseInCircleArea = true;
+            hoveredStepIndex = stepIndex;
+            
+            // Change cursor to indicate interactivity
+            setMouseCursor(juce::MouseCursor::PointingHandCursor);
+        }
+        else
+        {
+            // Mouse is not over a valid step
+            isMouseInCircleArea = false;
+            hoveredStepIndex = -1;
+            
+            // Restore default cursor
+            setMouseCursor(juce::MouseCursor::NormalCursor);
+        }
+        
+        // Repaint if hover state changed
+        if (wasInCircleArea != isMouseInCircleArea || previousHoveredStep != hoveredStepIndex)
+        {
+            repaint();
+        }
+    }
+}
+
+void RhythmPatternExplorerAudioProcessorEditor::mouseExit(const juce::MouseEvent& event)
+{
+    // Clear hover state when mouse leaves the component
+    bool needsRepaint = isMouseInCircleArea || hoveredStepIndex >= 0;
+    
+    isMouseInCircleArea = false;
+    hoveredStepIndex = -1;
+    setMouseCursor(juce::MouseCursor::NormalCursor);
+    
+    if (needsRepaint)
+    {
+        repaint();
     }
 }
 
