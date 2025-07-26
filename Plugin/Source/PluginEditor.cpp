@@ -791,6 +791,49 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
             g.drawText(stepNumber, textBounds, juce::Justification::centred);
         }
     }
+    
+    // Draw quantization direction indicators if present
+    if (audioProcessor.getHasQuantization())
+    {
+        bool clockwise = audioProcessor.getQuantizationClockwise();
+        
+        // Position indicator outside the circle
+        float indicatorRadius = outerRadius + 20.0f;
+        float indicatorSize = 8.0f;
+        
+        // Position at 3 o'clock (east) for clear visibility
+        float indicatorAngle = 0.0f; // 3 o'clock position
+        float indicatorX = center.x + indicatorRadius * std::cos(indicatorAngle);
+        float indicatorY = center.y + indicatorRadius * std::sin(indicatorAngle);
+        
+        // Draw direction arrow
+        juce::Path arrow;
+        if (clockwise) {
+            // Clockwise arrow: curved arrow pointing right and down
+            arrow.startNewSubPath(indicatorX - indicatorSize, indicatorY - indicatorSize);
+            arrow.lineTo(indicatorX + indicatorSize, indicatorY);
+            arrow.lineTo(indicatorX - indicatorSize, indicatorY + indicatorSize);
+            arrow.lineTo(indicatorX - indicatorSize * 0.5f, indicatorY + indicatorSize * 0.5f);
+            arrow.lineTo(indicatorX + indicatorSize * 0.5f, indicatorY);
+            arrow.lineTo(indicatorX - indicatorSize * 0.5f, indicatorY - indicatorSize * 0.5f);
+            arrow.closeSubPath();
+        } else {
+            // Counterclockwise arrow: curved arrow pointing left and down
+            arrow.startNewSubPath(indicatorX + indicatorSize, indicatorY - indicatorSize);
+            arrow.lineTo(indicatorX - indicatorSize, indicatorY);
+            arrow.lineTo(indicatorX + indicatorSize, indicatorY + indicatorSize);
+            arrow.lineTo(indicatorX + indicatorSize * 0.5f, indicatorY + indicatorSize * 0.5f);
+            arrow.lineTo(indicatorX - indicatorSize * 0.5f, indicatorY);
+            arrow.lineTo(indicatorX + indicatorSize * 0.5f, indicatorY - indicatorSize * 0.5f);
+            arrow.closeSubPath();
+        }
+        
+        // Draw the direction indicator with distinctive color
+        g.setColour(juce::Colour(0xff00ffff)); // Cyan for high visibility
+        g.fillPath(arrow);
+        g.setColour(juce::Colour(0xff004444)); // Dark cyan outline
+        g.strokePath(arrow, juce::PathStrokeType(1.0f));
+    }
 }
 
 void RhythmPatternExplorerAudioProcessorEditor::updatePatternDisplay()
@@ -801,6 +844,16 @@ void RhythmPatternExplorerAudioProcessorEditor::updatePatternDisplay()
     juce::String decimal = audioProcessor.getPatternEngine().getDecimalString();
     juce::String description = audioProcessor.getPatternEngine().getPatternDescription();
     
+    // Enhanced description for quantized patterns
+    if (audioProcessor.getHasQuantization()) {
+        int originalSteps = audioProcessor.getOriginalStepCount();
+        int quantizedSteps = audioProcessor.getQuantizedStepCount();
+        bool clockwise = audioProcessor.getQuantizationClockwise();
+        juce::String directionText = clockwise ? "CW" : "CCW";
+        
+        description += " [" + juce::String(originalSteps) + "→" + juce::String(quantizedSteps) + " " + directionText + "]";
+    }
+    
     // Display pattern in multiple notations: binary with description, then hex/octal/decimal
     juce::String displayText = binary + " | " + description + "\n" + 
                               hex + " | " + octal + " | " + decimal;
@@ -810,7 +863,23 @@ void RhythmPatternExplorerAudioProcessorEditor::updatePatternDisplay()
 
 void RhythmPatternExplorerAudioProcessorEditor::updateAnalysisDisplay()
 {
-    // Analysis functionality removed - methods no longer available
+    juce::String analysisText = "";
+    
+    // Show quantization information if present
+    if (audioProcessor.getHasQuantization()) {
+        int originalSteps = audioProcessor.getOriginalStepCount();
+        int quantizedSteps = audioProcessor.getQuantizedStepCount();
+        bool clockwise = audioProcessor.getQuantizationClockwise();
+        int originalOnsets = audioProcessor.getOriginalOnsetCount();
+        int quantizedOnsets = audioProcessor.getQuantizedOnsetCount();
+        
+        juce::String directionText = clockwise ? "CW" : "CCW";
+        
+        analysisText += "Quantization: " + juce::String(originalSteps) + "→" + juce::String(quantizedSteps) + " steps " + directionText + "\n";
+        analysisText += "Onsets: " + juce::String(originalOnsets) + "→" + juce::String(quantizedOnsets) + " preserved";
+    }
+    
+    analysisLabel.setText(analysisText, juce::dontSendNotification);
 }
 
 void RhythmPatternExplorerAudioProcessorEditor::updateStepSceneButton()
