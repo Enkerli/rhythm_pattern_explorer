@@ -121,6 +121,7 @@ public:
     
     // Interactive pattern modification methods
     void togglePatternStep(int stepIndex);
+    void toggleAccentAtStep(int stepIndex);
     bool isValidStepIndex(int stepIndex) const;
     void updateUPIFromCurrentPattern();
     

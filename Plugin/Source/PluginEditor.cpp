@@ -1054,28 +1054,44 @@ void RhythmPatternExplorerAudioProcessorEditor::mouseDoubleClick(const juce::Mou
 
 void RhythmPatternExplorerAudioProcessorEditor::mouseDown(const juce::MouseEvent& event)
 {
-    // Handle single clicks on pattern circle for step toggling
+    // Handle single clicks on pattern circle for step toggling and accent control
     if (event.mods.isLeftButtonDown() && !circleArea.isEmpty())
     {
         int mouseX = event.getMouseDownX();
         int mouseY = event.getMouseDownY();
         
-        // Check if click is within the circle area and get step index
-        int stepIndex = getStepIndexFromCoordinates(mouseX, mouseY, circleArea);
+        // Get detailed click information including inner/outer half detection
+        ClickResult clickResult = getStepClickDetails(mouseX, mouseY, circleArea);
         
-        if (stepIndex >= 0)
+        if (clickResult.stepIndex >= 0)
         {
-            // Valid step clicked - toggle the pattern step
-            audioProcessor.togglePatternStep(stepIndex);
+            // Get current pattern to check if step is an onset
+            auto currentPattern = audioProcessor.getPatternEngine().getCurrentPattern();
+            bool isOnset = (clickResult.stepIndex < currentPattern.size()) && currentPattern[clickResult.stepIndex];
+            
+            if (!isOnset) {
+                // Empty step: clicking anywhere creates an onset
+                audioProcessor.togglePatternStep(clickResult.stepIndex);
+                DBG("Mouse click: created onset at step " << clickResult.stepIndex);
+            } else {
+                // Existing onset: inner half toggles onset, outer half toggles accent
+                if (clickResult.isInOuterHalf) {
+                    // Outer half: toggle accent
+                    audioProcessor.toggleAccentAtStep(clickResult.stepIndex);
+                    DBG("Mouse click: toggled accent at step " << clickResult.stepIndex);
+                } else {
+                    // Inner half: toggle onset (remove it)
+                    audioProcessor.togglePatternStep(clickResult.stepIndex);
+                    DBG("Mouse click: removed onset at step " << clickResult.stepIndex);
+                }
+            }
             
             // Start click animation
-            clickedStepIndex = stepIndex;
+            clickedStepIndex = clickResult.stepIndex;
             clickAnimationFrames = 8; // Animation duration in frames
             
             // Force immediate UI update
             repaint();
-            
-            DBG("Mouse click: toggled step " << stepIndex);
         }
     }
 }
@@ -1200,5 +1216,65 @@ int RhythmPatternExplorerAudioProcessorEditor::getStepIndexFromCoordinates(int m
 bool RhythmPatternExplorerAudioProcessorEditor::isCoordinateInCircleArea(int mouseX, int mouseY, juce::Rectangle<int> circleArea) const
 {
     return getStepIndexFromCoordinates(mouseX, mouseY, circleArea) >= 0;
+}
+
+RhythmPatternExplorerAudioProcessorEditor::ClickResult RhythmPatternExplorerAudioProcessorEditor::getStepClickDetails(int mouseX, int mouseY, juce::Rectangle<int> circleArea) const
+{
+    ClickResult result;
+    
+    auto pattern = audioProcessor.getPatternEngine().getCurrentPattern();
+    int numSteps = static_cast<int>(pattern.size());
+    
+    if (numSteps <= 0) return result; // Invalid pattern
+    
+    // Calculate circle dimensions (matching drawPatternCircle logic)
+    juce::Point<float> center(circleArea.getCentreX(), circleArea.getCentreY());
+    
+    // Use same radius calculations as drawPatternCircle
+    float radius = std::min(circleArea.getWidth(), circleArea.getHeight()) * 0.4f;
+    float outerRadius = radius;
+    float innerRadius = radius * 0.3f; // 30% inner radius for donut effect
+    float midRadius = (innerRadius + outerRadius) * 0.5f; // Mid-point for inner/outer detection
+    
+    // Calculate distance from center
+    float dx = mouseX - center.x;
+    float dy = mouseY - center.y;
+    float distanceFromCenter = std::sqrt(dx * dx + dy * dy);
+    
+    // Check if click is within the ring (between inner and outer radius)
+    if (distanceFromCenter < innerRadius || distanceFromCenter > outerRadius) {
+        return result; // Outside clickable area
+    }
+    
+    // Calculate angle from center
+    float angleFromCenter = std::atan2(dy, dx);
+    if (angleFromCenter < 0) {
+        angleFromCenter += 2.0f * juce::MathConstants<float>::pi;
+    }
+    
+    // Adjust for 12 o'clock alignment (matching drawPatternCircle)
+    float adjustedAngle = angleFromCenter + juce::MathConstants<float>::halfPi;
+    if (adjustedAngle >= 2.0f * juce::MathConstants<float>::pi) {
+        adjustedAngle -= 2.0f * juce::MathConstants<float>::pi;
+    }
+    
+    // Calculate slice angle and step index
+    float sliceAngle = 2.0f * juce::MathConstants<float>::pi / numSteps;
+    adjustedAngle += sliceAngle * 0.5f;
+    if (adjustedAngle >= 2.0f * juce::MathConstants<float>::pi) {
+        adjustedAngle -= 2.0f * juce::MathConstants<float>::pi;
+    }
+    int stepIndex = static_cast<int>(adjustedAngle / sliceAngle);
+    
+    // Clamp to valid range
+    if (stepIndex < 0) stepIndex = 0;
+    if (stepIndex >= numSteps) stepIndex = numSteps - 1;
+    
+    // Determine if click is in outer half (accent area)
+    bool isInOuterHalf = distanceFromCenter > midRadius;
+    
+    result.stepIndex = stepIndex;
+    result.isInOuterHalf = isInOuterHalf;
+    return result;
 }
 

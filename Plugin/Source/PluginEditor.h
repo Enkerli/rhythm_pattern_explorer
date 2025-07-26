@@ -139,6 +139,13 @@ private:
     int getStepIndexFromCoordinates(int mouseX, int mouseY, juce::Rectangle<int> circleArea) const;
     bool isCoordinateInCircleArea(int mouseX, int mouseY, juce::Rectangle<int> circleArea) const;
     
+    // Enhanced click detection for accent control
+    struct ClickResult {
+        int stepIndex = -1;      // -1 if no valid step
+        bool isInOuterHalf = false; // true if click is in outer half (accent area)
+    };
+    ClickResult getStepClickDetails(int mouseX, int mouseY, juce::Rectangle<int> circleArea) const;
+    
     // Circle area for responsive layout
     juce::Rectangle<int> circleArea;
     

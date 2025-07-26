@@ -1139,6 +1139,43 @@ void RhythmPatternExplorerAudioProcessor::togglePatternStep(int stepIndex)
     DBG("togglePatternStep: Toggled step " << stepIndex << " to " << (currentPattern[stepIndex] ? "ON" : "OFF"));
 }
 
+void RhythmPatternExplorerAudioProcessor::toggleAccentAtStep(int stepIndex)
+{
+    juce::ScopedLock lock(processingLock);
+    
+    if (!isValidStepIndex(stepIndex)) {
+        DBG("toggleAccentAtStep: Invalid step index " << stepIndex);
+        return;
+    }
+    
+    // First ensure the step is an onset - can't accent a rest
+    auto currentPattern = patternEngine.getCurrentPattern();
+    if (!currentPattern[stepIndex]) {
+        DBG("toggleAccentAtStep: Cannot accent a rest step at index " << stepIndex);
+        return;
+    }
+    
+    // Toggle accent at this step
+    if (hasAccentPattern && stepIndex < currentAccentPattern.size()) {
+        // Existing accent pattern - toggle this step
+        currentAccentPattern[stepIndex] = !currentAccentPattern[stepIndex];
+        DBG("toggleAccentAtStep: Toggled accent at step " << stepIndex << " to " << (currentAccentPattern[stepIndex] ? "ACCENTED" : "UNACCENTED"));
+    } else {
+        // No accent pattern exists - create one with this step accented
+        currentAccentPattern.clear();
+        currentAccentPattern.resize(currentPattern.size(), false);
+        currentAccentPattern[stepIndex] = true;
+        hasAccentPattern = true;
+        DBG("toggleAccentAtStep: Created new accent pattern with accent at step " << stepIndex);
+    }
+    
+    // Update UPI display to show accent pattern changes
+    updateUPIFromCurrentPattern();
+    
+    // Notify UI of pattern change
+    patternChanged.store(true);
+}
+
 bool RhythmPatternExplorerAudioProcessor::isValidStepIndex(int stepIndex) const
 {
     auto currentPattern = patternEngine.getCurrentPattern();
@@ -1161,9 +1198,21 @@ void RhythmPatternExplorerAudioProcessor::updateUPIFromCurrentPattern()
         binaryString += step ? "1" : "0";
     }
     
+    // Include accent pattern if present
+    juce::String displayUPI;
+    if (hasAccentPattern && !currentAccentPattern.empty()) {
+        // Generate accent binary string
+        juce::String accentString;
+        for (bool accent : currentAccentPattern) {
+            accentString += accent ? "1" : "0";
+        }
+        displayUPI = "{" + accentString + "}" + binaryString + ":" + juce::String(static_cast<int>(currentPattern.size()));
+    } else {
+        displayUPI = binaryString + ":" + juce::String(static_cast<int>(currentPattern.size()));
+    }
+    
     // Update UPI input to show the manual modification for display purposes
-    // Use binary notation to clearly show the current state
-    currentUPIInput = binaryString + ":" + juce::String(static_cast<int>(currentPattern.size()));
+    currentUPIInput = displayUPI;
     
     // CRITICAL: Do NOT clear originalUPIInput here - preserve progressive/scene syntax for Tick/MIDI
     // originalUPIInput stays intact so Tick button and MIDI can still advance progressive transformations
