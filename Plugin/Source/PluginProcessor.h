@@ -195,6 +195,14 @@ public:
     bool shouldStepBeAccented(int stepIndex) const;    // NEW: step-based logic for MIDI alignment
     std::vector<bool> getCurrentAccentMap() const;
     void resetAccentSystem();
+    
+    // Lascabettes quantization access for UI and processing
+    bool getHasQuantization() const { return hasQuantization; }
+    int getOriginalStepCount() const { return originalStepCount; }
+    int getQuantizedStepCount() const { return quantizedStepCount; }
+    bool getQuantizationClockwise() const { return quantizationClockwise; }
+    int getOriginalOnsetCount() const { return originalOnsetCount; }
+    int getQuantizedOnsetCount() const { return quantizedOnsetCount; }
 
 private:
     //==============================================================================
@@ -227,6 +235,14 @@ private:
     juce::String originalUPIInput; // Preserve original pattern with progressive/scene syntax
     juce::String lastParsedUPI;
     juce::String currentProgressivePatternKey; // Track current progressive pattern for step counting
+    
+    // Lascabettes quantization metadata
+    bool hasQuantization = false;
+    int originalStepCount = 0;
+    int quantizedStepCount = 0;
+    bool quantizationClockwise = true;
+    int originalOnsetCount = 0;
+    int quantizedOnsetCount = 0;
     
     
     // Progressive offset support (works for any pattern)

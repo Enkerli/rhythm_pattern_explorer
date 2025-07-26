@@ -1328,6 +1328,29 @@ void RhythmPatternExplorerAudioProcessor::parseAndApplyUPI(const juce::String& u
         // Apply the parsed pattern to the engine
         patternEngine.setPattern(parseResult.pattern);
         
+        // Store quantization metadata if present
+        if (parseResult.hasQuantization)
+        {
+            hasQuantization = true;
+            originalStepCount = parseResult.originalStepCount;
+            quantizedStepCount = parseResult.quantizedStepCount;
+            quantizationClockwise = parseResult.quantizationClockwise;
+            originalOnsetCount = parseResult.originalOnsetCount;
+            quantizedOnsetCount = parseResult.quantizedOnsetCount;
+            DBG("   Quantization applied: " << originalStepCount << " -> " << quantizedStepCount 
+                << " steps, " << originalOnsetCount << " -> " << quantizedOnsetCount << " onsets, "
+                << (quantizationClockwise ? "clockwise" : "counterclockwise"));
+        }
+        else
+        {
+            hasQuantization = false;
+            originalStepCount = 0;
+            quantizedStepCount = 0;
+            quantizationClockwise = true;
+            originalOnsetCount = 0;
+            quantizedOnsetCount = 0;
+        }
+        
         // Set up accent pattern if present
         if (parseResult.hasAccentPattern)
         {
