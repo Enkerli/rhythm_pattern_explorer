@@ -56,6 +56,14 @@ public:
         std::vector<bool> accentPattern;
         juce::String accentPatternName;
         
+        // Quantization support (Lascabettes-style)
+        bool hasQuantization = false;
+        int originalStepCount = 0;
+        int quantizedStepCount = 0;
+        bool quantizationClockwise = true;
+        int originalOnsetCount = 0;
+        int quantizedOnsetCount = 0;
+        
         bool isValid() const { return type != Error; }
     };
     

@@ -9,6 +9,7 @@
 #include "UPIParser.h"
 #include "PatternEngine.h"
 #include "PatternUtils.h"
+#include "QuantizationEngine.h"
 #include "DebugConfig.h"
 #include <cmath>
 #include <random>
@@ -283,6 +284,81 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
                 auto rotated = PatternUtils::rotatePattern(baseResult.pattern, -rotationSteps);
                 return createSuccess(rotated, baseResult.patternName + "@" + juce::String(rotationSteps));
             }
+        }
+    }
+    
+    // Handle quantization: pattern;steps or pattern;-steps (Lascabettes-style)
+    if (QuantizationEngine::hasQuantizationNotation(cleaned))
+    {
+        DBG("UPIParser: Quantization notation detected: " << cleaned);
+        
+        auto quantParams = QuantizationEngine::parseQuantizationNotation(cleaned);
+        if (quantParams.isValid)
+        {
+            DBG("UPIParser: Parsed quantization - pattern: '" << quantParams.patternPart 
+                << "', steps: " << quantParams.newStepCount 
+                << ", direction: " << (quantParams.clockwise ? "clockwise" : "counterclockwise"));
+            
+            // Parse the base pattern first
+            auto baseResult = parsePattern(quantParams.patternPart);
+            if (baseResult.isValid())
+            {
+                // Apply quantization to the parsed pattern
+                auto quantResult = QuantizationEngine::quantizePattern(
+                    baseResult.pattern, 
+                    quantParams.newStepCount, 
+                    quantParams.clockwise
+                );
+                
+                if (quantResult.isValid)
+                {
+                    // Create success result with quantized pattern
+                    juce::String directionSymbol = quantParams.clockwise ? "↻" : "↺";
+                    juce::String quantizedName = baseResult.patternName + ";" + 
+                                               juce::String(quantParams.clockwise ? "" : "-") + 
+                                               juce::String(quantParams.newStepCount) + directionSymbol;
+                    
+                    auto result = createSuccess(quantResult.pattern, quantizedName);
+                    
+                    // Add quantization metadata
+                    result.hasQuantization = true;
+                    result.originalStepCount = quantResult.originalStepCount;
+                    result.quantizedStepCount = quantResult.quantizedStepCount;
+                    result.quantizationClockwise = quantResult.isClockwise;
+                    result.originalOnsetCount = quantResult.originalOnsetCount;
+                    result.quantizedOnsetCount = quantResult.quantizedOnsetCount;
+                    
+                    // Preserve any accent pattern from base result
+                    if (baseResult.hasAccentPattern)
+                    {
+                        result.hasAccentPattern = baseResult.hasAccentPattern;
+                        result.accentPattern = baseResult.accentPattern;
+                        result.accentPatternName = baseResult.accentPatternName;
+                    }
+                    
+                    DBG("UPIParser: Quantization successful - " << quantResult.originalOnsetCount 
+                        << " onsets mapped from " << quantResult.originalStepCount 
+                        << " to " << quantResult.quantizedStepCount << " steps, "
+                        << quantResult.quantizedOnsetCount << " onsets preserved");
+                    
+                    return result;
+                }
+                else
+                {
+                    DBG("UPIParser: Quantization failed - " << quantResult.errorMessage);
+                    return createError("Quantization failed: " + quantResult.errorMessage);
+                }
+            }
+            else
+            {
+                DBG("UPIParser: Base pattern parsing failed for quantization");
+                return createError("Invalid base pattern for quantization: " + quantParams.patternPart);
+            }
+        }
+        else
+        {
+            DBG("UPIParser: Quantization notation parsing failed - " << quantParams.errorMessage);
+            return createError("Invalid quantization notation: " + quantParams.errorMessage);
         }
     }
     
