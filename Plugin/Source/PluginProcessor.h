@@ -119,6 +119,11 @@ public:
     void parseAndApplyUPI(const juce::String& upiPattern, bool resetAccentPosition = true);
     void applyCurrentScenePattern();
     
+    // Interactive pattern modification methods
+    void togglePatternStep(int stepIndex);
+    bool isValidStepIndex(int stepIndex) const;
+    void updateUPIFromCurrentPattern();
+    
     // Progressive offset support (universal for all patterns)
     void resetProgressiveOffset() { 
         if (progressiveManager) {

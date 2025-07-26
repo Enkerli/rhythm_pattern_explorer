@@ -1063,6 +1063,70 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
     currentUPIInput = upiPattern;
 }
 
+//==============================================================================
+// Interactive Pattern Modification Methods
+//==============================================================================
+
+void RhythmPatternExplorerAudioProcessor::togglePatternStep(int stepIndex)
+{
+    juce::ScopedLock lock(processingLock);
+    
+    if (!isValidStepIndex(stepIndex)) {
+        DBG("togglePatternStep: Invalid step index " << stepIndex);
+        return;
+    }
+    
+    // Get current pattern and toggle the specified step
+    auto currentPattern = patternEngine.getCurrentPattern();
+    currentPattern[stepIndex] = !currentPattern[stepIndex];
+    
+    // Apply the modified pattern
+    patternEngine.setPattern(currentPattern);
+    
+    // Update step indicator to current position for immediate feedback
+    currentStep.store(stepIndex);
+    
+    // Update UPI display to reflect the manual modification
+    updateUPIFromCurrentPattern();
+    
+    // Preserve accent patterns through manual edits
+    // The accent system will automatically adjust to the new pattern length/structure
+    
+    // Notify UI of pattern change
+    patternChanged.store(true);
+    
+    DBG("togglePatternStep: Toggled step " << stepIndex << " to " << (currentPattern[stepIndex] ? "ON" : "OFF"));
+}
+
+bool RhythmPatternExplorerAudioProcessor::isValidStepIndex(int stepIndex) const
+{
+    auto currentPattern = patternEngine.getCurrentPattern();
+    return stepIndex >= 0 && stepIndex < static_cast<int>(currentPattern.size());
+}
+
+void RhythmPatternExplorerAudioProcessor::updateUPIFromCurrentPattern()
+{
+    // Convert the current pattern back to a binary representation for UPI display
+    auto currentPattern = patternEngine.getCurrentPattern();
+    
+    if (currentPattern.empty()) {
+        currentUPIInput = "E(0,8)"; // Default fallback
+        return;
+    }
+    
+    // Generate binary string representation
+    juce::String binaryString;
+    for (bool step : currentPattern) {
+        binaryString += step ? "1" : "0";
+    }
+    
+    // Update UPI input to show the manual modification
+    // Use binary notation to clearly show the current state
+    currentUPIInput = binaryString + ":" + juce::String(static_cast<int>(currentPattern.size()));
+    
+    DBG("updateUPIFromCurrentPattern: Updated UPI to " << currentUPIInput);
+}
+
 void RhythmPatternExplorerAudioProcessor::parseAndApplyUPI(const juce::String& upiPattern, bool)
 {
     if (upiPattern.isEmpty())
