@@ -180,11 +180,40 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
     // Handle tick parameter (equivalent to pressing Parse)
     bool currentTickState = tickParam ? tickParam->get() : false;
     if (currentTickState && !lastTickState) {
-        // Tick edge detected - reparse current UPI pattern
+        // Tick edge detected - advance scenes and progressive transformations like Enter key and MIDI input
         DBG("RhythmPatternExplorer: Tick parameter activated! UPI input: '" << currentUPIInput << "'");
         if (!currentUPIInput.isEmpty()) {
-            setUPIInput(currentUPIInput);
-            DBG("RhythmPatternExplorer: Pattern reparsed via tick");
+            // Check for scenes and progressive patterns to handle them correctly
+            bool hasProgressiveTransformation = currentUPIInput.contains(">");
+            bool hasScenes = currentUPIInput.contains("|");
+            
+            bool triggerNeeded = false;
+            
+            if (hasProgressiveTransformation) {
+                // Progressive transformations: advance without resetting accents
+                parseAndApplyUPI(currentUPIInput, false); // false = preserve accents
+                triggerNeeded = true;
+                DBG("RhythmPatternExplorer: Advanced progressive transformation via tick (accents preserved)");
+            }
+            
+            // Handle scenes separately - can occur together with progressive transformations
+            if (hasScenes) {
+                advanceScene();
+                applyCurrentScenePattern(); 
+                triggerNeeded = true;
+                DBG("RhythmPatternExplorer: Advanced scene via tick (accents preserved)");
+            }
+            
+            // For regular patterns without scenes or progressive transformations
+            if (!triggerNeeded) {
+                parseAndApplyUPI(currentUPIInput, true); // true = reset accents for new patterns
+                DBG("RhythmPatternExplorer: Applied regular pattern via tick");
+            }
+            
+            // Reset step indicator for all manual triggers
+            currentStep.store(0);
+            patternChanged.store(true);
+            
         } else {
             DBG("RhythmPatternExplorer: No UPI pattern to tick - currentUPIInput is empty");
         }
