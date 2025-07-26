@@ -668,8 +668,15 @@ void RhythmPatternExplorerAudioProcessor::processStep(juce::MidiBuffer& midiBuff
     if (stepToProcess < pattern.size() && pattern[stepToProcess])
     {
         // This step has an onset - determine if it should be accented
-        // FIXED: Use step-based accent logic to match UI display exactly
-        bool isAccented = shouldStepBeAccented(stepToProcess);
+        // Use appropriate accent logic based on suspension mode
+        bool isAccented;
+        if (patternManuallyModified) {
+            // SUSPENSION MODE: Use step-based accent logic (manual modifications)
+            isAccented = shouldStepBeAccented(stepToProcess);
+        } else {
+            // NORMAL MODE: Use onset-based accent logic (UPI patterns, progressive transformations)
+            isAccented = shouldOnsetBeAccented(globalOnsetCounter);
+        }
         
         // Trigger MIDI note
         triggerNote(midiBuffer, samplePosition, isAccented);
@@ -1775,7 +1782,7 @@ bool RhythmPatternExplorerAudioProcessor::shouldStepBeAccented(int stepIndex) co
 
 std::vector<bool> RhythmPatternExplorerAudioProcessor::getCurrentAccentMap() const
 {
-    // For UI visualization - return step-based accent mapping
+    // For UI visualization - use appropriate accent mapping based on suspension mode
     std::vector<bool> accentMap;
     auto currentPattern = patternEngine.getCurrentPattern();
     
@@ -1786,20 +1793,34 @@ std::vector<bool> RhythmPatternExplorerAudioProcessor::getCurrentAccentMap() con
         return accentMap;
     }
     
-    // FIXED: Use step-based accent mapping directly instead of onset-based conversion
-    // This ensures that accents appear exactly where the user clicked
     accentMap.resize(currentPattern.size(), false);
     
-    for (int stepIndex = 0; stepIndex < static_cast<int>(currentPattern.size()); ++stepIndex)
-    {
-        // Only show accent if:
-        // 1. This step has an onset (currentPattern[stepIndex] is true)
-        // 2. This step is marked as accented (currentAccentPattern[stepIndex] is true)
-        if (currentPattern[stepIndex] && stepIndex < static_cast<int>(currentAccentPattern.size()))
+    if (patternManuallyModified) {
+        // SUSPENSION MODE: Use step-based accent mapping (manual modifications)
+        // Accents appear exactly where the user clicked
+        for (int stepIndex = 0; stepIndex < static_cast<int>(currentPattern.size()); ++stepIndex)
         {
-            accentMap[stepIndex] = currentAccentPattern[stepIndex];
+            if (currentPattern[stepIndex] && stepIndex < static_cast<int>(currentAccentPattern.size()))
+            {
+                accentMap[stepIndex] = currentAccentPattern[stepIndex];
+            }
         }
-        // else: No onset or no accent at this step, accentMap[stepIndex] remains false
+    } else {
+        // NORMAL MODE: Use onset-based accent mapping (UPI patterns, progressive transformations)
+        // Calculate which onsets will occur in this cycle and their accent status
+        // Use stable UI offset that only updates at cycle boundaries
+        int onsetNumber = uiAccentOffset; // Start from stable UI accent position
+        
+        for (int stepInCycle = 0; stepInCycle < static_cast<int>(currentPattern.size()); ++stepInCycle)
+        {
+            if (currentPattern[stepInCycle])
+            {
+                // This step will have an onset - will it be accented?
+                accentMap[stepInCycle] = shouldOnsetBeAccented(onsetNumber);
+                onsetNumber++;
+            }
+            // else: No onset at this step, accentMap[stepInCycle] remains false
+        }
     }
     
     return accentMap;
