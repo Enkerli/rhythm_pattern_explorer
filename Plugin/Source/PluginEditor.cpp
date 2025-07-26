@@ -721,20 +721,12 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
         }
         highlightSlice.closeSubPath();
         
-        // Use different colors for playing vs recent playback
-        juce::Colour highlightColor = isPlaying ? juce::Colour(0xffff6b35) : juce::Colour(0xff888888); // Orange when playing, gray when stopped
+        // Use thick outline instead of fill to preserve pattern state visibility
+        juce::Colour highlightColor = isPlaying ? juce::Colour(0xffff6b35) : juce::Colour(0xffcccccc); // Orange when playing, light gray when stopped
         g.setColour(highlightColor);
-        g.fillPath(highlightSlice);
         
-        // Clean production version - highlight displayed
-        
-        // Redraw inner circle on top of highlight
-        if (innerRadius > 0)
-        {
-            g.setColour(getBackgroundColour());
-            g.fillEllipse(center.x - innerRadius, center.y - innerRadius, 
-                         innerRadius * 2, innerRadius * 2);
-        }
+        // Draw thick outline instead of filled area - preserves underlying pattern visibility
+        g.strokePath(highlightSlice, juce::PathStrokeType(5.0f)); // Thick stroke for clear visibility
     }
     
     // Draw slice separator lines AFTER filling
