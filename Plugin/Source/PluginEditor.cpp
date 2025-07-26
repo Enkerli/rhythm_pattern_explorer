@@ -982,6 +982,30 @@ void RhythmPatternExplorerAudioProcessorEditor::mouseDoubleClick(const juce::Mou
     cycleBackgroundColor();
 }
 
+void RhythmPatternExplorerAudioProcessorEditor::mouseDown(const juce::MouseEvent& event)
+{
+    // Handle single clicks on pattern circle for step toggling
+    if (event.mods.isLeftButtonDown() && !circleArea.isEmpty())
+    {
+        int mouseX = event.getMouseDownX();
+        int mouseY = event.getMouseDownY();
+        
+        // Check if click is within the circle area and get step index
+        int stepIndex = getStepIndexFromCoordinates(mouseX, mouseY, circleArea);
+        
+        if (stepIndex >= 0)
+        {
+            // Valid step clicked - toggle the pattern step
+            audioProcessor.togglePatternStep(stepIndex);
+            
+            // Force immediate UI update
+            repaint();
+            
+            DBG("Mouse click: toggled step " << stepIndex);
+        }
+    }
+}
+
 //==============================================================================
 // Pattern Editing via Mouse Clicks
 //==============================================================================

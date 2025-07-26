@@ -123,6 +123,7 @@ private:
     
     // Mouse interaction
     void mouseDoubleClick(const juce::MouseEvent& event) override;
+    void mouseDown(const juce::MouseEvent& event) override;
     
     // Pattern editing via mouse clicks
     int getStepIndexFromCoordinates(int mouseX, int mouseY, juce::Rectangle<int> circleArea) const;
