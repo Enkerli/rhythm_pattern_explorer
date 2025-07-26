@@ -1,0 +1,28 @@
+# Makefile for Step Detection Tests
+# Standalone compilation without JUCE dependencies
+
+CXX = clang++
+CXXFLAGS = -std=c++17 -Wall -Wextra -O2
+
+# Target executable
+TARGET = test_step_detection
+
+# Source files
+SOURCES = StepDetectionTests.cpp
+
+# Build rule
+$(TARGET): $(SOURCES)
+	$(CXX) $(CXXFLAGS) -o $(TARGET) $(SOURCES)
+
+# Run tests
+test: $(TARGET)
+	./$(TARGET)
+
+# Clean up
+clean:
+	rm -f $(TARGET)
+
+# Run tests and clean up
+test-clean: test clean
+
+.PHONY: test clean test-clean

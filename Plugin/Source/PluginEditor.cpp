@@ -982,3 +982,69 @@ void RhythmPatternExplorerAudioProcessorEditor::mouseDoubleClick(const juce::Mou
     cycleBackgroundColor();
 }
 
+//==============================================================================
+// Pattern Editing via Mouse Clicks
+//==============================================================================
+
+int RhythmPatternExplorerAudioProcessorEditor::getStepIndexFromCoordinates(int mouseX, int mouseY, juce::Rectangle<int> circleArea) const
+{
+    auto pattern = audioProcessor.getPatternEngine().getCurrentPattern();
+    int numSteps = static_cast<int>(pattern.size());
+    
+    if (numSteps <= 0) return -1; // Invalid pattern
+    
+    // Calculate circle dimensions (matching drawPatternCircle logic)
+    juce::Point<float> center(circleArea.getCentreX(), circleArea.getCentreY());
+    
+    // Use same radius calculations as drawPatternCircle
+    float radius = std::min(circleArea.getWidth(), circleArea.getHeight()) * 0.4f;
+    float outerRadius = radius;
+    float innerRadius = radius * 0.3f; // 30% inner radius for donut effect
+    
+    // Calculate distance from center
+    float dx = mouseX - center.x;
+    float dy = mouseY - center.y;
+    float distanceFromCenter = std::sqrt(dx * dx + dy * dy);
+    
+    // Check if click is within the ring (between inner and outer radius)
+    if (distanceFromCenter < innerRadius || distanceFromCenter > outerRadius) {
+        return -1; // Outside clickable area
+    }
+    
+    // Calculate angle from center
+    // atan2 returns angle in range [-π, π], we need [0, 2π]
+    float angleFromCenter = std::atan2(dy, dx);
+    if (angleFromCenter < 0) {
+        angleFromCenter += 2.0f * juce::MathConstants<float>::pi;
+    }
+    
+    // Adjust for 12 o'clock alignment (matching drawPatternCircle)
+    // The pattern starts at 12 o'clock (north), so we need to offset by +π/2
+    // This converts from standard math coordinates to our 12-o'clock-first system
+    float adjustedAngle = angleFromCenter + juce::MathConstants<float>::halfPi;
+    if (adjustedAngle >= 2.0f * juce::MathConstants<float>::pi) {
+        adjustedAngle -= 2.0f * juce::MathConstants<float>::pi;
+    }
+    
+    // Calculate slice angle and step index
+    float sliceAngle = 2.0f * juce::MathConstants<float>::pi / numSteps;
+    
+    // Add half slice offset to ensure we're detecting the center of slices correctly
+    adjustedAngle += sliceAngle * 0.5f;
+    if (adjustedAngle >= 2.0f * juce::MathConstants<float>::pi) {
+        adjustedAngle -= 2.0f * juce::MathConstants<float>::pi;
+    }
+    int stepIndex = static_cast<int>(adjustedAngle / sliceAngle);
+    
+    // Clamp to valid range
+    if (stepIndex < 0) stepIndex = 0;
+    if (stepIndex >= numSteps) stepIndex = numSteps - 1;
+    
+    return stepIndex;
+}
+
+bool RhythmPatternExplorerAudioProcessorEditor::isCoordinateInCircleArea(int mouseX, int mouseY, juce::Rectangle<int> circleArea) const
+{
+    return getStepIndexFromCoordinates(mouseX, mouseY, circleArea) >= 0;
+}
+

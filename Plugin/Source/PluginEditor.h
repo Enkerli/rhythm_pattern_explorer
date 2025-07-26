@@ -124,6 +124,10 @@ private:
     // Mouse interaction
     void mouseDoubleClick(const juce::MouseEvent& event) override;
     
+    // Pattern editing via mouse clicks
+    int getStepIndexFromCoordinates(int mouseX, int mouseY, juce::Rectangle<int> circleArea) const;
+    bool isCoordinateInCircleArea(int mouseX, int mouseY, juce::Rectangle<int> circleArea) const;
+    
     // Circle area for responsive layout
     juce::Rectangle<int> circleArea;
     
