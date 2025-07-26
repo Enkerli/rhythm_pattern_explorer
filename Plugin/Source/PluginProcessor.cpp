@@ -183,15 +183,18 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
         // Tick edge detected - advance scenes and progressive transformations like Enter key and MIDI input
         DBG("RhythmPatternExplorer: Tick parameter activated! UPI input: '" << currentUPIInput << "'");
         if (!currentUPIInput.isEmpty()) {
+            // Use original UPI input if available (preserves progressive/scene syntax after manual edits)
+            juce::String upiToProcess = originalUPIInput.isEmpty() ? currentUPIInput : originalUPIInput;
+            
             // Check for scenes and progressive patterns to handle them correctly
-            bool hasProgressiveTransformation = currentUPIInput.contains(">");
-            bool hasScenes = currentUPIInput.contains("|");
+            bool hasProgressiveTransformation = upiToProcess.contains(">");
+            bool hasScenes = upiToProcess.contains("|");
             
             bool triggerNeeded = false;
             
             if (hasProgressiveTransformation) {
                 // Progressive transformations: advance without resetting accents
-                parseAndApplyUPI(currentUPIInput, false); // false = preserve accents
+                parseAndApplyUPI(upiToProcess, false); // false = preserve accents
                 triggerNeeded = true;
                 DBG("RhythmPatternExplorer: Advanced progressive transformation via tick (accents preserved)");
             }
@@ -206,7 +209,7 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
             
             // For regular patterns without scenes or progressive transformations
             if (!triggerNeeded) {
-                parseAndApplyUPI(currentUPIInput, true); // true = reset accents for new patterns
+                parseAndApplyUPI(upiToProcess, true); // true = reset accents for new patterns
                 DBG("RhythmPatternExplorer: Applied regular pattern via tick");
             }
             
@@ -847,20 +850,29 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
     
     // Check for progressive syntax: scenes first (pattern|pattern|pattern), then pattern+N (offset), pattern*N (lengthening)
     juce::String pattern = upiPattern.trim();
-    bool isScenes = pattern.contains("|");
+    
+    // Store original UPI input if it contains progressive/scene syntax for later Tick/MIDI advancement
+    bool hasProgressiveTransformation = pattern.contains(">");
+    bool hasScenes = pattern.contains("|");
+    if (hasProgressiveTransformation || hasScenes) {
+        originalUPIInput = pattern;
+        DBG("Stored original UPI with progressive/scene syntax: " << originalUPIInput);
+    } else {
+        originalUPIInput.clear(); // Clear if no progressive syntax
+    }
     
     // Check if + is followed by a number (progressive offset) vs pattern (combination)
     bool isProgressiveOffset = false;
-    if (!isScenes && pattern.contains("+") && pattern.lastIndexOf("+") > 0) {
+    if (!hasScenes && pattern.contains("+") && pattern.lastIndexOf("+") > 0) {
         int lastPlusIndex = pattern.lastIndexOf("+");
         juce::String afterPlus = pattern.substring(lastPlusIndex + 1).trim();
         // Progressive offset if what follows + is purely numeric (including negative numbers)
         isProgressiveOffset = afterPlus.containsOnly("0123456789-") && afterPlus.isNotEmpty();
     }
     
-    bool isProgressiveLengthening = !isScenes && pattern.contains("*") && pattern.lastIndexOf("*") > 0;
+    bool isProgressiveLengthening = !hasScenes && pattern.contains("*") && pattern.lastIndexOf("*") > 0;
     
-    if (isScenes)
+    if (hasScenes)
     {
         // Handle scene cycling: pattern1|pattern2|pattern3
         // CRITICAL: Split scenes BEFORE any UPI parsing to preserve individual accent patterns
@@ -1149,11 +1161,14 @@ void RhythmPatternExplorerAudioProcessor::updateUPIFromCurrentPattern()
         binaryString += step ? "1" : "0";
     }
     
-    // Update UPI input to show the manual modification
+    // Update UPI input to show the manual modification for display purposes
     // Use binary notation to clearly show the current state
     currentUPIInput = binaryString + ":" + juce::String(static_cast<int>(currentPattern.size()));
     
-    DBG("updateUPIFromCurrentPattern: Updated UPI to " << currentUPIInput);
+    // CRITICAL: Do NOT clear originalUPIInput here - preserve progressive/scene syntax for Tick/MIDI
+    // originalUPIInput stays intact so Tick button and MIDI can still advance progressive transformations
+    
+    DBG("updateUPIFromCurrentPattern: Updated display UPI to " << currentUPIInput << " (original preserved: " << originalUPIInput << ")");
 }
 
 void RhythmPatternExplorerAudioProcessor::parseAndApplyUPI(const juce::String& upiPattern, bool)
@@ -1284,11 +1299,42 @@ void RhythmPatternExplorerAudioProcessor::checkMidiInputForTriggers(juce::MidiBu
                 DBG("RhythmPatternExplorer: Captured MIDI note " << noteNumber << " for output");
             }
             
-            // Any MIDI note input triggers pattern regeneration - use same logic as Enter key/Tick button
+            // Any MIDI note input triggers pattern regeneration - use same logic as Tick button
             if (!currentUPIInput.isEmpty())
             {
-                DBG("RhythmPatternExplorer: MIDI triggered pattern advancement - using setUPIInput like Enter key");
-                setUPIInput(currentUPIInput);
+                // Use original UPI input if available (preserves progressive/scene syntax after manual edits)
+                juce::String upiToProcess = originalUPIInput.isEmpty() ? currentUPIInput : originalUPIInput;
+                
+                // Check for scenes and progressive patterns to handle them correctly
+                bool hasProgressiveTransformation = upiToProcess.contains(">");
+                bool hasScenes = upiToProcess.contains("|");
+                
+                bool triggerNeeded = false;
+                
+                if (hasProgressiveTransformation) {
+                    // Progressive transformations: advance without resetting accents
+                    parseAndApplyUPI(upiToProcess, false); // false = preserve accents
+                    triggerNeeded = true;
+                    DBG("RhythmPatternExplorer: Advanced progressive transformation via MIDI (accents preserved)");
+                }
+                
+                // Handle scenes separately - can occur together with progressive transformations
+                if (hasScenes) {
+                    advanceScene();
+                    applyCurrentScenePattern(); 
+                    triggerNeeded = true;
+                    DBG("RhythmPatternExplorer: Advanced scene via MIDI (accents preserved)");
+                }
+                
+                // For regular patterns without scenes or progressive transformations
+                if (!triggerNeeded) {
+                    parseAndApplyUPI(upiToProcess, true); // true = reset accents for new patterns
+                    DBG("RhythmPatternExplorer: Applied regular pattern via MIDI");
+                }
+                
+                // Reset step indicator for all manual triggers
+                currentStep.store(0);
+                patternChanged.store(true);
             }
             // Pattern updates are handled via UPI only
         }

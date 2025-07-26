@@ -222,6 +222,7 @@ private:
     
     // UPI pattern input
     juce::String currentUPIInput;
+    juce::String originalUPIInput; // Preserve original pattern with progressive/scene syntax
     juce::String lastParsedUPI;
     juce::String currentProgressivePatternKey; // Track current progressive pattern for step counting
     
