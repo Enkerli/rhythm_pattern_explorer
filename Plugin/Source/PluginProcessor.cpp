@@ -692,10 +692,15 @@ void RhythmPatternExplorerAudioProcessor::processStep(juce::MidiBuffer& midiBuff
     int nextStep = (stepToProcess + 1) % static_cast<int>(pattern.size());
     if (nextStep == 0)
     {
-        // Update stable UI accent offset at cycle boundaries
-        if (hasAccentPattern && !currentAccentPattern.empty())
+        // Update stable UI accent offset at cycle boundaries (only if not manually modified)
+        if (hasAccentPattern && !currentAccentPattern.empty() && !accentPatternManuallyModified)
         {
             uiAccentOffset = globalOnsetCounter % static_cast<int>(currentAccentPattern.size());
+            DBG("Cycle boundary: Updated UI accent offset to " << uiAccentOffset << " (automatic cycling)");
+        }
+        else if (hasAccentPattern && accentPatternManuallyModified)
+        {
+            DBG("Cycle boundary: Accent pattern manually modified - skipping automatic cycling");
         }
         patternChanged.store(true); // UI can refresh at cycle boundaries
     }
@@ -1169,6 +1174,10 @@ void RhythmPatternExplorerAudioProcessor::toggleAccentAtStep(int stepIndex)
         DBG("toggleAccentAtStep: Created new accent pattern with accent at step " << stepIndex);
     }
     
+    // Mark accent pattern as manually modified to prevent automatic cycling
+    accentPatternManuallyModified = true;
+    DBG("toggleAccentAtStep: Accent pattern marked as manually modified - cycling disabled");
+    
     // Update UPI display to show accent pattern changes
     updateUPIFromCurrentPattern();
     
@@ -1220,7 +1229,7 @@ void RhythmPatternExplorerAudioProcessor::updateUPIFromCurrentPattern()
     DBG("updateUPIFromCurrentPattern: Updated display UPI to " << currentUPIInput << " (original preserved: " << originalUPIInput << ")");
 }
 
-void RhythmPatternExplorerAudioProcessor::parseAndApplyUPI(const juce::String& upiPattern, bool)
+void RhythmPatternExplorerAudioProcessor::parseAndApplyUPI(const juce::String& upiPattern, bool resetAccentPosition)
 {
     if (upiPattern.isEmpty())
         return;
@@ -1266,6 +1275,12 @@ void RhythmPatternExplorerAudioProcessor::parseAndApplyUPI(const juce::String& u
         // Reset global onset counter and UI accent offset (fresh start)
         globalOnsetCounter = 0;
         uiAccentOffset = 0;
+        
+        // Reset manual modification flag when accents are reset
+        if (resetAccentPosition) {
+            accentPatternManuallyModified = false;
+            DBG("parseAndApplyUPI: Reset manual accent modification flag - automatic cycling re-enabled");
+        }
         
         // Set up progressive offset if present
         if (parseResult.hasProgressiveOffset)
@@ -1722,7 +1737,7 @@ bool RhythmPatternExplorerAudioProcessor::shouldOnsetBeAccented(int onsetNumber)
 
 std::vector<bool> RhythmPatternExplorerAudioProcessor::getCurrentAccentMap() const
 {
-    // For UI visualization - calculate accents for current rhythm cycle
+    // For UI visualization - return step-based accent mapping
     std::vector<bool> accentMap;
     auto currentPattern = patternEngine.getCurrentPattern();
     
@@ -1733,20 +1748,20 @@ std::vector<bool> RhythmPatternExplorerAudioProcessor::getCurrentAccentMap() con
         return accentMap;
     }
     
-    // Calculate which onsets will occur in this cycle and their accent status
-    // Use stable UI offset that only updates at cycle boundaries
-    int onsetNumber = uiAccentOffset; // Start from stable UI accent position
+    // FIXED: Use step-based accent mapping directly instead of onset-based conversion
+    // This ensures that accents appear exactly where the user clicked
     accentMap.resize(currentPattern.size(), false);
     
-    for (int stepInCycle = 0; stepInCycle < static_cast<int>(currentPattern.size()); ++stepInCycle)
+    for (int stepIndex = 0; stepIndex < static_cast<int>(currentPattern.size()); ++stepIndex)
     {
-        if (currentPattern[stepInCycle])
+        // Only show accent if:
+        // 1. This step has an onset (currentPattern[stepIndex] is true)
+        // 2. This step is marked as accented (currentAccentPattern[stepIndex] is true)
+        if (currentPattern[stepIndex] && stepIndex < static_cast<int>(currentAccentPattern.size()))
         {
-            // This step will have an onset - will it be accented?
-            accentMap[stepInCycle] = shouldOnsetBeAccented(onsetNumber);
-            onsetNumber++;
+            accentMap[stepIndex] = currentAccentPattern[stepIndex];
         }
-        // else: No onset at this step, accentMap[stepInCycle] remains false
+        // else: No onset or no accent at this step, accentMap[stepIndex] remains false
     }
     
     return accentMap;
@@ -1756,7 +1771,9 @@ void RhythmPatternExplorerAudioProcessor::resetAccentSystem()
 {
     globalOnsetCounter = 0;
     uiAccentOffset = 0;
+    accentPatternManuallyModified = false; // Reset manual modification flag
     patternChanged.store(true);
+    DBG("resetAccentSystem: Reset accent system including manual modification flag");
 }
 
 //==============================================================================

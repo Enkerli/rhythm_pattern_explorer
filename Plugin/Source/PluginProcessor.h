@@ -264,6 +264,7 @@ private:
     std::vector<bool> currentAccentPattern;
     int globalOnsetCounter = 0;           // Single source of truth: counts all onsets since pattern start
     int uiAccentOffset = 0;               // Stable accent offset for UI display (updates only at cycle boundaries)
+    bool accentPatternManuallyModified = false; // Flag to prevent automatic accent cycling after manual edits
     
     // Parameters - implementation details
     juce::AudioParameterBool* useHostTransportParam;
