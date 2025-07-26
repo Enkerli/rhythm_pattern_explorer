@@ -50,6 +50,7 @@
 		8E9E958A19D1F865F0D05DF8 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C873CD2F1FF4CD43481EEAEC /* Accelerate.framework */; };
 		924A6C0707E6D092DC1AA282 /* UPIParser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D134A56167EE1189C4F23324 /* UPIParser.cpp */; };
 		97158F0C81A48846505C6B4E /* PatternEngine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3807C0D40B0C5372930BBC8E /* PatternEngine.cpp */; };
+		AC4D7E8F29B1A3D4E6F12C8B /* QuantizationEngine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2F9E8A1C74B6D5E8A3C19F7E /* QuantizationEngine.cpp */; };
 		9D218D2CB3DBE5F2DBB49E62 /* include_juce_gui_basics.mm in Sources */ = {isa = PBXBuildFile; fileRef = D69E01D310170BDB9C030EC9 /* include_juce_gui_basics.mm */; };
 		9F014246351A2834EABC0B8E /* include_juce_dsp.mm in Sources */ = {isa = PBXBuildFile; fileRef = 57E0F6A5FC450BFFD8DDD049 /* include_juce_dsp.mm */; };
 		A572E463541342F93B5B6918 /* include_juce_audio_processors_lv2_libs.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BE1D943D5FC956F6F1E1C5DE /* include_juce_audio_processors_lv2_libs.cpp */; };
@@ -168,6 +169,7 @@
 		2A15FFCC893EEA52106C4F5B /* include_juce_graphics.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_graphics.mm; path = ../../JuceLibraryCode/include_juce_graphics.mm; sourceTree = SOURCE_ROOT; };
 		32C38D4AB5C4169A720A5C23 /* juce_vst3_helper */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = juce_vst3_helper; sourceTree = BUILT_PRODUCTS_DIR; };
 		350C7F3540E0738DF058B8CA /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
+		2F9E8A1C74B6D5E8A3C19F7E /* QuantizationEngine.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = QuantizationEngine.cpp; path = ../../Source/QuantizationEngine.cpp; sourceTree = SOURCE_ROOT; };
 		3807C0D40B0C5372930BBC8E /* PatternEngine.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = PatternEngine.cpp; path = ../../Source/PatternEngine.cpp; sourceTree = SOURCE_ROOT; };
 		40365512EC0DA262E47ED40D /* libRhythm Pattern Explorer.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libRhythm Pattern Explorer.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		406EEFE8CFFF6DFBBFD7FF4F /* include_juce_audio_utils.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_audio_utils.mm; path = ../../JuceLibraryCode/include_juce_audio_utils.mm; sourceTree = SOURCE_ROOT; };
@@ -184,6 +186,7 @@
 		5EF44E0CA03361D93A611F89 /* juce_events */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_events; path = /Users/alex/JUCE/modules/juce_events; sourceTree = "<absolute>"; };
 		72B934818FD6B87FA2265080 /* Info-AU.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Info-AU.plist"; sourceTree = SOURCE_ROOT; };
 		750149BEEBB2697CE59DF249 /* PatternEngine.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = PatternEngine.h; path = ../../Source/PatternEngine.h; sourceTree = SOURCE_ROOT; };
+		8B7C9F3E41A2D8C7F6E58B2A /* QuantizationEngine.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = QuantizationEngine.h; path = ../../Source/QuantizationEngine.h; sourceTree = SOURCE_ROOT; };
 		762735DAF040256A74866F76 /* DiscRecording.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = DiscRecording.framework; path = System/Library/Frameworks/DiscRecording.framework; sourceTree = SDKROOT; };
 		772C1DB482FE5EEDF576B059 /* juce_audio_basics */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_audio_basics; path = /Users/alex/JUCE/modules/juce_audio_basics; sourceTree = "<absolute>"; };
 		7A2B5A6179FC9F8C59F1912B /* include_juce_graphics_Harfbuzz.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = include_juce_graphics_Harfbuzz.cpp; path = ../../JuceLibraryCode/include_juce_graphics_Harfbuzz.cpp; sourceTree = SOURCE_ROOT; };
@@ -308,6 +311,8 @@
 				7A7F70D19EA0C731F064CE2E /* PluginEditor.h */,
 				3807C0D40B0C5372930BBC8E /* PatternEngine.cpp */,
 				750149BEEBB2697CE59DF249 /* PatternEngine.h */,
+				2F9E8A1C74B6D5E8A3C19F7E /* QuantizationEngine.cpp */,
+				8B7C9F3E41A2D8C7F6E58B2A /* QuantizationEngine.h */,
 				D134A56167EE1189C4F23324 /* UPIParser.cpp */,
 				595C1C404B8A41918BA496D7 /* UPIParser.h */,
 				FC8AF65B92A3884E691EF0AF /* PatternUtils.cpp */,
@@ -797,6 +802,7 @@
 				A76A77C6873073C5348141BD /* PluginProcessor.cpp in Sources */,
 				4203B9A6240C801EB1F80140 /* PluginEditor.cpp in Sources */,
 				97158F0C81A48846505C6B4E /* PatternEngine.cpp in Sources */,
+				AC4D7E8F29B1A3D4E6F12C8B /* QuantizationEngine.cpp in Sources */,
 				924A6C0707E6D092DC1AA282 /* UPIParser.cpp in Sources */,
 				E6AB5C92B13E87BEA3E0976B /* PatternUtils.cpp in Sources */,
 				5911474405E35190CD622FFA /* include_juce_audio_basics.mm in Sources */,
