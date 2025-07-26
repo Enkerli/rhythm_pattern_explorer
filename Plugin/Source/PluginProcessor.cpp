@@ -192,19 +192,20 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
             
             bool triggerNeeded = false;
             
-            if (hasProgressiveTransformation) {
-                // Progressive transformations: advance without resetting accents
-                parseAndApplyUPI(upiToProcess, false); // false = preserve accents
-                triggerNeeded = true;
-                DBG("RhythmPatternExplorer: Advanced progressive transformation via tick (accents preserved)");
-            }
-            
-            // Handle scenes separately - can occur together with progressive transformations
             if (hasScenes) {
+                // CRITICAL FIX: If we have scenes, handle scene advancement first
+                // This prevents double/triple advancement when scenes contain progressive transformations
                 advanceScene();
                 applyCurrentScenePattern(); 
                 triggerNeeded = true;
                 DBG("RhythmPatternExplorer: Advanced scene via tick (accents preserved)");
+            }
+            else if (hasProgressiveTransformation) {
+                // Progressive transformations: advance without resetting accents
+                // Only process this if we DON'T have scenes (to avoid double advancement)
+                parseAndApplyUPI(upiToProcess, false); // false = preserve accents
+                triggerNeeded = true;
+                DBG("RhythmPatternExplorer: Advanced progressive transformation via tick (accents preserved)");
             }
             
             // For regular patterns without scenes or progressive transformations
@@ -1130,23 +1131,57 @@ void RhythmPatternExplorerAudioProcessor::togglePatternStep(int stepIndex)
         return;
     }
     
-    // ENTER SUSPENSION MODE: Preserve current state before manual modification
+    // ENTER SUSPENSION MODE: Preserve current VISUAL accent state before pattern modification
     if (!patternManuallyModified) {
+        // CRITICAL FIX: Capture current visual accent state BEFORE any pattern changes
+        auto currentVisualAccents = getCurrentAccentMap(); // Call while still in normal mode
+        
+        // Now enter suspension mode
         patternManuallyModified = true;
         suspendedRhythmPattern = patternEngine.getCurrentPattern();
+        
+        // Get current pattern and toggle the specified step
+        auto currentPattern = patternEngine.getCurrentPattern();
+        currentPattern[stepIndex] = !currentPattern[stepIndex];
+        
+        // Apply the modified pattern
+        patternEngine.setPattern(currentPattern);
+        
+        // CRITICAL FIX: Map the captured visual accents to the NEW pattern structure
+        // This preserves accent positions even when pattern structure changes
+        currentAccentPattern.clear();
+        currentAccentPattern.resize(currentPattern.size(), false);
+        
+        // Copy accents from old visual state to new pattern structure
+        for (int i = 0; i < std::min(static_cast<int>(currentVisualAccents.size()), static_cast<int>(currentPattern.size())); ++i) {
+            if (currentPattern[i] && i < currentVisualAccents.size()) {
+                currentAccentPattern[i] = currentVisualAccents[i];
+            }
+        }
+        hasAccentPattern = true; // We now have a captured accent pattern
+        
+        // Update suspended patterns with the NEW structure
+        suspendedRhythmPattern = currentPattern;
         suspendedAccentPattern = currentAccentPattern;
-        DBG("togglePatternStep: Entered suspension mode - current cycle state preserved");
+        
+        DBG("togglePatternStep: Entered suspension mode - preserved visual accents for new pattern structure");
+    } else {
+        // Already in suspension mode - just modify the pattern
+        auto currentPattern = patternEngine.getCurrentPattern();
+        currentPattern[stepIndex] = !currentPattern[stepIndex];
+        
+        // Update suspended patterns (this becomes the new cycle state)
+        suspendedRhythmPattern = currentPattern;
+        
+        // Apply the modified pattern
+        patternEngine.setPattern(currentPattern);
+        
+        // Resize accent pattern to match new pattern size
+        if (currentAccentPattern.size() != currentPattern.size()) {
+            currentAccentPattern.resize(currentPattern.size(), false);
+            suspendedAccentPattern = currentAccentPattern;
+        }
     }
-    
-    // Get current pattern and toggle the specified step
-    auto currentPattern = patternEngine.getCurrentPattern();
-    currentPattern[stepIndex] = !currentPattern[stepIndex];
-    
-    // Update suspended patterns (this becomes the new cycle state)
-    suspendedRhythmPattern = currentPattern;
-    
-    // Apply the modified pattern
-    patternEngine.setPattern(currentPattern);
     
     // Update step indicator to current position for immediate feedback
     currentStep.store(stepIndex);
@@ -1415,19 +1450,20 @@ void RhythmPatternExplorerAudioProcessor::checkMidiInputForTriggers(juce::MidiBu
                 
                 bool triggerNeeded = false;
                 
-                if (hasProgressiveTransformation) {
-                    // Progressive transformations: advance without resetting accents
-                    parseAndApplyUPI(upiToProcess, false); // false = preserve accents
-                    triggerNeeded = true;
-                    DBG("RhythmPatternExplorer: Advanced progressive transformation via MIDI (accents preserved)");
-                }
-                
-                // Handle scenes separately - can occur together with progressive transformations
                 if (hasScenes) {
+                    // CRITICAL FIX: If we have scenes, handle scene advancement first
+                    // This prevents double/triple advancement when scenes contain progressive transformations
                     advanceScene();
                     applyCurrentScenePattern(); 
                     triggerNeeded = true;
                     DBG("RhythmPatternExplorer: Advanced scene via MIDI (accents preserved)");
+                }
+                else if (hasProgressiveTransformation) {
+                    // Progressive transformations: advance without resetting accents
+                    // Only process this if we DON'T have scenes (to avoid double advancement)
+                    parseAndApplyUPI(upiToProcess, false); // false = preserve accents
+                    triggerNeeded = true;
+                    DBG("RhythmPatternExplorer: Advanced progressive transformation via MIDI (accents preserved)");
                 }
                 
                 // For regular patterns without scenes or progressive transformations
