@@ -1176,26 +1176,33 @@ void RhythmPatternExplorerAudioProcessor::toggleAccentAtStep(int stepIndex)
         return;
     }
     
-    // ENTER SUSPENSION MODE: Preserve current state before manual modification
+    // ENTER SUSPENSION MODE: Preserve current VISUAL accent state before manual modification
     if (!patternManuallyModified) {
+        // CRITICAL FIX: Capture current visual accent state BEFORE setting patternManuallyModified
+        // This preserves the live accent cycling state instead of losing it
+        auto currentVisualAccents = getCurrentAccentMap(); // Call this while still in normal mode
+        
+        // Now enter suspension mode
         patternManuallyModified = true;
         suspendedRhythmPattern = patternEngine.getCurrentPattern();
+        
+        // Set the captured visual state as our new accent pattern
+        currentAccentPattern = currentVisualAccents;
+        hasAccentPattern = true; // We now have a captured accent pattern
+        
         suspendedAccentPattern = currentAccentPattern;
-        DBG("toggleAccentAtStep: Entered suspension mode - current cycle state preserved");
+        DBG("toggleAccentAtStep: Entered suspension mode - captured current visual accent state");
     }
     
-    // Toggle accent at this step
-    if (hasAccentPattern && stepIndex < currentAccentPattern.size()) {
-        // Existing accent pattern - toggle this step
+    // Toggle accent at this step (working with the preserved visual state)
+    if (stepIndex < currentAccentPattern.size()) {
         currentAccentPattern[stepIndex] = !currentAccentPattern[stepIndex];
         DBG("toggleAccentAtStep: Toggled accent at step " << stepIndex << " to " << (currentAccentPattern[stepIndex] ? "ACCENTED" : "UNACCENTED"));
     } else {
-        // No accent pattern exists - create one with this step accented
-        currentAccentPattern.clear();
+        // Pattern size mismatch - resize and toggle
         currentAccentPattern.resize(currentPattern.size(), false);
-        currentAccentPattern[stepIndex] = true;
-        hasAccentPattern = true;
-        DBG("toggleAccentAtStep: Created new accent pattern with accent at step " << stepIndex);
+        currentAccentPattern[stepIndex] = !currentAccentPattern[stepIndex];
+        DBG("toggleAccentAtStep: Resized accent pattern and toggled step " << stepIndex);
     }
     
     // Update suspended accent pattern (this becomes the new cycle state)
@@ -1299,17 +1306,20 @@ void RhythmPatternExplorerAudioProcessor::parseAndApplyUPI(const juce::String& u
             currentAccentPattern.clear();
         }
         
-        // Reset global onset counter and UI accent offset (fresh start)
-        globalOnsetCounter = 0;
-        uiAccentOffset = 0;
-        
-        // Reset manual modification flags when accents are reset
+        // Reset global onset counter and UI accent offset only when requested
         if (resetAccentPosition) {
-            accentPatternManuallyModified = false;
+            globalOnsetCounter = 0;
+            uiAccentOffset = 0;
+        }
+        
+        // CRITICAL FIX: Always exit suspension mode when we get a new UPI pattern
+        // This ensures that restored UPI accent patterns use proper onset-based logic
+        if (patternManuallyModified) {
             patternManuallyModified = false;
+            accentPatternManuallyModified = false;
             suspendedRhythmPattern.clear();
             suspendedAccentPattern.clear();
-            DBG("parseAndApplyUPI: Reset manual modification flags and exited suspension mode - automatic cycling re-enabled");
+            DBG("parseAndApplyUPI: THAWING - Exited suspension mode, restored UPI accent behavior");
         }
         
         // Set up progressive offset if present

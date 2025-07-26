@@ -1234,7 +1234,10 @@ RhythmPatternExplorerAudioProcessorEditor::ClickResult RhythmPatternExplorerAudi
     float radius = std::min(circleArea.getWidth(), circleArea.getHeight()) * 0.4f;
     float outerRadius = radius;
     float innerRadius = radius * 0.3f; // 30% inner radius for donut effect
-    float midRadius = (innerRadius + outerRadius) * 0.5f; // Mid-point for inner/outer detection
+    
+    // IMPROVED TOUCH TARGETS: Make outer half larger for easier accent clicking
+    // Split the ring 70% outer (accent) / 30% inner (onset toggle) instead of 50/50
+    float midRadius = innerRadius + (outerRadius - innerRadius) * 0.3f; // 70% is outer half
     
     // Calculate distance from center
     float dx = mouseX - center.x;
