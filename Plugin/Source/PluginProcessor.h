@@ -191,7 +191,8 @@ public:
     bool getHasAccentPattern() const { return hasAccentPattern; }
     const std::vector<bool>& getCurrentAccentPattern() const { return currentAccentPattern; }
     int getGlobalOnsetCounter() const { return globalOnsetCounter; }
-    bool shouldOnsetBeAccented(int onsetNumber) const;
+    bool shouldOnsetBeAccented(int onsetNumber) const; // DEPRECATED: onset-based logic
+    bool shouldStepBeAccented(int stepIndex) const;    // NEW: step-based logic for MIDI alignment
     std::vector<bool> getCurrentAccentMap() const;
     void resetAccentSystem();
 
@@ -265,6 +266,9 @@ private:
     int globalOnsetCounter = 0;           // Single source of truth: counts all onsets since pattern start
     int uiAccentOffset = 0;               // Stable accent offset for UI display (updates only at cycle boundaries)
     bool accentPatternManuallyModified = false; // Flag to prevent automatic accent cycling after manual edits
+    bool patternManuallyModified = false;       // Flag to indicate pattern has been manually edited (suspension mode)
+    std::vector<bool> suspendedRhythmPattern;   // Preserve manually modified rhythm pattern
+    std::vector<bool> suspendedAccentPattern;   // Preserve manually modified accent pattern
     
     // Parameters - implementation details
     juce::AudioParameterBool* useHostTransportParam;

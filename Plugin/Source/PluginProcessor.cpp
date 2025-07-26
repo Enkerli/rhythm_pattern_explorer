@@ -668,7 +668,8 @@ void RhythmPatternExplorerAudioProcessor::processStep(juce::MidiBuffer& midiBuff
     if (stepToProcess < pattern.size() && pattern[stepToProcess])
     {
         // This step has an onset - determine if it should be accented
-        bool isAccented = shouldOnsetBeAccented(globalOnsetCounter);
+        // FIXED: Use step-based accent logic to match UI display exactly
+        bool isAccented = shouldStepBeAccented(stepToProcess);
         
         // Trigger MIDI note
         triggerNote(midiBuffer, samplePosition, isAccented);
@@ -1122,9 +1123,20 @@ void RhythmPatternExplorerAudioProcessor::togglePatternStep(int stepIndex)
         return;
     }
     
+    // ENTER SUSPENSION MODE: Preserve current state before manual modification
+    if (!patternManuallyModified) {
+        patternManuallyModified = true;
+        suspendedRhythmPattern = patternEngine.getCurrentPattern();
+        suspendedAccentPattern = currentAccentPattern;
+        DBG("togglePatternStep: Entered suspension mode - current cycle state preserved");
+    }
+    
     // Get current pattern and toggle the specified step
     auto currentPattern = patternEngine.getCurrentPattern();
     currentPattern[stepIndex] = !currentPattern[stepIndex];
+    
+    // Update suspended patterns (this becomes the new cycle state)
+    suspendedRhythmPattern = currentPattern;
     
     // Apply the modified pattern
     patternEngine.setPattern(currentPattern);
@@ -1135,13 +1147,10 @@ void RhythmPatternExplorerAudioProcessor::togglePatternStep(int stepIndex)
     // Update UPI display to reflect the manual modification
     updateUPIFromCurrentPattern();
     
-    // Preserve accent patterns through manual edits
-    // The accent system will automatically adjust to the new pattern length/structure
-    
     // Notify UI of pattern change
     patternChanged.store(true);
     
-    DBG("togglePatternStep: Toggled step " << stepIndex << " to " << (currentPattern[stepIndex] ? "ON" : "OFF"));
+    DBG("togglePatternStep: Toggled step " << stepIndex << " to " << (currentPattern[stepIndex] ? "ON" : "OFF") << " (suspension mode)");
 }
 
 void RhythmPatternExplorerAudioProcessor::toggleAccentAtStep(int stepIndex)
@@ -1160,6 +1169,14 @@ void RhythmPatternExplorerAudioProcessor::toggleAccentAtStep(int stepIndex)
         return;
     }
     
+    // ENTER SUSPENSION MODE: Preserve current state before manual modification
+    if (!patternManuallyModified) {
+        patternManuallyModified = true;
+        suspendedRhythmPattern = patternEngine.getCurrentPattern();
+        suspendedAccentPattern = currentAccentPattern;
+        DBG("toggleAccentAtStep: Entered suspension mode - current cycle state preserved");
+    }
+    
     // Toggle accent at this step
     if (hasAccentPattern && stepIndex < currentAccentPattern.size()) {
         // Existing accent pattern - toggle this step
@@ -1174,9 +1191,12 @@ void RhythmPatternExplorerAudioProcessor::toggleAccentAtStep(int stepIndex)
         DBG("toggleAccentAtStep: Created new accent pattern with accent at step " << stepIndex);
     }
     
+    // Update suspended accent pattern (this becomes the new cycle state)
+    suspendedAccentPattern = currentAccentPattern;
+    
     // Mark accent pattern as manually modified to prevent automatic cycling
     accentPatternManuallyModified = true;
-    DBG("toggleAccentAtStep: Accent pattern marked as manually modified - cycling disabled");
+    DBG("toggleAccentAtStep: Accent pattern marked as manually modified - cycling disabled (suspension mode)");
     
     // Update UPI display to show accent pattern changes
     updateUPIFromCurrentPattern();
@@ -1276,10 +1296,13 @@ void RhythmPatternExplorerAudioProcessor::parseAndApplyUPI(const juce::String& u
         globalOnsetCounter = 0;
         uiAccentOffset = 0;
         
-        // Reset manual modification flag when accents are reset
+        // Reset manual modification flags when accents are reset
         if (resetAccentPosition) {
             accentPatternManuallyModified = false;
-            DBG("parseAndApplyUPI: Reset manual accent modification flag - automatic cycling re-enabled");
+            patternManuallyModified = false;
+            suspendedRhythmPattern.clear();
+            suspendedAccentPattern.clear();
+            DBG("parseAndApplyUPI: Reset manual modification flags and exited suspension mode - automatic cycling re-enabled");
         }
         
         // Set up progressive offset if present
@@ -1730,9 +1753,24 @@ bool RhythmPatternExplorerAudioProcessor::shouldOnsetBeAccented(int onsetNumber)
     if (!hasAccentPattern || currentAccentPattern.empty())
         return false;
     
-    // Simple layered cycle: which position in accent pattern cycle?
+    // DEPRECATED: onset-based logic (kept for compatibility during transition)
     int accentPosition = onsetNumber % static_cast<int>(currentAccentPattern.size());
     return currentAccentPattern[accentPosition];
+}
+
+bool RhythmPatternExplorerAudioProcessor::shouldStepBeAccented(int stepIndex) const
+{
+    if (!hasAccentPattern || currentAccentPattern.empty())
+        return false;
+    
+    // NEW: Step-based accent logic that matches UI display exactly
+    // Check if this specific step is marked as accented
+    if (stepIndex >= 0 && stepIndex < static_cast<int>(currentAccentPattern.size()))
+    {
+        return currentAccentPattern[stepIndex];
+    }
+    
+    return false;
 }
 
 std::vector<bool> RhythmPatternExplorerAudioProcessor::getCurrentAccentMap() const
@@ -1772,8 +1810,11 @@ void RhythmPatternExplorerAudioProcessor::resetAccentSystem()
     globalOnsetCounter = 0;
     uiAccentOffset = 0;
     accentPatternManuallyModified = false; // Reset manual modification flag
+    patternManuallyModified = false;       // Exit suspension mode
+    suspendedRhythmPattern.clear();
+    suspendedAccentPattern.clear();
     patternChanged.store(true);
-    DBG("resetAccentSystem: Reset accent system including manual modification flag");
+    DBG("resetAccentSystem: Reset accent system and exited suspension mode");
 }
 
 //==============================================================================
