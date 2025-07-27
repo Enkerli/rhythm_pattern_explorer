@@ -569,6 +569,9 @@ void RhythmPatternExplorerAudioProcessor::getStateInformation (juce::MemoryBlock
     // Save UPI input
     state.setProperty("currentUPIInput", currentUPIInput, nullptr);
     
+    // Save background color
+    state.setProperty("currentBackgroundColor", currentBackgroundColor, nullptr);
+    
     // Save critical pattern state (Phase 3: Core Pattern State)
     state.setProperty("originalUPIInput", originalUPIInput, nullptr);
     state.setProperty("lastParsedUPI", lastParsedUPI, nullptr);
@@ -596,6 +599,47 @@ void RhythmPatternExplorerAudioProcessor::getStateInformation (juce::MemoryBlock
         accentPatternString += currentAccentPattern[i] ? "1" : "0";
     }
     state.setProperty("currentAccentPattern", accentPatternString, nullptr);
+    
+    // Save scene state (Phase 5: Scene State Persistence)
+    state.setProperty("currentSceneIndex", currentSceneIndex, nullptr);
+    state.setProperty("sceneCount", static_cast<int>(scenePatterns.size()), nullptr);
+    
+    // Save scene patterns as comma-separated string
+    juce::String scenePatternsString;
+    for (int i = 0; i < scenePatterns.size(); ++i) {
+        if (i > 0) scenePatternsString += ",";
+        scenePatternsString += scenePatterns[i];
+    }
+    state.setProperty("scenePatterns", scenePatternsString, nullptr);
+    
+    // Save per-scene progressive state
+    juce::String sceneOffsetsString;
+    for (int i = 0; i < sceneProgressiveOffsets.size(); ++i) {
+        if (i > 0) sceneOffsetsString += ",";
+        sceneOffsetsString += juce::String(sceneProgressiveOffsets[i]);
+    }
+    state.setProperty("sceneProgressiveOffsets", sceneOffsetsString, nullptr);
+    
+    juce::String sceneStepsString;
+    for (int i = 0; i < sceneProgressiveSteps.size(); ++i) {
+        if (i > 0) sceneStepsString += ",";
+        sceneStepsString += juce::String(sceneProgressiveSteps[i]);
+    }
+    state.setProperty("sceneProgressiveSteps", sceneStepsString, nullptr);
+    
+    juce::String sceneBasePatternsString;
+    for (int i = 0; i < sceneBasePatterns.size(); ++i) {
+        if (i > 0) sceneBasePatternsString += ",";
+        sceneBasePatternsString += sceneBasePatterns[i];
+    }
+    state.setProperty("sceneBasePatterns", sceneBasePatternsString, nullptr);
+    
+    juce::String sceneLengtheningString;
+    for (int i = 0; i < sceneProgressiveLengthening.size(); ++i) {
+        if (i > 0) sceneLengtheningString += ",";
+        sceneLengtheningString += juce::String(sceneProgressiveLengthening[i]);
+    }
+    state.setProperty("sceneProgressiveLengthening", sceneLengtheningString, nullptr);
     
     // Save progressive transformation state (Phase 4: Progressive State Persistence)
     if (progressiveManager)
@@ -637,6 +681,9 @@ void RhythmPatternExplorerAudioProcessor::setStateInformation (const void* data,
             // Restore UPI input
             currentUPIInput = state.getProperty("currentUPIInput", "E(3,8)");
             
+            // Restore background color
+            currentBackgroundColor = state.getProperty("currentBackgroundColor", 0);
+            
             // Restore critical pattern state (Phase 3: Core Pattern State)
             originalUPIInput = state.getProperty("originalUPIInput", juce::String());
             lastParsedUPI = state.getProperty("lastParsedUPI", juce::String());
@@ -665,10 +712,71 @@ void RhythmPatternExplorerAudioProcessor::setStateInformation (const void* data,
                 currentAccentPattern.push_back(accentPatternString[i] == '1');
             }
             
+            // Restore scene state (Phase 5: Scene State Persistence)
+            currentSceneIndex = state.getProperty("currentSceneIndex", 0);
+            int sceneCount = state.getProperty("sceneCount", 0);
+            
+            // Restore scene patterns from comma-separated string
+            juce::String scenePatternsString = state.getProperty("scenePatterns", juce::String());
+            scenePatterns.clear();
+            if (!scenePatternsString.isEmpty()) {
+                auto sceneArray = juce::StringArray::fromTokens(scenePatternsString, ",", "");
+                for (const auto& scene : sceneArray) {
+                    scenePatterns.add(scene);
+                }
+            }
+            
+            // Restore per-scene progressive state
+            juce::String sceneOffsetsString = state.getProperty("sceneProgressiveOffsets", juce::String());
+            sceneProgressiveOffsets.clear();
+            if (!sceneOffsetsString.isEmpty()) {
+                auto offsetArray = juce::StringArray::fromTokens(sceneOffsetsString, ",", "");
+                for (const auto& offset : offsetArray) {
+                    sceneProgressiveOffsets.push_back(offset.getIntValue());
+                }
+            }
+            
+            juce::String sceneStepsString = state.getProperty("sceneProgressiveSteps", juce::String());
+            sceneProgressiveSteps.clear();
+            if (!sceneStepsString.isEmpty()) {
+                auto stepsArray = juce::StringArray::fromTokens(sceneStepsString, ",", "");
+                for (const auto& step : stepsArray) {
+                    sceneProgressiveSteps.push_back(step.getIntValue());
+                }
+            }
+            
+            juce::String sceneBasePatternsString = state.getProperty("sceneBasePatterns", juce::String());
+            sceneBasePatterns.clear();
+            if (!sceneBasePatternsString.isEmpty()) {
+                auto basePatternsArray = juce::StringArray::fromTokens(sceneBasePatternsString, ",", "");
+                for (const auto& basePattern : basePatternsArray) {
+                    sceneBasePatterns.push_back(basePattern);
+                }
+            }
+            
+            juce::String sceneLengtheningString = state.getProperty("sceneProgressiveLengthening", juce::String());
+            sceneProgressiveLengthening.clear();
+            if (!sceneLengtheningString.isEmpty()) {
+                auto lengtheningArray = juce::StringArray::fromTokens(sceneLengtheningString, ",", "");
+                for (const auto& lengthening : lengtheningArray) {
+                    sceneProgressiveLengthening.push_back(lengthening.getIntValue());
+                }
+            }
+            
+            // Initialize sceneBaseLengthPatterns with correct size
+            sceneBaseLengthPatterns.clear();
+            sceneBaseLengthPatterns.resize(sceneCount);
+            
             // Restore progressive transformation state (Phase 4: Progressive State Persistence)
             if (progressiveManager)
             {
                 progressiveManager->loadProgressiveStatesFromValueTree(state);
+            }
+            
+            // Apply the restored UPI pattern after all state has been loaded
+            if (!currentUPIInput.isEmpty())
+            {
+                parseAndApplyUPI(currentUPIInput);
             }
             
             updateTiming();
@@ -716,6 +824,15 @@ void RhythmPatternExplorerAudioProcessor::setStateInformation (const void* data,
             globalOnsetCounter = 0;
             uiAccentOffset = 0;
             accentPatternManuallyModified = false;
+            
+            // Initialize scene state (won't exist in old format)
+            currentSceneIndex = 0;
+            scenePatterns.clear();
+            sceneProgressiveOffsets.clear();
+            sceneProgressiveSteps.clear();
+            sceneBasePatterns.clear();
+            sceneProgressiveLengthening.clear();
+            sceneBaseLengthPatterns.clear();
             
             // Clear progressive transformation state (won't exist in old format)
             if (progressiveManager)

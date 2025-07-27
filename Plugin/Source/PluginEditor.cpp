@@ -86,6 +86,7 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     upiTextEditor.setTextToShowWhenEmpty("Enter pattern: E(3,8), P(5,0), etc.", juce::Colours::grey);
     upiTextEditor.setFont(juce::Font(juce::FontOptions(juce::Font::getDefaultMonospacedFontName(), 14.0f, juce::Font::plain)));
     upiTextEditor.onReturnKey = [this]() { parseUPIPattern(); };
+    upiTextEditor.setText(audioProcessor.getUPIInput(), juce::dontSendNotification);
     addAndMakeVisible(upiTextEditor);
     
     
@@ -167,6 +168,12 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     // Initial display update
     updatePatternDisplay();
     updateAnalysisDisplay();
+    
+    // Initialize background color from processor state
+    currentBackgroundColor = static_cast<BackgroundColor>(audioProcessor.getCurrentBackgroundColor());
+    
+    // Trigger pattern update to ensure restored patterns are applied
+    audioProcessor.triggerPatternUpdate();
     
     // Start timer for regular UI updates
     startTimer(16); // Update every 16ms (~60fps) for even smoother animation
@@ -1119,6 +1126,10 @@ void RhythmPatternExplorerAudioProcessorEditor::cycleBackgroundColor()
     int current = static_cast<int>(currentBackgroundColor);
     current = (current + 1) % 6; // 6 total colors
     currentBackgroundColor = static_cast<BackgroundColor>(current);
+    
+    // Update processor with new background color for persistence
+    audioProcessor.setCurrentBackgroundColor(current);
+    
     repaint(); // Trigger redraw with new background color
 }
 

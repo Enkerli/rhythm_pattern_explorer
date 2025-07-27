@@ -119,6 +119,10 @@ public:
     void parseAndApplyUPI(const juce::String& upiPattern, bool resetAccentPosition = true);
     void applyCurrentScenePattern();
     
+    // Background color persistence
+    int getCurrentBackgroundColor() const { return currentBackgroundColor; }
+    void setCurrentBackgroundColor(int color) { currentBackgroundColor = color; }
+    
     // Interactive pattern modification methods
     void togglePatternStep(int stepIndex);
     void toggleAccentAtStep(int stepIndex);
@@ -236,6 +240,9 @@ private:
     juce::String originalUPIInput; // Preserve original pattern with progressive/scene syntax
     juce::String lastParsedUPI;
     juce::String currentProgressivePatternKey; // Track current progressive pattern for step counting
+    
+    // Background color persistence
+    int currentBackgroundColor = 0; // Default to Dark background
     
     // Lascabettes quantization metadata
     bool hasQuantization = false;
