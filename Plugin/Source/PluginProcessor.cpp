@@ -583,6 +583,20 @@ void RhythmPatternExplorerAudioProcessor::getStateInformation (juce::MemoryBlock
     }
     state.setProperty("baseLengthPattern", baseLengthPatternString, nullptr);
     
+    // Save accent pattern state (Phase 3: Missing accent support)
+    state.setProperty("hasAccentPattern", hasAccentPattern, nullptr);
+    state.setProperty("globalOnsetCounter", globalOnsetCounter, nullptr);
+    state.setProperty("uiAccentOffset", uiAccentOffset, nullptr);
+    state.setProperty("accentPatternManuallyModified", accentPatternManuallyModified, nullptr);
+    
+    // Save currentAccentPattern as string
+    juce::String accentPatternString;
+    for (int i = 0; i < currentAccentPattern.size(); ++i)
+    {
+        accentPatternString += currentAccentPattern[i] ? "1" : "0";
+    }
+    state.setProperty("currentAccentPattern", accentPatternString, nullptr);
+    
     // Convert ValueTree to XML and save to memory block
     if (auto xml = state.createXml())
         copyXmlToBinary(*xml, destData);
@@ -631,6 +645,20 @@ void RhythmPatternExplorerAudioProcessor::setStateInformation (const void* data,
                 baseLengthPattern.push_back(baseLengthPatternString[i] == '1');
             }
             
+            // Restore accent pattern state (Phase 3: Missing accent support)
+            hasAccentPattern = state.getProperty("hasAccentPattern", false);
+            globalOnsetCounter = state.getProperty("globalOnsetCounter", 0);
+            uiAccentOffset = state.getProperty("uiAccentOffset", 0);
+            accentPatternManuallyModified = state.getProperty("accentPatternManuallyModified", false);
+            
+            // Restore currentAccentPattern from string
+            juce::String accentPatternString = state.getProperty("currentAccentPattern", juce::String());
+            currentAccentPattern.clear();
+            for (int i = 0; i < accentPatternString.length(); ++i)
+            {
+                currentAccentPattern.push_back(accentPatternString[i] == '1');
+            }
+            
             updateTiming();
         }
         // Fallback: handle old XML format for backward compatibility
@@ -669,6 +697,13 @@ void RhythmPatternExplorerAudioProcessor::setStateInformation (const void* data,
             currentProgressivePatternKey = juce::String();
             basePattern = juce::String();
             baseLengthPattern.clear();
+            
+            // Initialize accent pattern state (won't exist in old format)
+            hasAccentPattern = false;
+            currentAccentPattern.clear();
+            globalOnsetCounter = 0;
+            uiAccentOffset = 0;
+            accentPatternManuallyModified = false;
             
             updateTiming();
         }
