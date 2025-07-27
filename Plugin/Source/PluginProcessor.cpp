@@ -256,30 +256,9 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
     lastProcessBlockTime = juce::Time::getMillisecondCounter();
     
     
-    // BITWIG 210 BPM DEBUG: Focus on the specific problem
-    static int debugCallCount = 0;
-    static int lastLoggedBPM = 0;
-    
     int currentBufferSize = buffer.getNumSamples();
     if (currentBufferSize <= 0) {
         return;
-    }
-    
-    // Log every 50 calls or when BPM changes, with focus on 200+ BPM
-    debugCallCount++;
-    
-    // More frequent logging at high BPMs
-    bool shouldLog = false;
-    if (currentBPM >= 200) {
-        shouldLog = (debugCallCount % 25 == 0); // Every 25 calls at high BPM
-    } else {
-        shouldLog = (debugCallCount % 100 == 0); // Every 100 calls normally
-    }
-    
-    if (shouldLog || std::abs(currentBPM - lastLoggedBPM) > 2) {
-        juce::String message = juce::String::formatted("BPM=%.1f, SamplesPerStep=%d, BufferSize=%d, CurrentSample=%d, CurrentStep=%d, SampleRate=%.0f, CallCount=%d",
-            currentBPM, samplesPerStep, currentBufferSize, currentSample, currentStep.load(), currentSampleRate, debugCallCount);
-        lastLoggedBPM = currentBPM;
     }
     
     juce::ScopedLock lock(processingLock);
@@ -319,18 +298,6 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
                 bpm = *tempo;
         }
         
-        // BITWIG TRANSPORT DEBUG: Log transport details
-        // Use internal currentBPM variable
-        if (currentBPM >= 200.0f) {
-            static int transportDebugCount = 0;
-            if (++transportDebugCount % 100 == 0) {
-                juce::String message = juce::String::formatted("hasValidPosition=%s, isPlaying=%s, isRecording=%s, ppqPosition=%.3f, bpm=%.1f",
-                    hasValidPosition ? "TRUE" : "FALSE",
-                    isPlaying ? "TRUE" : "FALSE", 
-                    isRecording ? "TRUE" : "FALSE",
-                    ppqPosition, bpm);
-            }
-        }
         
         // Transport sync with host
     }
@@ -395,11 +362,6 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
         updateTiming();
         currentSample = static_cast<int>(sampleRatio * samplesPerStep);
         
-        // Log BPM changes for debugging
-        if (bpmChanged && currentBPM >= 180.0f) {
-            juce::String message = juce::String::formatted("%.1f->%.1f, sampleRatio=%.3f, newCurrentSample=%d, newSamplesPerStep=%d",
-                lastBPM, currentBPM, sampleRatio, currentSample, samplesPerStep);
-        }
     }
     
     // Always update lastBPM outside the if block
@@ -407,17 +369,6 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
         lastBPM = currentBPM;
     }
     
-    // Clean production version - no aggressive debugging
-
-    // BITWIG PLAYING STATE DEBUG: Log playing detection
-    if (currentBPM >= 180.0f) {
-        static int playingDebugCount = 0;
-        if (++playingDebugCount % 50 == 0) {
-                ", hostIsPlaying=" + juce::String(hostIsPlaying ? "TRUE" : "FALSE") + 
-                ", internalPlaying=" + juce::String(internalPlaying ? "TRUE" : "FALSE") +
-                ", useHostTransport=" + juce::String(useHostTransportParam->get() ? "TRUE" : "FALSE");
-        }
-    }
 
     // FIRST STEP FIX: Track if we've processed step 0 in this buffer
     static bool processedFirstStepThisBuffer = false;
@@ -572,6 +523,14 @@ void RhythmPatternExplorerAudioProcessor::getStateInformation (juce::MemoryBlock
     // Save background color
     state.setProperty("currentBackgroundColor", currentBackgroundColor, nullptr);
     
+    // Save UPI history (ticker tape feature)
+    juce::String upiHistoryString;
+    for (int i = 0; i < upiHistory.size(); ++i) {
+        if (i > 0) upiHistoryString += "\n";
+        upiHistoryString += upiHistory[i];
+    }
+    state.setProperty("upiHistory", upiHistoryString, nullptr);
+    
     // Save critical pattern state (Phase 3: Core Pattern State)
     state.setProperty("originalUPIInput", originalUPIInput, nullptr);
     state.setProperty("lastParsedUPI", lastParsedUPI, nullptr);
@@ -683,6 +642,18 @@ void RhythmPatternExplorerAudioProcessor::setStateInformation (const void* data,
             
             // Restore background color
             currentBackgroundColor = state.getProperty("currentBackgroundColor", 0);
+            
+            // Restore UPI history (ticker tape feature)
+            juce::String upiHistoryString = state.getProperty("upiHistory", juce::String());
+            upiHistory.clear();
+            if (!upiHistoryString.isEmpty()) {
+                auto historyArray = juce::StringArray::fromLines(upiHistoryString);
+                for (const auto& historyItem : historyArray) {
+                    if (!historyItem.isEmpty()) {
+                        upiHistory.add(historyItem);
+                    }
+                }
+            }
             
             // Restore critical pattern state (Phase 3: Core Pattern State)
             originalUPIInput = state.getProperty("originalUPIInput", juce::String());
@@ -1065,7 +1036,8 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
 {
     juce::ScopedLock lock(processingLock);
     
-    
+    // Add to history when pattern is entered (not when restored from state)
+    addToUPIHistory(upiPattern.trim());
     
     // Check for progressive syntax: scenes first (pattern|pattern|pattern), then pattern+N (offset), pattern*N (lengthening)
     juce::String pattern = upiPattern.trim();
@@ -1118,7 +1090,6 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
             // Same sequence - advance to next scene
             advanceScene();
             
-            // Debug log advancement
         }
         else
         {
@@ -1181,11 +1152,6 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
             
             currentSceneIndex = 0;
             
-            // Debug log reset
-            juce::String scenesInfo = "New scene sequence - parsed " + juce::String(scenePatterns.size()) + " scenes, starting with scene 0: " + scenePatterns[0];
-            for (int i = 0; i < scenePatterns.size(); ++i) {
-                scenesInfo += "\n  Scene " + juce::String(i) + ": " + scenePatterns[i] + " (base: " + sceneBasePatterns[i] + ", step: " + juce::String(sceneProgressiveSteps[i]) + ")";
-            }
             
             // TRANSITION: Initialize SceneManager with same data as legacy system
             if (sceneManager) {
@@ -1216,7 +1182,6 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
             // Notify UI that pattern has changed for accent map updates
             patternChanged.store(true);
             
-            // Debug log advancement
         }
         else
         {
@@ -1225,7 +1190,6 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
             progressiveStep = newStep;
             progressiveOffset = newStep; // Start with first offset
             
-            // Debug log reset
         }
         
         // Parse the base pattern first, then apply progressive offset via rotation
@@ -1239,7 +1203,6 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
             auto rotatedPattern = PatternUtils::rotatePattern(currentPattern, -progressiveOffset);
             patternEngine.setPattern(rotatedPattern);
             
-            // Debug log rotation
         }
     }
     else if (isProgressiveLengthening)
@@ -1260,7 +1223,6 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
             // Notify UI that pattern has changed for accent map updates
             patternChanged.store(true);
             
-            // Debug log advancement
         }
         else
         {
@@ -1275,7 +1237,6 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
             // Apply initial lengthening immediately (don't wait for second trigger)
             advanceProgressiveLengthening();
             
-            // Debug log reset
         }
         
         // Apply current lengthened pattern
@@ -1770,8 +1731,6 @@ void RhythmPatternExplorerAudioProcessor::advanceScene()
         // Notify UI that pattern has changed for accent map updates
         patternChanged.store(true);
         
-        juce::String sceneInfo = "Advanced to scene (SceneManager) " + juce::String(currentSceneIndex) + "/" + 
-            juce::String(sceneManager->getSceneCount()) + ": " + sceneManager->getCurrentScenePattern();
     }
     else if (!scenePatterns.isEmpty() && currentSceneIndex < static_cast<int>(sceneProgressiveSteps.size()))
     {
@@ -1793,12 +1752,6 @@ void RhythmPatternExplorerAudioProcessor::advanceScene()
         // Notify UI that pattern has changed for accent map updates
         patternChanged.store(true);
         
-        juce::String sceneInfo = "Advanced to scene (Legacy) " + juce::String(currentSceneIndex) + "/" + 
-            juce::String(static_cast<int>(scenePatterns.size())) + ": " + scenePatterns[currentSceneIndex];
-        if (currentSceneIndex < static_cast<int>(sceneProgressiveSteps.size())) {
-            sceneInfo += "\n  Scene progressive state - offset: " + juce::String(sceneProgressiveOffsets[currentSceneIndex]) + 
-                        ", lengthening: " + juce::String(sceneProgressiveLengthening[currentSceneIndex]);
-        }
     }
 }
 
@@ -2045,6 +1998,26 @@ void RhythmPatternExplorerAudioProcessor::resetAccentSystem()
     suspendedRhythmPattern.clear();
     suspendedAccentPattern.clear();
     patternChanged.store(true);
+}
+
+//==============================================================================
+// UPI History Management (Ticker Tape Feature)
+
+void RhythmPatternExplorerAudioProcessor::addToUPIHistory(const juce::String& upiPattern)
+{
+    if (upiPattern.isEmpty()) return;
+    
+    // Remove if already exists (move to front)
+    upiHistory.removeString(upiPattern);
+    
+    // Add to front
+    upiHistory.insert(0, upiPattern);
+    
+    // Limit size
+    while (upiHistory.size() > MAX_UPI_HISTORY)
+    {
+        upiHistory.remove(upiHistory.size() - 1);
+    }
 }
 
 //==============================================================================

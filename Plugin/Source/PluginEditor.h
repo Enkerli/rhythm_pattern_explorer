@@ -14,6 +14,23 @@
 
 //==============================================================================
 /**
+ * UPI History List Model for ticker tape feature
+ */
+class UPIHistoryListModel : public juce::ListBoxModel
+{
+public:
+    UPIHistoryListModel(class RhythmPatternExplorerAudioProcessorEditor& editor) : editorRef(editor) {}
+    
+    int getNumRows() override;
+    void paintListBoxItem(int rowNumber, juce::Graphics& g, int width, int height, bool rowIsSelected) override;
+    void listBoxItemClicked(int row, const juce::MouseEvent& e) override;
+    
+private:
+    class RhythmPatternExplorerAudioProcessorEditor& editorRef;
+};
+
+//==============================================================================
+/**
  * Plugin editor with simplified interface for mobile/desktop use
  * 
  * Features:
@@ -52,6 +69,10 @@ public:
     
     // Background color access
     BackgroundColor getCurrentBackgroundColor() const { return currentBackgroundColor; }
+    
+    // Public access for ListBoxModel
+    void onHistoryItemClicked(int index);
+    RhythmPatternExplorerAudioProcessor& getAudioProcessor() { return audioProcessor; }
     
 
 private:
@@ -92,6 +113,13 @@ private:
     std::unique_ptr<juce::WebBrowserComponent> docsBrowser;
     juce::TextButton docsToggleButton;
     bool showingDocs = false;
+    
+    // Ticker tape UPI history sidebar
+    juce::ListBox upiHistoryList;
+    juce::TextButton historyToggleButton;
+    bool showingHistory = false;
+    juce::Label historyLabel;
+    std::unique_ptr<UPIHistoryListModel> historyListModel;
     
     // Minimal mode (Easter egg for very small windows)
     bool minimalMode = false;
@@ -151,6 +179,9 @@ private:
     // Documentation handling
     void toggleDocumentation();
     void createDocumentationHTML();
+    
+    // History handling
+    void toggleHistory();
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (RhythmPatternExplorerAudioProcessorEditor)
 };

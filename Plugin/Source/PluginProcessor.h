@@ -123,6 +123,11 @@ public:
     int getCurrentBackgroundColor() const { return currentBackgroundColor; }
     void setCurrentBackgroundColor(int color) { currentBackgroundColor = color; }
     
+    // UPI history (ticker tape feature)
+    const juce::StringArray& getUPIHistory() const { return upiHistory; }
+    void addToUPIHistory(const juce::String& upiPattern);
+    void clearUPIHistory() { upiHistory.clear(); }
+    
     // Interactive pattern modification methods
     void togglePatternStep(int stepIndex);
     void toggleAccentAtStep(int stepIndex);
@@ -243,6 +248,10 @@ private:
     
     // Background color persistence
     int currentBackgroundColor = 0; // Default to Dark background
+    
+    // UPI history (ticker tape feature)
+    juce::StringArray upiHistory;
+    static constexpr int MAX_UPI_HISTORY = 20;
     
     // Lascabettes quantization metadata
     bool hasQuantization = false;

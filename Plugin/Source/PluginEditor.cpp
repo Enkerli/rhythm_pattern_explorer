@@ -142,6 +142,29 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     docsToggleButton.onClick = [this]() { toggleDocumentation(); };
     addAndMakeVisible(docsToggleButton);
     
+    // History toggle button (ticker tape feature)
+    historyToggleButton.setButtonText("History");
+    historyToggleButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff4a5568));
+    historyToggleButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
+    historyToggleButton.onClick = [this]() { toggleHistory(); };
+    addAndMakeVisible(historyToggleButton);
+    
+    // History list setup
+    historyListModel = std::make_unique<UPIHistoryListModel>(*this);
+    upiHistoryList.setModel(historyListModel.get());
+    upiHistoryList.setRowHeight(24);
+    upiHistoryList.setColour(juce::ListBox::backgroundColourId, juce::Colour(0xff2d3748));
+    upiHistoryList.setColour(juce::ListBox::textColourId, juce::Colours::white);
+    addAndMakeVisible(upiHistoryList);
+    upiHistoryList.setVisible(false);
+    
+    // History label
+    historyLabel.setText("UPI History", juce::dontSendNotification);
+    historyLabel.setColour(juce::Label::textColourId, juce::Colours::white);
+    historyLabel.setJustificationType(juce::Justification::centred);
+    addAndMakeVisible(historyLabel);
+    historyLabel.setVisible(false);
+    
     // Initialize WebView documentation (initially hidden)
 #if JUCE_WEB_BROWSER
     docsBrowser = std::make_unique<juce::WebBrowserComponent>();
@@ -220,6 +243,7 @@ void RhythmPatternExplorerAudioProcessorEditor::resized()
         tickButton.setVisible(!minimalMode);
         patternDisplayEditor.setVisible(!minimalMode);
         docsToggleButton.setVisible(!minimalMode);
+        historyToggleButton.setVisible(!minimalMode);
         versionEditor.setVisible(!minimalMode);
         
         
@@ -301,11 +325,12 @@ void RhythmPatternExplorerAudioProcessorEditor::resized()
     auto displayArea = area.removeFromTop(80);
     patternDisplayEditor.setBounds(displayArea.reduced(10));
     
-    // Docs button area - positioned right after pattern display, aligned right
-    if (!showingDocs)
+    // Button area - positioned right after pattern display, aligned right
+    if (!showingDocs && !showingHistory)
     {
-        auto docsButtonArea = area.removeFromTop(30);
-        docsToggleButton.setBounds(docsButtonArea.removeFromRight(80).reduced(5));
+        auto buttonArea = area.removeFromTop(30);
+        historyToggleButton.setBounds(buttonArea.removeFromRight(80).reduced(5));
+        docsToggleButton.setBounds(buttonArea.removeFromRight(80).reduced(5));
     }
     
     // Analysis area - hidden
@@ -317,6 +342,31 @@ void RhythmPatternExplorerAudioProcessorEditor::resized()
     {
         auto bottomArea = getLocalBounds().removeFromBottom(25);
         versionEditor.setBounds(bottomArea.removeFromLeft(100));
+    }
+    
+    // History sidebar layout (do this BEFORE circle area calculation)
+    if (showingHistory)
+    {
+        // When history is showing, create a sidebar on the right
+        auto historyArea = getLocalBounds();
+        historyArea.removeFromTop(50); // Leave space for title
+        auto bottomControls = historyArea.removeFromBottom(30); // Leave space for buttons
+        
+        // Sidebar takes 250px on the right - this reduces the available area
+        auto sidebar = historyArea.removeFromRight(250);
+        
+        // History label at top of sidebar
+        historyLabel.setBounds(sidebar.removeFromTop(25));
+        
+        // History list takes remaining sidebar space
+        upiHistoryList.setBounds(sidebar.reduced(5));
+        
+        // Reposition buttons to be visible
+        historyToggleButton.setBounds(bottomControls.removeFromRight(80).reduced(2));
+        docsToggleButton.setBounds(bottomControls.removeFromRight(80).reduced(2));
+        
+        // Adjust the remaining area for circle (account for sidebar)
+        area = area.withTrimmedRight(250);
     }
     
     // Remaining area is for the circle - MAXIMIZED for clean interface
@@ -378,7 +428,6 @@ void RhythmPatternExplorerAudioProcessorEditor::timerCallback()
     
     // Step counter display removed for clean production interface
     
-    // Debug output removed for clean production version
     
     // Always repaint when playing to ensure smooth animation
     bool shouldRepaint = false;
@@ -448,7 +497,6 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
     int currentStep = audioProcessor.getCurrentStep();
     bool isPlaying = audioProcessor.isCurrentlyPlaying();
     
-    // Clean production version - no debug output
     
     // Draw the background circle first - white for green theme, background color for others
     if (currentBackgroundColor == BackgroundColor::Green)
@@ -1363,5 +1411,78 @@ RhythmPatternExplorerAudioProcessorEditor::ClickResult RhythmPatternExplorerAudi
     result.stepIndex = stepIndex;
     result.isInOuterHalf = isInOuterHalf;
     return result;
+}
+
+//==============================================================================
+// UPI History (Ticker Tape) Implementation
+
+void RhythmPatternExplorerAudioProcessorEditor::toggleHistory()
+{
+    showingHistory = !showingHistory;
+    
+    upiHistoryList.setVisible(showingHistory);
+    historyLabel.setVisible(showingHistory);
+    historyToggleButton.setButtonText(showingHistory ? "Pattern" : "History");
+    
+    // Update list content
+    if (showingHistory)
+    {
+        upiHistoryList.updateContent();
+    }
+    
+    // Force immediate layout recalculation
+    resized();
+    
+    // Force immediate repaint to prevent misalignment
+    repaint();
+}
+
+void RhythmPatternExplorerAudioProcessorEditor::onHistoryItemClicked(int index)
+{
+    const auto& history = audioProcessor.getUPIHistory();
+    if (index >= 0 && index < history.size())
+    {
+        // Set the UPI text and apply the pattern
+        upiTextEditor.setText(history[index], juce::dontSendNotification);
+        audioProcessor.setUPIInput(history[index]);
+    }
+}
+
+//==============================================================================
+// UPI History List Model Implementation
+
+int UPIHistoryListModel::getNumRows()
+{
+    return editorRef.getAudioProcessor().getUPIHistory().size();
+}
+
+void UPIHistoryListModel::paintListBoxItem(int rowNumber, juce::Graphics& g, int width, int height, bool rowIsSelected)
+{
+    const auto& history = editorRef.getAudioProcessor().getUPIHistory();
+    if (rowNumber >= 0 && rowNumber < history.size())
+    {
+        // Background
+        if (rowIsSelected)
+            g.setColour(juce::Colour(0xff4a5568));
+        else
+            g.setColour(juce::Colour(0xff2d3748));
+        g.fillRect(0, 0, width, height);
+        
+        // Text
+        g.setColour(juce::Colours::white);
+        g.setFont(juce::Font(juce::FontOptions(juce::Font::getDefaultMonospacedFontName(), 12.0f, juce::Font::plain)));
+        
+        juce::String text = history[rowNumber];
+        // Truncate if too long
+        if (text.length() > 25)
+            text = text.substring(0, 22) + "...";
+        
+        g.drawText(text, 5, 0, width - 10, height, juce::Justification::centredLeft);
+    }
+}
+
+void UPIHistoryListModel::listBoxItemClicked(int row, const juce::MouseEvent& e)
+{
+    editorRef.onHistoryItemClicked(row);
 }
 
