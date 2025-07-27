@@ -54,7 +54,6 @@
 		9F014246351A2834EABC0B8E /* include_juce_dsp.mm in Sources */ = {isa = PBXBuildFile; fileRef = 57E0F6A5FC450BFFD8DDD049 /* include_juce_dsp.mm */; };
 		A572E463541342F93B5B6918 /* include_juce_audio_processors_lv2_libs.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BE1D943D5FC956F6F1E1C5DE /* include_juce_audio_processors_lv2_libs.cpp */; };
 		A76A77C6873073C5348141BD /* PluginProcessor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 561D7427C5647BA3838426EB /* PluginProcessor.cpp */; };
-		QUANTIZATION_CPP_BUILD /* QuantizationEngine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = QUANTIZATION_CPP_REF /* QuantizationEngine.cpp */; };
 		AD76E0B7EA1595F3B3161F31 /* include_juce_audio_plugin_client_AU_1.mm in Sources */ = {isa = PBXBuildFile; fileRef = 935F09DA9C7A112609565CF2 /* include_juce_audio_plugin_client_AU_1.mm */; };
 		BEB4D32457C575780F13BBD2 /* AudioUnit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1378DD4DEBBEFC707D124A69 /* AudioUnit.framework */; };
 		BFE2B14656943CB96B579B4E /* include_juce_audio_plugin_client_AU_2.mm in Sources */ = {isa = PBXBuildFile; fileRef = 87DEF06CE56AB148ABB487AE /* include_juce_audio_plugin_client_AU_2.mm */; };
@@ -178,8 +177,6 @@
 		556B7E9A12E6FC1A5D83D956 /* Rhythm Pattern Explorer.vst3 */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Rhythm Pattern Explorer.vst3"; sourceTree = BUILT_PRODUCTS_DIR; };
 		5585B6760C8F7861633D3B83 /* include_juce_gui_extra.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_gui_extra.mm; path = ../../JuceLibraryCode/include_juce_gui_extra.mm; sourceTree = SOURCE_ROOT; };
 		561D7427C5647BA3838426EB /* PluginProcessor.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = PluginProcessor.cpp; path = ../../Source/PluginProcessor.cpp; sourceTree = SOURCE_ROOT; };
-		QUANTIZATION_CPP_REF /* QuantizationEngine.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = QuantizationEngine.cpp; path = ../../Source/QuantizationEngine.cpp; sourceTree = SOURCE_ROOT; };
-		QUANTIZATION_H_REF /* QuantizationEngine.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = QuantizationEngine.h; path = ../../Source/QuantizationEngine.h; sourceTree = SOURCE_ROOT; };
 		56A62B7A5501D8A8048C9FD2 /* juce_gui_basics */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_gui_basics; path = /Users/alex/JUCE/modules/juce_gui_basics; sourceTree = "<absolute>"; };
 		57467F28D75F5C55B30518A2 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		57E0F6A5FC450BFFD8DDD049 /* include_juce_dsp.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_dsp.mm; path = ../../JuceLibraryCode/include_juce_dsp.mm; sourceTree = SOURCE_ROOT; };
@@ -307,8 +304,6 @@
 				FAFCEE0F2E2FAD8A005AE45C /* SceneManager.cpp */,
 				561D7427C5647BA3838426EB /* PluginProcessor.cpp */,
 				967E52EC6693AB9FB4848A67 /* PluginProcessor.h */,
-				QUANTIZATION_CPP_REF /* QuantizationEngine.cpp */,
-				QUANTIZATION_H_REF /* QuantizationEngine.h */,
 				513106A9DEA09FDD25289678 /* PluginEditor.cpp */,
 				7A7F70D19EA0C731F064CE2E /* PluginEditor.h */,
 				3807C0D40B0C5372930BBC8E /* PatternEngine.cpp */,
@@ -800,7 +795,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				A76A77C6873073C5348141BD /* PluginProcessor.cpp in Sources */,
-				QUANTIZATION_CPP_BUILD /* QuantizationEngine.cpp in Sources */,
 				4203B9A6240C801EB1F80140 /* PluginEditor.cpp in Sources */,
 				97158F0C81A48846505C6B4E /* PatternEngine.cpp in Sources */,
 				924A6C0707E6D092DC1AA282 /* UPIParser.cpp in Sources */,

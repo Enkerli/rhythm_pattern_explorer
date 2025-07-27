@@ -39,7 +39,6 @@ public:
     void timerCallback() override;
     
     // MIDI note access
-    int getMidiNoteNumber() const;
     
     // Background color options (public enum for color functions)
     enum class BackgroundColor {
@@ -80,13 +79,6 @@ private:
     juce::Label upiLabel;
     
     
-    // Instance Name
-    juce::TextEditor instanceNameEditor;
-    juce::Label instanceNameLabel;
-    
-    // MIDI Note Number
-    juce::Slider midiNoteSlider;
-    juce::Label midiNoteLabel;
     
     
     // Tick Button

@@ -13,7 +13,6 @@
 // Disable debug output for production performance
 #ifdef NDEBUG
 #undef DBG
-#define DBG(textToWrite) do { } while (false)
 #endif
 
 // Adaptive Color Schemes for Pattern Visualization
@@ -90,28 +89,7 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     addAndMakeVisible(upiTextEditor);
     
     
-    // Instance Name Editor - no label to save space
-    instanceNameEditor.setMultiLine(false);
-    instanceNameEditor.setReturnKeyStartsNewLine(false);
-    instanceNameEditor.setReadOnly(false);
-    instanceNameEditor.setScrollbarsShown(false);
-    instanceNameEditor.setCaretVisible(true);
-    instanceNameEditor.setPopupMenuEnabled(true);
-    instanceNameEditor.setText("Rhythm", juce::dontSendNotification);
-    instanceNameEditor.setFont(juce::FontOptions(12.0f));
-    instanceNameEditor.setJustification(juce::Justification::centredLeft);
-    addAndMakeVisible(instanceNameEditor);
     
-    // MIDI Note Slider (spinner style) - wider text box for number visibility
-    midiNoteLabel.setText("Note:", juce::dontSendNotification);
-    addAndMakeVisible(midiNoteLabel);
-    
-    midiNoteSlider.setSliderStyle(juce::Slider::IncDecButtons);
-    midiNoteSlider.setRange(0, 127, 1);
-    midiNoteSlider.setValue(36); // C2 - kick drum
-    midiNoteSlider.setTextBoxStyle(juce::Slider::TextBoxLeft, false, 50, 20);
-    midiNoteSlider.setIncDecButtonsMode(juce::Slider::incDecButtonsNotDraggable);
-    addAndMakeVisible(midiNoteSlider);
     
     
     // Scene/Step Button (equivalent to Parse/Tick) - smaller and shows current step/scene
@@ -174,15 +152,6 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     // Step Counter Display - removed for clean production interface
     
     
-    // Connect essential parameters
-    midiNoteSlider.onValueChange = [this]()
-    {
-        if (audioProcessor.getMidiNoteParameter()) {
-            audioProcessor.getMidiNoteParameter()->setValueNotifyingHost(
-                audioProcessor.getMidiNoteParameter()->convertTo0to1(static_cast<int>(midiNoteSlider.getValue()))
-            );
-        }
-    };
     
     
     tickButton.onClick = [this]()
@@ -241,9 +210,6 @@ void RhythmPatternExplorerAudioProcessorEditor::resized()
         // Force all controls to update visibility
         upiLabel.setVisible(!minimalMode);
         upiTextEditor.setVisible(!minimalMode);
-        instanceNameEditor.setVisible(!minimalMode);
-        midiNoteLabel.setVisible(!minimalMode);
-        midiNoteSlider.setVisible(!minimalMode);
         tickButton.setVisible(!minimalMode);
         patternDisplayEditor.setVisible(!minimalMode);
         docsToggleButton.setVisible(!minimalMode);
@@ -284,7 +250,6 @@ void RhythmPatternExplorerAudioProcessorEditor::resized()
     int tickButtonWidth = 40; // Smaller for step/scene number display
     int nameFieldWidth = 90;
     int noteFieldWidth = 110; // Label + slider
-    int spacing = 50; // Total spacing between elements
     
     
     // Responsive layout: hide controls progressively when space is limited
@@ -295,9 +260,6 @@ void RhythmPatternExplorerAudioProcessorEditor::resized()
     
     // Set visibility based on available space
     tickButton.setVisible(showTickButton);
-    instanceNameEditor.setVisible(showNameField);
-    midiNoteLabel.setVisible(showNoteField);
-    midiNoteSlider.setVisible(showNoteField);
     
     // Layout UPI label (always visible)
     upiLabel.setBounds(upiRow.removeFromLeft(upiLabelWidth));
@@ -320,20 +282,6 @@ void RhythmPatternExplorerAudioProcessorEditor::resized()
             rightControls.removeFromLeft(10); // spacing
         }
         
-        if (showNameField)
-        {
-            auto instanceField = rightControls.removeFromLeft(nameFieldWidth).reduced(2);
-            instanceNameEditor.setBounds(instanceField);
-            rightControls.removeFromLeft(10); // spacing
-        }
-        
-        if (showNoteField)
-        {
-            midiNoteLabel.setBounds(rightControls.removeFromLeft(35));
-            auto noteField = rightControls.removeFromLeft(75).reduced(2);
-            midiNoteSlider.setBounds(noteField);
-            rightControls.removeFromLeft(5); // spacing
-        }
         
     }
     
@@ -342,8 +290,8 @@ void RhythmPatternExplorerAudioProcessorEditor::resized()
     upiTextEditor.setBounds(upiRow.reduced(5));
     
     
-    // Pattern display area (text results) - readable size
-    auto displayArea = area.removeFromTop(60);
+    // Pattern display area (text results) - increased size for onset/accent info
+    auto displayArea = area.removeFromTop(80);
     patternDisplayEditor.setBounds(displayArea.reduced(10));
     
     // Docs button area - positioned right after pattern display, aligned right
@@ -410,7 +358,6 @@ void RhythmPatternExplorerAudioProcessorEditor::timerCallback()
     
     // Sync UI sliders with parameter values (for host automation support)
     if (audioProcessor.getMidiNoteParameter()) {
-        midiNoteSlider.setValue(audioProcessor.getMidiNoteParameter()->get(), juce::dontSendNotification);
     }
     
     
@@ -429,7 +376,10 @@ void RhythmPatternExplorerAudioProcessorEditor::timerCallback()
     // Always repaint when playing to ensure smooth animation
     bool shouldRepaint = false;
     
-    if (currentHash != lastUpdateHash)
+    // Check for pattern changes (including accent pattern changes)
+    bool patternChanged = audioProcessor.checkPatternChanged(); // This will return true if pattern changed and reset the flag
+    
+    if (currentHash != lastUpdateHash || patternChanged)
     {
         updatePatternDisplay();
         updateAnalysisDisplay();
@@ -483,7 +433,7 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
     
     auto center = bounds.getCentre();
     float maxRadius = juce::jmin(bounds.getWidth(), bounds.getHeight()) * 0.3f;
-    float innerRadius = maxRadius * 0.3f;  // Larger inner hole for better donut effect
+    float innerRadius = maxRadius * 0.15f;  // Smaller inner hole for more room for step slices
     float outerRadius = maxRadius;
     float markerRadius = maxRadius * 0.85f;
     
@@ -792,48 +742,6 @@ void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics
         }
     }
     
-    // Draw quantization direction indicators if present
-    if (audioProcessor.getHasQuantization())
-    {
-        bool clockwise = audioProcessor.getQuantizationClockwise();
-        
-        // Position indicator outside the circle
-        float indicatorRadius = outerRadius + 20.0f;
-        float indicatorSize = 8.0f;
-        
-        // Position at 3 o'clock (east) for clear visibility
-        float indicatorAngle = 0.0f; // 3 o'clock position
-        float indicatorX = center.x + indicatorRadius * std::cos(indicatorAngle);
-        float indicatorY = center.y + indicatorRadius * std::sin(indicatorAngle);
-        
-        // Draw direction arrow
-        juce::Path arrow;
-        if (clockwise) {
-            // Clockwise arrow: curved arrow pointing right and down
-            arrow.startNewSubPath(indicatorX - indicatorSize, indicatorY - indicatorSize);
-            arrow.lineTo(indicatorX + indicatorSize, indicatorY);
-            arrow.lineTo(indicatorX - indicatorSize, indicatorY + indicatorSize);
-            arrow.lineTo(indicatorX - indicatorSize * 0.5f, indicatorY + indicatorSize * 0.5f);
-            arrow.lineTo(indicatorX + indicatorSize * 0.5f, indicatorY);
-            arrow.lineTo(indicatorX - indicatorSize * 0.5f, indicatorY - indicatorSize * 0.5f);
-            arrow.closeSubPath();
-        } else {
-            // Counterclockwise arrow: curved arrow pointing left and down
-            arrow.startNewSubPath(indicatorX + indicatorSize, indicatorY - indicatorSize);
-            arrow.lineTo(indicatorX - indicatorSize, indicatorY);
-            arrow.lineTo(indicatorX + indicatorSize, indicatorY + indicatorSize);
-            arrow.lineTo(indicatorX + indicatorSize * 0.5f, indicatorY + indicatorSize * 0.5f);
-            arrow.lineTo(indicatorX - indicatorSize * 0.5f, indicatorY);
-            arrow.lineTo(indicatorX + indicatorSize * 0.5f, indicatorY - indicatorSize * 0.5f);
-            arrow.closeSubPath();
-        }
-        
-        // Draw the direction indicator with distinctive color
-        g.setColour(juce::Colour(0xff00ffff)); // Cyan for high visibility
-        g.fillPath(arrow);
-        g.setColour(juce::Colour(0xff004444)); // Dark cyan outline
-        g.strokePath(arrow, juce::PathStrokeType(1.0f));
-    }
 }
 
 void RhythmPatternExplorerAudioProcessorEditor::updatePatternDisplay()
@@ -849,14 +757,44 @@ void RhythmPatternExplorerAudioProcessorEditor::updatePatternDisplay()
         int originalSteps = audioProcessor.getOriginalStepCount();
         int quantizedSteps = audioProcessor.getQuantizedStepCount();
         bool clockwise = audioProcessor.getQuantizationClockwise();
-        juce::String directionText = clockwise ? "CW" : "CCW";
+        juce::String directionText = clockwise ? juce::String::fromUTF8("↻") : juce::String::fromUTF8("↺");
         
         description += " [" + juce::String(originalSteps) + "→" + juce::String(quantizedSteps) + " " + directionText + "]";
     }
     
-    // Display pattern in multiple notations: binary with description, then hex/octal/decimal
-    juce::String displayText = binary + " | " + description + "\n" + 
-                              hex + " | " + octal + " | " + decimal;
+    // Get onset positions for display
+    auto currentPattern = audioProcessor.getPatternEngine().getCurrentPattern();
+    juce::String onsetPositions = "[";
+    bool first = true;
+    for (int i = 0; i < static_cast<int>(currentPattern.size()); ++i) {
+        if (currentPattern[i]) {
+            if (!first) onsetPositions += ",";
+            onsetPositions += juce::String(i);
+            first = false;
+        }
+    }
+    onsetPositions += "]";
+    
+    // Get accent information if present
+    juce::String accentInfo = "";
+    if (audioProcessor.getHasAccentPattern()) {
+        auto accentMap = audioProcessor.getCurrentAccentMap();
+        juce::String accentPositions = "[";
+        bool firstAccent = true;
+        for (int i = 0; i < static_cast<int>(accentMap.size()); ++i) {
+            if (accentMap[i]) {
+                if (!firstAccent) accentPositions += ",";
+                accentPositions += juce::String(i);
+                firstAccent = false;
+            }
+        }
+        accentPositions += "]";
+        accentInfo = " | Accents: " + accentPositions;
+    }
+    
+    // Display pattern with onsets, accents, and all notations on two lines
+    juce::String displayText = binary + " | " + description + "\n" +
+                              "Onsets: " + onsetPositions + accentInfo + " | " + hex + " | " + octal + " | " + decimal;
     
     patternDisplayEditor.setText(displayText, juce::dontSendNotification);
 }
@@ -873,7 +811,7 @@ void RhythmPatternExplorerAudioProcessorEditor::updateAnalysisDisplay()
         int originalOnsets = audioProcessor.getOriginalOnsetCount();
         int quantizedOnsets = audioProcessor.getQuantizedOnsetCount();
         
-        juce::String directionText = clockwise ? "CW" : "CCW";
+        juce::String directionText = clockwise ? juce::String::fromUTF8("↻") : juce::String::fromUTF8("↺");
         
         analysisText += "Quantization: " + juce::String(originalSteps) + "→" + juce::String(quantizedSteps) + " steps " + directionText + "\n";
         analysisText += "Onsets: " + juce::String(originalOnsets) + "→" + juce::String(quantizedOnsets) + " preserved";
@@ -921,6 +859,7 @@ void RhythmPatternExplorerAudioProcessorEditor::parseUPIPattern()
     if (upiText.isEmpty())
         return;
     
+    
     // Set the UPI input on the processor, which will parse and apply it
     audioProcessor.setUPIInput(upiText);
     
@@ -939,11 +878,6 @@ void RhythmPatternExplorerAudioProcessorEditor::onParseButtonClicked()
     parseUPIPattern();
 }
 
-int RhythmPatternExplorerAudioProcessorEditor::getMidiNoteNumber() const
-{
-    // Slider already handles range validation (0-127)
-    return static_cast<int>(midiNoteSlider.getValue());
-}
 
 void RhythmPatternExplorerAudioProcessorEditor::toggleDocumentation()
 {
@@ -1001,43 +935,118 @@ void RhythmPatternExplorerAudioProcessorEditor::createDocumentationHTML()
     htmlContent += "<h1>Universal Pattern Interface (UPI) Documentation</h1>\n";
     htmlContent += "<div class=\"quick-ref\">\n";
     htmlContent += "<h3>Quick Reference</h3>\n";
-    htmlContent += "<p>UPI provides a mathematical language for describing rhythm patterns using algorithms like Euclidean, Polygon, and Binary sequences.</p>\n";
+    htmlContent += "<p>UPI provides a comprehensive language for rhythm patterns using Euclidean, Barlow, Wolrab, Dilcue, Polygon, and Random algorithms, plus hex/binary notation, quantization, accents, progressive transformations, and scene cycling.</p>\n";
     htmlContent += "<p><strong>Download:</strong> <a href=\"https://github.com/Enkerli/rhythm_pattern_explorer/releases\" target=\"_blank\" style=\"color: #68d391; text-decoration: underline;\">Latest Releases</a> | <a href=\"https://github.com/Enkerli/rhythm_pattern_explorer\" target=\"_blank\" style=\"color: #68d391; text-decoration: underline;\">Source Code</a></p>\n";
     htmlContent += "</div>\n";
     htmlContent += "<h2>Basic Patterns</h2>\n";
     htmlContent += "<div class=\"pattern-example\">\n";
     htmlContent += "<div class=\"pattern-code\">E(3,8)</div>\n";
-    htmlContent += "<div class=\"pattern-description\">Euclidean: 3 onsets distributed evenly across 8 steps</div>\n";
+    htmlContent += "<div class=\"pattern-description\">Euclidean: 3 onsets distributed evenly across 8 steps (classic tresillo)</div>\n";
+    htmlContent += "</div>\n";
+    htmlContent += "<div class=\"pattern-example\">\n";
+    htmlContent += "<div class=\"pattern-code\">B(3,8)</div>\n";
+    htmlContent += "<div class=\"pattern-description\">Barlow: 3 onsets using indispensability theory (metric hierarchy)</div>\n";
+    htmlContent += "</div>\n";
+    htmlContent += "<div class=\"pattern-example\">\n";
+    htmlContent += "<div class=\"pattern-code\">W(3,8)</div>\n";
+    htmlContent += "<div class=\"pattern-description\">Wolrab: 3 onsets using anti-Barlow (groove-oriented, anti-metric)</div>\n";
+    htmlContent += "</div>\n";
+    htmlContent += "<div class=\"pattern-example\">\n";
+    htmlContent += "<div class=\"pattern-code\">D(3,8)</div>\n";
+    htmlContent += "<div class=\"pattern-description\">Dilcue: 3 onsets using anti-Euclidean distribution</div>\n";
     htmlContent += "</div>\n";
     htmlContent += "<div class=\"pattern-example\">\n";
     htmlContent += "<div class=\"pattern-code\">P(5,0)</div>\n";
     htmlContent += "<div class=\"pattern-description\">Polygon: Pentagon rhythm (5 equally spaced onsets)</div>\n";
     htmlContent += "</div>\n";
     htmlContent += "<div class=\"pattern-example\">\n";
-    htmlContent += "<div class=\"pattern-code\">B(170,8)</div>\n";
-    htmlContent += "<div class=\"pattern-description\">Binary: Convert decimal 170 to 8-step binary pattern</div>\n";
+    htmlContent += "<div class=\"pattern-code\">R(3,8)</div>\n";
+    htmlContent += "<div class=\"pattern-description\">Random: 3 randomly placed onsets across 8 steps</div>\n";
     htmlContent += "</div>\n";
-    htmlContent += "<h2>Progressive Patterns</h2>\n";
+    htmlContent += "<h2>Hex/Octal/Binary Notation</h2>\n";
     htmlContent += "<div class=\"pattern-example\">\n";
-    htmlContent += "<div class=\"pattern-code\">E(3,8)E.8</div>\n";
-    htmlContent += "<div class=\"pattern-description\">Progressive Euclidean: Pattern advances each trigger</div>\n";
+    htmlContent += "<div class=\"pattern-code\">0x94:8</div>\n";
+    htmlContent += "<div class=\"pattern-description\">Hex: Left-to-right bit mapping (0x94 = 10010010 tresillo)</div>\n";
+    htmlContent += "</div>\n";
+    htmlContent += "<div class=\"pattern-example\">\n";
+    htmlContent += "<div class=\"pattern-code\">0o222:8</div>\n";
+    htmlContent += "<div class=\"pattern-description\">Octal: Base-8 notation with left-to-right mapping</div>\n";
+    htmlContent += "</div>\n";
+    htmlContent += "<div class=\"pattern-example\">\n";
+    htmlContent += "<div class=\"pattern-code\">10010010</div>\n";
+    htmlContent += "<div class=\"pattern-description\">Binary: Direct binary pattern (1=onset, 0=rest)</div>\n";
+    htmlContent += "</div>\n";
+    htmlContent += "<h2>Lascabettes Quantization</h2>\n";
+    htmlContent += "<div class=\"pattern-example\">\n";
+    htmlContent += "<div class=\"pattern-code\">E(5,17);13</div>\n";
+    htmlContent += "<div class=\"pattern-description\">Quantize: Project 5 onsets from 17 steps onto 13 steps (clockwise ↻)</div>\n";
+    htmlContent += "</div>\n";
+    htmlContent += "<div class=\"pattern-example\">\n";
+    htmlContent += "<div class=\"pattern-code\">E(3,8);-12</div>\n";
+    htmlContent += "<div class=\"pattern-description\">Quantize: Project onto 12 steps counterclockwise (negative = ↺)</div>\n";
+    htmlContent += "</div>\n";
+    htmlContent += "<h2>Accent Patterns</h2>\n";
+    htmlContent += "<div class=\"pattern-example\">\n";
+    htmlContent += "<div class=\"pattern-code\">{100}E(3,8)</div>\n";
+    htmlContent += "<div class=\"pattern-description\">Accent: Accent first onset of tresillo pattern</div>\n";
+    htmlContent += "</div>\n";
+    htmlContent += "<div class=\"pattern-example\">\n";
+    htmlContent += "<div class=\"pattern-code\">{E(2,5)}E(3,8)</div>\n";
+    htmlContent += "<div class=\"pattern-description\">Accent: Use Euclidean pattern as accent layer (polyrhythmic)</div>\n";
+    htmlContent += "</div>\n";
+    htmlContent += "<h2>Progressive Transformations</h2>\n";
+    htmlContent += "<div class=\"pattern-example\">\n";
+    htmlContent += "<div class=\"pattern-code\">E(1,8)>8</div>\n";
+    htmlContent += "<div class=\"pattern-description\">Progressive: Transform from 1 to 8 onsets via Euclidean algorithm</div>\n";
+    htmlContent += "</div>\n";
+    htmlContent += "<div class=\"pattern-example\">\n";
+    htmlContent += "<div class=\"pattern-code\">E(1,8)B>8</div>\n";
+    htmlContent += "<div class=\"pattern-description\">Progressive: Transform using Barlow indispensability</div>\n";
+    htmlContent += "</div>\n";
+    htmlContent += "<div class=\"pattern-example\">\n";
+    htmlContent += "<div class=\"pattern-code\">1000000+2</div>\n";
+    htmlContent += "<div class=\"pattern-description\">Progressive Offset: Advance pattern by 2 steps each trigger</div>\n";
+    htmlContent += "</div>\n";
+    htmlContent += "<div class=\"pattern-example\">\n";
+    htmlContent += "<div class=\"pattern-code\">E(3,8)*3</div>\n";
+    htmlContent += "<div class=\"pattern-description\">Progressive Lengthening: Add 3 random steps each trigger</div>\n";
+    htmlContent += "</div>\n";
+    htmlContent += "<h2>Scene Cycling</h2>\n";
+    htmlContent += "<div class=\"pattern-example\">\n";
+    htmlContent += "<div class=\"pattern-code\">E(3,8)|B(5,13)|W(2,7)</div>\n";
+    htmlContent += "<div class=\"pattern-description\">Scenes: Cycle through multiple patterns with manual triggers</div>\n";
+    htmlContent += "</div>\n";
+    htmlContent += "<div class=\"pattern-example\">\n";
+    htmlContent += "<div class=\"pattern-code\">{101}E(3,8)|{110}B(5,13)</div>\n";
+    htmlContent += "<div class=\"pattern-description\">Scenes: Each scene can have unique accent patterns</div>\n";
     htmlContent += "</div>\n";
     htmlContent += "<div class=\"warning\">\n";
-    htmlContent += "<strong>Note:</strong> Progressive patterns change each time they are triggered via MIDI input.\n";
+    htmlContent += "<strong>Note:</strong> Progressive patterns and scenes advance only via manual triggers (Enter, Tick, MIDI input).\n";
     htmlContent += "</div>\n";
     htmlContent += "<h2>Pattern Combinations</h2>\n";
     htmlContent += "<div class=\"pattern-example\">\n";
     htmlContent += "<div class=\"pattern-code\">E(3,8) + E(2,5)</div>\n";
     htmlContent += "<div class=\"pattern-description\">Combine two Euclidean patterns using OR logic</div>\n";
     htmlContent += "</div>\n";
-    htmlContent += "<h2>Syntax Reference</h2>\n";
+    htmlContent += "<h2>Complete Syntax Reference</h2>\n";
     htmlContent += "<table>\n";
-    htmlContent += "<tr><th>Pattern Type</th><th>Syntax</th><th>Example</th></tr>\n";
-    htmlContent += "<tr><td>Euclidean</td><td>E(onsets,steps)</td><td>E(5,13)</td></tr>\n";
-    htmlContent += "<tr><td>Polygon</td><td>P(sides,offset,steps?)</td><td>P(7,2,16)</td></tr>\n";
-    htmlContent += "<tr><td>Binary</td><td>B(decimal,steps)</td><td>B(85,8)</td></tr>\n";
-    htmlContent += "<tr><td>Progressive</td><td>Pattern.steps</td><td>E(3,8)E.8</td></tr>\n";
-    htmlContent += "<tr><td>Combination</td><td>Pattern + Pattern</td><td>E(3,8) + P(5,0)</td></tr>\n";
+    htmlContent += "<tr><th>Pattern Type</th><th>Syntax</th><th>Example</th><th>Description</th></tr>\n";
+    htmlContent += "<tr><td>Euclidean</td><td>E(onsets,steps)</td><td>E(5,13)</td><td>Even distribution algorithm</td></tr>\n";
+    htmlContent += "<tr><td>Barlow</td><td>B(onsets,steps)</td><td>B(3,8)</td><td>Metric indispensability</td></tr>\n";
+    htmlContent += "<tr><td>Wolrab</td><td>W(onsets,steps)</td><td>W(3,8)</td><td>Anti-metric (groove)</td></tr>\n";
+    htmlContent += "<tr><td>Dilcue</td><td>D(onsets,steps)</td><td>D(3,8)</td><td>Anti-Euclidean</td></tr>\n";
+    htmlContent += "<tr><td>Polygon</td><td>P(sides,offset,steps?)</td><td>P(7,2,16)</td><td>Geometric patterns</td></tr>\n";
+    htmlContent += "<tr><td>Random</td><td>R(onsets,steps)</td><td>R(3,8)</td><td>Random placement</td></tr>\n";
+    htmlContent += "<tr><td>Binary</td><td>10110100</td><td>10010010</td><td>Direct binary input</td></tr>\n";
+    htmlContent += "<tr><td>Hexadecimal</td><td>0xHEX:steps</td><td>0x94:8</td><td>Left-to-right mapping</td></tr>\n";
+    htmlContent += "<tr><td>Octal</td><td>0oOCT:steps</td><td>0o222:8</td><td>Base-8 notation</td></tr>\n";
+    htmlContent += "<tr><td>Quantization</td><td>Pattern;steps</td><td>E(5,17);13</td><td>Angular projection</td></tr>\n";
+    htmlContent += "<tr><td>Accents</td><td>{accent}pattern</td><td>{100}E(3,8)</td><td>Suprasegmental layer</td></tr>\n";
+    htmlContent += "<tr><td>Progressive Transform</td><td>Pattern>target</td><td>E(1,8)>8</td><td>Gradual evolution</td></tr>\n";
+    htmlContent += "<tr><td>Progressive Offset</td><td>Pattern+step</td><td>E(3,8)+2</td><td>Rotation per trigger</td></tr>\n";
+    htmlContent += "<tr><td>Progressive Length</td><td>Pattern*add</td><td>E(3,8)*3</td><td>Growth per trigger</td></tr>\n";
+    htmlContent += "<tr><td>Scenes</td><td>Pat1|Pat2|Pat3</td><td>E(3,8)|B(5,13)</td><td>Manual cycling</td></tr>\n";
+    htmlContent += "<tr><td>Combination</td><td>Pattern + Pattern</td><td>E(3,8) + B(2,5)</td><td>OR logic merge</td></tr>\n";
     htmlContent += "</table>\n";
     htmlContent += "<h2>Musical Examples</h2>\n";
     htmlContent += "<div class=\"pattern-example\">\n";
@@ -1050,10 +1059,14 @@ void RhythmPatternExplorerAudioProcessorEditor::createDocumentationHTML()
     htmlContent += "</div>\n";
     htmlContent += "<h2>Tips and Tricks</h2>\n";
     htmlContent += "<ul>\n";
-    htmlContent += "<li><strong>MIDI Triggering:</strong> Play any MIDI note to advance progressive patterns</li>\n";
-    htmlContent += "<li><strong>Mathematical Beauty:</strong> Try E(3,8), E(5,8), E(7,16) for musical results</li>\n";
-    htmlContent += "<li><strong>Polygon Magic:</strong> P(3,0) through P(12,0) create interesting polyrhythms</li>\n";
-    htmlContent += "<li><strong>Binary Exploration:</strong> Powers of 2 like B(85,8) create symmetric patterns</li>\n";
+    htmlContent += "<li><strong>MIDI Triggering:</strong> Any MIDI note advances progressive patterns and scenes</li>\n";
+    htmlContent += "<li><strong>Hex Notation:</strong> 0x94:8 gives tresillo (10010010) - left bit = LSB</li>\n";
+    htmlContent += "<li><strong>Quantization:</strong> E(5,17);13 projects complex rhythms onto simpler grids</li>\n";
+    htmlContent += "<li><strong>Accents:</strong> {101}E(3,8) creates polyrhythmic accent patterns</li>\n";
+    htmlContent += "<li><strong>Algorithm Comparison:</strong> Try E(3,8), B(3,8), W(3,8), D(3,8) for different feels</li>\n";
+    htmlContent += "<li><strong>Progressive Looping:</strong> E(1,8)>8 cycles from sparse to dense and back</li>\n";
+    htmlContent += "<li><strong>Scene Performance:</strong> Use | to create live-triggerable pattern sequences</li>\n";
+    htmlContent += "<li><strong>Complex Combinations:</strong> {E(2,5)}E(3,8)|{B(1,3)}W(5,13) for evolving textures</li>\n";
     htmlContent += "</ul>\n";
     htmlContent += "<div class=\"quick-ref\">\n";
     htmlContent += "<h3>Getting Started</h3>\n";
@@ -1072,14 +1085,8 @@ void RhythmPatternExplorerAudioProcessorEditor::createDocumentationHTML()
     
     if (htmlFile.replaceWithText(htmlContent))
     {
-        // Also write to a debug file for inspection
-        juce::File debugFile = tempDir.getChildFile("rhythm_pattern_docs_debug.html");
-        debugFile.replaceWithText(htmlContent);
-        
         juce::URL fileURL = juce::URL(htmlFile);
         docsBrowser->goToURL(fileURL.toString(false));
-        
-        // Log the file path for debugging
     }
     else
     {
@@ -1141,17 +1148,14 @@ void RhythmPatternExplorerAudioProcessorEditor::mouseDown(const juce::MouseEvent
             if (!isOnset) {
                 // Empty step: clicking anywhere creates an onset
                 audioProcessor.togglePatternStep(clickResult.stepIndex);
-                DBG("Mouse click: created onset at step " << clickResult.stepIndex);
             } else {
                 // Existing onset: inner half toggles onset, outer half toggles accent
                 if (clickResult.isInOuterHalf) {
                     // Outer half: toggle accent
                     audioProcessor.toggleAccentAtStep(clickResult.stepIndex);
-                    DBG("Mouse click: toggled accent at step " << clickResult.stepIndex);
                 } else {
                     // Inner half: toggle onset (remove it)
                     audioProcessor.togglePatternStep(clickResult.stepIndex);
-                    DBG("Mouse click: removed onset at step " << clickResult.stepIndex);
                 }
             }
             
@@ -1238,7 +1242,7 @@ int RhythmPatternExplorerAudioProcessorEditor::getStepIndexFromCoordinates(int m
     // Use same radius calculations as drawPatternCircle
     float radius = std::min(circleArea.getWidth(), circleArea.getHeight()) * 0.4f;
     float outerRadius = radius;
-    float innerRadius = radius * 0.3f; // 30% inner radius for donut effect
+    float innerRadius = radius * 0.15f; // 15% inner radius for smaller donut hole
     
     // Calculate distance from center
     float dx = mouseX - center.x;
@@ -1302,7 +1306,7 @@ RhythmPatternExplorerAudioProcessorEditor::ClickResult RhythmPatternExplorerAudi
     // Use same radius calculations as drawPatternCircle
     float radius = std::min(circleArea.getWidth(), circleArea.getHeight()) * 0.4f;
     float outerRadius = radius;
-    float innerRadius = radius * 0.3f; // 30% inner radius for donut effect
+    float innerRadius = radius * 0.15f; // 15% inner radius for smaller donut hole
     
     // IMPROVED TOUCH TARGETS: Make outer half larger for easier accent clicking
     // Split the ring 70% outer (accent) / 30% inner (onset toggle) instead of 50/50

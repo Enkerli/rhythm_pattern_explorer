@@ -11,7 +11,6 @@
 #include "PatternEngine.h"
 #include "UPIParser.h"
 #include "PatternUtils.h"
-#include <fstream>
 
 //==============================================================================
 ProgressiveManager::ProgressiveManager()
@@ -126,12 +125,8 @@ juce::String ProgressiveManager::applyProgressive(const juce::String& stateKey, 
 
 void ProgressiveManager::triggerProgressive(const juce::String& stateKey, PatternEngine& patternEngine)
 {
-    std::ofstream debugFile("/tmp/progressive_debug.log", std::ios::app);
-    debugFile << "triggerProgressive called for key: " << stateKey.toRawUTF8() << std::endl;
-    
     auto it = progressiveStates.find(stateKey);
     if (it == progressiveStates.end()) {
-        debugFile << "ERROR: No state found for key: " << stateKey.toRawUTF8() << std::endl;
         return; // No state found
     }
     
@@ -141,14 +136,10 @@ void ProgressiveManager::triggerProgressive(const juce::String& stateKey, Patter
     // Trigger each progressive type
     if (state.hasOffset)
     {
-        debugFile << "Advancing offset from " << state.currentOffset << " by " << state.offsetStep << std::endl;
         state.currentOffset += state.offsetStep;
         state.triggerCount++;
-        debugFile << "New offset: " << state.currentOffset << ", trigger count: " << state.triggerCount << std::endl;
         
         // PatternEngine integration will happen in applyProgressiveOffset()
-    } else {
-        debugFile << "ERROR: state.hasOffset is FALSE!" << std::endl;
     }
     
     if (state.hasLengthening)
@@ -395,8 +386,6 @@ juce::String ProgressiveManager::applyProgressiveOffset(ProgressiveState& state,
 {
     // Restore original architecture: let PatternEngine handle the rotation
     // Just configure PatternEngine with the current offset state
-    std::ofstream debugFile("/tmp/progressive_debug.log", std::ios::app);
-    debugFile << "applyProgressiveOffset - setting PatternEngine offset to " << state.currentOffset << std::endl;
     patternEngine.setProgressiveOffset(true, state.currentOffset, state.offsetStep);
     
     // Return the base pattern - PatternEngine will apply rotation internally

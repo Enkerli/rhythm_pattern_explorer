@@ -194,6 +194,7 @@ public:
     bool shouldOnsetBeAccented(int onsetNumber) const; // DEPRECATED: onset-based logic
     bool shouldStepBeAccented(int stepIndex) const;    // NEW: step-based logic for MIDI alignment
     std::vector<bool> getCurrentAccentMap() const;
+    bool checkPatternChanged(); // Check and reset pattern changed flag
     void resetAccentSystem();
     
     // Lascabettes quantization access for UI and processing
@@ -299,7 +300,11 @@ private:
     juce::AudioParameterFloat* unaccentedVelocityParam;
     juce::AudioParameterInt* accentPitchOffsetParam;
     
+    // AudioProcessorValueTreeState for robust state management
+    juce::AudioProcessorValueTreeState parameters;
+    
     // Helper methods
+    static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
     void updateTiming();
     void processStep(juce::MidiBuffer& midiBuffer, int samplePosition, int stepToProcess);
     void triggerNote(juce::MidiBuffer& midiBuffer, int samplePosition, bool isAccented = false);
