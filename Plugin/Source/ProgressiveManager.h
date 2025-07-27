@@ -167,6 +167,19 @@ public:
     void cleanupLRUStates();
 
     //==============================================================================
+    // State Serialization (Phase 4: Progressive State Persistence)
+    
+    /**
+     * Serialize all progressive states to ValueTree
+     */
+    void saveProgressiveStatesToValueTree(juce::ValueTree& stateTree) const;
+    
+    /**
+     * Restore all progressive states from ValueTree
+     */
+    void loadProgressiveStatesFromValueTree(const juce::ValueTree& stateTree);
+
+    //==============================================================================
     // Debug and Diagnostics
     
     /**

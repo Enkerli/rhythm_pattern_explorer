@@ -597,6 +597,12 @@ void RhythmPatternExplorerAudioProcessor::getStateInformation (juce::MemoryBlock
     }
     state.setProperty("currentAccentPattern", accentPatternString, nullptr);
     
+    // Save progressive transformation state (Phase 4: Progressive State Persistence)
+    if (progressiveManager)
+    {
+        progressiveManager->saveProgressiveStatesToValueTree(state);
+    }
+    
     // Convert ValueTree to XML and save to memory block
     if (auto xml = state.createXml())
         copyXmlToBinary(*xml, destData);
@@ -659,6 +665,12 @@ void RhythmPatternExplorerAudioProcessor::setStateInformation (const void* data,
                 currentAccentPattern.push_back(accentPatternString[i] == '1');
             }
             
+            // Restore progressive transformation state (Phase 4: Progressive State Persistence)
+            if (progressiveManager)
+            {
+                progressiveManager->loadProgressiveStatesFromValueTree(state);
+            }
+            
             updateTiming();
         }
         // Fallback: handle old XML format for backward compatibility
@@ -704,6 +716,12 @@ void RhythmPatternExplorerAudioProcessor::setStateInformation (const void* data,
             globalOnsetCounter = 0;
             uiAccentOffset = 0;
             accentPatternManuallyModified = false;
+            
+            // Clear progressive transformation state (won't exist in old format)
+            if (progressiveManager)
+            {
+                progressiveManager->clearAllProgressiveStates();
+            }
             
             updateTiming();
         }
