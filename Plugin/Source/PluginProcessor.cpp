@@ -421,6 +421,9 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
             case 2: // Bars mode
                 patternLengthInBeats = lengthValue * 4.0; // Assume 4/4 time
                 break;
+            case 3: // Auto mode - calculate optimal pattern length based on pattern characteristics
+                patternLengthInBeats = calculateAutoPatternLength(pattern);
+                break;
             default:
                 patternLengthInBeats = lengthValue; // Default to beats
                 break;
