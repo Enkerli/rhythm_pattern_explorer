@@ -972,6 +972,35 @@ void RhythmPatternExplorerAudioProcessor::syncBPMWithHost(const juce::AudioPlayH
 
 void RhythmPatternExplorerAudioProcessor::syncPositionWithHost(const juce::AudioPlayHead::CurrentPositionInfo& posInfo)
 {
+    // Phase 3: Advanced Host Sync - Loop point detection
+    if (enableLoopSync && posInfo.isLooping)
+    {
+        bool wasLooping = hostIsLooping;
+        hostIsLooping = true;
+        
+        // Detect loop restart (position jumped backward significantly)
+        if (wasLooping && posInfo.ppqPosition < lastHostPosition - 0.1)
+        {
+            // Loop restarted - reset pattern timing and accents
+            currentStep.store(0);
+            currentSample = 0;
+            globalOnsetCounter = 0;
+            uiAccentOffset = 0;
+            resetAccentSystem();
+            patternChanged.store(true);
+        }
+        
+        // Update loop boundaries
+        if (!wasLooping)
+        {
+            hostLoopStart = posInfo.ppqPosition;
+        }
+    }
+    else
+    {
+        hostIsLooping = false;
+    }
+    
     // Calculate pattern position based on host timeline
     if (posInfo.ppqPosition >= 0.0)
     {

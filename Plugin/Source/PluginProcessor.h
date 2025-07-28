@@ -99,6 +99,11 @@ public:
     void setInternalPlaying(bool playing) { internalPlaying = playing; }
     void triggerPatternUpdate() { if (!currentUPIInput.isEmpty()) parseAndApplyUPI(currentUPIInput); }
     
+    // Phase 3: Advanced Host Sync - Loop sync access
+    bool getHostIsLooping() const { return hostIsLooping; }
+    bool getEnableLoopSync() const { return enableLoopSync; }
+    void setEnableLoopSync(bool enable) { enableLoopSync = enable; }
+    
     // Playback state
     int getCurrentStep() const { return currentStep.load(); }
     bool isCurrentlyPlaying() const { 
@@ -238,6 +243,12 @@ private:
     double lastHostPosition = 0.0;
     bool hostIsPlaying = false;
     mutable double lastProcessBlockTime = 0.0;
+    
+    // Host loop sync (Phase 3: Advanced Host Sync)
+    bool hostIsLooping = false;
+    double hostLoopStart = 0.0;
+    double hostLoopEnd = 0.0;
+    bool enableLoopSync = true;
     
     // Internal state (not exposed as parameters)
     float currentBPM = 120.0f;
