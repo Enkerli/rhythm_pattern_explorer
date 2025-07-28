@@ -9,9 +9,10 @@ HEX_OCTAL_TESTS = HexOctalCoreTests
 BARLOW_TESTS = TestRestoredBarlowAlgorithm
 CRITICAL_FIXES_TESTS = CriticalFixesTests
 ACCENT_MAPPING_TESTS = AccentMappingTests
+ADVANCED_HOST_SYNC_TESTS = AdvancedHostSyncTests
 TEST_RUNNER = TestRunner
 
-.PHONY: all test-comprehensive test-fixes test-critical test-barlow test-accent clean build-au build-vst3 dev dev-quick install help
+.PHONY: all test-comprehensive test-fixes test-critical test-barlow test-accent test-host-sync clean build-au build-vst3 dev dev-quick install help
 
 # Default target runs comprehensive test suite
 all: test-comprehensive
@@ -47,6 +48,12 @@ test-accent: $(ACCENT_MAPPING_TESTS)
 	@echo "==============================="
 	./$(ACCENT_MAPPING_TESTS)
 
+# Advanced host sync tests (Phase 3)
+test-host-sync: $(ADVANCED_HOST_SYNC_TESTS)
+	@echo "🔬 Testing Advanced Host Sync Features"
+	@echo "======================================"
+	./$(ADVANCED_HOST_SYNC_TESTS)
+
 # Build test executables
 $(HEX_OCTAL_TESTS): HexOctalCoreTests.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $<
@@ -58,6 +65,9 @@ $(CRITICAL_FIXES_TESTS): CriticalFixesTests.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
 $(ACCENT_MAPPING_TESTS): AccentMappingTests.cpp
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+$(ADVANCED_HOST_SYNC_TESTS): AdvancedHostSyncTests.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
 $(TEST_RUNNER): TestRunner.cpp
