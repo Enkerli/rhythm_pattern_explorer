@@ -74,6 +74,24 @@ python3 -m http.server 8000
 - **Binary Patterns**: Direct binary representation
 - **Accent Patterns**: Suprasegmental accent layer with curly bracket notation
 
+### Preset Management System (v0.03g)
+- **Factory Presets**: Educational library covering all pattern types with examples
+- **User Presets**: Save, load, delete custom patterns with full plugin state
+- **Visual Indicators**: Rich iconography showing pattern features at a glance
+  - **Scenes** (▸): Patterns with scene cycling using `|` notation
+  - **Progressive** (↻): Patterns with transformations using `>`, `+`, `*` operators
+  - **Accents** (◆): Patterns with accent layers using `{...}` notation
+  - **Step Count**: Visual indication of pattern complexity
+- **Smart Interaction**: Progressive offset patterns advance on repeated clicks
+- **Feature Detection**: Automatic analysis of UPI patterns for UI feedback
+
+### Enhanced User Interface (v0.03g)
+- **UPI History**: Ticker tape display of all entered patterns for easy recall
+- **Overlay System**: Mutually exclusive preset browser, history, and documentation views
+- **Close Buttons**: Proper navigation with Unicode-encoded close controls
+- **State Persistence**: Pattern history and settings maintained across sessions
+- **Responsive Design**: Adaptive layout for various window sizes and minimal mode
+
 ### Progressive Transformations
 - **Barlow (B)**: Indispensability-based pattern evolution
 - **Euclidean (E)**: Progressive onset addition/removal
@@ -239,7 +257,23 @@ The **WebApp** serves as the **reference implementation** - all algorithms are f
 
 ## Version History
 
-### Current: v0.03d (January 2025) - Complete Documentation & Bug Fixes Release
+### Current: v0.03g (July 2025) - Preset Browser & Enhanced UI Release
+- ✅ **Preset Browser System**: Comprehensive preset management with rich visual feedback
+  - Factory preset library with educational examples across all pattern types
+  - User preset creation, saving, loading, and deletion
+  - Visual feature indicators: scenes (▸), progressive transforms (↻), accents (◆)
+  - Step count display and automatic feature detection
+  - Smart progressive offset advancement for repeated clicks
+- ✅ **Enhanced UI/UX**:
+  - UPI history ticker tape for pattern recall and experimentation
+  - Mutual exclusion overlay system with proper close buttons
+  - Integrated HTML documentation with WebView component
+  - State persistence across plugin sessions
+  - Unicode encoding fixes for cross-platform emoji support
+- ✅ **Progressive Offset Fix**: E(3,8)+1 patterns now advance properly on repeated triggers
+- ✅ **Previous v0.03 Features**: Complete accent system, progressive transformations, timing modes
+
+### Previous: v0.03d (January 2025) - Complete Documentation & Bug Fixes Release
 - ✅ **Accent Pattern System**: Suprasegmental accent layer with curly bracket notation `{accent}pattern`
 - ✅ **Progressive Transformations**: Manual control with `>` syntax vs automatic with `@#` syntax
 - ✅ **B(n,s), W(n,s), D(n,s) Notations**: Complete pattern language with Barlow, Wolrab, and Dilcue

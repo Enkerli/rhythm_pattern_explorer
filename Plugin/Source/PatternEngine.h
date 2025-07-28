@@ -56,12 +56,13 @@ public:
     
     //==============================================================================
     // Progressive Offset Support
+    // Enables patterns like E(3,8)+1 where each trigger advances the rotation offset
     void setProgressiveOffset(bool enabled, int initial = 0, int progressive = 0);
-    void triggerProgressiveOffset();
+    void triggerProgressiveOffset();  // Advances offset by progressiveOffset amount
     int getCurrentOffset() const { return currentOffset; }
     bool hasProgressiveOffsetEnabled() const { return hasProgressiveOffset; }
-    int getProgressiveTriggerCount() const { return triggerCount; }
-    int getProgressiveOffsetValue() const { return progressiveOffset; }
+    int getProgressiveTriggerCount() const { return triggerCount; }  // Number of times triggered
+    int getProgressiveOffsetValue() const { return progressiveOffset; }  // Amount to advance per trigger
 
 private:
     //==============================================================================

@@ -15,6 +15,10 @@
 //==============================================================================
 /**
  * UPI History List Model for ticker tape feature
+ * 
+ * Displays chronological history of all UPI patterns entered by the user.
+ * Supports click-to-reload functionality for quick pattern recall.
+ * Integrates with plugin state persistence to maintain history across sessions.
  */
 class UPIHistoryListModel : public juce::ListBoxModel
 {
@@ -31,15 +35,56 @@ private:
 
 //==============================================================================
 /**
+ * Preset Browser List Model for preset management
+ * 
+ * Provides rich preset browsing with visual feature indicators:
+ * - Unicode icons for scenes (▸), progressive transforms (↻), and accents (◆)
+ * - Step count display for pattern complexity assessment
+ * - Factory preset protection and user preset management
+ * - Smart progressive offset advancement for repeated clicks
+ * - Automatic feature detection and visual feedback
+ */
+class PresetBrowserListModel : public juce::ListBoxModel
+{
+public:
+    PresetBrowserListModel(class RhythmPatternExplorerAudioProcessorEditor& editor) : editorRef(editor) {}
+    
+    int getNumRows() override;
+    void paintListBoxItem(int rowNumber, juce::Graphics& g, int width, int height, bool rowIsSelected) override;
+    void listBoxItemClicked(int row, const juce::MouseEvent& e) override;
+    
+    void refreshPresetList();
+    
+private:
+    class RhythmPatternExplorerAudioProcessorEditor& editorRef;
+    juce::StringArray currentPresetNames;
+    
+    // Helper method to parse step count from UPI pattern
+    int parseStepCount(const juce::String& upiPattern);
+};
+
+//==============================================================================
+/**
  * Plugin editor with simplified interface for mobile/desktop use
  * 
- * Features:
- * - Pattern type selection
- * - Onset/step count controls  
- * - BPM control
- * - Play/stop button
- * - Visual pattern display
- * - Pattern analysis display
+ * Core Features:
+ * - UPI pattern input and parsing with comprehensive syntax support
+ * - Visual pattern display with circular step layout and accent indicators
+ * - Real-time step indicator and pattern progression
+ * - Background color cycling for visual customization
+ * 
+ * Advanced UI Features (v0.03g):
+ * - Preset browser with rich visual feedback and feature icons
+ * - UPI history ticker tape for pattern recall and experimentation
+ * - Integrated HTML documentation with WebView component
+ * - Mutual exclusion overlay system with close buttons
+ * - Progressive offset advancement for repeated preset clicks
+ * - State persistence across plugin sessions
+ * 
+ * Responsive Design:
+ * - Adaptive layout for various window sizes
+ * - Minimal mode for very small windows
+ * - Mobile-friendly touch interactions
  */
 class RhythmPatternExplorerAudioProcessorEditor  : public juce::AudioProcessorEditor,
                                                    public juce::Timer
@@ -72,7 +117,14 @@ public:
     
     // Public access for ListBoxModel
     void onHistoryItemClicked(int index);
+    void onPresetItemClicked(int index);
     RhythmPatternExplorerAudioProcessor& getAudioProcessor() { return audioProcessor; }
+    
+    // Preset management
+    void togglePresets();
+    void showSavePresetDialog();
+    void saveCurrentPreset(const juce::String& name);
+    void deleteSelectedPreset();
     
 
 private:
@@ -112,14 +164,26 @@ private:
     // Documentation WebView
     std::unique_ptr<juce::WebBrowserComponent> docsBrowser;
     juce::TextButton docsToggleButton;
+    juce::TextButton docsCloseButton;
     bool showingDocs = false;
     
     // Ticker tape UPI history sidebar
     juce::ListBox upiHistoryList;
     juce::TextButton historyToggleButton;
+    juce::TextButton historyCloseButton;
     bool showingHistory = false;
     juce::Label historyLabel;
     std::unique_ptr<UPIHistoryListModel> historyListModel;
+    
+    // Preset browser sidebar
+    juce::ListBox presetBrowserList;
+    juce::TextButton presetToggleButton;
+    juce::TextButton presetCloseButton;
+    bool showingPresets = false;
+    juce::Label presetLabel;
+    std::unique_ptr<PresetBrowserListModel> presetListModel;
+    juce::TextButton savePresetButton;
+    juce::TextButton deletePresetButton;
     
     // Minimal mode (Easter egg for very small windows)
     bool minimalMode = false;
@@ -178,10 +242,15 @@ private:
     
     // Documentation handling
     void toggleDocumentation();
+    void closeDocumentation();
     void createDocumentationHTML();
     
     // History handling
     void toggleHistory();
+    void closeHistory();
+    
+    // Preset handling  
+    void closePresets();
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (RhythmPatternExplorerAudioProcessorEditor)
 };

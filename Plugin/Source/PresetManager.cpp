@@ -3,6 +3,14 @@
 
     PresetManager.cpp
     Preset system implementation for Rhythm Pattern Explorer
+    
+    Provides comprehensive preset management with:
+    - Factory preset installation with rich pattern examples
+    - User preset creation, saving, loading, and deletion
+    - Automatic feature detection (scenes, progressive transforms, accents)
+    - JSON-based preset storage with embedded plugin state
+    - Cached preset management for performance
+    - Safe file operations with validation and sanitization
 
   ==============================================================================
 */
@@ -10,6 +18,10 @@
 #include "PresetManager.h"
 
 //==============================================================================
+/**
+ * Initialize preset manager and load existing presets
+ * Creates preset directory if needed and populates cache for fast access
+ */
 PresetManager::PresetManager()
 {
     createPresetDirectoryIfNeeded();
@@ -19,6 +31,21 @@ PresetManager::PresetManager()
 PresetManager::~PresetManager() = default;
 
 //==============================================================================
+/**
+ * Save a preset with comprehensive metadata extraction
+ * 
+ * Automatically detects pattern features:
+ * - Scenes: patterns containing '|' separator
+ * - Progressive transforms: patterns with '>', '+', or '*' operators
+ * - Accent patterns: patterns with '{...}' notation
+ * 
+ * @param name Preset display name (will be sanitized for filesystem)
+ * @param category Organization category (defaults to "User")
+ * @param description Human-readable description
+ * @param pluginState Complete plugin state tree for restoration
+ * @param upiPattern UPI pattern string for feature analysis
+ * @return true if preset was successfully saved
+ */
 bool PresetManager::savePreset(const juce::String& name, const juce::String& category, 
                                const juce::String& description, const juce::ValueTree& pluginState,
                                const juce::String& upiPattern)
@@ -34,11 +61,13 @@ bool PresetManager::savePreset(const juce::String& name, const juce::String& cat
     preset.pluginState = pluginState.createCopy();
     preset.dateModified = juce::Time::getCurrentTime();
     
-    // Extract quick access metadata from plugin state
+    // Extract quick access metadata from plugin state for UI display
     preset.backgroundColorName = pluginState.getProperty("currentBackgroundColor", "Dark").toString();
-    preset.hasScenes = upiPattern.contains("|");
-    preset.hasProgressiveTransforms = upiPattern.contains(">") || upiPattern.contains("+") || upiPattern.contains("*");
-    preset.hasAccentPattern = upiPattern.contains("{") && upiPattern.contains("}");
+    
+    // Feature detection for preset browser icons and functionality
+    preset.hasScenes = upiPattern.contains("|");  // Scene separation with pipe
+    preset.hasProgressiveTransforms = upiPattern.contains(">") || upiPattern.contains("+") || upiPattern.contains("*");  // Various progressive operators
+    preset.hasAccentPattern = upiPattern.contains("{") && upiPattern.contains("}");  // Accent pattern notation
     
     // If this is a new preset, set creation time
     if (!presetExists(preset.name))
@@ -189,31 +218,42 @@ void PresetManager::createPresetDirectoryIfNeeded()
 }
 
 //==============================================================================
+/**
+ * Install comprehensive factory preset library
+ * 
+ * Provides example presets covering all major pattern types:
+ * - Basic Patterns: Classic rhythms (tresillo, clave, cinquillo)
+ * - Progressive: Growing/evolving patterns with transformations
+ * - Accent Patterns: Suprasegmental accent layer examples
+ * - Advanced: Complex combinations showcasing multiple features
+ * 
+ * Factory presets are protected from deletion and serve as learning examples
+ */
 void PresetManager::installFactoryPresets()
 {
-    // Install basic factory presets
+    // Install comprehensive factory preset library with educational examples
     struct FactoryPreset {
         juce::String name, category, description, upi;
     };
     
     const FactoryPreset factoryPresets[] = {
-        // Basic Patterns
+        // Basic Patterns - Educational rhythmic fundamentals
         {"Tresillo Classic", "Basic Patterns", "Classic 3-against-8 Afro-Cuban tresillo pattern", "E(3,8)"},
         {"Son Clave", "Basic Patterns", "2-3 son clave pattern using scenes", "E(3,8)|E(2,8)"},
         {"Cinquillo", "Basic Patterns", "Five-note Cuban pattern", "E(5,8)"},
         {"Bossa Nova", "Basic Patterns", "Bossa nova-style pattern", "E(3,8)"},
         
-        // Progressive Patterns  
+        // Progressive Patterns - Dynamic evolution examples
         {"Tresillo Growth", "Progressive", "Tresillo growing to full quintillo", "E(3,8)>5"},
         {"Euclidean Evolution", "Progressive", "Single onset evolving to complex pattern", "E(1,16)>8"},
         {"Rotating Rhythm", "Progressive", "Tresillo with progressive rotation", "E(3,8)+1"},
         
-        // Accent Patterns
+        // Accent Patterns - Suprasegmental accent layer examples
         {"Accented Tresillo", "Accent Patterns", "Tresillo with accent on first onset", "{100}E(3,8)"},
         {"Polyrhythmic Accents", "Accent Patterns", "Complex polyrhythmic accent pattern", "{10010}E(5,8)"},
         {"Binary Accents", "Accent Patterns", "Simple alternating accents", "{10}E(4,8)"},
         
-        // Complex Combinations
+        // Complex Combinations - Advanced multi-feature demonstrations
         {"Progressive Scenes", "Advanced", "Scene cycling with progressive transforms", "E(3,8)>5|E(5,13)|B(7,16)"},
         {"Accented Evolution", "Advanced", "Progressive pattern with accent layer", "{101}E(1,8)>8"},
         {"Barlow Transformation", "Advanced", "Barlow indispensability progression", "E(3,8)B>8"}

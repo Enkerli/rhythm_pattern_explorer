@@ -263,7 +263,19 @@ rhythm_pattern_explorer/
 ```
 
 ## Current Status  
-- **v0.03f with Modern JUCE API Migration** 
+- **v0.03g with Preset Browser and UI Improvements** (July 2025)
+- **PRESET BROWSER SYSTEM COMPLETED** (July 2025):
+  - ✅ Complete preset management with factory and user presets
+  - ✅ Rich preset list with feature indicators (scenes, progressive, accents, step count)
+  - ✅ Save/load/delete functionality with confirmation dialogs
+  - ✅ Progressive offset advancement fix (E(3,8)+1 now advances on repeated clicks)
+  - ✅ Visual feature icons: ▸ (scenes), ⚡ (progressive), ● (accents), numbers (steps)
+- **UI/UX IMPROVEMENTS COMPLETED** (July 2025):
+  - ✅ Mutual exclusion overlay system (Docs/History/Presets)
+  - ✅ Close buttons for all overlay views (white "X" on all overlays)
+  - ✅ Consistent button layout and navigation
+  - ✅ WebView CFNetwork error fix (deferred HTML loading)
+  - ✅ Enhanced ticker tape UPI history display
 - **CRITICAL BUG FIXES COMPLETED** (July 2025):
   - ✅ Accent markers stable during playback (no swirling)
   - ✅ Accent patterns cycle properly at pattern boundaries (polyrhythmic visual feedback)  
