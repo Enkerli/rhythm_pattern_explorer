@@ -27,7 +27,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout RhythmPatternExplorerAudioPr
     
     // Pattern Length parameters for Phase 2 temporal control
     layout.add(std::make_unique<juce::AudioParameterChoice>("patternLengthUnit", "Pattern Length Unit", 
-        juce::StringArray{"Steps", "Beats", "Bars"}, 1)); // Default to "Beats"
+        juce::StringArray{"Steps", "Beats", "Bars", "Auto"}, 1)); // Default to "Beats"
     layout.add(std::make_unique<juce::AudioParameterChoice>("patternLengthValue", "Pattern Length Value", 
         juce::StringArray{"0.125", "0.25", "0.5", "0.75", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32"}, 7)); // Default to "8"
     
@@ -858,6 +858,9 @@ void RhythmPatternExplorerAudioProcessor::updateTiming()
         case 2: // Bars mode - pattern fits in specified number of bars
             patternLengthInBeats = lengthValue * 4.0; // Assume 4/4 time
             break;
+        case 3: // Auto mode - calculate optimal pattern length based on pattern characteristics
+            patternLengthInBeats = calculateAutoPatternLength(pattern);
+            break;
         default:
             patternLengthInBeats = lengthValue; // Default to beats
             break;
@@ -1031,6 +1034,9 @@ void RhythmPatternExplorerAudioProcessor::syncPositionWithHost(const juce::Audio
                 break;
             case 2: // Bars mode - pattern fits in specified number of bars
                 patternLengthInBeats = lengthValue * 4.0; // Assume 4/4 time
+                break;
+            case 3: // Auto mode - calculate optimal pattern length based on pattern characteristics
+                patternLengthInBeats = calculateAutoPatternLength(pattern);
                 break;
             default:
                 patternLengthInBeats = lengthValue; // Default to beats
@@ -1738,6 +1744,64 @@ std::vector<bool> RhythmPatternExplorerAudioProcessor::lengthenPattern(const std
     auto randomSteps = generateBellCurveRandomSteps(additionalSteps);
     lengthened.insert(lengthened.end(), randomSteps.begin(), randomSteps.end());
     return lengthened;
+}
+
+double RhythmPatternExplorerAudioProcessor::calculateAutoPatternLength(const std::vector<bool>& pattern) const
+{
+    // Phase 3: Advanced Host Sync - Automatic pattern length calculation
+    if (pattern.empty()) return 4.0; // Default to 4 beats
+    
+    int stepCount = static_cast<int>(pattern.size());
+    int onsetCount = static_cast<int>(std::count(pattern.begin(), pattern.end(), true));
+    
+    // Calculate onset density (onsets per step)
+    double density = static_cast<double>(onsetCount) / stepCount;
+    
+    // Musical heuristics based on pattern characteristics
+    double baseLength;
+    
+    // Step count based heuristics
+    if (stepCount <= 4) {
+        baseLength = 1.0; // Very short patterns get 1 beat
+    } else if (stepCount <= 8) {
+        baseLength = 2.0; // Standard patterns get 2 beats
+    } else if (stepCount <= 16) {
+        baseLength = 4.0; // Longer patterns get 4 beats (1 bar)
+    } else {
+        baseLength = 8.0; // Very long patterns get 8 beats (2 bars)
+    }
+    
+    // Density adjustment: sparse patterns get longer duration, dense patterns get shorter
+    if (density < 0.2) {
+        baseLength *= 2.0; // Very sparse - double the length
+    } else if (density < 0.4) {
+        baseLength *= 1.5; // Sparse - increase length by 50%
+    } else if (density > 0.8) {
+        baseLength *= 0.5; // Very dense - halve the length
+    } else if (density > 0.6) {
+        baseLength *= 0.75; // Dense - reduce length by 25%
+    }
+    
+    // Special cases for common mathematical patterns
+    if (stepCount == 7 && onsetCount == 3) {
+        // Likely E(3,7) or similar - standard Afro-Cuban pattern
+        baseLength = 2.0;
+    } else if (stepCount == 8 && onsetCount == 3) {
+        // Likely E(3,8) tresillo - standard 2 beat pattern
+        baseLength = 2.0;
+    } else if (stepCount == 16 && onsetCount == 3) {
+        // Likely E(3,16) - sparse pattern gets 4 beats
+        baseLength = 4.0;
+    } else if (stepCount == 5 && onsetCount >= 3) {
+        // Quintillo patterns - 2.5 beats or 1.25 beats
+        baseLength = (onsetCount >= 4) ? 1.25 : 2.5;
+    }
+    
+    // Ensure reasonable bounds
+    if (baseLength < 0.5) baseLength = 0.5;
+    if (baseLength > 16.0) baseLength = 16.0;
+    
+    return baseLength;
 }
 
 void RhythmPatternExplorerAudioProcessor::advanceScene()

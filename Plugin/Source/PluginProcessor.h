@@ -92,6 +92,9 @@ public:
     // Helper to convert subdivision choice to beat fraction
     double getSubdivisionInBeats(int subdivisionIndex) const;
     
+    // Phase 3: Advanced Host Sync - Automatic pattern length adjustment
+    double calculateAutoPatternLength(const std::vector<bool>& pattern) const;
+    
     // Internal state access for editor
     float getCurrentBPM() const { return currentBPM; }
     void setCurrentBPM(float bpm) { currentBPM = bpm; updateTiming(); }
