@@ -165,13 +165,79 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     addAndMakeVisible(historyLabel);
     historyLabel.setVisible(false);
     
+    // Preset browser toggle button
+    presetToggleButton.setButtonText("Presets");
+    presetToggleButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff4a5568));
+    presetToggleButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
+    presetToggleButton.setTooltip("Toggle preset browser");
+    presetToggleButton.onClick = [this]() { togglePresets(); };
+    addAndMakeVisible(presetToggleButton);
+    
+    // Preset list setup
+    presetListModel = std::make_unique<PresetBrowserListModel>(*this);
+    presetBrowserList.setModel(presetListModel.get());
+    presetBrowserList.setRowHeight(24);
+    presetBrowserList.setColour(juce::ListBox::backgroundColourId, juce::Colour(0xff2d3748));
+    presetBrowserList.setColour(juce::ListBox::textColourId, juce::Colours::white);
+    addAndMakeVisible(presetBrowserList);
+    presetBrowserList.setVisible(false);
+    
+    // Preset label
+    presetLabel.setText("Presets", juce::dontSendNotification);
+    presetLabel.setColour(juce::Label::textColourId, juce::Colours::white);
+    presetLabel.setJustificationType(juce::Justification::centred);
+    addAndMakeVisible(presetLabel);
+    presetLabel.setVisible(false);
+    
+    // Preset management buttons
+    savePresetButton.setButtonText("Save");
+    savePresetButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff48bb78));
+    savePresetButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
+    savePresetButton.setTooltip("Save current pattern as preset");
+    savePresetButton.onClick = [this]() { showSavePresetDialog(); };
+    addAndMakeVisible(savePresetButton);
+    savePresetButton.setVisible(false);
+    
+    deletePresetButton.setButtonText("Delete");
+    deletePresetButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xffef4444));
+    deletePresetButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
+    deletePresetButton.setTooltip("Delete selected preset");
+    deletePresetButton.onClick = [this]() { deleteSelectedPreset(); };
+    addAndMakeVisible(deletePresetButton);
+    deletePresetButton.setVisible(false);
+    
     // Initialize WebView documentation (initially hidden)
 #if JUCE_WEB_BROWSER
     docsBrowser = std::make_unique<juce::WebBrowserComponent>();
     docsBrowser->setVisible(false); // Explicitly hidden initially
     addAndMakeVisible(*docsBrowser);
-    createDocumentationHTML();
+    // Don't load HTML immediately - wait until first toggle to avoid CFNetwork error
 #endif
+    
+    // Close buttons for overlay views
+    docsCloseButton.setButtonText("X");
+    docsCloseButton.setColour(juce::TextButton::buttonColourId, juce::Colours::white);
+    docsCloseButton.setColour(juce::TextButton::textColourOffId, juce::Colours::red);
+    docsCloseButton.setTooltip("Close documentation");
+    docsCloseButton.onClick = [this]() { closeDocumentation(); };
+    addAndMakeVisible(docsCloseButton);
+    docsCloseButton.setVisible(false);
+    
+    historyCloseButton.setButtonText("X");
+    historyCloseButton.setColour(juce::TextButton::buttonColourId, juce::Colours::white);
+    historyCloseButton.setColour(juce::TextButton::textColourOffId, juce::Colours::red);
+    historyCloseButton.setTooltip("Close history");
+    historyCloseButton.onClick = [this]() { closeHistory(); };
+    addAndMakeVisible(historyCloseButton);
+    historyCloseButton.setVisible(false);
+    
+    presetCloseButton.setButtonText("X");
+    presetCloseButton.setColour(juce::TextButton::buttonColourId, juce::Colours::white);
+    presetCloseButton.setColour(juce::TextButton::textColourOffId, juce::Colours::red);
+    presetCloseButton.setTooltip("Close presets");
+    presetCloseButton.onClick = [this]() { closePresets(); };
+    addAndMakeVisible(presetCloseButton);
+    presetCloseButton.setVisible(false);
     
     // Step Counter Display - removed for clean production interface
     
@@ -244,6 +310,7 @@ void RhythmPatternExplorerAudioProcessorEditor::resized()
         patternDisplayEditor.setVisible(!minimalMode);
         docsToggleButton.setVisible(!minimalMode);
         historyToggleButton.setVisible(!minimalMode);
+        presetToggleButton.setVisible(!minimalMode);
         versionEditor.setVisible(!minimalMode);
         
         
@@ -325,13 +392,11 @@ void RhythmPatternExplorerAudioProcessorEditor::resized()
     auto displayArea = area.removeFromTop(80);
     patternDisplayEditor.setBounds(displayArea.reduced(10));
     
-    // Button area - positioned right after pattern display, aligned right
-    if (!showingDocs && !showingHistory)
-    {
-        auto buttonArea = area.removeFromTop(30);
-        historyToggleButton.setBounds(buttonArea.removeFromRight(80).reduced(5));
-        docsToggleButton.setBounds(buttonArea.removeFromRight(80).reduced(5));
-    }
+    // Button area - always visible, positioned right after pattern display, aligned right
+    auto buttonArea = area.removeFromTop(30);
+    presetToggleButton.setBounds(buttonArea.removeFromRight(80).reduced(5));
+    historyToggleButton.setBounds(buttonArea.removeFromRight(80).reduced(5));
+    docsToggleButton.setBounds(buttonArea.removeFromRight(80).reduced(5));
     
     // Analysis area - hidden
     auto analysisArea = area.removeFromTop(0);
@@ -350,20 +415,46 @@ void RhythmPatternExplorerAudioProcessorEditor::resized()
         // When history is showing, create a sidebar on the right
         auto historyArea = getLocalBounds();
         historyArea.removeFromTop(50); // Leave space for title
-        auto bottomControls = historyArea.removeFromBottom(30); // Leave space for buttons
+        historyArea.removeFromBottom(30); // Leave space for main button area
         
         // Sidebar takes 250px on the right - this reduces the available area
         auto sidebar = historyArea.removeFromRight(250);
         
-        // History label at top of sidebar
-        historyLabel.setBounds(sidebar.removeFromTop(25));
+        // History label and close button at top of sidebar
+        auto headerArea = sidebar.removeFromTop(25);
+        historyLabel.setBounds(headerArea.removeFromLeft(headerArea.getWidth() - 30));
+        historyCloseButton.setBounds(headerArea.reduced(2));
         
         // History list takes remaining sidebar space
         upiHistoryList.setBounds(sidebar.reduced(5));
         
-        // Reposition buttons to be visible
-        historyToggleButton.setBounds(bottomControls.removeFromRight(80).reduced(2));
-        docsToggleButton.setBounds(bottomControls.removeFromRight(80).reduced(2));
+        // Adjust the remaining area for circle (account for sidebar)
+        area = area.withTrimmedRight(250);
+    }
+    
+    // Preset browser sidebar layout (do this BEFORE circle area calculation)
+    if (showingPresets)
+    {
+        // When presets are showing, create a sidebar on the right
+        auto presetArea = getLocalBounds();
+        presetArea.removeFromTop(50); // Leave space for title
+        presetArea.removeFromBottom(30); // Leave space for main button area
+        
+        // Sidebar takes 250px on the right - this reduces the available area
+        auto sidebar = presetArea.removeFromRight(250);
+        
+        // Preset label and close button at top of sidebar
+        auto headerArea = sidebar.removeFromTop(25);
+        presetLabel.setBounds(headerArea.removeFromLeft(headerArea.getWidth() - 30));
+        presetCloseButton.setBounds(headerArea.reduced(2));
+        
+        // Preset management buttons below label
+        auto buttonRow = sidebar.removeFromTop(30);
+        savePresetButton.setBounds(buttonRow.removeFromLeft(120).reduced(2));
+        deletePresetButton.setBounds(buttonRow.reduced(2));
+        
+        // Preset list takes remaining sidebar space
+        presetBrowserList.setBounds(sidebar.reduced(5));
         
         // Adjust the remaining area for circle (account for sidebar)
         area = area.withTrimmedRight(250);
@@ -381,11 +472,13 @@ void RhythmPatternExplorerAudioProcessorEditor::resized()
             // When docs are showing, take over most of the plugin area
             auto docsArea = getLocalBounds();
             docsArea.removeFromTop(50); // Leave space for title
-            auto bottomControls = docsArea.removeFromBottom(30); // Leave space for toggle button
-            docsBrowser->setBounds(docsArea);
+            docsArea.removeFromBottom(30); // Leave space for main button area
             
-            // Reposition docs toggle button to be visible
-            docsToggleButton.setBounds(bottomControls.removeFromRight(80).reduced(2));
+            // Position close button in top-right corner
+            auto topRightArea = docsArea.removeFromTop(30);
+            docsCloseButton.setBounds(topRightArea.removeFromRight(30).reduced(2));
+            
+            docsBrowser->setBounds(docsArea);
         }
         docsBrowser->setVisible(showingDocs && !minimalMode);
     }
@@ -942,15 +1035,53 @@ void RhythmPatternExplorerAudioProcessorEditor::toggleDocumentation()
         return;
     }
     
+    // Close other views first (mutual exclusion)
+    if (showingHistory) {
+        showingHistory = false;
+        upiHistoryList.setVisible(false);
+        historyLabel.setVisible(false);
+        historyToggleButton.setButtonText("History");
+    }
+    if (showingPresets) {
+        showingPresets = false;
+        presetBrowserList.setVisible(false);
+        presetLabel.setVisible(false);
+        savePresetButton.setVisible(false);
+        deletePresetButton.setVisible(false);
+        presetToggleButton.setButtonText("Presets");
+    }
+    
     showingDocs = !showingDocs;
+    
+    // Load HTML content on first use to avoid CFNetwork errors
+    if (showingDocs)
+    {
+        createDocumentationHTML();
+    }
     
     // Update button text immediately
     docsToggleButton.setButtonText(showingDocs ? "Pattern" : "Docs");
     
     // Update visibility immediately
     docsBrowser->setVisible(showingDocs);
+    docsCloseButton.setVisible(showingDocs);
     
     // Force layout update
+    resized();
+    repaint();
+#endif
+}
+
+void RhythmPatternExplorerAudioProcessorEditor::closeDocumentation()
+{
+#if JUCE_WEB_BROWSER
+    if (!docsBrowser) return;
+    
+    showingDocs = false;
+    docsToggleButton.setButtonText("Docs");
+    docsBrowser->setVisible(false);
+    docsCloseButton.setVisible(false);
+    
     resized();
     repaint();
 #endif
@@ -1418,10 +1549,28 @@ RhythmPatternExplorerAudioProcessorEditor::ClickResult RhythmPatternExplorerAudi
 
 void RhythmPatternExplorerAudioProcessorEditor::toggleHistory()
 {
+    // Close other views first (mutual exclusion)
+    if (showingDocs) {
+        showingDocs = false;
+#if JUCE_WEB_BROWSER
+        if (docsBrowser) docsBrowser->setVisible(false);
+#endif
+        docsToggleButton.setButtonText("Docs");
+    }
+    if (showingPresets) {
+        showingPresets = false;
+        presetBrowserList.setVisible(false);
+        presetLabel.setVisible(false);
+        savePresetButton.setVisible(false);
+        deletePresetButton.setVisible(false);
+        presetToggleButton.setButtonText("Presets");
+    }
+    
     showingHistory = !showingHistory;
     
     upiHistoryList.setVisible(showingHistory);
     historyLabel.setVisible(showingHistory);
+    historyCloseButton.setVisible(showingHistory);
     historyToggleButton.setButtonText(showingHistory ? "Pattern" : "History");
     
     // Update list content
@@ -1434,6 +1583,18 @@ void RhythmPatternExplorerAudioProcessorEditor::toggleHistory()
     resized();
     
     // Force immediate repaint to prevent misalignment
+    repaint();
+}
+
+void RhythmPatternExplorerAudioProcessorEditor::closeHistory()
+{
+    showingHistory = false;
+    historyToggleButton.setButtonText("History");
+    upiHistoryList.setVisible(false);
+    historyLabel.setVisible(false);
+    historyCloseButton.setVisible(false);
+    
+    resized();
     repaint();
 }
 
@@ -1484,5 +1645,425 @@ void UPIHistoryListModel::paintListBoxItem(int rowNumber, juce::Graphics& g, int
 void UPIHistoryListModel::listBoxItemClicked(int row, const juce::MouseEvent& e)
 {
     editorRef.onHistoryItemClicked(row);
+}
+
+//==============================================================================
+// Preset Browser List Model Implementation
+
+int PresetBrowserListModel::getNumRows()
+{
+    return currentPresetNames.size();
+}
+
+void PresetBrowserListModel::paintListBoxItem(int rowNumber, juce::Graphics& g, int width, int height, bool rowIsSelected)
+{
+    if (rowNumber >= 0 && rowNumber < currentPresetNames.size())
+    {
+        // Background
+        if (rowIsSelected)
+            g.setColour(juce::Colour(0xff4a5568));
+        else
+            g.setColour(juce::Colour(0xff2d3748));
+        g.fillRect(0, 0, width, height);
+        
+        // Get preset data for feature analysis
+        auto& presetManager = editorRef.getAudioProcessor().getPresetManager();
+        juce::String presetName = currentPresetNames[rowNumber];
+        juce::ValueTree presetState;
+        juce::String upiPattern = "";
+        
+        // Load preset to get UPI pattern for analysis
+        if (presetManager.loadPreset(presetName, presetState))
+        {
+            // Check for both possible property names
+            if (presetState.hasProperty("currentUPIInput"))
+                upiPattern = presetState.getProperty("currentUPIInput").toString();
+            else if (presetState.hasProperty("upiInput"))
+                upiPattern = presetState.getProperty("upiInput").toString();
+        }
+        
+        // Layout: Name | Icons (80px) | Factory (15px)  
+        int nameWidth = width - 95;
+        int iconAreaX = nameWidth;
+        int iconWidth = 18;
+        int iconY = (height - 12) / 2;
+        
+        // Preset name (truncated if needed)
+        g.setColour(juce::Colours::white);
+        g.setFont(juce::Font(juce::FontOptions(juce::Font::getDefaultSansSerifFontName(), 12.0f, juce::Font::plain)));
+        
+        juce::String text = presetName;
+        if (text.length() > 18)  // Shorter to make room for icons
+            text = text.substring(0, 15) + "...";
+        
+        g.drawText(text, 5, 0, nameWidth - 5, height, juce::Justification::centredLeft);
+        
+        // Feature icons (right-aligned)
+        int currentIconX = iconAreaX;
+        
+        // Scenes icon: ▸ (if contains |) - more visible than 🎬
+        if (upiPattern.contains("|"))
+        {
+            g.setColour(juce::Colour(0xff00ff00)); // Bright green
+            g.setFont(juce::Font(juce::FontOptions(juce::Font::getDefaultSansSerifFontName(), 10.0f, juce::Font::bold)));
+            g.drawText(juce::CharPointer_UTF8("\xE2\x96\xB8"), currentIconX, iconY, iconWidth, 12, juce::Justification::centred);
+            currentIconX += iconWidth;
+        }
+        
+        // Progressive icon: ⚡ (if contains >) - lightning bolt is good
+        if (upiPattern.contains(">"))
+        {
+            g.setColour(juce::Colour(0xffffff00)); // Bright yellow
+            g.setFont(juce::Font(juce::FontOptions(juce::Font::getDefaultSansSerifFontName(), 10.0f, juce::Font::plain)));
+            g.drawText(juce::CharPointer_UTF8("\xE2\x9A\xA1"), currentIconX, iconY, iconWidth, 12, juce::Justification::centred);
+            currentIconX += iconWidth;
+        }
+        
+        // Accents icon: ● (if contains { and }) - solid circle more visible than 🎵
+        if (upiPattern.contains("{") && upiPattern.contains("}"))
+        {
+            g.setColour(juce::Colour(0xffff00ff)); // Bright magenta
+            g.setFont(juce::Font(juce::FontOptions(juce::Font::getDefaultSansSerifFontName(), 10.0f, juce::Font::bold)));
+            g.drawText(juce::CharPointer_UTF8("\xE2\x97\x8F"), currentIconX, iconY, iconWidth, 12, juce::Justification::centred);
+            currentIconX += iconWidth;
+        }
+        
+        // Steps count (parse basic patterns for step count)
+        if (!upiPattern.isEmpty())
+        {
+            int stepCount = parseStepCount(upiPattern);
+            if (stepCount > 0)
+            {
+                g.setColour(juce::Colour(0xff90cdf4)); // Light blue
+                g.setFont(juce::Font(juce::FontOptions(juce::Font::getDefaultSansSerifFontName(), 9.0f, juce::Font::bold)));
+                g.drawText(juce::String(stepCount), currentIconX, iconY, iconWidth, 12, juce::Justification::centred);
+            }
+        }
+        
+        // Factory indicator (green dot)
+        if (presetManager.isFactoryPreset(presetName))
+        {
+            g.setColour(juce::Colour(0xff48bb78)); // Green indicator
+            g.fillEllipse(width - 12, height / 2 - 2, 4, 4);
+        }
+    }
+}
+
+void PresetBrowserListModel::listBoxItemClicked(int row, const juce::MouseEvent& e)
+{
+    editorRef.onPresetItemClicked(row);
+}
+
+void PresetBrowserListModel::refreshPresetList()
+{
+    const auto& presetManager = editorRef.getAudioProcessor().getPresetManager();
+    currentPresetNames = presetManager.getPresetNames();
+}
+
+int PresetBrowserListModel::parseStepCount(const juce::String& upiPattern)
+{
+    if (upiPattern.isEmpty()) return 0;
+    
+    // Handle scenes - take first scene for step count
+    juce::String pattern = upiPattern;
+    if (pattern.contains("|"))
+    {
+        pattern = pattern.upToFirstOccurrenceOf("|", false, false).trim();
+    }
+    
+    // Handle accents - extract main pattern
+    if (pattern.contains("{") && pattern.contains("}"))
+    {
+        // Find the main pattern outside accent braces
+        int braceStart = pattern.indexOf("{");
+        int braceEnd = pattern.indexOf(braceStart, "}");
+        if (braceEnd > braceStart)
+        {
+            // Take pattern after accent definition
+            juce::String afterAccent = pattern.substring(braceEnd + 1).trim();
+            if (!afterAccent.isEmpty())
+                pattern = afterAccent;
+        }
+    }
+    
+    // Parse common pattern types
+    // E(onsets,steps), B(onsets,steps), W(onsets,steps), D(onsets,steps), P(sides,offset)
+    if (pattern.startsWithIgnoreCase("E(") || pattern.startsWithIgnoreCase("B(") || 
+        pattern.startsWithIgnoreCase("W(") || pattern.startsWithIgnoreCase("D("))
+    {
+        int openParen = pattern.indexOf("(");
+        int closeParen = pattern.indexOf(openParen, ")");
+        if (closeParen > openParen)
+        {
+            juce::String params = pattern.substring(openParen + 1, closeParen);
+            auto parts = juce::StringArray::fromTokens(params, ",", "");
+            if (parts.size() >= 2)
+            {
+                return parts[1].trim().getIntValue(); // Return steps parameter
+            }
+        }
+    }
+    
+    // P(sides,offset) - polygon patterns
+    if (pattern.startsWithIgnoreCase("P("))
+    {
+        int openParen = pattern.indexOf("(");
+        int closeParen = pattern.indexOf(openParen, ")");
+        if (closeParen > openParen)
+        {
+            juce::String params = pattern.substring(openParen + 1, closeParen);
+            auto parts = juce::StringArray::fromTokens(params, ",", "");
+            if (parts.size() >= 1)
+            {
+                return parts[0].trim().getIntValue(); // Return sides parameter for polygons
+            }
+        }
+    }
+    
+    // Hex notation: 0xHH:steps
+    if (pattern.startsWith("0x") && pattern.contains(":"))
+    {
+        int colonPos = pattern.indexOf(":");
+        if (colonPos > 2)
+        {
+            juce::String stepsStr = pattern.substring(colonPos + 1).trim();
+            return stepsStr.getIntValue();
+        }
+    }
+    
+    // Binary patterns: assume common lengths
+    if (pattern.containsOnly("01"))
+    {
+        return pattern.length();
+    }
+    
+    // Default fallback
+    return 0;
+}
+
+//==============================================================================
+// Preset Browser UI Methods
+
+void RhythmPatternExplorerAudioProcessorEditor::onPresetItemClicked(int index)
+{
+    auto& presetManager = audioProcessor.getPresetManager();
+    auto presetNames = presetManager.getPresetNames();
+    
+    if (index >= 0 && index < presetNames.size())
+    {
+        juce::String presetName = presetNames[index];
+        
+        // Load preset state to get UPI pattern
+        juce::ValueTree presetState;
+        if (presetManager.loadPreset(presetName, presetState))
+        {
+            // Get the UPI pattern from the preset
+            juce::String upiPattern = "";
+            if (presetState.hasProperty("currentUPIInput"))
+                upiPattern = presetState.getProperty("currentUPIInput").toString();
+            else if (presetState.hasProperty("upiInput"))
+                upiPattern = presetState.getProperty("upiInput").toString();
+            
+            // Check if this is a progressive offset pattern (contains +N)
+            bool isProgressiveOffset = false;
+            if (upiPattern.contains("+") && upiPattern.lastIndexOf("+") > 0) {
+                int lastPlusIndex = upiPattern.lastIndexOf("+");
+                juce::String afterPlus = upiPattern.substring(lastPlusIndex + 1).trim();
+                isProgressiveOffset = afterPlus.containsOnly("0123456789-") && afterPlus.isNotEmpty();
+            }
+            
+            // Check if user is clicking the same progressive offset preset repeatedly
+            static juce::String lastClickedPreset = "";
+            bool isSameProgressivePreset = (presetName == lastClickedPreset) && isProgressiveOffset;
+            
+            if (isSameProgressivePreset)
+            {
+                // Advance the progressive offset by re-triggering the same UPI pattern
+                // This will advance the progressiveOffset counter
+                audioProcessor.setUPIInput(upiPattern);
+            }
+            else
+            {
+                // Different preset or not progressive - do full state load
+                auto stateXml = presetState.createXml();
+                if (stateXml)
+                {
+                    auto memoryBlock = juce::MemoryBlock();
+                    audioProcessor.copyXmlToBinary(*stateXml, memoryBlock);
+                    audioProcessor.setStateInformation(memoryBlock.getData(), static_cast<int>(memoryBlock.getSize()));
+                }
+            }
+            
+            // Remember this preset for next click
+            lastClickedPreset = presetName;
+            
+            // Update UI to reflect current state
+            upiTextEditor.setText(audioProcessor.getUPIInput(), juce::dontSendNotification);
+            updatePatternDisplay();
+            updateAnalysisDisplay();
+        }
+    }
+}
+
+void RhythmPatternExplorerAudioProcessorEditor::togglePresets()
+{
+    // Close other views first (mutual exclusion)
+    if (showingDocs) {
+        showingDocs = false;
+#if JUCE_WEB_BROWSER
+        if (docsBrowser) docsBrowser->setVisible(false);
+#endif
+        docsToggleButton.setButtonText("Docs");
+    }
+    if (showingHistory) {
+        showingHistory = false;
+        upiHistoryList.setVisible(false);
+        historyLabel.setVisible(false);
+        historyToggleButton.setButtonText("History");
+    }
+    
+    showingPresets = !showingPresets;
+    
+    // Update preset list before showing
+    if (showingPresets && presetListModel)
+    {
+        presetListModel->refreshPresetList();
+        presetBrowserList.updateContent();
+    }
+    
+    // Show/hide all preset components
+    presetBrowserList.setVisible(showingPresets);
+    presetLabel.setVisible(showingPresets);
+    savePresetButton.setVisible(showingPresets);
+    deletePresetButton.setVisible(showingPresets);
+    presetCloseButton.setVisible(showingPresets);
+    
+    presetToggleButton.setButtonText(showingPresets ? "Pattern" : "Presets");
+    
+    resized(); // Force layout recalculation
+    repaint(); // Force immediate repaint
+}
+
+void RhythmPatternExplorerAudioProcessorEditor::closePresets()
+{
+    showingPresets = false;
+    presetToggleButton.setButtonText("Presets");
+    presetBrowserList.setVisible(false);
+    presetLabel.setVisible(false);
+    savePresetButton.setVisible(false);
+    deletePresetButton.setVisible(false);
+    presetCloseButton.setVisible(false);
+    
+    resized();
+    repaint();
+}
+
+void RhythmPatternExplorerAudioProcessorEditor::showSavePresetDialog()
+{
+    auto alertWindow = new juce::AlertWindow("Save Preset", 
+                                           "Enter preset name:", 
+                                           juce::AlertWindow::QuestionIcon);
+    
+    alertWindow->addTextEditor("presetName", "", "Preset Name:");
+    alertWindow->addButton("Save", 1, juce::KeyPress(juce::KeyPress::returnKey));
+    alertWindow->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+    
+    alertWindow->enterModalState(true, 
+        juce::ModalCallbackFunction::create([this, alertWindow](int result)
+        {
+            if (result == 1) // Save button clicked
+            {
+                auto presetName = alertWindow->getTextEditorContents("presetName");
+                if (presetName.isNotEmpty())
+                {
+                    saveCurrentPreset(presetName);
+                }
+            }
+            delete alertWindow;
+        }), true);
+}
+
+void RhythmPatternExplorerAudioProcessorEditor::saveCurrentPreset(const juce::String& name)
+{
+    auto& presetManager = audioProcessor.getPresetManager();
+    
+    // Get current plugin state
+    juce::MemoryBlock currentState;
+    audioProcessor.getStateInformation(currentState);
+    
+    // Convert to ValueTree
+    auto stateXml = audioProcessor.getXmlFromBinary(currentState.getData(), static_cast<int>(currentState.getSize()));
+    if (stateXml)
+    {
+        auto stateTree = juce::ValueTree::fromXml(*stateXml);
+        
+        // Save preset
+        juce::String category = "User";
+        juce::String description = "User created preset";
+        juce::String upiPattern = audioProcessor.getUPIInput();
+        
+        if (presetManager.savePreset(name, category, description, stateTree, upiPattern))
+        {
+            // Refresh preset list
+            if (presetListModel)
+            {
+                presetListModel->refreshPresetList();
+                presetBrowserList.updateContent();
+            }
+        }
+    }
+}
+
+void RhythmPatternExplorerAudioProcessorEditor::deleteSelectedPreset()
+{
+    int selectedRow = presetBrowserList.getSelectedRow();
+    if (selectedRow >= 0)
+    {
+        auto& presetManager = audioProcessor.getPresetManager();
+        auto presetNames = presetManager.getPresetNames();
+        
+        if (selectedRow < presetNames.size())
+        {
+            juce::String presetName = presetNames[selectedRow];
+            
+            // Don't delete factory presets
+            if (presetManager.isFactoryPreset(presetName))
+            {
+                juce::AlertWindow::showMessageBoxAsync(
+                    juce::AlertWindow::InfoIcon,
+                    "Cannot Delete",
+                    "Factory presets cannot be deleted.",
+                    "OK"
+                );
+                return;
+            }
+            
+            // Confirm deletion
+            juce::AlertWindow::showAsync(
+                juce::MessageBoxOptions()
+                    .withIconType(juce::MessageBoxIconType::QuestionIcon)
+                    .withTitle("Delete Preset")
+                    .withMessage("Delete preset '" + presetName + "'?")
+                    .withButton("Delete")
+                    .withButton("Cancel"),
+                [this, presetName](int result)
+                {
+                    if (result == 1) // Delete button clicked
+                    {
+                        auto& manager = audioProcessor.getPresetManager();
+                        if (manager.deletePreset(presetName))
+                        {
+                            // Refresh preset list
+                            if (presetListModel)
+                            {
+                                presetListModel->refreshPresetList();
+                                presetBrowserList.updateContent();
+                            }
+                        }
+                    }
+                }
+            );
+        }
+    }
 }
 

@@ -82,6 +82,8 @@ RhythmPatternExplorerAudioProcessor::RhythmPatternExplorerAudioProcessor()
     sceneManager = std::make_unique<SceneManager>();
     progressiveManager = std::make_unique<ProgressiveManager>();
     
+    // Install factory presets on first run
+    presetManager.installFactoryPresets();
     
 }
 

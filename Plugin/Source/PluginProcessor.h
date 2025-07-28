@@ -14,6 +14,7 @@
 #include "UPIParser.h"
 #include "SceneManager.h"
 #include "ProgressiveManager.h"
+#include "PresetManager.h"
 
 //==============================================================================
 /**
@@ -127,6 +128,10 @@ public:
     const juce::StringArray& getUPIHistory() const { return upiHistory; }
     void addToUPIHistory(const juce::String& upiPattern);
     void clearUPIHistory() { upiHistory.clear(); }
+    
+    // Preset management
+    PresetManager& getPresetManager() { return presetManager; }
+    const PresetManager& getPresetManager() const { return presetManager; }
     
     // Interactive pattern modification methods
     void togglePatternStep(int stepIndex);
@@ -252,6 +257,9 @@ private:
     // UPI history (ticker tape feature)
     juce::StringArray upiHistory;
     static constexpr int MAX_UPI_HISTORY = 20;
+    
+    // Preset management
+    PresetManager presetManager;
     
     // Lascabettes quantization metadata
     bool hasQuantization = false;

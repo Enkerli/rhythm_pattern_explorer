@@ -32,6 +32,20 @@
       <FILE id="PTU001" name="PatternUtils.cpp" compile="1" resource="0"
             file="Source/PatternUtils.cpp"/>
       <FILE id="PTU002" name="PatternUtils.h" compile="0" resource="0" file="Source/PatternUtils.h"/>
+      <FILE id="PSM001" name="PresetManager.cpp" compile="1" resource="0"
+            file="Source/PresetManager.cpp"/>
+      <FILE id="PSM002" name="PresetManager.h" compile="0" resource="0" file="Source/PresetManager.h"/>
+      <FILE id="SCM001" name="SceneManager.cpp" compile="1" resource="0"
+            file="Source/SceneManager.cpp"/>
+      <FILE id="SCM002" name="SceneManager.h" compile="0" resource="0" file="Source/SceneManager.h"/>
+      <FILE id="PGM001" name="ProgressiveManager.cpp" compile="1" resource="0"
+            file="Source/ProgressiveManager.cpp"/>
+      <FILE id="PGM002" name="ProgressiveManager.h" compile="0" resource="0"
+            file="Source/ProgressiveManager.h"/>
+      <FILE id="QTE001" name="QuantizationEngine.cpp" compile="1" resource="0"
+            file="Source/QuantizationEngine.cpp"/>
+      <FILE id="QTE002" name="QuantizationEngine.h" compile="0" resource="0"
+            file="Source/QuantizationEngine.h"/>
     </GROUP>
   </MAINGROUP>
   <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1" JUCE_VST3_CAN_REPLACE_VST2="0"/>
