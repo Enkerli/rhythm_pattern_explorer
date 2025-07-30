@@ -100,60 +100,22 @@ private:
         bool (*customValidator)(const juce::String&) = nullptr;
     };
     
-    static bool isPatternType(const juce::String& input, PatternType type);
-    static const std::map<PatternType, PatternRecognitionRule>& getPatternRules();
+    static std::map<PatternType, PatternRecognitionRule> getPatternRules();
+    static PatternType identifyPatternType(const juce::String& input);
     
-    // Legacy pattern recognition helpers (for backward compatibility)
-    static bool isEuclideanPattern(const juce::String& input);
-    static bool isPolygonPattern(const juce::String& input);
-    static bool isBinaryPattern(const juce::String& input);
-    static bool isArrayPattern(const juce::String& input);
-    static bool isRandomPattern(const juce::String& input);
-    static bool isBarlowPattern(const juce::String& input);
-    static bool isWolrabPattern(const juce::String& input);
-    static bool isDilcuePattern(const juce::String& input);
-    static bool isHexPattern(const juce::String& input);
-    static bool isDecimalPattern(const juce::String& input);
-    static bool isOctalPattern(const juce::String& input);
-    static bool isMorsePattern(const juce::String& input);
-    
-    // Generic numeric pattern handler
-    enum class NumericBase { Binary = 2, Octal = 8, Decimal = 10, Hexadecimal = 16 };
-    struct NumericPatternInfo {
-        juce::String prefix;
-        NumericBase base;
-        juce::String validChars;
-    };
-    static bool isNumericPattern(const juce::String& input, const NumericPatternInfo& info);
-    static ParseResult parseNumericPattern(const juce::String& input, const NumericPatternInfo& info, int stepCount);
-    
-    // Polygon combination helper
-    static ParseResult parsePolygonForCombination(const juce::String& polygonStr, int targetSteps);
-    
-    // Progressive transformation helpers
-    static std::vector<bool> applyProgressiveTransformation(const std::vector<bool>& basePattern, char transformerType, int targetOnsets);
-    static std::vector<bool> diluteByBarlow(const std::vector<bool>& pattern, int targetOnsets, const std::vector<std::pair<int, double>>& indispensabilityTable, bool wolrabMode);
-    static std::vector<bool> concentrateByBarlow(const std::vector<bool>& pattern, int targetOnsets, const std::vector<std::pair<int, double>>& indispensabilityTable, bool wolrabMode);
-    static double calculateBarlowIndispensability(int position, int stepCount);
-    static void resetProgressiveState(const juce::String& patternKey);
-    
-public:
-    static void resetAllProgressiveStates();
-    static int getProgressiveStepCount(const juce::String& patternKey);
+    // Helper functions
+    static juce::String cleanInput(const juce::String& input);
+    static std::vector<juce::String> tokenize(const juce::String& input, const juce::String& delimiter);
+    static ParseResult createError(const juce::String& message);
+    static juce::String extractParameters(const juce::String& input, 
+                                         const juce::String& prefix, 
+                                         const juce::String& suffix = ")");
     
     // Progressive offset engine support
-    static void setProgressiveOffsetEngine(class PatternEngine* engine);
-    static int getCurrentProgressiveOffset();
     static bool hasProgressiveOffsetEngine;
-    static class PatternEngine* progressiveOffsetEngine;
+    static PatternEngine* progressiveOffsetEngine;
     
-    // String processing utilities
-    static juce::String cleanInput(const juce::String& input);
-    static juce::StringArray tokenize(const juce::String& input, const juce::String& delimiter);
-    static bool hasTransformationPrefix(const juce::String& input);
-    
-    
-    // Error handling
-    static ParseResult createError(const juce::String& message);
-    static ParseResult createSuccess(const std::vector<bool>& pattern, const juce::String& name = "");
+public:
+    // Engine setup for progressive offset support
+    static void setProgressiveOffsetEngine(PatternEngine* engine);
 };

@@ -301,7 +301,7 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
                 if (quantResult.isValid)
                 {
                     // Create success result with quantized pattern
-                    juce::String directionSymbol = quantParams.clockwise ? "CW" : "CCW";
+                    juce::String directionSymbol = quantParams.clockwise ? "↻" : "↺";
                     juce::String quantizedName = baseResult.patternName + ";" + 
                                                juce::String(quantParams.clockwise ? "" : "-") + 
                                                juce::String(quantParams.newStepCount) + directionSymbol;

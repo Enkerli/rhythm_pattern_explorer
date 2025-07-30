@@ -12,6 +12,9 @@
 #include <JuceHeader.h>
 #include "PatternEngine.h"
 #include "UPIParser.h"
+#include "SceneManager.h"
+#include "ProgressiveManager.h"
+#include "PresetManager.h"
 
 //==============================================================================
 /**
@@ -82,6 +85,10 @@ public:
     // Debug info for UI
     juce::String getDebugInfo() const { return debugInfo; }
     
+    // Advanced management system access
+    PresetManager& getPresetManager() { return presetManager; }
+    const PresetManager& getPresetManager() const { return presetManager; }
+    
 private:
     //==============================================================================
     // Core pattern engine
@@ -103,6 +110,11 @@ private:
     // Parameters
     juce::AudioParameterInt* midiNoteParam;
     juce::AudioParameterBool* tickParam;
+    
+    // Advanced management systems
+    PresetManager presetManager;
+    std::unique_ptr<SceneManager> sceneManager;
+    std::unique_ptr<ProgressiveManager> progressiveManager;
     
     // Helper methods
     void updateTiming(juce::Optional<juce::AudioPlayHead::PositionInfo> position = {});

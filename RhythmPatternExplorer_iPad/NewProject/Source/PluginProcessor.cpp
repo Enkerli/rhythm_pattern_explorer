@@ -31,6 +31,10 @@ RhythmPatternExplorerAudioProcessor::RhythmPatternExplorerAudioProcessor()
     // Initialize pattern engine connection
     UPIParser::setProgressiveOffsetEngine(&patternEngine);
     
+    // Initialize advanced management systems
+    sceneManager = std::make_unique<SceneManager>();
+    progressiveManager = std::make_unique<ProgressiveManager>();
+    
     // Initialize pattern with basic Euclidean pattern
     currentUPIInput = "E(3,8)";
     auto parseResult = UPIParser::parse(currentUPIInput);
