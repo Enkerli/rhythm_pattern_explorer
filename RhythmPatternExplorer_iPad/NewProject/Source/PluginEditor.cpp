@@ -21,7 +21,7 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     titleLabel.setColour(juce::Label::textColourId, juce::Colours::white);
     addAndMakeVisible(titleLabel);
     
-    // Set up UPI input field
+    // Set up UPI input field with iPad-optimized settings
     upiInputField.setMultiLine(false);
     upiInputField.setReturnKeyStartsNewLine(false);
     upiInputField.setReadOnly(false);
@@ -33,6 +33,11 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     upiInputField.setColour(juce::TextEditor::backgroundColourId, juce::Colours::darkgrey);
     upiInputField.setColour(juce::TextEditor::textColourId, juce::Colours::white);
     upiInputField.setColour(juce::TextEditor::outlineColourId, juce::Colours::lightblue);
+    
+    // Enhanced iPad keyboard support
+    upiInputField.setInputRestrictions(0, "{}()[]|><+-*~0123456789ABCDEFabcdefoxdEPBWDRrOEeUuLlNnCcPpGgYyQqVvZzSsKkJjMmTtAaBbXx:,;.");
+    upiInputField.setKeyboardType(juce::TextEditor::textKeyboard);
+    
     upiInputField.onTextChange = [this] { upiInputChanged(); };
     upiInputField.onReturnKey = [this] { triggerButtonClicked(); };
     
@@ -63,17 +68,19 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     addAndMakeVisible(statusLabel);
 
     
-    // Set up debug display - multi-line, scrollable, copyable
+    // Set up debug display - multi-line, scrollable, copyable with larger font
     debugDisplay.setText("Debug: Ready\nTiming info will appear here during playback", false);
     debugDisplay.setMultiLine(true);
     debugDisplay.setReadOnly(true);
     debugDisplay.setScrollbarsShown(true);
     debugDisplay.setCaretVisible(true);
     debugDisplay.setPopupMenuEnabled(true);
-    debugDisplay.setFont(juce::Font("Courier New", 9.0f, juce::Font::plain));
+    debugDisplay.setSelectAllWhenFocused(true);  // Select all on focus for easy copying
+    debugDisplay.setFont(juce::Font("Courier New", 12.0f, juce::Font::plain));  // Larger font
     debugDisplay.setColour(juce::TextEditor::textColourId, juce::Colours::yellow);
     debugDisplay.setColour(juce::TextEditor::backgroundColourId, juce::Colours::black);
     debugDisplay.setColour(juce::TextEditor::outlineColourId, juce::Colours::grey);
+    debugDisplay.setColour(juce::TextEditor::highlightColourId, juce::Colours::blue.withAlpha(0.3f));
     addAndMakeVisible(debugDisplay);
     
     // Set size suitable for iPad - responsive design
@@ -172,6 +179,13 @@ void RhythmPatternExplorerAudioProcessorEditor::triggerButtonClicked()
         // Send UPI pattern to processor
         audioProcessor.setUPIInput(upiInput);
         
+        // If this is a scene pattern, log for debugging
+        if (upiInput.contains("|"))
+        {
+            // Scene patterns should be handled by the SceneManager
+            // Debug info should show in the debug display
+        }
+        
         // Trigger pattern playback
         auto* tickParam = audioProcessor.getTickParameter();
         if (tickParam != nullptr)
@@ -244,6 +258,10 @@ void RhythmPatternExplorerAudioProcessorEditor::updatePatternDisplay()
 
 void RhythmPatternExplorerAudioProcessorEditor::timerCallback()
 {
+    // Don't update if user is actively selecting text
+    if (debugDisplay.hasKeyboardFocus(true) && debugDisplay.getHighlightedRegion().getLength() > 0)
+        return;
+    
     // Get current debug info from processor
     juce::String currentInfo = audioProcessor.getDebugInfo();
     
@@ -259,11 +277,12 @@ void RhythmPatternExplorerAudioProcessorEditor::timerCallback()
         while (debugLines.size() > 20)
             debugLines.remove(0);
         
-        // Update display
-        juce::String displayText = "Debug Log (copyable):\n" + debugLines.joinIntoString("\n");
+        // Update display only if not being actively used
+        juce::String displayText = "Debug Log (tap to select all for copying):\n" + debugLines.joinIntoString("\n");
         debugDisplay.setText(displayText, false);
         
-        // Auto-scroll to bottom
-        debugDisplay.moveCaretToEnd();
+        // Auto-scroll to bottom only if not focused
+        if (!debugDisplay.hasKeyboardFocus(true))
+            debugDisplay.moveCaretToEnd();
     }
 }
