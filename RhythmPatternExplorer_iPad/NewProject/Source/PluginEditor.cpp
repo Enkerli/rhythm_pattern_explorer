@@ -34,8 +34,8 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     upiInputField.setColour(juce::TextEditor::textColourId, juce::Colours::white);
     upiInputField.setColour(juce::TextEditor::outlineColourId, juce::Colours::lightblue);
     
-    // Enhanced iPad keyboard support
-    upiInputField.setInputRestrictions(0, "{}()[]|><+-*~0123456789ABCDEFabcdefoxdEPBWDRrOEeUuLlNnCcPpGgYyQqVvZzSsKkJjMmTtAaBbXx:,;.");
+    // Enhanced iPad keyboard support - remove input restrictions to allow alt-key combinations
+    upiInputField.setInputRestrictions(0, ""); // Allow all characters for alt-key support
     upiInputField.setKeyboardType(juce::TextEditor::textKeyboard);
     
     upiInputField.onTextChange = [this] { upiInputChanged(); };
@@ -179,11 +179,12 @@ void RhythmPatternExplorerAudioProcessorEditor::triggerButtonClicked()
         // Send UPI pattern to processor
         audioProcessor.setUPIInput(upiInput);
         
-        // If this is a scene pattern, log for debugging
+        // Handle scene advancement if this is a scene pattern
         if (upiInput.contains("|"))
         {
-            // Scene patterns should be handled by the SceneManager
-            // Debug info should show in the debug display
+            // For scene patterns, we need to advance scenes on each trigger
+            // This should be handled automatically by the processor's scene logic
+            statusLabel.setText("Scene pattern: " + upiInput, juce::dontSendNotification);
         }
         
         // Trigger pattern playback

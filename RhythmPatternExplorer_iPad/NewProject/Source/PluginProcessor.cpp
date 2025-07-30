@@ -181,6 +181,13 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
         // Reset tick parameter
         tickParam->setValueNotifyingHost(0.0f);
         
+        // Handle scene advancement if this is a scene pattern
+        if (currentUPIInput.contains("|") && sceneManager && sceneManager->hasScenes())
+        {
+            advanceScene();
+            applyCurrentScenePattern();
+        }
+        
         // Reset pattern playback
         currentStep = 0;
         sampleCounter = 0.0;
@@ -341,19 +348,68 @@ void RhythmPatternExplorerAudioProcessor::setStateInformation (const void* data,
 void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiString)
 {
     currentUPIInput = upiString;
-    auto parseResult = UPIParser::parse(upiString);
-    if (parseResult.isValid())
+    
+    // Check if this is a scene pattern
+    if (upiString.contains("|") && sceneManager)
     {
-        currentPattern = parseResult.pattern;
+        // Initialize scene manager with the pattern
+        if (sceneManager->parseScenePattern(upiString))
+        {
+            // Get the first scene pattern
+            applyCurrentScenePattern();
+            debugInfo = "Initialized scene pattern: " + upiString;
+        }
     }
     else
     {
-        // Keep existing pattern if parsing fails
-        // Could also set an error pattern or log the error
+        // Regular pattern processing
+        auto parseResult = UPIParser::parse(upiString);
+        if (parseResult.isValid())
+        {
+            currentPattern = parseResult.pattern;
+        }
+        else
+        {
+            // Keep existing pattern if parsing fails
+            // Could also set an error pattern or log the error
+        }
     }
+    
     currentStep = 0;
     sampleCounter = 0.0;
     updateTiming(); // Use default parameters when no position info available
+}
+
+//==============================================================================
+// Scene Management Functions (simplified for iPad)
+
+void RhythmPatternExplorerAudioProcessor::advanceScene()
+{
+    // Use SceneManager if available
+    if (sceneManager && sceneManager->hasScenes()) 
+    {
+        sceneManager->advanceScene();
+        debugInfo = "Advanced to scene " + juce::String(sceneManager->getCurrentSceneIndex() + 1);
+    }
+}
+
+void RhythmPatternExplorerAudioProcessor::applyCurrentScenePattern()
+{
+    // Use SceneManager to get current scene pattern
+    if (sceneManager && sceneManager->hasScenes())
+    {
+        auto scenePattern = sceneManager->getCurrentScenePattern();
+        if (!scenePattern.isEmpty())
+        {
+            // Apply the current scene pattern
+            auto parseResult = UPIParser::parse(scenePattern);
+            if (parseResult.isValid())
+            {
+                currentPattern = parseResult.pattern;
+                debugInfo = "Applied scene pattern: " + scenePattern;
+            }
+        }
+    }
 }
 
 void RhythmPatternExplorerAudioProcessor::updateTiming(juce::Optional<juce::AudioPlayHead::PositionInfo> position)

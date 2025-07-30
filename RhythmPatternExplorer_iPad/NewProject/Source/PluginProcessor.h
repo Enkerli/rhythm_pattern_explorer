@@ -89,6 +89,10 @@ public:
     PresetManager& getPresetManager() { return presetManager; }
     const PresetManager& getPresetManager() const { return presetManager; }
     
+    // Scene management functions
+    void advanceScene();
+    void applyCurrentScenePattern();
+    
 private:
     //==============================================================================
     // Core pattern engine
