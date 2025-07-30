@@ -103,12 +103,12 @@ private:
         bool (*customValidator)(const juce::String&) = nullptr;
     };
     
-    static std::map<PatternType, PatternRecognitionRule> getPatternRules();
+    static const std::map<PatternType, PatternRecognitionRule>& getPatternRules();
     static PatternType identifyPatternType(const juce::String& input);
     
     // Helper functions
     static juce::String cleanInput(const juce::String& input);
-    static std::vector<juce::String> tokenize(const juce::String& input, const juce::String& delimiter);
+    static juce::StringArray tokenize(const juce::String& input, const juce::String& delimiter);
     static ParseResult createError(const juce::String& message);
     static ParseResult createSuccess(const std::vector<bool>& pattern, const juce::String& name);
     static juce::String extractParameters(const juce::String& input, 
@@ -135,7 +135,7 @@ private:
     static bool isMorsePattern(const juce::String& input);
     
     // Numeric pattern helpers
-    enum class NumericBase { Hexadecimal, Decimal, Octal };
+    enum class NumericBase { Binary, Hexadecimal, Decimal, Octal };
     struct NumericPatternInfo {
         juce::String prefix;
         NumericBase base;
