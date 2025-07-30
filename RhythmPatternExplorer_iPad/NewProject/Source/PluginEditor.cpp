@@ -259,8 +259,8 @@ void RhythmPatternExplorerAudioProcessorEditor::updatePatternDisplay()
 
 void RhythmPatternExplorerAudioProcessorEditor::timerCallback()
 {
-    // Don't update if user is actively selecting text
-    if (debugDisplay.hasKeyboardFocus(true) && debugDisplay.getHighlightedRegion().getLength() > 0)
+    // Don't update if user is actively selecting text or has focus
+    if (debugDisplay.hasKeyboardFocus(true))
         return;
     
     // Get current debug info from processor
@@ -268,11 +268,14 @@ void RhythmPatternExplorerAudioProcessorEditor::timerCallback()
     
     // Accumulate debug info with timestamps (keep last 20 lines)
     static juce::StringArray debugLines;
+    static juce::String lastInfo = "";
     
-    if (currentInfo != "Ready" && !currentInfo.isEmpty())
+    // Only add new info if it's different from the last one
+    if (currentInfo != "Ready" && !currentInfo.isEmpty() && currentInfo != lastInfo)
     {
         juce::String timestamp = juce::Time::getCurrentTime().toString(false, true, true, true);
         debugLines.add("[" + timestamp + "] " + currentInfo);
+        lastInfo = currentInfo;
         
         // Keep only last 20 lines
         while (debugLines.size() > 20)
@@ -282,8 +285,6 @@ void RhythmPatternExplorerAudioProcessorEditor::timerCallback()
         juce::String displayText = "Debug Log (tap to select all for copying):\n" + debugLines.joinIntoString("\n");
         debugDisplay.setText(displayText, false);
         
-        // Auto-scroll to bottom only if not focused
-        if (!debugDisplay.hasKeyboardFocus(true))
-            debugDisplay.moveCaretToEnd();
+        // Don't auto-scroll - let user manually scroll
     }
 }

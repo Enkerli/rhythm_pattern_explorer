@@ -186,6 +186,8 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
         {
             advanceScene();
             applyCurrentScenePattern();
+            debugInfo = "Scene advanced to: " + juce::String(sceneManager->getCurrentSceneIndex() + 1) + 
+                       " - " + sceneManager->getCurrentScenePattern();
         }
         
         // Reset pattern playback
@@ -359,9 +361,10 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiStr
         // Initialize scene manager with the parsed scenes
         sceneManager->initializeScenes(scenes);
         
-        // Get the first scene pattern
+        // Apply the first scene pattern (scene 0)
         applyCurrentScenePattern();
-        debugInfo = "Initialized scene pattern: " + upiString + " (" + juce::String(scenes.size()) + " scenes)";
+        debugInfo = "Initialized " + juce::String(scenes.size()) + " scenes, starting with: " + 
+                   sceneManager->getCurrentScenePattern();
     }
     else
     {
@@ -392,7 +395,7 @@ void RhythmPatternExplorerAudioProcessor::advanceScene()
     if (sceneManager && sceneManager->hasScenes()) 
     {
         sceneManager->advanceScene();
-        debugInfo = "Advanced to scene " + juce::String(sceneManager->getCurrentSceneIndex() + 1);
+        // Don't update debugInfo here - let the caller do it with pattern info
     }
 }
 
@@ -402,6 +405,8 @@ void RhythmPatternExplorerAudioProcessor::applyCurrentScenePattern()
     if (sceneManager && sceneManager->hasScenes())
     {
         auto scenePattern = sceneManager->getCurrentScenePattern();
+        int sceneIndex = sceneManager->getCurrentSceneIndex();
+        
         if (!scenePattern.isEmpty())
         {
             // Apply the current scene pattern
@@ -409,7 +414,7 @@ void RhythmPatternExplorerAudioProcessor::applyCurrentScenePattern()
             if (parseResult.isValid())
             {
                 currentPattern = parseResult.pattern;
-                debugInfo = "Applied scene pattern: " + scenePattern;
+                // Don't update debugInfo here - let the caller provide context
             }
         }
     }
