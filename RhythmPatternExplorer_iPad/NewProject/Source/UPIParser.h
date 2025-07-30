@@ -15,6 +15,9 @@
 #include <regex>
 #include <map>
 
+// Forward declaration
+class PatternEngine;
+
 //==============================================================================
 /**
  * Universal Pattern Input Parser
@@ -107,9 +110,46 @@ private:
     static juce::String cleanInput(const juce::String& input);
     static std::vector<juce::String> tokenize(const juce::String& input, const juce::String& delimiter);
     static ParseResult createError(const juce::String& message);
+    static ParseResult createSuccess(const std::vector<bool>& pattern, const juce::String& name);
     static juce::String extractParameters(const juce::String& input, 
                                          const juce::String& prefix, 
                                          const juce::String& suffix = ")");
+    
+    // Advanced parsing helpers
+    static bool hasTransformationPrefix(const juce::String& input);
+    static ParseResult parsePolygonForCombination(const juce::String& polygonStr, int targetSteps);
+    
+    // Pattern type validation helpers  
+    static bool isPatternType(const juce::String& input, PatternType type);
+    static bool isEuclideanPattern(const juce::String& input);
+    static bool isPolygonPattern(const juce::String& input);
+    static bool isBinaryPattern(const juce::String& input);
+    static bool isArrayPattern(const juce::String& input);
+    static bool isRandomPattern(const juce::String& input);
+    static bool isBarlowPattern(const juce::String& input);
+    static bool isWolrabPattern(const juce::String& input);
+    static bool isDilcuePattern(const juce::String& input);
+    static bool isHexPattern(const juce::String& input);
+    static bool isDecimalPattern(const juce::String& input);
+    static bool isOctalPattern(const juce::String& input);
+    static bool isMorsePattern(const juce::String& input);
+    
+    // Numeric pattern helpers
+    enum class NumericBase { Hexadecimal, Decimal, Octal };
+    struct NumericPatternInfo {
+        juce::String prefix;
+        NumericBase base;
+        juce::String validChars;
+    };
+    static bool isNumericPattern(const juce::String& input, const NumericPatternInfo& info);
+    static ParseResult parseNumericPattern(const juce::String& input, const NumericPatternInfo& info, int stepCount);
+    
+    // Progressive transformation helpers
+    static std::vector<bool> applyProgressiveTransformation(const std::vector<bool>& basePattern, char transformerType, int targetOnsets);
+    static void resetProgressiveState(const juce::String& patternKey);
+    static void resetAllProgressiveStates();
+    static int getProgressiveStepCount(const juce::String& patternKey);
+    static int getCurrentProgressiveOffset();
     
     // Progressive offset engine support
     static bool hasProgressiveOffsetEngine;
