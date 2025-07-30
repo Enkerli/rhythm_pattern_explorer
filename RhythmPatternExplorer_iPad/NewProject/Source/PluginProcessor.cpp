@@ -352,13 +352,16 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiStr
     // Check if this is a scene pattern
     if (upiString.contains("|") && sceneManager)
     {
-        // Initialize scene manager with the pattern
-        if (sceneManager->parseScenePattern(upiString))
-        {
-            // Get the first scene pattern
-            applyCurrentScenePattern();
-            debugInfo = "Initialized scene pattern: " + upiString;
-        }
+        // Parse scene pattern into individual scenes
+        juce::StringArray scenes;
+        scenes.addTokens(upiString, "|", "");
+        
+        // Initialize scene manager with the parsed scenes
+        sceneManager->initializeScenes(scenes);
+        
+        // Get the first scene pattern
+        applyCurrentScenePattern();
+        debugInfo = "Initialized scene pattern: " + upiString + " (" + juce::String(scenes.size()) + " scenes)";
     }
     else
     {
