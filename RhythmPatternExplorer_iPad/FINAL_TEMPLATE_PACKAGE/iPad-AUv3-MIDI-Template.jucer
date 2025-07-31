@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<JUCERPROJECT id="iMIDI" name="iPad AUv3 MIDI Template" projectType="audioplug"
+              useAppConfig="0" addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1"
+              bundleIdentifier="com.yourcompany.yourplugin" pluginName="Your Plugin Name"
+              pluginDesc="Your iPad AUv3 MIDI effect description"
+              pluginManufacturer="Your Company" pluginManufacturerCode="YrCo"
+              pluginCode="YrPl" pluginChannelConfigs="{0,0}" pluginIsSynth="0"
+              pluginWantsMidiIn="1" pluginProducesMidiOut="1" pluginIsMidiEffectPlugin="1"
+              pluginEditorRequiresKeys="0" pluginAUExportPrefix="YourPluginAU"
+              pluginRTASCategory="2" aaxIdentifier="com.yourcompany.yourplugin"
+              pluginAAXCategory="2" companyName="Your Company" companyWebsite=""
+              companyEmail="" displaySplashScreen="1"
+              reportAppUsage="1" splashScreenColour="Dark" projectLineFeed="&#10;"
+              version="1.0.0" defines="JUCE_DISPLAY_SPLASH_SCREEN=1&#10;JUCE_USE_DARK_SPLASH_SCREEN=1"
+              pluginCharacteristicsValue="pluginWantsMidiIn,pluginProducesMidiOut,pluginIsMidiEffectPlugin"
+              pluginFormats="buildAUv3">
+  <MAINGROUP id="MainGroup" name="iPad AUv3 MIDI Template">
+    <GROUP id="SourceGroup" name="Source">
+      <FILE id="PluginProcessorCpp" name="PluginProcessor.cpp" compile="1" resource="0"
+            file="Source/PluginProcessor.cpp"/>
+      <FILE id="PluginProcessorH" name="PluginProcessor.h" compile="0" resource="0"
+            file="Source/PluginProcessor.h"/>
+      <FILE id="PluginEditorCpp" name="PluginEditor.cpp" compile="1" resource="0"
+            file="Source/PluginEditor.cpp"/>
+      <FILE id="PluginEditorH" name="PluginEditor.h" compile="0" resource="0" 
+            file="Source/PluginEditor.h"/>
+    </GROUP>
+  </MAINGROUP>
+  <MODULES>
+    <MODULE id="juce_audio_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_devices" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_formats" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_plugin_client" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_processors" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_utils" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_core" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_data_structures" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_events" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_graphics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_gui_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_gui_extra" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+  </MODULES>
+  <EXPORTFORMATS>
+    <XCODE_IPHONE targetFolder="Builds/iOS" iosDeploymentTarget="15.0" keepCustomXcodeSchemes="1"
+                  customXcodeResourceFolders="" customXcodeFrameworks="" extraLinkerFlags=""
+                  extraCompilerFlags="" externalLibraries="" extraFrameworks=""
+                  frameworkSearchPaths="" extraDLLs="" winArchitecture="Win32"
+                  winWarningLevel="4" generateManifest="1" useRuntimePermissions="0"
+                  sanitizerEnabled="0" enablePlugInBinaryCopyStep="1" stripLocalSymbols="1"
+                  iPadScreenOrientation="portraitlandscape" iPhoneScreenOrientation="portrait"
+                  buildConfiguration="Release" linkTimeOptimisation="1" stripLocalSymbolsRelease="1"
+                  debugInformationFormat="dwarfWithDsym" enableGPUFrame="0" enableGPUApi="0"
+                  enableMetal="1" metalLanguageStandard="2.4" customLaunchStoryboard=""
+                  iosBackgroundAudio="1" iosBackgroundBle="0" iosAppGroups=""
+                  iCloudPermissions="0" pushNotifications="0" uiFileSharingEnabled="0"
+                  documentPickerEnabled="0" cameraUsagePermission="0" microphonePermission="0"
+                  bluetoothPermission="0" sendAppleEventsPermission="0" voipEnabled="0"
+                  networkingMulticast="0" suppressPlistResourceUsage="0"
+                  xcodeValidArchs="arm64" customPListPreprocessorDefinitions=""
+                  pListPrefixHeader="" pListPreprocessorDefinitions="JUCE_ENABLE_LIVE_CONSTANT_EDITOR=0"
+                  bundleIdentifier="com.yourcompany.yourplugin" appSandbox="1"
+                  appSandboxInheritance="0" appSandboxOptions=""/>
+  </EXPORTFORMATS>
+  <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1" JUCE_VST3_CAN_REPLACE_VST2="0"/>
+</JUCERPROJECT>

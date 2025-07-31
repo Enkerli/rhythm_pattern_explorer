@@ -118,8 +118,8 @@ namespace PatternUtils
      * 
      * EXAMPLES:
      * - bjorklundAlgorithm(3, 8) → 10010010 (tresillo rhythm)
-     * - bjorklundAlgorithm(5, 8) → 10101010 (cinquillo rhythm)
-     * - bjorklundAlgorithm(3, 4) → 1011 (maximally even 3-in-4)
+     * - bjorklundAlgorithm(5, 8) → 10110110 (cinquillo rhythm)  
+     * - bjorklundAlgorithm(3, 4) → 1110 (maximally even 3-in-4)
      * 
      * @param beats Number of onsets to distribute (must be ≤ steps)
      * @param steps Total number of positions in the pattern

@@ -1,0 +1,34 @@
+<!-- 
+Add this section to your AUv3 extension's Info.plist file:
+This should go inside the main <dict> section of the Info.plist
+-->
+
+<key>NSExtension</key>
+<dict>
+    <key>NSExtensionAttributes</key>
+    <dict>
+        <key>AudioComponentDescription</key>
+        <dict>
+            <key>componentType</key>
+            <string>aurm</string>
+            <key>componentSubType</key>
+            <string>RPEi</string>
+            <key>componentManufacturer</key>
+            <string>Alex</string>
+            <key>componentFlags</key>
+            <integer>0</integer>
+            <key>componentFlagsMask</key>
+            <integer>0</integer>
+        </dict>
+    </dict>
+    <key>NSExtensionPointIdentifier</key>
+    <string>com.apple.AudioUnit</string>
+    <key>NSExtensionPrincipalClass</key>
+    <string>AUv3_AUAudioUnit</string>
+</dict>
+
+<!-- Also ensure these capabilities are present: -->
+<key>UIBackgroundModes</key>
+<array>
+    <string>audio</string>
+</array>
