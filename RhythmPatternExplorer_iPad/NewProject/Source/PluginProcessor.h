@@ -73,10 +73,53 @@ public:
     
     // UPI Input for pattern creation
     void setUPIInput(const juce::String& upiString);
+    void parseAndApplyUPI(const juce::String& upiPattern, bool resetAccentPosition = true);
     juce::String getCurrentUPIInput() const { return currentUPIInput; }
     
     // Current pattern access
     std::vector<bool> getCurrentPattern() const { return currentPattern; }
+    int getCurrentStep() const { return currentStep; }
+    
+    // Scene management access
+    int getSceneCount() const {
+        return (sceneManager && sceneManager->hasScenes()) ? sceneManager->getSceneCount() : 1;
+    }
+    int getCurrentSceneIndex() const {
+        return (sceneManager && sceneManager->hasScenes()) ? sceneManager->getCurrentSceneIndex() : 0;
+    }
+    
+    // Progressive transformation access  
+    bool hasProgressiveOffset() const {
+        if (progressiveManager && progressiveManager->hasProgressiveState(currentUPIInput)) {
+            return progressiveManager->hasProgressiveOffset(currentUPIInput);
+        }
+        return false;
+    }
+    
+    // Progressive offset support (universal for all patterns)
+    void resetProgressiveOffset() { 
+        if (progressiveManager) {
+            progressiveManager->resetProgressiveOffset(currentUPIInput);
+        }
+    }
+    void advanceProgressiveOffset() { 
+        if (progressiveManager) {
+            progressiveManager->triggerProgressive(currentUPIInput, patternEngine);
+        }
+    }
+    int getProgressiveOffset() const { 
+        if (progressiveManager && progressiveManager->hasProgressiveState(currentUPIInput)) {
+            return progressiveManager->getProgressiveOffsetValue(currentUPIInput);
+        }
+        return 0;
+    }
+    
+    // Progressive lengthening support
+    void resetProgressiveLengthening() { 
+        if (progressiveManager) {
+            progressiveManager->resetProgressiveLengthening(currentUPIInput);
+        }
+    }
     
     // Basic parameters
     juce::AudioParameterInt* getMidiNoteParameter() const { return midiNoteParam; }
@@ -100,6 +143,7 @@ private:
     
     // Current state
     juce::String currentUPIInput;
+    juce::String originalUPIInput; // Preserve original pattern with progressive/scene syntax
     std::vector<bool> currentPattern;
     
     // MIDI processing

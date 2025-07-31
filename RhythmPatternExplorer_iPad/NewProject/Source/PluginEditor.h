@@ -39,18 +39,30 @@ private:
     /// Reference to the audio processor
     RhythmPatternExplorerAudioProcessor& audioProcessor;
     
-    /// UI Components for RPE
-    juce::Label titleLabel;
-    juce::TextEditor upiInputField;
-    juce::TextButton triggerButton;
-    juce::Label statusLabel;
-    juce::Label patternDisplay;
-    juce::TextEditor debugDisplay;
+    /// Core UI Components (desktop-compatible)
+    juce::Label upiLabel;
+    juce::TextEditor upiTextEditor;
+    juce::TextButton tickButton;  // Equivalent to Parse/Tick button
+    juce::Label patternDisplayEditor;  // Pattern text display
     
-    /// Button callback methods
-    void triggerButtonClicked();
-    void upiInputChanged();
+    /// Circle area for pattern visualization
+    juce::Rectangle<int> circleArea;
+    
+    /// Background color cycling support
+    enum class BackgroundColor {
+        Dark = 0, White = 1, Green = 2, Orange = 3, Blue = 4, Purple = 5
+    };
+    BackgroundColor currentBackgroundColor = BackgroundColor::Dark;
+    juce::Colour getBackgroundColour() const;
+    
+    /// Event handlers
+    void parseUPIPattern();
+    void onParseButtonClicked();
     void updatePatternDisplay();
+    void updateStepSceneButton();
+    
+    /// Pattern visualization (desktop-compatible)
+    void drawPatternCircle(juce::Graphics& g, juce::Rectangle<int> bounds);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (RhythmPatternExplorerAudioProcessorEditor)
 };

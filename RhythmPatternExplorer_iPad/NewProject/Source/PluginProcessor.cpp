@@ -181,13 +181,40 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
         // Reset tick parameter
         tickParam->setValueNotifyingHost(0.0f);
         
-        // Handle scene advancement if this is a scene pattern
-        if (currentUPIInput.contains("|") && sceneManager && sceneManager->hasScenes())
+        // Handle progressive transformations and scenes (desktop-compatible logic)
+        if (!currentUPIInput.isEmpty())
         {
-            advanceScene();
-            applyCurrentScenePattern();
-            debugInfo = "Scene advanced to: " + juce::String(sceneManager->getCurrentSceneIndex() + 1) + 
-                       " - " + sceneManager->getCurrentScenePattern();
+            // Use original UPI input if available (preserves progressive/scene syntax)
+            juce::String upiToProcess = originalUPIInput.isEmpty() ? currentUPIInput : originalUPIInput;
+            
+            // Check for scenes and progressive patterns to handle them correctly
+            bool hasProgressiveTransformation = upiToProcess.contains(">");
+            bool hasScenes = upiToProcess.contains("|");
+            
+            bool triggerNeeded = false;
+            
+            if (hasScenes) {
+                // CRITICAL FIX: If we have scenes, handle scene advancement first
+                // This prevents double/triple advancement when scenes contain progressive transformations
+                advanceScene();
+                applyCurrentScenePattern(); 
+                debugInfo = "TRIGGER advanced to Scene " + juce::String(sceneManager->getCurrentSceneIndex() + 1) + 
+                           " - " + sceneManager->getCurrentScenePattern();
+                triggerNeeded = true;
+            }
+            else if (hasProgressiveTransformation) {
+                // Progressive transformations: advance without resetting accents
+                // Only process this if we DON'T have scenes (to avoid double advancement)
+                parseAndApplyUPI(upiToProcess, false); // false = preserve accents
+                debugInfo = "TRIGGER advanced progressive transformation";
+                triggerNeeded = true;
+            }
+            
+            // For regular patterns without scenes or progressive transformations
+            if (!triggerNeeded) {
+                parseAndApplyUPI(upiToProcess, true); // true = reset accents for new patterns
+                debugInfo = "TRIGGER regular pattern";
+            }
         }
         
         // Reset pattern playback
@@ -297,11 +324,41 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
     }
     wasPlaying = isPlaying;
     
-    // Get any queued MIDI messages from UI interactions
+    // Store incoming MIDI for scene advancement processing - throttled to prevent rapid triggering
+    static juce::uint32 lastMidiTriggerTime = 0;
+    juce::uint32 currentTime = juce::Time::getMillisecondCounter();
+    
+    // Process incoming MIDI for scene changes, but don't clear the buffer yet
+    for (const auto metadata : midiMessages)
+    {
+        const auto msg = metadata.getMessage();
+        if (msg.isNoteOn() && (currentTime - lastMidiTriggerTime > 500))  // 500ms throttle
+        {
+            // MIDI input triggers scene advancement (like desktop version)
+            if (currentUPIInput.contains("|") && sceneManager && sceneManager->hasScenes())
+            {
+                advanceScene();
+                applyCurrentScenePattern();
+                debugInfo = "MIDI triggered Scene " + juce::String(sceneManager->getCurrentSceneIndex() + 1) + 
+                           " - " + sceneManager->getCurrentScenePattern();
+                
+                // Reset position for new scene
+                currentStep = 0;
+                sampleCounter = 0.0;
+                lastMidiTriggerTime = currentTime;
+                break;  // Only process first note in buffer
+            }
+        }
+    }
+    
+    // Clear input MIDI to prevent passthrough, then add our generated notes
+    midiMessages.clear();
+    
+    // Get any queued MIDI messages from UI interactions and pattern generation
     juce::MidiBuffer collectedMidi;
     midiCollector.removeNextBlockOfMessages(collectedMidi, buffer.getNumSamples());
     
-    // Add generated MIDI to the output
+    // Add our generated MIDI to the output
     midiMessages.addEvents(collectedMidi, 0, buffer.getNumSamples(), 0);
 }
 
@@ -351,20 +408,51 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiStr
 {
     currentUPIInput = upiString;
     
+    // Store original UPI input if it contains progressive/scene syntax (desktop-compatible)
+    bool hasProgressiveTransformation = upiString.contains(">");
+    bool hasScenes = upiString.contains("|");
+    if (hasProgressiveTransformation || hasScenes) {
+        originalUPIInput = upiString;
+    } else {
+        originalUPIInput.clear(); // Clear if no progressive syntax
+    }
+    
     // Check if this is a scene pattern
-    if (upiString.contains("|") && sceneManager)
+    if (hasScenes && sceneManager)
     {
         // Parse scene pattern into individual scenes
         juce::StringArray scenes;
         scenes.addTokens(upiString, "|", "");
         
-        // Initialize scene manager with the parsed scenes
+        // Initialize scene manager with the parsed scenes (starts at scene 0)
         sceneManager->initializeScenes(scenes);
         
-        // Apply the first scene pattern (scene 0)
-        applyCurrentScenePattern();
-        debugInfo = "Initialized " + juce::String(scenes.size()) + " scenes, starting with: " + 
+        // Apply the first scene pattern directly without calling applyCurrentScenePattern
+        // to avoid any potential advancement
+        auto firstScenePattern = sceneManager->getCurrentScenePattern();
+        if (!firstScenePattern.isEmpty())
+        {
+            auto parseResult = UPIParser::parse(firstScenePattern);
+            if (parseResult.isValid())
+            {
+                currentPattern = parseResult.pattern;
+            }
+        }
+        
+        debugInfo = "Initialized " + juce::String(scenes.size()) + " scenes. Starting at Scene 1 - " + 
                    sceneManager->getCurrentScenePattern();
+    }
+    else if (hasProgressiveTransformation && progressiveManager)
+    {
+        // Progressive transformation pattern - parse and initialize state
+        auto parseResult = UPIParser::parse(upiString);
+        if (parseResult.isValid())
+        {
+            currentPattern = parseResult.pattern;
+            // Initialize progressive state
+            progressiveManager->resetProgressiveOffset(upiString);
+            debugInfo = "Initialized progressive transformation: " + upiString;
+        }
     }
     else
     {
@@ -384,6 +472,29 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiStr
     currentStep = 0;
     sampleCounter = 0.0;
     updateTiming(); // Use default parameters when no position info available
+}
+
+void RhythmPatternExplorerAudioProcessor::parseAndApplyUPI(const juce::String& upiPattern, bool resetAccentPosition)
+{
+    if (upiPattern.isEmpty()) return;
+    
+    // Parse the UPI pattern
+    auto parseResult = UPIParser::parse(upiPattern);
+    if (parseResult.isValid())
+    {
+        // Update current pattern
+        currentPattern = parseResult.pattern;
+        
+        // Update timing for new pattern
+        updateTiming();
+        
+        // Reset step counter if requested
+        if (resetAccentPosition)
+        {
+            currentStep = 0;
+            sampleCounter = 0.0;
+        }
+    }
 }
 
 //==============================================================================
@@ -457,12 +568,15 @@ void RhythmPatternExplorerAudioProcessor::processPatternStep(juce::MidiBuffer& m
         // Log MIDI events
         DEBUG_MIDI("NoteOn", noteNumber, velocity, sampleNumber);
         
-        // Create note on message
+        // Create note on message and add to collector (not directly to midiMessages)
         juce::MidiMessage noteOn = juce::MidiMessage::noteOn(channel, noteNumber, velocity);
         juce::MidiMessage noteOff = juce::MidiMessage::noteOff(channel, noteNumber, 0.0f);
         
-        midiMessages.addEvent(noteOn, sampleNumber);
-        midiMessages.addEvent(noteOff, sampleNumber + 100); // 100 samples note duration
+        midiCollector.addMessageToQueue(noteOn);
+        // Note off after short duration
+        juce::Timer::callAfterDelay(50, [this, noteOff]() {
+            midiCollector.addMessageToQueue(noteOff);
+        });
     }
 }
 

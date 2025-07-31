@@ -14,74 +14,36 @@
 RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEditor (RhythmPatternExplorerAudioProcessor& p)
     : AudioProcessorEditor (&p), audioProcessor (p)
 {
-    // Set up title label
-    titleLabel.setText("Rhythm Pattern Explorer", juce::dontSendNotification);
-    titleLabel.setFont(juce::Font(24.0f, juce::Font::bold));
-    titleLabel.setJustificationType(juce::Justification::centred);
-    titleLabel.setColour(juce::Label::textColourId, juce::Colours::white);
-    addAndMakeVisible(titleLabel);
+    // UPI Pattern Input (desktop-compatible)
+    upiLabel.setText("UPI:", juce::dontSendNotification);
+    upiLabel.setJustificationType(juce::Justification::centredLeft);
+    addAndMakeVisible(upiLabel);
     
-    // Set up UPI input field with iPad-optimized settings
-    upiInputField.setMultiLine(false);
-    upiInputField.setReturnKeyStartsNewLine(false);
-    upiInputField.setReadOnly(false);
-    upiInputField.setScrollbarsShown(false);
-    upiInputField.setCaretVisible(true);
-    upiInputField.setPopupMenuEnabled(true);
-    upiInputField.setText("E(3,8)", false);
-    upiInputField.setFont(juce::Font(18.0f, juce::Font::plain));
-    upiInputField.setColour(juce::TextEditor::backgroundColourId, juce::Colours::darkgrey);
-    upiInputField.setColour(juce::TextEditor::textColourId, juce::Colours::white);
-    upiInputField.setColour(juce::TextEditor::outlineColourId, juce::Colours::lightblue);
+    upiTextEditor.setMultiLine(false);
+    upiTextEditor.setReturnKeyStartsNewLine(false);
+    upiTextEditor.setTextToShowWhenEmpty("Enter pattern: E(3,8), P(5,0), etc.", juce::Colours::grey);
+    upiTextEditor.setFont(juce::Font(juce::FontOptions(juce::Font::getDefaultMonospacedFontName(), 14.0f, juce::Font::plain)));
+    upiTextEditor.onReturnKey = [this]() { parseUPIPattern(); };
+    upiTextEditor.setText(audioProcessor.getCurrentUPIInput(), juce::dontSendNotification);
+    addAndMakeVisible(upiTextEditor);
     
-    // Enhanced iPad keyboard support - remove input restrictions to allow alt-key combinations
-    upiInputField.setInputRestrictions(0, ""); // Allow all characters for alt-key support
-    upiInputField.setKeyboardType(juce::TextEditor::textKeyboard);
-    
-    upiInputField.onTextChange = [this] { upiInputChanged(); };
-    upiInputField.onReturnKey = [this] { triggerButtonClicked(); };
-    
-    // Add context menu for special characters
-    upiInputField.setPopupMenuEnabled(true);
-    addAndMakeVisible(upiInputField);
-    
-    // Set up trigger button with iPad-optimized sizing
-    triggerButton.setButtonText("TRIGGER");
-    triggerButton.onClick = [this] { triggerButtonClicked(); };
-    triggerButton.setColour(juce::TextButton::buttonColourId, juce::Colours::green.darker());
-    triggerButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
-    addAndMakeVisible(triggerButton);
+    // Scene/Step Button (equivalent to Parse/Tick) - shows current step/scene
+    tickButton.setButtonText("1"); // Will be updated in timer
+    tickButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff4a5568));
+    tickButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
+    tickButton.setTooltip("Current step/scene number. Click to advance.");
+    tickButton.onClick = [this]() { onParseButtonClicked(); };
+    addAndMakeVisible(tickButton);
     
     
-    // Set up pattern display
-    patternDisplay.setText("X . . X . . X .", juce::dontSendNotification);
-    patternDisplay.setFont(juce::Font(20.0f, juce::Font::plain));
-    patternDisplay.setJustificationType(juce::Justification::centred);
-    patternDisplay.setColour(juce::Label::textColourId, juce::Colours::lightgreen);
-    addAndMakeVisible(patternDisplay);
-    
-    // Set up status label
-    statusLabel.setText("Enter UPI pattern and tap TRIGGER", juce::dontSendNotification);
-    statusLabel.setFont(juce::Font(14.0f));
-    statusLabel.setJustificationType(juce::Justification::centred);
-    statusLabel.setColour(juce::Label::textColourId, juce::Colours::lightgrey);
-    addAndMakeVisible(statusLabel);
+    // Pattern text display (smaller, supplementary to circle)
+    patternDisplayEditor.setText("Ready", juce::dontSendNotification);
+    patternDisplayEditor.setFont(juce::Font(juce::FontOptions(juce::Font::getDefaultMonospacedFontName(), 11.0f, juce::Font::plain)));
+    patternDisplayEditor.setJustificationType(juce::Justification::centred);
+    addAndMakeVisible(patternDisplayEditor);
 
     
-    // Set up debug display - multi-line, scrollable, copyable with larger font
-    debugDisplay.setText("Debug: Ready\nTiming info will appear here during playback", false);
-    debugDisplay.setMultiLine(true);
-    debugDisplay.setReadOnly(true);
-    debugDisplay.setScrollbarsShown(true);
-    debugDisplay.setCaretVisible(true);
-    debugDisplay.setPopupMenuEnabled(true);
-    debugDisplay.setSelectAllWhenFocused(true);  // Select all on focus for easy copying
-    debugDisplay.setFont(juce::Font("Courier New", 12.0f, juce::Font::plain));  // Larger font
-    debugDisplay.setColour(juce::TextEditor::textColourId, juce::Colours::yellow);
-    debugDisplay.setColour(juce::TextEditor::backgroundColourId, juce::Colours::black);
-    debugDisplay.setColour(juce::TextEditor::outlineColourId, juce::Colours::grey);
-    debugDisplay.setColour(juce::TextEditor::highlightColourId, juce::Colours::blue.withAlpha(0.3f));
-    addAndMakeVisible(debugDisplay);
+    // Debug display removed - not needed with circle visualization
     
     // Set size suitable for iPad - responsive design
     setSize (500, 500); // Increased height for test results
@@ -105,133 +67,177 @@ RhythmPatternExplorerAudioProcessorEditor::~RhythmPatternExplorerAudioProcessorE
 //==============================================================================
 void RhythmPatternExplorerAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    // Modern dark background suitable for iPad
-    g.fillAll (juce::Colours::darkgrey.darker());
+    // Background with adaptive color system
+    g.fillAll(getBackgroundColour());
     
-    // Add subtle gradient for visual interest
-    juce::ColourGradient gradient(juce::Colours::darkgrey.darker(), 0, 0,
-                                  juce::Colours::darkgrey.darker().brighter(0.1f), 0, getHeight(),
-                                  false);
-    g.setGradientFill(gradient);
-    g.fillAll();
-    
-    // Add a subtle border
-    g.setColour (juce::Colours::lightgrey.withAlpha(0.3f));
-    g.drawRect (getLocalBounds(), 2);
+    // Draw pattern circle in available space
+    if (!circleArea.isEmpty())
+        drawPatternCircle(g, circleArea);
 }
 
 void RhythmPatternExplorerAudioProcessorEditor::resized()
 {
-    auto bounds = getLocalBounds();
-    bounds.reduce(25, 25);  // Add padding for touch-friendly spacing
+    auto area = getLocalBounds();
+    area.reduce(20, 20);  // iPad-friendly padding
     
-    // Title at top
-    titleLabel.setBounds(bounds.removeFromTop(50));
-    bounds.removeFromTop(15);  // Spacing
+    // UPI input row at top
+    auto upiRow = area.removeFromTop(40);
+    upiLabel.setBounds(upiRow.removeFromLeft(50));
     
-    // UPI input field - full width for easy typing
-    auto inputBounds = bounds.removeFromTop(50);
-    upiInputField.setBounds(inputBounds);
-    bounds.removeFromTop(15);  // Spacing
+    // Tick button on right (iPad-friendly size)
+    auto tickButtonWidth = 60;
+    tickButton.setBounds(upiRow.removeFromRight(tickButtonWidth));
+    upiRow.removeFromRight(10);  // Spacing
     
-    // Trigger button - centered, minimum 44pt touch target
-    auto buttonBounds = bounds.removeFromTop(60);
-    auto buttonWidth = juce::jmax(120, buttonBounds.getWidth() / 3);
-    auto buttonHeight = juce::jmax(44, 55); // Minimum 44pt for touch
+    // UPI text field takes remaining space
+    upiTextEditor.setBounds(upiRow);
     
-    // Center the trigger button
-    auto triggerBounds = buttonBounds.withSizeKeepingCentre(buttonWidth, buttonHeight);
-    triggerButton.setBounds(triggerBounds);
+    area.removeFromTop(15);  // Spacing
     
-    bounds.removeFromTop(20);  // Spacing
+    // Circle area - main focus (larger for iPad)
+    auto circleHeight = juce::jmin(300, area.getHeight() - 60);
+    circleArea = area.removeFromTop(circleHeight);
     
-    // Pattern visualization 
-    patternDisplay.setBounds(bounds.removeFromTop(50));
-    bounds.removeFromTop(15);  // Spacing
+    area.removeFromTop(10);  // Spacing
     
-    // Status 
-    statusLabel.setBounds(bounds.removeFromTop(40));
-    
-    bounds.removeFromTop(15);  // Spacing
-    
-    // Debug display - take remaining space (minimum 100px)
-    auto debugHeight = juce::jmax(100, bounds.getHeight());
-    debugDisplay.setBounds(bounds.removeFromTop(debugHeight));
+    // Pattern text display (small, supplementary)
+    patternDisplayEditor.setBounds(area.removeFromTop(30));
 }
 
 //==============================================================================
-void RhythmPatternExplorerAudioProcessorEditor::triggerButtonClicked()
+
+
+void RhythmPatternExplorerAudioProcessorEditor::timerCallback()
 {
-    // Get current UPI input with safe string handling
-    juce::String upiInput;
-    try 
-    {
-        upiInput = upiInputField.getText().trim();
-    }
-    catch (...)
-    {
-        statusLabel.setText("Text input error - please re-enter pattern", juce::dontSendNotification);
+    // Update displays to show scene changes
+    updatePatternDisplay();
+    updateStepSceneButton();
+    
+    // Repaint to update circle visualization with current step
+    repaint();
+}
+
+void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics& g, juce::Rectangle<int> bounds)
+{
+    auto pattern = audioProcessor.getCurrentPattern();
+    if (pattern.empty())
         return;
+    
+    auto center = bounds.getCentre();
+    float maxRadius = juce::jmin(bounds.getWidth(), bounds.getHeight()) * 0.35f;
+    float innerRadius = maxRadius * 0.15f;  // Smaller inner hole like desktop
+    float outerRadius = maxRadius;
+    
+    int numSteps = static_cast<int>(pattern.size());
+    int currentStep = audioProcessor.getCurrentStep();
+    
+    // Draw background circle - adaptive color like desktop
+    if (currentBackgroundColor == BackgroundColor::Green)
+    {
+        g.setColour(juce::Colours::white);
+    }
+    else
+    {
+        g.setColour(getBackgroundColour());
+    }
+    g.fillEllipse(center.x - outerRadius, center.y - outerRadius, outerRadius * 2, outerRadius * 2);
+    
+    // Draw pattern steps
+    for (int i = 0; i < numSteps; ++i)
+    {
+        float sliceAngle = 2.0f * juce::MathConstants<float>::pi / numSteps;
+        // Start at 12 o'clock like desktop
+        float startAngle = (i * sliceAngle) - juce::MathConstants<float>::halfPi - (sliceAngle * 0.5f);
+        
+        // Draw onset slices
+        if (pattern[i])
+        {
+            juce::Path slice;
+            slice.startNewSubPath(center.x + innerRadius * std::cos(startAngle), 
+                                 center.y + innerRadius * std::sin(startAngle));
+            
+            int numSegments = std::max(8, int(sliceAngle * 20));
+            for (int seg = 0; seg <= numSegments; ++seg)
+            {
+                float angle = startAngle + (sliceAngle * seg / numSegments);
+                float x = center.x + outerRadius * std::cos(angle);
+                float y = center.y + outerRadius * std::sin(angle);
+                slice.lineTo(x, y);
+            }
+            
+            for (int seg = numSegments; seg >= 0; --seg)
+            {
+                float angle = startAngle + (sliceAngle * seg / numSegments);
+                float x = center.x + innerRadius * std::cos(angle);
+                float y = center.y + innerRadius * std::sin(angle);
+                slice.lineTo(x, y);
+            }
+            slice.closeSubPath();
+            
+            // Simple color scheme for iPad - current step vs regular
+            if (i == currentStep)
+            {
+                g.setColour(juce::Colours::orange);  // Current step highlight
+            }
+            else
+            {
+                g.setColour(juce::Colours::lightblue);  // Regular onset
+            }
+            g.fillPath(slice);
+        }
     }
     
-    if (upiInput.isNotEmpty() && upiInput.length() > 0 && upiInput.length() < 100)
+    // Draw inner circle to create donut effect like desktop
+    if (innerRadius > 0)
     {
-        // Send UPI pattern to processor
-        audioProcessor.setUPIInput(upiInput);
+        g.setColour(getBackgroundColour());
+        g.fillEllipse(center.x - innerRadius, center.y - innerRadius, 
+                     innerRadius * 2, innerRadius * 2);
+    }
+    
+    // Draw step markers around the circle
+    for (int i = 0; i < numSteps; ++i)
+    {
+        float angle = (i * 2.0f * juce::MathConstants<float>::pi / numSteps) - juce::MathConstants<float>::halfPi;
+        float markerRadius = maxRadius * 1.15f;
         
-        // Handle scene advancement if this is a scene pattern
-        if (upiInput.contains("|"))
+        float x = center.x + markerRadius * std::cos(angle);
+        float y = center.y + markerRadius * std::sin(angle);
+        
+        // Step number with better visibility
+        g.setColour(juce::Colours::white);
+        g.setFont(juce::Font(12.0f, juce::Font::bold));
+        g.drawText(juce::String(i + 1), x - 10, y - 10, 20, 20, juce::Justification::centred);
+    }
+}
+
+void RhythmPatternExplorerAudioProcessorEditor::parseUPIPattern()
+{
+    juce::String upiInput = upiTextEditor.getText().trim();
+    
+    if (upiInput.isNotEmpty())
+    {
+        // Check if this is a different pattern than what's currently loaded
+        if (upiInput != audioProcessor.getCurrentUPIInput())
         {
-            // For scene patterns, we need to advance scenes on each trigger
-            // This should be handled automatically by the processor's scene logic
-            statusLabel.setText("Scene pattern: " + upiInput, juce::dontSendNotification);
+            // New pattern - send to processor for initialization
+            audioProcessor.setUPIInput(upiInput);
         }
         
-        // Trigger pattern playback
+        // Always trigger pattern playback (handles scene advancement)
         auto* tickParam = audioProcessor.getTickParameter();
         if (tickParam != nullptr)
         {
             tickParam->setValueNotifyingHost(1.0f);
         }
         
-        // Update status with confirmation - use safe string handling
-        try
-        {
-            juce::String statusText = juce::String("Pattern: ") + upiInput;
-            statusLabel.setText(statusText, juce::dontSendNotification);
-        }
-        catch (...)
-        {
-            statusLabel.setText("Pattern triggered", juce::dontSendNotification);
-        }
-        
-        // Update pattern display
         updatePatternDisplay();
-        
-        // Reset status after a delay
-        juce::Timer::callAfterDelay(2000, [this]() {
-            if (statusLabel.isShowing())
-            {
-                statusLabel.setText("Enter UPI pattern and tap TRIGGER", juce::dontSendNotification);
-            }
-        });
-    }
-    else
-    {
-        statusLabel.setText("Please enter a valid pattern (1-100 chars)", juce::dontSendNotification);
     }
 }
 
-void RhythmPatternExplorerAudioProcessorEditor::upiInputChanged()
+void RhythmPatternExplorerAudioProcessorEditor::onParseButtonClicked()
 {
-    // Real-time pattern validation and preview
-    juce::String upiInput = upiInputField.getText();
-    
-    if (upiInput.isNotEmpty())
-    {
-        // Update pattern display in real-time
-        updatePatternDisplay();
-    }
+    parseUPIPattern();
 }
 
 void RhythmPatternExplorerAudioProcessorEditor::updatePatternDisplay()
@@ -241,50 +247,86 @@ void RhythmPatternExplorerAudioProcessorEditor::updatePatternDisplay()
     
     if (currentPattern.empty())
     {
-        patternDisplay.setText("No pattern", juce::dontSendNotification);
+        patternDisplayEditor.setText("No pattern", juce::dontSendNotification);
         return;
     }
     
-    // Create visual representation using filled/empty circles
-    juce::String visualPattern;
-    for (size_t i = 0; i < currentPattern.size(); ++i)
-    {
-        if (i > 0) visualPattern += " ";
-        visualPattern += currentPattern[i] ? "X" : ".";  // X .
+    // Get onset positions for display (desktop-compatible)
+    juce::String onsetPositions = "[";
+    bool first = true;
+    for (int i = 0; i < static_cast<int>(currentPattern.size()); ++i) {
+        if (currentPattern[i]) {
+            if (!first) onsetPositions += ",";
+            onsetPositions += juce::String(i);
+            first = false;
+        }
+    }
+    onsetPositions += "]";
+    
+    // Calculate hex, octal, and decimal representations
+    int decimal = 0;
+    for (int i = 0; i < static_cast<int>(currentPattern.size()); ++i) {
+        if (currentPattern[i]) {
+            decimal |= (1 << i);  // LSB-first bit ordering like desktop
+        }
     }
     
-    patternDisplay.setText(visualPattern, juce::dontSendNotification);
+    juce::String hex = "0x" + juce::String::toHexString(decimal).toUpperCase();
+    juce::String octal = "0o" + juce::String::formatted("%o", decimal);  // Octal format
+    juce::String decimalStr = juce::String(decimal);
+    
+    // Get accent information if present (placeholder for now)
+    juce::String accentInfo = "";
+    // TODO: Add accent pattern support
+    
+    // Combine all information like desktop version
+    juce::String displayText = "Onsets: " + onsetPositions + accentInfo + " | " + hex + " | " + octal + " | " + decimalStr;
+    
+    patternDisplayEditor.setText(displayText, juce::dontSendNotification);
 }
 
-
-void RhythmPatternExplorerAudioProcessorEditor::timerCallback()
+void RhythmPatternExplorerAudioProcessorEditor::updateStepSceneButton()
 {
-    // Don't update if user is actively selecting text or has focus
-    if (debugDisplay.hasKeyboardFocus(true))
-        return;
+    juce::String buttonText;
+    juce::String tooltip;
     
-    // Get current debug info from processor
-    juce::String currentInfo = audioProcessor.getDebugInfo();
-    
-    // Accumulate debug info with timestamps (keep last 20 lines)
-    static juce::StringArray debugLines;
-    static juce::String lastInfo = "";
-    
-    // Only add new info if it's different from the last one
-    if (currentInfo != "Ready" && !currentInfo.isEmpty() && currentInfo != lastInfo)
+    // Check if we have scene cycling (multiple scenes)
+    int sceneCount = audioProcessor.getSceneCount();
+    if (sceneCount > 1)
     {
-        juce::String timestamp = juce::Time::getCurrentTime().toString(false, true, true, true);
-        debugLines.add("[" + timestamp + "] " + currentInfo);
-        lastInfo = currentInfo;
-        
-        // Keep only last 20 lines
-        while (debugLines.size() > 20)
-            debugLines.remove(0);
-        
-        // Update display only if not being actively used
-        juce::String displayText = "Debug Log (tap to select all for copying):\n" + debugLines.joinIntoString("\n");
-        debugDisplay.setText(displayText, false);
-        
-        // Don't auto-scroll - let user manually scroll
+        // Scene cycling: show current scene index (1-based)
+        int currentScene = audioProcessor.getCurrentSceneIndex() + 1; // 1-based for display
+        buttonText = juce::String(currentScene);
+        tooltip = "Scene " + juce::String(currentScene) + " of " + juce::String(sceneCount) + ". Click to advance to next scene.";
+    }
+    else if (audioProcessor.hasProgressiveOffset())
+    {
+        // Progressive transformation: show current offset
+        int offset = audioProcessor.getProgressiveOffset();
+        buttonText = juce::String(offset);
+        tooltip = "Progressive transformation offset: " + juce::String(offset) + ". Click to advance.";
+    }
+    else
+    {
+        // Regular pattern: show current step (1-based)
+        int currentStep = audioProcessor.getCurrentStep() + 1;
+        buttonText = juce::String(currentStep);
+        tooltip = "Current step " + juce::String(currentStep) + ". Click to trigger pattern.";
+    }
+    
+    tickButton.setButtonText(buttonText);
+    tickButton.setTooltip(tooltip);
+}
+
+juce::Colour RhythmPatternExplorerAudioProcessorEditor::getBackgroundColour() const
+{
+    switch (currentBackgroundColor)
+    {
+        case BackgroundColor::White:  return juce::Colours::white;
+        case BackgroundColor::Green:  return juce::Colour(0xff48bb78);
+        case BackgroundColor::Orange: return juce::Colour(0xffff6b35);
+        case BackgroundColor::Blue:   return juce::Colour(0xff4299e1);
+        case BackgroundColor::Purple: return juce::Colour(0xff9f7aea);
+        default:                      return juce::Colour(0xff2d3748); // Dark
     }
 }
