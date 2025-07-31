@@ -200,9 +200,16 @@ PresetData PresetManager::getPresetData(const juce::String& name) const
 //==============================================================================
 juce::File PresetManager::getPresetDirectory() const
 {
-    return juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
-           .getChildFile("RhythmPatternExplorer")
-           .getChildFile("Presets");
+    // iOS apps must use userApplicationDataDirectory due to sandboxing
+    #if JUCE_IOS
+        return juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
+               .getChildFile("RhythmPatternExplorer")
+               .getChildFile("Presets");
+    #else
+        return juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
+               .getChildFile("RhythmPatternExplorer")
+               .getChildFile("Presets");
+    #endif
 }
 
 juce::File PresetManager::getPresetFile(const juce::String& name) const
