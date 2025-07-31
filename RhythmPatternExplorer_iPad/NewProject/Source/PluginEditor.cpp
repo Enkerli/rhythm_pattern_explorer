@@ -206,6 +206,64 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     addAndMakeVisible(deletePresetButton);
     deletePresetButton.setVisible(false);
     
+    // iOS-compatible inline preset saving components
+    presetNameEditor.setTextToShowWhenEmpty("Enter preset name...", juce::Colours::grey);
+    presetNameEditor.setFont(juce::Font(juce::FontOptions(juce::Font::getDefaultSansSerifFontName(), 14.0f, juce::Font::plain)));
+    presetNameEditor.onReturnKey = [this]() { 
+        auto name = presetNameEditor.getText().trim();
+        if (name.isNotEmpty()) {
+            saveCurrentPreset(name);
+            // Hide inline input
+            showingInlineInput = false;
+            savePresetButton.setVisible(true);
+            deletePresetButton.setVisible(true);
+            presetNameEditor.setVisible(false);
+            confirmSaveButton.setVisible(false);
+            cancelSaveButton.setVisible(false);
+            resized();
+        }
+    };
+    addAndMakeVisible(presetNameEditor);
+    presetNameEditor.setVisible(false);
+    
+    confirmSaveButton.setButtonText("✓");
+    confirmSaveButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff48bb78));
+    confirmSaveButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
+    confirmSaveButton.setTooltip("Save preset");
+    confirmSaveButton.onClick = [this]() {
+        auto name = presetNameEditor.getText().trim();
+        if (name.isNotEmpty()) {
+            saveCurrentPreset(name);
+            // Hide inline input
+            showingInlineInput = false;
+            savePresetButton.setVisible(true);
+            deletePresetButton.setVisible(true);
+            presetNameEditor.setVisible(false);
+            confirmSaveButton.setVisible(false);
+            cancelSaveButton.setVisible(false);
+            resized();
+        }
+    };
+    addAndMakeVisible(confirmSaveButton);
+    confirmSaveButton.setVisible(false);
+    
+    cancelSaveButton.setButtonText("✗");
+    cancelSaveButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xffef4444));
+    cancelSaveButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
+    cancelSaveButton.setTooltip("Cancel");
+    cancelSaveButton.onClick = [this]() {
+        // Hide inline input
+        showingInlineInput = false;
+        savePresetButton.setVisible(true);
+        deletePresetButton.setVisible(true);
+        presetNameEditor.setVisible(false);
+        confirmSaveButton.setVisible(false);
+        cancelSaveButton.setVisible(false);
+        resized();
+    };
+    addAndMakeVisible(cancelSaveButton);
+    cancelSaveButton.setVisible(false);
+    
     // Initialize WebView documentation (initially hidden)
 #if JUCE_WEB_BROWSER
     docsBrowser = std::make_unique<juce::WebBrowserComponent>();
@@ -450,8 +508,24 @@ void RhythmPatternExplorerAudioProcessorEditor::resized()
         
         // Preset management buttons below label
         auto buttonRow = sidebar.removeFromTop(30);
-        savePresetButton.setBounds(buttonRow.removeFromLeft(120).reduced(2));
-        deletePresetButton.setBounds(buttonRow.reduced(2));
+        
+        if (showingInlineInput)
+        {
+            // Layout for inline input: text editor with confirm/cancel buttons
+            auto inputArea = buttonRow.removeFromLeft(180);
+            presetNameEditor.setBounds(inputArea.reduced(2));
+            
+            auto confirmArea = buttonRow.removeFromLeft(30);
+            confirmSaveButton.setBounds(confirmArea.reduced(2));
+            
+            cancelSaveButton.setBounds(buttonRow.reduced(2));
+        }
+        else
+        {
+            // Normal layout: save and delete buttons
+            savePresetButton.setBounds(buttonRow.removeFromLeft(120).reduced(2));
+            deletePresetButton.setBounds(buttonRow.reduced(2));
+        }
         
         // Preset list takes remaining sidebar space
         presetBrowserList.setBounds(sidebar.reduced(5));
@@ -1960,27 +2034,54 @@ void RhythmPatternExplorerAudioProcessorEditor::closePresets()
 
 void RhythmPatternExplorerAudioProcessorEditor::showSavePresetDialog()
 {
-    auto alertWindow = new juce::AlertWindow("Save Preset", 
-                                           "Enter preset name:", 
-                                           juce::AlertWindow::QuestionIcon);
-    
-    alertWindow->addTextEditor("presetName", "", "Preset Name:");
-    alertWindow->addButton("Save", 1, juce::KeyPress(juce::KeyPress::returnKey));
-    alertWindow->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
-    
-    alertWindow->enterModalState(true, 
-        juce::ModalCallbackFunction::create([this, alertWindow](int result)
-        {
-            if (result == 1) // Save button clicked
+    #if JUCE_IOS
+        // iOS-compatible inline input method to avoid modal dialog freezing
+        showSavePresetInlineInput();
+    #else
+        // Desktop modal dialog (working fine)
+        auto alertWindow = new juce::AlertWindow("Save Preset", 
+                                               "Enter preset name:", 
+                                               juce::AlertWindow::QuestionIcon);
+        
+        alertWindow->addTextEditor("presetName", "", "Preset Name:");
+        alertWindow->addButton("Save", 1, juce::KeyPress(juce::KeyPress::returnKey));
+        alertWindow->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+        
+        alertWindow->enterModalState(true, 
+            juce::ModalCallbackFunction::create([this, alertWindow](int result)
             {
-                auto presetName = alertWindow->getTextEditorContents("presetName");
-                if (presetName.isNotEmpty())
+                if (result == 1) // Save button clicked
                 {
-                    saveCurrentPreset(presetName);
+                    auto presetName = alertWindow->getTextEditorContents("presetName");
+                    if (presetName.isNotEmpty())
+                    {
+                        saveCurrentPreset(presetName);
+                    }
                 }
-            }
-            delete alertWindow;
-        }), true);
+                delete alertWindow;
+            }), true);
+    #endif
+}
+
+void RhythmPatternExplorerAudioProcessorEditor::showSavePresetInlineInput()
+{
+    // Show inline input components
+    showingInlineInput = true;
+    
+    // Hide regular preset buttons
+    savePresetButton.setVisible(false);
+    deletePresetButton.setVisible(false);
+    
+    // Show inline input components
+    presetNameEditor.setVisible(true);
+    confirmSaveButton.setVisible(true);
+    cancelSaveButton.setVisible(true);
+    
+    // Focus the text editor
+    presetNameEditor.setText("");
+    presetNameEditor.grabKeyboardFocus();
+    
+    resized(); // Recalculate layout
 }
 
 void RhythmPatternExplorerAudioProcessorEditor::saveCurrentPreset(const juce::String& name)

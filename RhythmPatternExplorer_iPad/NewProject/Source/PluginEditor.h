@@ -123,6 +123,7 @@ public:
     // Preset management
     void togglePresets();
     void showSavePresetDialog();
+    void showSavePresetInlineInput(); // iOS-compatible version
     void saveCurrentPreset(const juce::String& name);
     void deleteSelectedPreset();
     
@@ -184,6 +185,12 @@ private:
     std::unique_ptr<PresetBrowserListModel> presetListModel;
     juce::TextButton savePresetButton;
     juce::TextButton deletePresetButton;
+    
+    // iOS-compatible inline preset saving
+    juce::TextEditor presetNameEditor;
+    juce::TextButton confirmSaveButton;
+    juce::TextButton cancelSaveButton;
+    bool showingInlineInput = false;
     
     // Minimal mode (Easter egg for very small windows)
     bool minimalMode = false;
