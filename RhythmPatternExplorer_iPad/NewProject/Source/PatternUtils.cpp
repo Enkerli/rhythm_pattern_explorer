@@ -117,11 +117,11 @@ namespace PatternUtils
      * - The recursive build function constructs the final pattern
      * 
      * EXAMPLES:
-     * - bjorklundAlgorithm(3, 8) -> 10010010 (tresillo rhythm)
-     * - bjorklundAlgorithm(5, 8) -> 10110110 (cinquillo rhythm)
-     * - bjorklundAlgorithm(3, 4) -> 1110 (maximally even 3-in-4)
+     * - bjorklundAlgorithm(3, 8) → 10010010 (tresillo rhythm)
+     * - bjorklundAlgorithm(5, 8) → 10110110 (cinquillo rhythm)  
+     * - bjorklundAlgorithm(3, 4) → 1110 (maximally even 3-in-4)
      * 
-     * @param beats Number of onsets to distribute (must be <= steps)
+     * @param beats Number of onsets to distribute (must be ≤ steps)
      * @param steps Total number of positions in the pattern
      * @return Binary pattern with beats distributed as evenly as possible
      */
@@ -336,11 +336,11 @@ namespace PatternUtils
      * - Each hex digit represents 4 consecutive pattern steps
      * 
      * CRITICAL EXAMPLES:
-     * - Pattern 1000 -> 0x1 (leftmost bit is LSB, so bit 0 = 1)
-     * - Pattern 0100 -> 0x2 (second bit is bit 1, so 2^1 = 2)
-     * - Pattern 0010 -> 0x4 (third bit is bit 2, so 2^2 = 4)  
-     * - Pattern 0001 -> 0x8 (rightmost bit is MSB, so 2^3 = 8)
-     * - Pattern 10010010 -> 0x94 (tresillo: 1*1 + 0*2 + 0*4 + 1*8 = 9, then 0*1 + 0*2 + 1*4 + 0*8 = 4)
+     * - Pattern 1000 → 0x1 (leftmost bit is LSB, so bit 0 = 1)
+     * - Pattern 0100 → 0x2 (second bit is bit 1, so 2^1 = 2)
+     * - Pattern 0010 → 0x4 (third bit is bit 2, so 2^2 = 4)  
+     * - Pattern 0001 → 0x8 (rightmost bit is MSB, so 2^3 = 8)
+     * - Pattern 10010010 → 0x94 (tresillo: 1*1 + 0*2 + 0*4 + 1*8 = 9, then 0*1 + 0*2 + 1*4 + 0*8 = 4)
      * 
      * USER WORKFLOW:
      * 1. User types: 0x94:8
@@ -374,10 +374,10 @@ namespace PatternUtils
                 if (pattern[groupStart + bitInGroup])
                 {
                     // CRITICAL: Left-to-right mapping - bit position maps directly to nibble bit
-                    // groupStart=0, bitInGroup=0 -> pattern[0] -> nibble bit 0 (LSB)
-                    // groupStart=0, bitInGroup=1 -> pattern[1] -> nibble bit 1
-                    // groupStart=0, bitInGroup=2 -> pattern[2] -> nibble bit 2  
-                    // groupStart=0, bitInGroup=3 -> pattern[3] -> nibble bit 3 (MSB of nibble)
+                    // groupStart=0, bitInGroup=0 → pattern[0] → nibble bit 0 (LSB)
+                    // groupStart=0, bitInGroup=1 → pattern[1] → nibble bit 1
+                    // groupStart=0, bitInGroup=2 → pattern[2] → nibble bit 2  
+                    // groupStart=0, bitInGroup=3 → pattern[3] → nibble bit 3 (MSB of nibble)
                     nibbleValue |= (1 << bitInGroup);
                 }
             }

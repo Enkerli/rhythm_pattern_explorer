@@ -2,11 +2,11 @@
   ==============================================================================
 
     AllManagers.cpp
-    Includes all manager implementations for easy Xcode project integration
+    Includes all manager implementations for Xcode project integration
     
     This file includes the implementation of all manager classes to ensure
-    they are compiled into the iPad project without needing to manually
-    add each .cpp file to the Xcode project.
+    they are compiled into the iPad project. The individual .cpp files
+    should NOT be added to the Xcode project to avoid duplicate symbols.
 
   ==============================================================================
 */
