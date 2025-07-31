@@ -1,8 +1,8 @@
 /*
   ==============================================================================
 
-    Rhythm Pattern Explorer iPad - AUv3 Plugin
-    Main Audio Processor Header
+    Rhythm Pattern Explorer - AUv3 Plugin
+    Main Audio Processor Header (Fixed)
 
   ==============================================================================
 */
@@ -18,15 +18,16 @@
 
 //==============================================================================
 /**
- * Main audio processor for Rhythm Pattern Explorer iPad AUv3 plugin
+ * Main audio processor for Rhythm Pattern Explorer AUv3 plugin
  * 
  * This class handles:
  * - MIDI input/output 
  * - MIDI effect processing (no audio synthesis)
+ * - Parameter management
  * - Pattern generation and analysis
- * - iPad-optimized UI integration
+ * - DAW transport synchronization
  */
-class RhythmPatternExplorerAudioProcessor : public juce::AudioProcessor
+class RhythmPatternExplorerAudioProcessor  : public juce::AudioProcessor
 {
 public:
     //==============================================================================
@@ -71,106 +72,288 @@ public:
     const PatternEngine& getPatternEngine() const { return patternEngine; }
     PatternEngine& getPatternEngine() { return patternEngine; }
     
-    // UPI Input for pattern creation
-    void setUPIInput(const juce::String& upiString);
-    void parseAndApplyUPI(const juce::String& upiPattern, bool resetAccentPosition = true);
-    juce::String getCurrentUPIInput() const { return currentUPIInput; }
     
-    // Current pattern access
-    std::vector<bool> getCurrentPattern() const { return currentPattern; }
-    int getCurrentStep() const { return currentStep; }
+    // Parameter access for editor
+    juce::AudioParameterBool* getUseHostTransportParameter() const { return useHostTransportParam; }
+    juce::AudioParameterInt* getMidiNoteParameter() const { return midiNoteParam; }
+    juce::AudioParameterBool* getTickParameter() const { return tickParam; }
+    juce::AudioParameterChoice* getPatternLengthUnitParameter() const { return patternLengthUnitParam; }
+    juce::AudioParameterChoice* getPatternLengthValueParameter() const { return patternLengthValueParam; }
+    juce::AudioParameterChoice* getSubdivisionParameter() const { return subdivisionParam; }
     
-    // Scene management access
-    int getSceneCount() const {
-        return (sceneManager && sceneManager->hasScenes()) ? sceneManager->getSceneCount() : 1;
-    }
-    int getCurrentSceneIndex() const {
-        return (sceneManager && sceneManager->hasScenes()) ? sceneManager->getCurrentSceneIndex() : 0;
-    }
+    // Accent parameter access for editor
+    juce::AudioParameterFloat* getAccentVelocityParameter() const { return accentVelocityParam; }
+    juce::AudioParameterFloat* getUnaccentedVelocityParameter() const { return unaccentedVelocityParam; }
+    juce::AudioParameterInt* getAccentPitchOffsetParameter() const { return accentPitchOffsetParam; }
     
-    // Progressive transformation access  
-    bool hasProgressiveOffset() const {
-        if (progressiveManager && progressiveManager->hasProgressiveState(currentUPIInput)) {
-            return progressiveManager->hasProgressiveOffset(currentUPIInput);
+    // Helper to convert pattern length choice to float value
+    float getPatternLengthValue() const;
+    
+    // Helper to convert subdivision choice to beat fraction
+    double getSubdivisionInBeats(int subdivisionIndex) const;
+    
+    // Phase 3: Advanced Host Sync - Automatic pattern length adjustment
+    double calculateAutoPatternLength(const std::vector<bool>& pattern) const;
+    
+    // Internal state access for editor
+    float getCurrentBPM() const { return currentBPM; }
+    void setCurrentBPM(float bpm) { currentBPM = bpm; updateTiming(); }
+    bool getInternalPlaying() const { return internalPlaying; }
+    void setInternalPlaying(bool playing) { internalPlaying = playing; }
+    void triggerPatternUpdate() { if (!currentUPIInput.isEmpty()) parseAndApplyUPI(currentUPIInput); }
+    
+    // Phase 3: Advanced Host Sync - Loop sync access
+    bool getHostIsLooping() const { return hostIsLooping; }
+    bool getEnableLoopSync() const { return enableLoopSync; }
+    void setEnableLoopSync(bool enable) { enableLoopSync = enable; }
+    
+    // Playback state
+    int getCurrentStep() const { return currentStep.load(); }
+    bool isCurrentlyPlaying() const { 
+        // REFINED: Check if we're getting recent processBlock calls AND transport is playing
+        double currentTime = juce::Time::getMillisecondCounter();
+        bool recentProcessBlock = (currentTime - lastProcessBlockTime) < 100.0; // Within last 100ms
+        
+        // First try host transport, fall back to recent processBlock activity
+        if (useHostTransportParam && useHostTransportParam->get()) {
+            return hostIsPlaying && recentProcessBlock;
+        } else {
+            return internalPlaying && recentProcessBlock;
         }
-        return false;
     }
+    
+    // UPI pattern input methods
+    void setUPIInput(const juce::String& upiPattern);
+    juce::String getUPIInput() const { return currentUPIInput; }
+    void parseAndApplyUPI(const juce::String& upiPattern, bool resetAccentPosition = true);
+    void applyCurrentScenePattern();
+    
+    // Background color persistence
+    int getCurrentBackgroundColor() const { return currentBackgroundColor; }
+    void setCurrentBackgroundColor(int color) { currentBackgroundColor = color; }
+    
+    // UPI history (ticker tape feature)
+    const juce::StringArray& getUPIHistory() const { return upiHistory; }
+    void addToUPIHistory(const juce::String& upiPattern);
+    void clearUPIHistory() { upiHistory.clear(); }
+    
+    // Preset management
+    PresetManager& getPresetManager() { return presetManager; }
+    const PresetManager& getPresetManager() const { return presetManager; }
+    
+    // Interactive pattern modification methods
+    void togglePatternStep(int stepIndex);
+    void toggleAccentAtStep(int stepIndex);
+    bool isValidStepIndex(int stepIndex) const;
+    void updateUPIFromCurrentPattern();
     
     // Progressive offset support (universal for all patterns)
     void resetProgressiveOffset() { 
         if (progressiveManager) {
             progressiveManager->resetProgressiveOffset(currentUPIInput);
         }
+        progressiveOffset = 0; // Legacy fallback
     }
     void advanceProgressiveOffset() { 
         if (progressiveManager) {
             progressiveManager->triggerProgressive(currentUPIInput, patternEngine);
         }
+        progressiveOffset += progressiveStep; // Legacy fallback
     }
     int getProgressiveOffset() const { 
+        // TRANSITION: Use ProgressiveManager if available, fallback to legacy for safety
         if (progressiveManager && progressiveManager->hasProgressiveState(currentUPIInput)) {
             return progressiveManager->getProgressiveOffsetValue(currentUPIInput);
         }
-        return 0;
+        return progressiveOffset; // Legacy fallback
     }
     
-    // Progressive lengthening support
+    // Scene information access for UI
+    int getCurrentSceneIndex() const { 
+        // TRANSITION: Use SceneManager if available, fallback to legacy for safety
+        return sceneManager ? sceneManager->getCurrentSceneIndex() : currentSceneIndex; 
+    }
+    int getSceneCount() const { 
+        // TRANSITION: Use SceneManager if available, fallback to legacy for safety
+        return sceneManager ? sceneManager->getSceneCount() : static_cast<int>(scenePatterns.size()); 
+    }
+    
+    // Progressive transformation access for UI  
+    int getProgressiveTriggerCount() const;
+    bool hasProgressiveOffset() const { 
+        // TRANSITION: Use ProgressiveManager if available, fallback to legacy for safety
+        if (progressiveManager && progressiveManager->hasProgressiveState(currentUPIInput)) {
+            return progressiveManager->hasProgressiveOffset(currentUPIInput);
+        }
+        return patternEngine.hasProgressiveOffsetEnabled(); // Legacy fallback
+    }
+    
+    // Progressive lengthening support (universal for all patterns)
     void resetProgressiveLengthening() { 
         if (progressiveManager) {
             progressiveManager->resetProgressiveLengthening(currentUPIInput);
         }
+        progressiveLengthening = 0; baseLengthPattern.clear(); // Legacy fallback
     }
+    void advanceProgressiveLengthening();
     
-    // Basic parameters
-    juce::AudioParameterInt* getMidiNoteParameter() const { return midiNoteParam; }
-    juce::AudioParameterBool* getTickParameter() const { return tickParam; }
-    
-    // Debug info for UI
-    juce::String getDebugInfo() const { return debugInfo; }
-    
-    // Advanced management system access
-    PresetManager& getPresetManager() { return presetManager; }
-    const PresetManager& getPresetManager() const { return presetManager; }
-    
-    // Scene management functions
+    // Scene cycling support (universal for all patterns)
+    void resetScenes() { 
+        currentSceneIndex = 0; 
+        scenePatterns.clear(); 
+        sceneProgressiveOffsets.clear();
+        sceneProgressiveSteps.clear();
+        sceneBasePatterns.clear();
+        sceneProgressiveLengthening.clear();
+        sceneBaseLengthPatterns.clear();
+    }
     void advanceScene();
-    void applyCurrentScenePattern();
     
+    // Accent system access for UI and processing
+    bool getHasAccentPattern() const { return hasAccentPattern; }
+    const std::vector<bool>& getCurrentAccentPattern() const { return currentAccentPattern; }
+    int getGlobalOnsetCounter() const { return globalOnsetCounter; }
+    bool shouldOnsetBeAccented(int onsetNumber) const; // DEPRECATED: onset-based logic
+    bool shouldStepBeAccented(int stepIndex) const;    // NEW: step-based logic for MIDI alignment
+    std::vector<bool> getCurrentAccentMap() const;
+    bool checkPatternChanged(); // Check and reset pattern changed flag
+    void resetAccentSystem();
+    
+    // Lascabettes quantization access for UI and processing
+    bool getHasQuantization() const { return hasQuantization; }
+    int getOriginalStepCount() const { return originalStepCount; }
+    int getQuantizedStepCount() const { return quantizedStepCount; }
+    bool getQuantizationClockwise() const { return quantizationClockwise; }
+    int getOriginalOnsetCount() const { return originalOnsetCount; }
+    int getQuantizedOnsetCount() const { return quantizedOnsetCount; }
+
 private:
     //==============================================================================
-    // Core pattern engine
+    // Pattern Engine
     PatternEngine patternEngine;
     
-    // Current state
+    // MIDI effect mode - no audio synthesis components needed
+    
+    // Timing and sequencing
+    double currentSampleRate = 44100.0;
+    int samplesPerStep = 0;
+    int currentSample = 0;
+    std::atomic<int> currentStep{0};
+    bool wasPlaying = false;
+    
+    // DAW transport sync
+    bool useHostTransport = true;
+    double lastHostPosition = 0.0;
+    bool hostIsPlaying = false;
+    mutable double lastProcessBlockTime = 0.0;
+    
+    // Host loop sync (Phase 3: Advanced Host Sync)
+    bool hostIsLooping = false;
+    double hostLoopStart = 0.0;
+    double hostLoopEnd = 0.0;
+    bool enableLoopSync = true;
+    
+    // Internal state (not exposed as parameters)
+    float currentBPM = 120.0f;
+    bool internalPlaying = false;
+    bool lastTickState = false;
+    int tickResetCounter = 0;
+    
+    // UPI pattern input
     juce::String currentUPIInput;
     juce::String originalUPIInput; // Preserve original pattern with progressive/scene syntax
-    std::vector<bool> currentPattern;
+    juce::String lastParsedUPI;
+    juce::String currentProgressivePatternKey; // Track current progressive pattern for step counting
     
-    // MIDI processing
-    juce::MidiMessageCollector midiCollector;
-    double currentSampleRate { 44100.0 };
+    // Background color persistence
+    int currentBackgroundColor = 0; // Default to Dark background
     
-    // Timing and playback
-    int currentStep { 0 };
-    double samplesPerStep { 0.0 };
-    double sampleCounter { 0.0 };
+    // UPI history (ticker tape feature)
+    juce::StringArray upiHistory;
+    static constexpr int MAX_UPI_HISTORY = 20;
     
-    // Parameters
-    juce::AudioParameterInt* midiNoteParam;
-    juce::AudioParameterBool* tickParam;
-    
-    // Advanced management systems
+    // Preset management
     PresetManager presetManager;
+    
+    // Lascabettes quantization metadata
+    bool hasQuantization = false;
+    int originalStepCount = 0;
+    int quantizedStepCount = 0;
+    bool quantizationClockwise = true;
+    int originalOnsetCount = 0;
+    int quantizedOnsetCount = 0;
+    
+    
+    // Progressive offset support (works for any pattern)
+    int progressiveOffset = 0;      // Current accumulated offset
+    int progressiveStep = 0;        // How much to advance each time
+    juce::String basePattern;       // Pattern without progressive syntax
+    
+    // Progressive lengthening support (works for any pattern)
+    int progressiveLengthening = 0; // How many steps to add each time
+    std::vector<bool> baseLengthPattern; // Original pattern for lengthening
+    std::mt19937 randomGenerator;   // For bell curve random step generation
+    
+    // Scene cycling support (works for any pattern)
+    juce::StringArray scenePatterns; // List of patterns to cycle through - LEGACY, being replaced
+    int currentSceneIndex = 0;      // Current scene position - LEGACY, being replaced
+    
+    // Per-scene progressive state tracking - LEGACY, being replaced
+    std::vector<int> sceneProgressiveOffsets;     // Current offset for each scene
+    std::vector<int> sceneProgressiveSteps;       // Step size for each scene
+    std::vector<juce::String> sceneBasePatterns;  // Base pattern for each scene
+    std::vector<int> sceneProgressiveLengthening; // Current lengthening for each scene
+    std::vector<std::vector<bool>> sceneBaseLengthPatterns; // Base patterns for lengthening
+    
+    // New encapsulated management - TRANSITION: Running parallel with legacy for safety
     std::unique_ptr<SceneManager> sceneManager;
     std::unique_ptr<ProgressiveManager> progressiveManager;
     
-    // Helper methods
-    void updateTiming(juce::Optional<juce::AudioPlayHead::PositionInfo> position = {});
-    void processPatternStep(juce::MidiBuffer& midiMessages, int sampleNumber);
-    void processPatternStep(juce::MidiBuffer& midiMessages, int sampleNumber, int stepToProcess);
+    // Thread safety
+    juce::CriticalSection processingLock;
     
-private:
-    juce::String debugInfo = "Ready";
+    // Pattern change notification for UI updates
+    std::atomic<bool> patternChanged{false};
+    
+    // Accent system - single source of truth
+    bool hasAccentPattern = false;
+    std::vector<bool> currentAccentPattern;
+    int globalOnsetCounter = 0;           // Single source of truth: counts all onsets since pattern start
+    int uiAccentOffset = 0;               // Stable accent offset for UI display (updates only at cycle boundaries)
+    bool accentPatternManuallyModified = false; // Flag to prevent automatic accent cycling after manual edits
+    bool patternManuallyModified = false;       // Flag to indicate pattern has been manually edited (suspension mode)
+    std::vector<bool> suspendedRhythmPattern;   // Preserve manually modified rhythm pattern
+    std::vector<bool> suspendedAccentPattern;   // Preserve manually modified accent pattern
+    
+    // Parameters - implementation details
+    juce::AudioParameterBool* useHostTransportParam;
+    juce::AudioParameterInt* midiNoteParam;
+    juce::AudioParameterBool* tickParam;
+    juce::AudioParameterChoice* patternLengthUnitParam;
+    juce::AudioParameterChoice* patternLengthValueParam;
+    juce::AudioParameterChoice* subdivisionParam;
+    
+    // Accent parameters
+    juce::AudioParameterFloat* accentVelocityParam;
+    juce::AudioParameterFloat* unaccentedVelocityParam;
+    juce::AudioParameterInt* accentPitchOffsetParam;
+    
+    // AudioProcessorValueTreeState for robust state management
+    juce::AudioProcessorValueTreeState parameters;
+    
+    // Helper methods
+    static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
+    void updateTiming();
+    void processStep(juce::MidiBuffer& midiBuffer, int samplePosition, int stepToProcess);
+    void triggerNote(juce::MidiBuffer& midiBuffer, int samplePosition, bool isAccented = false);
+    void syncBPMWithHost(const juce::AudioPlayHead::CurrentPositionInfo& posInfo);
+    void syncPositionWithHost(const juce::AudioPlayHead::CurrentPositionInfo& posInfo);
+    void checkMidiInputForTriggers(juce::MidiBuffer& midiMessages);
+    
+    
+    // Pattern manipulation
+    std::vector<bool> generateBellCurveRandomSteps(int numSteps);
+    std::vector<bool> lengthenPattern(const std::vector<bool>& pattern, int additionalSteps);
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (RhythmPatternExplorerAudioProcessor)
 };

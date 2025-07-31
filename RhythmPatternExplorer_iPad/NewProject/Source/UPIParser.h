@@ -148,7 +148,6 @@ private:
     static std::vector<bool> applyProgressiveTransformation(const std::vector<bool>& basePattern, char transformerType, int targetOnsets);
     static void resetProgressiveState(const juce::String& patternKey);
     static void resetAllProgressiveStates();
-    static int getProgressiveStepCount(const juce::String& patternKey);
     static int getCurrentProgressiveOffset();
     
     // Progressive offset engine support
@@ -158,4 +157,7 @@ private:
 public:
     // Engine setup for progressive offset support
     static void setProgressiveOffsetEngine(PatternEngine* engine);
+    
+    // Progressive transformation public access for desktop processor compatibility
+    static int getProgressiveStepCount(const juce::String& patternKey);
 };

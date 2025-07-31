@@ -24,7 +24,7 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     upiTextEditor.setTextToShowWhenEmpty("Enter pattern: E(3,8), P(5,0), etc.", juce::Colours::grey);
     upiTextEditor.setFont(juce::Font(juce::FontOptions(juce::Font::getDefaultMonospacedFontName(), 14.0f, juce::Font::plain)));
     upiTextEditor.onReturnKey = [this]() { parseUPIPattern(); };
-    upiTextEditor.setText(audioProcessor.getCurrentUPIInput(), juce::dontSendNotification);
+    upiTextEditor.setText(audioProcessor.getUPIInput(), juce::dontSendNotification);
     addAndMakeVisible(upiTextEditor);
     
     // Scene/Step Button (equivalent to Parse/Tick) - shows current step/scene
@@ -119,7 +119,7 @@ void RhythmPatternExplorerAudioProcessorEditor::timerCallback()
 
 void RhythmPatternExplorerAudioProcessorEditor::drawPatternCircle(juce::Graphics& g, juce::Rectangle<int> bounds)
 {
-    auto pattern = audioProcessor.getCurrentPattern();
+    auto pattern = audioProcessor.getPatternEngine().getCurrentPattern();
     if (pattern.empty())
         return;
     
@@ -218,7 +218,7 @@ void RhythmPatternExplorerAudioProcessorEditor::parseUPIPattern()
     if (upiInput.isNotEmpty())
     {
         // Check if this is a different pattern than what's currently loaded
-        if (upiInput != audioProcessor.getCurrentUPIInput())
+        if (upiInput != audioProcessor.getUPIInput())
         {
             // New pattern - send to processor for initialization
             audioProcessor.setUPIInput(upiInput);
@@ -243,7 +243,7 @@ void RhythmPatternExplorerAudioProcessorEditor::onParseButtonClicked()
 void RhythmPatternExplorerAudioProcessorEditor::updatePatternDisplay()
 {
     // Get current pattern from processor
-    auto currentPattern = audioProcessor.getCurrentPattern();
+    auto currentPattern = audioProcessor.getPatternEngine().getCurrentPattern();
     
     if (currentPattern.empty())
     {
