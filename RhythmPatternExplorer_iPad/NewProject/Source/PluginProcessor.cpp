@@ -316,8 +316,8 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
 
-    // Clear unused output channels
-    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
+    // CRITICAL FIX: Clear ALL audio channels - this is a MIDI-only plugin and should produce NO audio
+    for (auto i = 0; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
     // Check for incoming MIDI that could trigger pattern regeneration
