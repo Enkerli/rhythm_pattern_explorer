@@ -802,9 +802,23 @@ void RhythmPatternExplorerAudioProcessor::setStateInformation (const void* data,
             }
             
             // Apply the restored UPI pattern after all state has been loaded
-            if (!currentUPIInput.isEmpty())
+            // CRITICAL: Use originalUPIInput if available (contains full scene syntax)
+            juce::String patternToRestore = originalUPIInput.isEmpty() ? currentUPIInput : originalUPIInput;
+            if (!patternToRestore.isEmpty())
             {
-                parseAndApplyUPI(currentUPIInput);
+                // CRITICAL FIX: Reset ALL scene and progressive state before parsing
+                // This prevents inconsistencies between saved scene state and fresh parsing
+                resetScenes();
+                resetAccentSystem();
+                if (sceneManager) {
+                    sceneManager->resetScenes();
+                }
+                if (progressiveManager) {
+                    progressiveManager->clearAllProgressiveStates();
+                }
+                
+                // Now parse the pattern fresh - this will rebuild all scene state correctly
+                parseAndApplyUPI(patternToRestore);
             }
             
             updateTiming();
@@ -868,6 +882,14 @@ void RhythmPatternExplorerAudioProcessor::setStateInformation (const void* data,
             if (progressiveManager)
             {
                 progressiveManager->clearAllProgressiveStates();
+            }
+            
+            // CRITICAL FIX: Re-parse the pattern to set up scenes properly (legacy format)
+            // Use originalUPIInput if available (contains full scene syntax)
+            juce::String patternToRestore = originalUPIInput.isEmpty() ? currentUPIInput : originalUPIInput;
+            if (!patternToRestore.isEmpty())
+            {
+                parseAndApplyUPI(patternToRestore);
             }
             
             updateTiming();
