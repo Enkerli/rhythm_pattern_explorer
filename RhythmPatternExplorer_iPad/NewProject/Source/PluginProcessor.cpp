@@ -818,7 +818,13 @@ void RhythmPatternExplorerAudioProcessor::setStateInformation (const void* data,
                 }
                 
                 // Now parse the pattern fresh - this will rebuild all scene state correctly
+                // CRITICAL: Preserve currentUPIInput after parsing for Tick button functionality
+                juce::String preservedCurrentUPI = currentUPIInput;
                 parseAndApplyUPI(patternToRestore);
+                // Restore currentUPIInput if it was a scene pattern, so Tick button works
+                if (patternToRestore.contains("|")) {
+                    currentUPIInput = patternToRestore;
+                }
             }
             
             updateTiming();
@@ -890,6 +896,10 @@ void RhythmPatternExplorerAudioProcessor::setStateInformation (const void* data,
             if (!patternToRestore.isEmpty())
             {
                 parseAndApplyUPI(patternToRestore);
+                // Restore currentUPIInput if it was a scene pattern, so Tick button works
+                if (patternToRestore.contains("|")) {
+                    currentUPIInput = patternToRestore;
+                }
             }
             
             updateTiming();
