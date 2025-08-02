@@ -603,17 +603,19 @@ void ProgressiveManager::loadProgressiveStatesFromValueTree(const juce::ValueTre
         // Restore baseLengthPattern from string
         juce::String baseLengthPatternString = stateNode.getProperty("baseLengthPattern", juce::String());
         state.baseLengthPattern.clear();
+        auto chars1 = baseLengthPatternString.getCharPointer();
         for (int j = 0; j < baseLengthPatternString.length(); ++j)
         {
-            state.baseLengthPattern.push_back(baseLengthPatternString[j] == '1');
+            state.baseLengthPattern.push_back(chars1[j] == '1');
         }
         
         // Restore currentLengthenedPattern from string
         juce::String currentLengthenedPatternString = stateNode.getProperty("currentLengthenedPattern", juce::String());
         state.currentLengthenedPattern.clear();
+        auto chars2 = currentLengthenedPatternString.getCharPointer();
         for (int j = 0; j < currentLengthenedPatternString.length(); ++j)
         {
-            state.currentLengthenedPattern.push_back(currentLengthenedPatternString[j] == '1');
+            state.currentLengthenedPattern.push_back(chars2[j] == '1');
         }
         
         // Progressive Transformation (>N)
@@ -625,9 +627,10 @@ void ProgressiveManager::loadProgressiveStatesFromValueTree(const juce::ValueTre
         // Restore currentTransformedPattern from string
         juce::String currentTransformedPatternString = stateNode.getProperty("currentTransformedPattern", juce::String());
         state.currentTransformedPattern.clear();
+        auto chars3 = currentTransformedPatternString.getCharPointer();
         for (int j = 0; j < currentTransformedPatternString.length(); ++j)
         {
-            state.currentTransformedPattern.push_back(currentTransformedPatternString[j] == '1');
+            state.currentTransformedPattern.push_back(chars3[j] == '1');
         }
         
         // LRU tracking

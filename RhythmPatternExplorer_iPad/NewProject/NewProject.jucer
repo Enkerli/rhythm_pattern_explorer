@@ -6,6 +6,14 @@
               pluginCharacteristicsValue="pluginIsMidiEffectPlugin,pluginProducesMidiOut,pluginWantsMidiIn"
               pluginManufacturerCode="Enke" pluginCode="RPEi">
   <MAINGROUP id="uIXukB" name="Rhythm Pattern Explorer iPad">
+    <GROUP id="{PLUGIN-ICONS}" name="Plugin Icons">
+      <FILE id="PluginIcon32" name="plugin-icon-32.png" compile="0" resource="1"
+            file="plugin-icon-32.png"/>
+      <FILE id="PluginIcon64" name="plugin-icon-64.png" compile="0" resource="1"
+            file="plugin-icon-64.png"/>
+      <FILE id="PluginIcon128" name="plugin-icon-128.png" compile="0" resource="1"
+            file="plugin-icon-128.png"/>
+    </GROUP>
     <GROUP id="{96A900E3-22A5-1BBF-BD7A-A481BEA56D93}" name="Source">
       <FILE id="SJvONR" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>

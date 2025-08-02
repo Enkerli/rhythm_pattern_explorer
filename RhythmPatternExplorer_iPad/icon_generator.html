@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RPE Icon Generator</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f0f0f0;
+            padding: 20px;
+            text-align: center;
+        }
+        .generator {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        canvas {
+            border: 1px solid #ddd;
+            margin: 20px;
+            border-radius: 15px;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        button {
+            background: #007AFF;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 0 10px;
+        }
+        button:hover { background: #0056CC; }
+        .download-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .download-grid button {
+            font-size: 12px;
+            padding: 8px 12px;
+        }
+        .preview-text {
+            color: #666;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="generator">
+        <h1>🎵 Rhythm Pattern Explorer Icon Generator</h1>
+        <p>Accented Quintillo Pattern: E(5,8) with {10} accent</p>
+        
+        <canvas id="iconCanvas" width="512" height="512"></canvas>
+        
+        <div class="preview-text">
+            Pattern: <strong>10110100</strong> (quintillo)<br>
+            Accent: <strong>{10}</strong> (red slices on onsets 0,2)<br>
+            Design: Donut with radial slices matching GUI
+        </div>
+        
+        <div class="controls">
+            <button onclick="drawIcon(512)">Generate 512px Preview</button>
+            <button onclick="drawIcon(1024)">Generate 1024px (App Store)</button>
+        </div>
+        
+        <div class="download-grid">
+            <button onclick="downloadSize(1024, 'Icon-AppStore-1024.png')">App Store (1024px)</button>
+            <button onclick="downloadSize(180, 'Icon-@3x.png')">iPhone 3x (180px)</button>
+            <button onclick="downloadSize(120, 'Icon-60@2x.png')">iPhone 2x (120px)</button>
+            <button onclick="downloadSize(167, 'Icon-83.5@2x.png')">iPad Pro (167px)</button>
+            <button onclick="downloadSize(152, 'Icon-76@2x.png')">iPad 2x (152px)</button>
+            <button onclick="downloadSize(76, 'Icon-76.png')">iPad 1x (76px)</button>
+            <button onclick="downloadSize(120, 'Icon-Spotlight-40@3x.png')">iPhone Spotlight 3x (120px)</button>
+            <button onclick="downloadSize(80, 'Icon-Spotlight-40@2x.png')">iPhone Spotlight 2x (80px)</button>
+            <button onclick="downloadSize(80, 'Icon-Spotlight-40@2x-1.png')">iPad Spotlight 2x (80px)</button>
+            <button onclick="downloadSize(40, 'Icon-Spotlight-40.png')">iPad Spotlight 1x (40px)</button>
+            <button onclick="downloadSize(87, 'Icon-29@3x.png')">iPhone Settings 3x (87px)</button>
+            <button onclick="downloadSize(58, 'Icon-29@2x.png')">iPhone Settings 2x (58px)</button>
+            <button onclick="downloadSize(29, 'Icon-29.png')">iPhone Settings 1x (29px)</button>
+            <button onclick="downloadSize(58, 'Icon-Small@2x-1.png')">iPad Settings 2x (58px)</button>
+            <button onclick="downloadSize(29, 'Icon-Small-1.png')">iPad Settings 1x (29px)</button>
+            <button onclick="downloadSize(60, 'Icon-Notification-20@3x.png')">iPhone Notification 3x (60px)</button>
+            <button onclick="downloadSize(40, 'Icon-Notification-20@2x.png')">iPhone Notification 2x (40px)</button>
+            <button onclick="downloadSize(40, 'Icon-Notifications-20@2x.png')">iPad Notification 2x (40px)</button>
+            <button onclick="downloadSize(20, 'Icon-Notifications-20.png')">iPad Notification 1x (20px)</button>
+        </div>
+        
+        <h3 style="margin-top: 30px;">🎛️ AUv3 Plugin Icons (for DAW Hosts)</h3>
+        <div class="download-grid">
+            <button onclick="downloadSize(128, 'plugin-icon-128.png')">Plugin 128px (AUM, Cubasis)</button>
+            <button onclick="downloadSize(64, 'plugin-icon-64.png')">Plugin 64px (Logic, AUM)</button>
+            <button onclick="downloadSize(32, 'plugin-icon-32.png')">Plugin 32px (Logic, GarageBand)</button>
+        </div>
+        
+        <div style="margin-top: 30px; padding: 20px; background: #f8f8f8; border-radius: 8px; text-align: left;">
+            <h3>📋 Installation Instructions:</h3>
+            <ol>
+                <li><strong>Download ALL icon sizes above</strong> - each button creates the exact filename needed</li>
+                <li><strong>Navigate to:</strong><br>
+                    <code style="background: #e8e8e8; padding: 2px 6px; border-radius: 4px; font-size: 11px;">
+                    NewProject/Builds/iOS/Rhythm Pattern Explorer iPad/Images.xcassets/AppIcon.appiconset/
+                    </code>
+                </li>
+                <li><strong>Replace ALL PNG files</strong> with your downloaded icons (exact filename matches required)</li>
+                <li><strong>Clean build</strong> in Xcode to refresh icon cache</li>
+                <li><strong>Reinstall</strong> to device - icons will appear in iOS Springboard AND DAW hosts!</li>
+            </ol>
+            <div style="background: #fff3cd; padding: 10px; border-radius: 4px; margin-top: 15px;">
+                <strong>⚠️ Critical:</strong> The filename <code>Icon-Notifications-20.png</code> is different from <code>Icon-Notification-20@2x.png</code> - download both separately!
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('iconCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        function drawIcon(size) {
+            // Resize canvas
+            canvas.width = size;
+            canvas.height = size;
+            
+            // Use the same drawing function
+            drawIconToCanvas(ctx, size);
+        }
+        
+        function downloadSize(targetSize, filename) {
+            // Create temporary canvas at target size
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCanvas.width = targetSize;
+            tempCanvas.height = targetSize;
+            
+            // Draw icon at target size
+            drawIconToCanvas(tempCtx, targetSize);
+            
+            // Download
+            tempCanvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+        }
+        
+        function drawIconToCanvas(ctx, size) {
+            const pattern = [1,0,1,1,0,1,0,0];
+            const accents = [1,0];
+            const numSteps = pattern.length;
+            
+            const center = size / 2;
+            const maxRadius = size * 0.38;  // Match GUI: maxRadius
+            const innerRadius = maxRadius * 0.15;  // Match GUI: 15% inner radius
+            
+            // Background
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#2d2d2d');
+            gradient.addColorStop(1, '#1a1a1a');
+            
+            ctx.fillStyle = gradient;
+            const cornerRadius = size / 6;
+            ctx.beginPath();
+            ctx.roundRect(0, 0, size, size, cornerRadius);
+            ctx.fill();
+            
+            // Draw donut slices - matching GUI exactly
+            let onsetCounter = 0;
+            const sliceAngle = (2 * Math.PI) / numSteps;
+            
+            for (let i = 0; i < numSteps; i++) {
+                // Match GUI: start at 12 o'clock, center slice 0 there
+                const startAngle = (i * sliceAngle) - Math.PI/2 - (sliceAngle * 0.5);
+                const endAngle = startAngle + sliceAngle;
+                
+                if (pattern[i]) { // Onset slice
+                    const isAccented = accents[onsetCounter % accents.length];
+                    
+                    // Create donut slice path
+                    ctx.beginPath();
+                    // Outer arc
+                    ctx.arc(center, center, maxRadius, startAngle, endAngle);
+                    // Inner arc (reverse direction)
+                    ctx.arc(center, center, innerRadius, endAngle, startAngle, true);
+                    ctx.closePath();
+                    
+                    if (isAccented) {
+                        // Split accent slice: inner red, outer bright red
+                        const midRadius = innerRadius + (maxRadius - innerRadius) * 0.5;
+                        
+                        // Inner half (darker red)
+                        ctx.beginPath();
+                        ctx.arc(center, center, midRadius, startAngle, endAngle);
+                        ctx.arc(center, center, innerRadius, endAngle, startAngle, true);
+                        ctx.closePath();
+                        ctx.fillStyle = '#cc3333';
+                        ctx.fill();
+                        
+                        // Outer half (bright red)
+                        ctx.beginPath();
+                        ctx.arc(center, center, maxRadius, startAngle, endAngle);
+                        ctx.arc(center, center, midRadius, endAngle, startAngle, true);
+                        ctx.closePath();
+                        ctx.fillStyle = '#ff4444';
+                        ctx.fill();
+                        
+                        // Glow effect
+                        ctx.shadowColor = '#ff4444';
+                        ctx.shadowBlur = size * 0.01;
+                        ctx.fill();
+                        ctx.shadowBlur = 0;
+                    } else {
+                        // Regular onset (green)
+                        ctx.fillStyle = '#4CAF50';
+                        ctx.fill();
+                    }
+                    
+                    // Thick outline for onsets
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = size * 0.003;
+                    ctx.stroke();
+                    
+                    onsetCounter++;
+                }
+            }
+            
+            // Draw inner circle to create donut hole (match GUI)
+            ctx.beginPath();
+            ctx.arc(center, center, innerRadius, 0, 2 * Math.PI);
+            ctx.fillStyle = gradient; // Same as background
+            ctx.fill();
+            
+            // Draw slice separator lines (match GUI)
+            ctx.strokeStyle = '#555555';
+            ctx.lineWidth = size * 0.002;
+            
+            for (let i = 0; i < numSteps; i++) {
+                const angle = (i * sliceAngle) - Math.PI/2 + (sliceAngle * 0.5);
+                const x1 = center + innerRadius * Math.cos(angle);
+                const y1 = center + innerRadius * Math.sin(angle);
+                const x2 = center + maxRadius * Math.cos(angle);
+                const y2 = center + maxRadius * Math.sin(angle);
+                
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+            }
+        }
+        
+        // Initial draw
+        drawIcon(512);
+    </script>
+</body>
+</html>

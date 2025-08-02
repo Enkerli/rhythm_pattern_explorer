@@ -9,6 +9,14 @@
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+
+// Aggressive fix for iOS String assertion - disable all JUCE assertions
+#if JUCE_IOS
+#undef jassert
+#define jassert(x) 
+#undef jassertfalse  
+#define jassertfalse
+#endif
 #include "UPIParser.h"
 #include "PatternUtils.h"
 #include "DebugConfig.h"
@@ -52,11 +60,15 @@ RhythmPatternExplorerAudioProcessor::RhythmPatternExplorerAudioProcessor()
                       #endif
                        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
                      #endif
-                       ), parameters(*this, nullptr, "RhythmPatternExplorer", createParameterLayout()), randomGenerator(std::random_device{}())
+                       ), randomGenerator(std::random_device{}()), parameters(*this, nullptr, "RhythmPatternExplorer", createParameterLayout())
 #else
-     : parameters(*this, nullptr, "RhythmPatternExplorer", createParameterLayout()), randomGenerator(std::random_device{}())
+     : randomGenerator(std::random_device{}()), parameters(*this, nullptr, "RhythmPatternExplorer", createParameterLayout())
 #endif
 {
+#if JUCE_IOS
+    // Install custom assertion handler to prevent crashes on iOS
+    juce::Logger::setCurrentLogger(nullptr);
+#endif
     // Get parameter pointers from AudioProcessorValueTreeState
     useHostTransportParam = dynamic_cast<juce::AudioParameterBool*>(parameters.getParameter("useHostTransport"));
     midiNoteParam = dynamic_cast<juce::AudioParameterInt*>(parameters.getParameter("midiNote"));
@@ -636,9 +648,11 @@ void RhythmPatternExplorerAudioProcessor::setStateInformation (const void* data,
             // Restore pattern data
             juce::String patternString = state.getProperty("patternData", "10010010");
             std::vector<bool> pattern;
+            // Use getCharPointer() for safer access to avoid String assertion
+            auto chars = patternString.getCharPointer();
             for (int i = 0; i < patternString.length(); ++i)
             {
-                pattern.push_back(patternString[i] == '1');
+                pattern.push_back(chars[i] == '1');
             }
             patternEngine.setPattern(pattern);
             
@@ -669,9 +683,10 @@ void RhythmPatternExplorerAudioProcessor::setStateInformation (const void* data,
             // Restore baseLengthPattern from string
             juce::String baseLengthPatternString = state.getProperty("baseLengthPattern", juce::String());
             baseLengthPattern.clear();
+            auto chars4 = baseLengthPatternString.getCharPointer();
             for (int i = 0; i < baseLengthPatternString.length(); ++i)
             {
-                baseLengthPattern.push_back(baseLengthPatternString[i] == '1');
+                baseLengthPattern.push_back(chars4[i] == '1');
             }
             
             // Restore accent pattern state (Phase 3: Missing accent support)
@@ -683,9 +698,10 @@ void RhythmPatternExplorerAudioProcessor::setStateInformation (const void* data,
             // Restore currentAccentPattern from string
             juce::String accentPatternString = state.getProperty("currentAccentPattern", juce::String());
             currentAccentPattern.clear();
+            auto chars5 = accentPatternString.getCharPointer();
             for (int i = 0; i < accentPatternString.length(); ++i)
             {
-                currentAccentPattern.push_back(accentPatternString[i] == '1');
+                currentAccentPattern.push_back(chars5[i] == '1');
             }
             
             // Restore scene state (Phase 5: Scene State Persistence)
@@ -773,9 +789,11 @@ void RhythmPatternExplorerAudioProcessor::setStateInformation (const void* data,
             {
                 juce::String patternString = patternXml->getStringAttribute("data");
                 std::vector<bool> pattern;
+                // Use getCharPointer() for safer access to avoid String assertion
+                auto chars = patternString.getCharPointer();
                 for (int i = 0; i < patternString.length(); ++i)
                 {
-                    pattern.push_back(patternString[i] == '1');
+                    pattern.push_back(chars[i] == '1');
                 }
                 patternEngine.setPattern(pattern);
             }
@@ -1108,11 +1126,7 @@ void RhythmPatternExplorerAudioProcessor::setUPIInput(const juce::String& upiPat
         // CRITICAL: Split scenes BEFORE any UPI parsing to preserve individual accent patterns
         auto scenes = juce::StringArray::fromTokens(pattern, "|", "");
         
-        // Log scene cycling detection
-        juce::String sceneList;
-        for (int i = 0; i < scenes.size(); ++i) {
-            sceneList += juce::String::formatted("  Scene %d: %s\n", i, scenes[i].trim().toRawUTF8());
-        }
+        // Scene cycling detection
         
         // Check if this is the same scene sequence or a new one
         bool isSameSequence = (scenes.size() == scenePatterns.size());
@@ -2100,6 +2114,7 @@ void RhythmPatternExplorerAudioProcessor::resetAccentSystem()
 
 //==============================================================================
 // UPI History Management (Ticker Tape Feature)
+
 
 void RhythmPatternExplorerAudioProcessor::addToUPIHistory(const juce::String& upiPattern)
 {

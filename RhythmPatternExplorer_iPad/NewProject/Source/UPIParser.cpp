@@ -1397,7 +1397,7 @@ std::vector<bool> UPIParser::parseAccentPattern(const juce::String& accentStr)
         return {};
     
     // Handle Euclidean accent patterns: E(3,8)
-    if (trimmed.startsWith("E(") && trimmed.endsWith(")"))
+    if (trimmed.startsWith("E(") && trimmed.endsWith(")") && trimmed.length() > 3)
     {
         auto content = trimmed.substring(2, trimmed.length() - 1);
         auto parts = juce::StringArray::fromTokens(content, ",", "");
@@ -1411,7 +1411,7 @@ std::vector<bool> UPIParser::parseAccentPattern(const juce::String& accentStr)
     }
     
     // Handle Barlow accent patterns: B(3,8)
-    if (trimmed.startsWith("B(") && trimmed.endsWith(")"))
+    if (trimmed.startsWith("B(") && trimmed.endsWith(")") && trimmed.length() > 3)
     {
         auto content = trimmed.substring(2, trimmed.length() - 1);
         auto parts = juce::StringArray::fromTokens(content, ",", "");

@@ -48,6 +48,13 @@
 					<string>aumi</string>
 					<key>version</key>
 					<integer>65536</integer>
+					<key>resourceUsage</key>
+					<dict>
+						<key>network.client</key>
+						<false/>
+						<key>temporary-exception.files.all.read-write</key>
+						<false/>
+					</dict>
 				</dict>
 			</array>
 		</dict>

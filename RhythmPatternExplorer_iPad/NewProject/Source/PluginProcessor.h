@@ -355,5 +355,6 @@ private:
     std::vector<bool> generateBellCurveRandomSteps(int numSteps);
     std::vector<bool> lengthenPattern(const std::vector<bool>& pattern, int additionalSteps);
     
+    
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (RhythmPatternExplorerAudioProcessor)
 };

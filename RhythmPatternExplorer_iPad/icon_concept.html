@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Rhythm Pattern Explorer Icon Concept</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f0f0f0;
+            padding: 20px;
+        }
+        .icon-preview {
+            width: 300px;
+            height: 300px;
+            background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+            border-radius: 60px;
+            position: relative;
+            margin: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .circle-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+        }
+        .step-circle {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #333;
+            border: 2px solid #555;
+        }
+        .step-circle.active {
+            background: #4CAF50;
+            border-color: #4CAF50;
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+        }
+        .step-circle.accented {
+            background: #ff4444;
+            border-color: #ff4444;
+            box-shadow: 0 0 15px rgba(255, 68, 68, 0.7);
+        }
+        .title {
+            text-align: center;
+            color: #333;
+            font-size: 18px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Rhythm Pattern Explorer Icon Concepts</h1>
+    
+    <div>
+        <div class="icon-preview" id="quintillo-icon">
+            <div class="circle-container" id="quintillo-container"></div>
+        </div>
+        <div class="title">Accented Quintillo E(5,8) with {10} accent</div>
+    </div>
+
+    <script>
+        // Create quintillo pattern: E(5,8) = 10110100 with {10} accent = accent on steps 0,2
+        function createQuintilloIcon() {
+            const container = document.getElementById('quintillo-container');
+            const pattern = [1,0,1,1,0,1,0,0]; // E(5,8) quintillo
+            const accents = [1,0]; // {10} accent pattern - accents on onsets 0 and 2
+            
+            let onsetCounter = 0;
+            
+            for (let i = 0; i < 8; i++) {
+                const angle = (i * 45 - 90) * Math.PI / 180; // Start at top, go clockwise
+                const radius = 88;
+                const x = 100 + radius * Math.cos(angle) - 12;
+                const y = 100 + radius * Math.sin(angle) - 12;
+                
+                const circle = document.createElement('div');
+                circle.className = 'step-circle';
+                circle.style.left = x + 'px';
+                circle.style.top = y + 'px';
+                
+                if (pattern[i]) {
+                    circle.classList.add('active');
+                    // Check if this onset should be accented
+                    if (accents[onsetCounter % accents.length]) {
+                        circle.classList.add('accented');
+                    }
+                    onsetCounter++;
+                }
+                
+                container.appendChild(circle);
+            }
+        }
+        
+        createQuintilloIcon();
+    </script>
+</body>
+</html>

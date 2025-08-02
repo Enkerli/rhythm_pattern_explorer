@@ -310,7 +310,7 @@ juce::String PresetManager::sanitizePresetName(const juce::String& name) const
         sanitized = sanitized.replace(juce::String::charToString(invalidChars[i]), "_");
     }
     
-    return sanitized.substring(0, 64); // Limit length
+    return sanitized.length() > 64 ? sanitized.substring(0, 64) : sanitized; // Safe length limiting
 }
 
 //==============================================================================
@@ -349,7 +349,9 @@ bool PresetManager::loadPresetFromFile(const juce::File& file, PresetData& prese
     if (!file.exists())
         return false;
     
-    auto json = juce::JSON::parse(file);
+    // Read file content safely to avoid String assertion with non-ASCII paths
+    juce::String fileContent = file.loadFileAsString();
+    auto json = juce::JSON::parse(fileContent);
     if (!json.isObject())
         return false;
     

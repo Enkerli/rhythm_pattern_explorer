@@ -122,7 +122,10 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     // Version Editor - copyable and selectable
     // Add timestamp to verify we're testing the right build (clean build 11:16)
     juce::String buildTimestamp = __DATE__ " " __TIME__;
-    versionEditor.setText("v1.3.5-" + buildTimestamp.substring(0, 6) + "-" + buildTimestamp.substring(12, 17), juce::dontSendNotification);
+    // Safe substring extraction to avoid String assertion
+    juce::String dateStr = buildTimestamp.length() >= 6 ? buildTimestamp.substring(0, 6) : "unknown";
+    juce::String timeStr = buildTimestamp.length() >= 17 ? buildTimestamp.substring(12, 17) : "00:00";
+    versionEditor.setText("v1.3.5-" + dateStr + "-" + timeStr, juce::dontSendNotification);
     versionEditor.setMultiLine(false);
     versionEditor.setReadOnly(true);
     versionEditor.setScrollbarsShown(false);
@@ -226,7 +229,7 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     addAndMakeVisible(presetNameEditor);
     presetNameEditor.setVisible(false);
     
-    confirmSaveButton.setButtonText("✓");
+    confirmSaveButton.setButtonText("OK");
     confirmSaveButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff48bb78));
     confirmSaveButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
     confirmSaveButton.setTooltip("Save preset");
@@ -247,7 +250,7 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     addAndMakeVisible(confirmSaveButton);
     confirmSaveButton.setVisible(false);
     
-    cancelSaveButton.setButtonText("✗");
+    cancelSaveButton.setButtonText("X");
     cancelSaveButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xffef4444));
     cancelSaveButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
     cancelSaveButton.setTooltip("Cancel");
