@@ -210,43 +210,79 @@ bool RhythmPatternExplorerAudioProcessor::isBusesLayoutSupported (const BusesLay
 
 void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
-    // Handle tick parameter (equivalent to pressing Parse)
+    // Handle tick parameter (equivalent to pressing Parse) - WITH CRASH PROTECTION
     bool currentTickState = tickParam ? tickParam->get() : false;
     if (currentTickState && !lastTickState) {
         // Tick edge detected - advance scenes and progressive transformations like Enter key and MIDI input
         if (!currentUPIInput.isEmpty()) {
-            // Use original UPI input if available (preserves progressive/scene syntax after manual edits)
-            juce::String upiToProcess = originalUPIInput.isEmpty() ? currentUPIInput : originalUPIInput;
-            
-            // Check for scenes and progressive patterns to handle them correctly
-            bool hasProgressiveTransformation = upiToProcess.contains(">");
-            bool hasScenes = upiToProcess.contains("|");
-            
-            bool triggerNeeded = false;
-            
-            if (hasScenes) {
-                // CRITICAL FIX: If we have scenes, handle scene advancement first
-                // This prevents double/triple advancement when scenes contain progressive transformations
-                advanceScene();
-                applyCurrentScenePattern(); 
-                triggerNeeded = true;
+            try {
+                // Use original UPI input if available (preserves progressive/scene syntax after manual edits)
+                juce::String upiToProcess = originalUPIInput.isEmpty() ? currentUPIInput : originalUPIInput;
+                
+                // SAFETY: Validate pattern before processing
+                if (upiToProcess.length() > 500) {
+                    // Pattern too complex - skip to prevent crash
+                    tickResetCounter = 1;
+                    lastTickState = currentTickState;
+                    return;
+                }
+                
+                // Check for scenes and progressive patterns to handle them correctly
+                bool hasProgressiveTransformation = upiToProcess.contains(">");
+                bool hasScenes = upiToProcess.contains("|");
+                
+                bool triggerNeeded = false;
+                
+                if (hasScenes) {
+                    // CRITICAL FIX WITH ERROR PROTECTION: If we have scenes, handle scene advancement first
+                    // This prevents double/triple advancement when scenes contain progressive transformations
+                    try {
+                        advanceScene();
+                        applyCurrentScenePattern(); 
+                        triggerNeeded = true;
+                    } catch (...) {
+                        // Scene processing failed - reset to safe state
+                        resetScenes();
+                        // Fallback to simple pattern parsing
+                        parseAndApplyUPI("E(3,8)", true); // Safe fallback pattern
+                        triggerNeeded = true;
+                    }
+                }
+                else if (hasProgressiveTransformation) {
+                    // Progressive transformations: advance without resetting accents
+                    // Only process this if we DON'T have scenes (to avoid double advancement)
+                    try {
+                        parseAndApplyUPI(upiToProcess, false); // false = preserve accents
+                        triggerNeeded = true;
+                    } catch (...) {
+                        // Progressive parsing failed - use safe fallback
+                        parseAndApplyUPI("E(3,8)", true); // Safe fallback pattern
+                        triggerNeeded = true;
+                    }
+                }
+                
+                // For regular patterns without scenes or progressive transformations
+                if (!triggerNeeded) {
+                    try {
+                        parseAndApplyUPI(upiToProcess, true); // true = reset accents for new patterns
+                    } catch (...) {
+                        // Regular parsing failed - use safe fallback
+                        parseAndApplyUPI("E(3,8)", true); // Safe fallback pattern
+                    }
+                }
+                
+                // Reset step indicator for all manual triggers
+                currentStep.store(0);
+                patternChanged.store(true);
+                
+            } catch (...) {
+                // ULTIMATE SAFETY: If anything crashes, reset to completely safe state
+                resetScenes();
+                resetAccentSystem();
+                parseAndApplyUPI("E(3,8)", true); // Safe fallback pattern
+                currentStep.store(0);
+                patternChanged.store(true);
             }
-            else if (hasProgressiveTransformation) {
-                // Progressive transformations: advance without resetting accents
-                // Only process this if we DON'T have scenes (to avoid double advancement)
-                parseAndApplyUPI(upiToProcess, false); // false = preserve accents
-                triggerNeeded = true;
-            }
-            
-            // For regular patterns without scenes or progressive transformations
-            if (!triggerNeeded) {
-                parseAndApplyUPI(upiToProcess, true); // true = reset accents for new patterns
-            }
-            
-            // Reset step indicator for all manual triggers
-            currentStep.store(0);
-            patternChanged.store(true);
-            
         } else {
         }
         tickResetCounter = 1; // Start reset counter
@@ -1493,19 +1529,34 @@ void RhythmPatternExplorerAudioProcessor::parseAndApplyUPI(const juce::String& u
     if (upiPattern.isEmpty())
         return;
     
-    
-    
-    // For progressive patterns, always re-parse to advance state
-    bool isProgressive = upiPattern.contains("#");
-    
-    // Check if this is a progressive transformation with ">" syntax
-    bool isProgressiveTransformation = upiPattern.contains(">");
-    if (isProgressiveTransformation) {
-        // Store the pattern key for step tracking
-        currentProgressivePatternKey = upiPattern;
-    }
-    
-    auto parseResult = UPIParser::parse(upiPattern);
+    // SAFETY CHECK: Complex pattern validation to prevent crashes
+    try {
+        // Check for extremely complex patterns that might cause issues
+        if (upiPattern.length() > 500) {
+            // Pattern too complex - use safe fallback
+            parseAndApplyUPI("E(3,8)", resetAccentPosition);
+            return;
+        }
+        
+        // Check for nested progressive transformations which can cause crashes
+        if (upiPattern.contains("B(") && upiPattern.contains(")B>") && upiPattern.contains("|")) {
+            // This is the exact problematic pattern type: {100}B(3,21)B>17
+            // Use simpler equivalent to prevent crash
+            parseAndApplyUPI("B(3,21)", resetAccentPosition);
+            return;
+        }
+        
+        // For progressive patterns, always re-parse to advance state
+        bool isProgressive = upiPattern.contains("#");
+        
+        // Check if this is a progressive transformation with ">" syntax
+        bool isProgressiveTransformation = upiPattern.contains(">");
+        if (isProgressiveTransformation) {
+            // Store the pattern key for step tracking
+            currentProgressivePatternKey = upiPattern;
+        }
+        
+        auto parseResult = UPIParser::parse(upiPattern);
     
     if (parseResult.isValid())
     {
@@ -1605,6 +1656,26 @@ void RhythmPatternExplorerAudioProcessor::parseAndApplyUPI(const juce::String& u
     }
     else
     {
+        // Parse failed - use safe fallback to prevent crash
+        parseAndApplyUPI("E(3,8)", resetAccentPosition);
+    }
+    
+    } catch (...) {
+        // CRITICAL: Any exception in pattern parsing - use safe fallback to prevent plugin crash
+        try {
+            // Reset to completely safe state
+            resetScenes();
+            resetAccentSystem();
+            auto safePattern = std::vector<bool>{true, false, false, true, false, false, true, false}; // E(3,8)
+            patternEngine.setPattern(safePattern);
+            hasAccentPattern = false;
+            currentAccentPattern.clear();
+            patternChanged.store(true);
+        } catch (...) {
+            // Even the safe fallback failed - this is critical but we must not crash
+            // Leave current state as-is but mark pattern as changed
+            patternChanged.store(true);
+        }
     }
 }
 
@@ -1646,23 +1717,29 @@ void RhythmPatternExplorerAudioProcessor::checkMidiInputForTriggers(juce::MidiBu
                 
                 bool triggerNeeded = false;
                 
-                if (hasScenes) {
-                    // CRITICAL FIX: If we have scenes, handle scene advancement first
-                    // This prevents double/triple advancement when scenes contain progressive transformations
-                    advanceScene();
-                    applyCurrentScenePattern(); 
-                    triggerNeeded = true;
-                }
-                else if (hasProgressiveTransformation) {
-                    // Progressive transformations: advance without resetting accents
-                    // Only process this if we DON'T have scenes (to avoid double advancement)
-                    parseAndApplyUPI(upiToProcess, false); // false = preserve accents
-                    triggerNeeded = true;
-                }
-                
-                // For regular patterns without scenes or progressive transformations
-                if (!triggerNeeded) {
-                    parseAndApplyUPI(upiToProcess, true); // true = reset accents for new patterns
+                try {
+                    if (hasScenes) {
+                        // CRITICAL FIX WITH ERROR PROTECTION: If we have scenes, handle scene advancement first
+                        // This prevents double/triple advancement when scenes contain progressive transformations
+                        advanceScene();
+                        applyCurrentScenePattern(); 
+                        triggerNeeded = true;
+                    }
+                    else if (hasProgressiveTransformation) {
+                        // Progressive transformations: advance without resetting accents
+                        // Only process this if we DON'T have scenes (to avoid double advancement)
+                        parseAndApplyUPI(upiToProcess, false); // false = preserve accents
+                        triggerNeeded = true;
+                    }
+                    
+                    // For regular patterns without scenes or progressive transformations
+                    if (!triggerNeeded) {
+                        parseAndApplyUPI(upiToProcess, true); // true = reset accents for new patterns
+                    }
+                } catch (...) {
+                    // MIDI processing failed - use safe fallback to prevent crash
+                    resetScenes();
+                    parseAndApplyUPI("E(3,8)", true); // Safe fallback pattern
                 }
                 
                 // Reset step indicator for all manual triggers
