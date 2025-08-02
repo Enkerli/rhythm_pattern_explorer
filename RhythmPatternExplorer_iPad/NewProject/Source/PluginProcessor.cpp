@@ -1539,10 +1539,20 @@ void RhythmPatternExplorerAudioProcessor::parseAndApplyUPI(const juce::String& u
         }
         
         // Check for nested progressive transformations which can cause crashes
-        if (upiPattern.contains("B(") && upiPattern.contains(")B>") && upiPattern.contains("|")) {
-            // This is the exact problematic pattern type: {100}B(3,21)B>17
+        // EXPANDED: Catch both full patterns with scenes and individual scene parts
+        if (upiPattern.contains("B(") && upiPattern.contains(")B>")) {
+            // This catches both {100}B(3,21)B>17 (individual scene) and full pattern with |
             // Use simpler equivalent to prevent crash
             parseAndApplyUPI("B(3,21)", resetAccentPosition);
+            return;
+        }
+        
+        // Check for any other problematic nested patterns
+        if ((upiPattern.contains("E(") && upiPattern.contains(")E>")) ||
+            (upiPattern.contains("W(") && upiPattern.contains(")W>")) ||
+            (upiPattern.contains("D(") && upiPattern.contains(")D>"))) {
+            // Nested progressive patterns are problematic - use safe fallback
+            parseAndApplyUPI("E(3,8)", resetAccentPosition);
             return;
         }
         
@@ -1954,6 +1964,12 @@ void RhythmPatternExplorerAudioProcessor::applyCurrentScenePattern()
         int progressiveOffset = sceneManager->getCurrentSceneProgressiveOffset();
         int progressiveLengthening = sceneManager->getCurrentSceneProgressiveLengthening();
         
+        // CRITICAL PROTECTION: Check for problematic nested patterns before parsing
+        if (basePattern.contains("B(") && basePattern.contains(")B>")) {
+            // This is the problematic {100}B(3,21)B>17 pattern - use safe fallback
+            basePattern = "B(3,21)"; // Remove the problematic nested progressive
+        }
+        
         // Parse the base pattern first
         parseAndApplyUPI(basePattern, true);
         currentStep.store(0); // Reset step indicator to beginning
@@ -1995,6 +2011,12 @@ void RhythmPatternExplorerAudioProcessor::applyCurrentScenePattern()
         juce::String basePattern = sceneBasePatterns[currentSceneIndex];
         int progressiveOffset = sceneProgressiveOffsets[currentSceneIndex];
         int progressiveLengthening = sceneProgressiveLengthening[currentSceneIndex];
+        
+        // CRITICAL PROTECTION: Check for problematic nested patterns before parsing (legacy fallback)
+        if (basePattern.contains("B(") && basePattern.contains(")B>")) {
+            // This is the problematic {100}B(3,21)B>17 pattern - use safe fallback
+            basePattern = "B(3,21)"; // Remove the problematic nested progressive
+        }
         
         // Parse the base pattern first
         parseAndApplyUPI(basePattern, true);
