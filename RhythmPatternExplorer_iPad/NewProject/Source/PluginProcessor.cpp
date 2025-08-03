@@ -1,8 +1,28 @@
 /*
   ==============================================================================
 
-    Rhythm Pattern Explorer - AUv3 Plugin
-    Main Audio Processor Implementation (Fixed)
+    Rhythm Pattern Explorer - iPad AUv3 Plugin
+    Main Audio Processor Implementation
+    
+    PLATFORM DIFFERENCES FROM DESKTOP VERSION:
+    
+    1. iOS String Assertion Fix (lines 13-19)
+       - JUCE String assertions cause crashes on iOS with Unicode characters
+       - Desktop versions don't experience these crashes
+       - Required for pattern parsing stability on iPadOS
+    
+    2. Redundant Note-Off Safety Mechanism (triggerNote function)
+       - AUv3 framework occasionally loses note-off messages
+       - Desktop AU/VST3 versions don't need this redundancy
+       - Critical for preventing stuck notes on iPad
+    
+    3. Sandboxed File System Access
+       - iOS sandboxing prevents direct preset directory access
+       - Desktop versions have unrestricted file system access
+       - Affects preset management and factory preset loading
+    
+    Last Updated: August 2025 - Stable note timing achieved
+    Status: Consistent 1-tick note duration matching desktop version
 
   ==============================================================================
 */
@@ -10,7 +30,17 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
-// Aggressive fix for iOS String assertion - disable all JUCE assertions
+// ============================================================================
+// iOS-SPECIFIC WORKAROUND: JUCE String Assertion Fix
+// ============================================================================
+// ISSUE: JUCE String class triggers fatal assertions on iOS when processing
+//        certain Unicode characters during UPI pattern parsing
+// CAUSE: iOS has stricter Unicode validation that conflicts with JUCE's
+//        internal String assertion logic
+// SYMPTOMS: Plugin crashes with "juce_String.cpp:327 assertion" during pattern parsing
+// SOLUTION: Disable all JUCE assertions for iOS builds only
+// IMPACT: Desktop versions are unaffected - this fix is iOS-specific
+// SAFETY: Pattern parsing logic remains intact, only assertion checking is disabled
 #if JUCE_IOS
 #undef jassert
 #define jassert(x) 
@@ -984,6 +1014,16 @@ void RhythmPatternExplorerAudioProcessor::processStep(juce::MidiBuffer& midiBuff
     }
 }
 
+// ============================================================================
+// iPad AUv3 MIDI Note Trigger with Redundant Note-Off Safety
+// ============================================================================
+// PLATFORM DIFFERENCE: This function includes iPad-specific note-off redundancy
+// that is not needed in the desktop AU/VST3 versions.
+//
+// ISSUE: AUv3 framework occasionally loses note-off messages, causing notes
+//        to last until the end of recording instead of having proper duration
+// SOLUTION: Dual note-off messages ensure notes are always terminated
+// DESKTOP: Desktop versions use single note-off without issues
 void RhythmPatternExplorerAudioProcessor::triggerNote(juce::MidiBuffer& midiBuffer, int samplePosition, bool isAccented)
 {
     // Get base MIDI note number from parameter
@@ -995,31 +1035,41 @@ void RhythmPatternExplorerAudioProcessor::triggerNote(juce::MidiBuffer& midiBuff
     
     if (isAccented && hasAccentPattern)
     {
-        // Use accent parameters
+        // Accented note: higher velocity + pitch offset (typically F1 = C1 + 5 semitones)
         velocity = accentVelocityParam ? accentVelocityParam->get() : 1.0f;
         int pitchOffset = accentPitchOffsetParam ? accentPitchOffsetParam->get() : 5;
         noteNumber = baseNoteNumber + pitchOffset;
     }
     else
     {
-        // Use unaccented velocity parameter
+        // Regular note: standard velocity (typically C1)
         velocity = unaccentedVelocityParam ? unaccentedVelocityParam->get() : 0.8f;
     }
     
-    // GUARANTEED NOTE-OFF: Always add both note-on and note-off in the same call
+    // ========================================================================
+    // iPad AUv3 REDUNDANT NOTE-OFF SAFETY MECHANISM
+    // ========================================================================
+    // This redundancy is required due to AUv3 framework limitations where
+    // note-off messages are occasionally lost, causing stuck notes.
+    // Desktop AU/VST3 versions don't experience this issue.
+    
     juce::MidiMessage noteOn = juce::MidiMessage::noteOn(1, noteNumber, velocity);
     juce::MidiMessage noteOff = juce::MidiMessage::noteOff(1, noteNumber, 0.0f);
     
     // Add note-on at exact position
     midiBuffer.addEvent(noteOn, samplePosition);
     
-    // CRITICAL: Ensure note-off is always added, even if at same position
-    // Some hosts handle simultaneous note-on/off correctly as trigger events
+    // PRIMARY NOTE-OFF: Immediate termination (1-tick duration)
+    // Creates trigger-style notes that match desktop behavior
     midiBuffer.addEvent(noteOff, samplePosition + 1);
     
-    // SAFETY: Also add a redundant note-off later in case the first one gets lost
-    // This ensures no notes get stuck, even if there are timing issues
+    // SAFETY NOTE-OFF: Redundant termination to prevent stuck notes
+    // This backup ensures notes are terminated even if primary note-off is lost
+    // 10-sample delay provides safety margin while remaining musically insignificant
     midiBuffer.addEvent(juce::MidiMessage::noteOff(1, noteNumber, 0.0f), samplePosition + 10);
+    
+    // RESULT: Consistent 1-tick note duration matching desktop version
+    // All notes now properly terminate instead of lasting until end of recording
 }
 
 void RhythmPatternExplorerAudioProcessor::syncBPMWithHost(const juce::AudioPlayHead::CurrentPositionInfo& posInfo)

@@ -211,6 +211,16 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     addAndMakeVisible(deletePresetButton);
     deletePresetButton.setVisible(false);
     
+    // ========================================================================
+    // iPad AUv3 PRESET SYSTEM: iOS Sandbox-Compatible Implementation
+    // ========================================================================
+    // PLATFORM DIFFERENCE: iPad uses sandbox-constrained preset management
+    // - Desktop: Direct file system access to unrestricted directories
+    // - iPad: Must use PresetManager with sandboxed app directories only
+    // - Cannot programmatically create factory preset directories
+    // - All preset operations require user interaction through file picker
+    // FUTURE: Consider iOS-specific file sharing and document provider integration
+    
     // iOS-compatible inline preset saving components
     presetNameEditor.setTextToShowWhenEmpty("Enter preset name...", juce::Colours::grey);
     presetNameEditor.setFont(juce::Font(juce::FontOptions(juce::Font::getDefaultSansSerifFontName(), 14.0f, juce::Font::plain)));
@@ -269,9 +279,20 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     addAndMakeVisible(cancelSaveButton);
     cancelSaveButton.setVisible(false);
     
-    // Initialize WebView documentation (initially hidden)
-    // TEMPORARILY DISABLED: WebView causing GPU process issues on iPadOS
-#if JUCE_WEB_BROWSER && 0
+    // ========================================================================
+    // iPad AUv3 WEBVIEW LIMITATION: Currently Disabled
+    // ========================================================================
+    // ISSUE: WebView causes GPU process warnings and CFNetwork errors on iPadOS
+    // SYMPTOMS: 
+    //   - "LLDB is likely reading from device memory to resolve symbols"
+    //   - GPU process isolation warnings
+    //   - CFNetwork connection errors
+    // DESKTOP: WebView works normally for inline documentation
+    // iPad LIMITATION: iOS WebView has stricter process isolation
+    // FUTURE SOLUTION: Consider native iOS WebView or file-based documentation
+    
+    // Initialize WebView documentation (currently disabled on iPad)
+#if JUCE_WEB_BROWSER && 0  // Disabled until iOS WebView issues are resolved
     docsBrowser = std::make_unique<juce::WebBrowserComponent>();
     docsBrowser->setVisible(false); // Explicitly hidden initially
     addAndMakeVisible(*docsBrowser);
