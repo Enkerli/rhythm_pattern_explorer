@@ -139,10 +139,12 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     addAndMakeVisible(versionEditor);
     
     // Documentation toggle button
+    // TEMPORARILY DISABLED: WebView causing GPU process issues on iPadOS
     docsToggleButton.setButtonText("Docs");
     docsToggleButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff4a5568));
     docsToggleButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
-    docsToggleButton.onClick = [this]() { toggleDocumentation(); };
+    docsToggleButton.onClick = [this]() { /* toggleDocumentation(); */ }; // Disabled
+    docsToggleButton.setEnabled(false); // Visually disabled
     addAndMakeVisible(docsToggleButton);
     
     // History toggle button (ticker tape feature)
@@ -268,7 +270,8 @@ RhythmPatternExplorerAudioProcessorEditor::RhythmPatternExplorerAudioProcessorEd
     cancelSaveButton.setVisible(false);
     
     // Initialize WebView documentation (initially hidden)
-#if JUCE_WEB_BROWSER
+    // TEMPORARILY DISABLED: WebView causing GPU process issues on iPadOS
+#if JUCE_WEB_BROWSER && 0
     docsBrowser = std::make_unique<juce::WebBrowserComponent>();
     docsBrowser->setVisible(false); // Explicitly hidden initially
     addAndMakeVisible(*docsBrowser);

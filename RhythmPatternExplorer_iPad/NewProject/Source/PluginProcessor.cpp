@@ -210,6 +210,11 @@ bool RhythmPatternExplorerAudioProcessor::isBusesLayoutSupported (const BusesLay
 
 void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
+    // CRITICAL DEBUG: Track processBlock calls to detect multiple instances
+    static int processBlockCallCount = 0;
+    processBlockCallCount++;
+    
+    // If this number grows too fast, we have multiple instances or threading issues
     // Handle tick parameter (equivalent to pressing Parse) - WITH CRASH PROTECTION
     bool currentTickState = tickParam ? tickParam->get() : false;
     if (currentTickState && !lastTickState) {
@@ -298,10 +303,6 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
     }
     lastTickState = currentTickState;
     
-    // FIRST: Always log that processBlock is being called
-    static int processBlockCallCount = 0;
-    processBlockCallCount++;
-    
     // Update last process time to indicate we're receiving audio callbacks
     lastProcessBlockTime = juce::Time::getMillisecondCounter();
     
@@ -313,7 +314,6 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
     
     juce::ScopedLock lock(processingLock);
     juce::ScopedNoDenormals noDenormals;
-    auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
 
     // CRITICAL FIX: Clear ALL audio channels - this is a MIDI-only plugin and should produce NO audio
@@ -485,47 +485,33 @@ void RhythmPatternExplorerAudioProcessor::processBlock (juce::AudioBuffer<float>
         // Calculate which step should be active within the current pattern cycle
         // Use modulo on the raw step count to handle patterns that don't start at beat 0
         double stepsInCurrentCycle = fmod(stepsFromStart, patternEngine.getStepCount());
-        int targetStep = static_cast<int>(stepsInCurrentCycle);
-        
         
         // Trigger notes at the exact moment they should occur
         int numSamples = buffer.getNumSamples();
-        double samplesPerBeat = getSampleRate() * 60.0 / bpm;
+        
+        // RESTORED: Buffer-level step detection to prevent multiple triggers per step
+        int patternStepCount = patternEngine.getStepCount();
+        int currentBufferStep = static_cast<int>(stepsInCurrentCycle);
         
         // Track the last processed step to detect boundaries
         static int lastProcessedStep = -1;
         
-        for (int sample = 0; sample < numSamples; ++sample)
+        // Only trigger if we've moved to a new step since last buffer
+        if (currentBufferStep != lastProcessedStep)
         {
-            // Calculate the ppqPosition for this sample
-            double sampleBeat = currentBeat + (sample / samplesPerBeat);
-            double sampleStepsFromStart = sampleBeat / beatsPerStep;
-            int patternStepCount = patternEngine.getStepCount();
-            int sampleStep = static_cast<int>(sampleStepsFromStart) % patternStepCount;
+            // Calculate sample position for the step within this buffer
+            double stepPosition = fmod(stepsInCurrentCycle, 1.0); // Fractional position within step
+            int samplePosition = static_cast<int>(stepPosition * numSamples);
+            if (samplePosition >= numSamples) samplePosition = 0; // Safety clamp
             
-            // For single-step patterns, also check pattern cycle boundaries
-            int patternCycle = static_cast<int>(sampleStepsFromStart / patternStepCount);
-            static int lastProcessedCycle = -1;
+            // Update tracking
+            lastProcessedStep = currentBufferStep;
             
-            // Check if we're crossing a step boundary OR pattern cycle boundary
-            bool stepBoundary = (sampleStep != lastProcessedStep);
-            bool cycleBoundary = (patternStepCount == 1 && patternCycle != lastProcessedCycle);
+            // Trigger the step ONCE per buffer
+            processStep(midiMessages, samplePosition, currentBufferStep);
             
-            if (stepBoundary || cycleBoundary)
-            {
-                // Update target step
-                targetStep = sampleStep;
-                lastProcessedStep = sampleStep;
-                lastProcessedCycle = patternCycle;
-                
-                // Trigger the step at this exact sample position
-                processStep(midiMessages, sample, targetStep);
-                
-                // Update current step
-                currentStep.store(targetStep);
-                
-                
-            }
+            // Update current step
+            currentStep.store(currentBufferStep);
         }
     }
     
@@ -817,14 +803,9 @@ void RhythmPatternExplorerAudioProcessor::setStateInformation (const void* data,
                     progressiveManager->clearAllProgressiveStates();
                 }
                 
-                // Now parse the pattern fresh - this will rebuild all scene state correctly
-                // CRITICAL: Preserve currentUPIInput after parsing for Tick button functionality
-                juce::String preservedCurrentUPI = currentUPIInput;
-                parseAndApplyUPI(patternToRestore);
-                // Restore currentUPIInput if it was a scene pattern, so Tick button works
-                if (patternToRestore.contains("|")) {
-                    currentUPIInput = patternToRestore;
-                }
+                // CRITICAL FIX: Use setUPIInput instead of parseAndApplyUPI for proper scene initialization
+                // This ensures scene state is set up exactly like manual entry (Enter key behavior)
+                setUPIInput(patternToRestore);
             }
             
             updateTiming();
@@ -890,16 +871,12 @@ void RhythmPatternExplorerAudioProcessor::setStateInformation (const void* data,
                 progressiveManager->clearAllProgressiveStates();
             }
             
-            // CRITICAL FIX: Re-parse the pattern to set up scenes properly (legacy format)
+            // CRITICAL FIX: Use setUPIInput for proper scene initialization (legacy format)
             // Use originalUPIInput if available (contains full scene syntax)
             juce::String patternToRestore = originalUPIInput.isEmpty() ? currentUPIInput : originalUPIInput;
             if (!patternToRestore.isEmpty())
             {
-                parseAndApplyUPI(patternToRestore);
-                // Restore currentUPIInput if it was a scene pattern, so Tick button works
-                if (patternToRestore.contains("|")) {
-                    currentUPIInput = patternToRestore;
-                }
+                setUPIInput(patternToRestore);
             }
             
             updateTiming();
@@ -970,8 +947,7 @@ void RhythmPatternExplorerAudioProcessor::processStep(juce::MidiBuffer& midiBuff
 {
     auto pattern = patternEngine.getCurrentPattern();
     
-    
-    
+    // CRITICAL FIX: Only trigger if this step has an onset in the pattern
     if (stepToProcess < pattern.size() && pattern[stepToProcess])
     {
         // This step has an onset - determine if it should be accented
@@ -990,7 +966,6 @@ void RhythmPatternExplorerAudioProcessor::processStep(juce::MidiBuffer& midiBuff
         
         // Advance the global onset counter (single source of truth)
         globalOnsetCounter++;
-        
     }
     
     // Notify UI of cycle completion for pattern change updates
@@ -1031,16 +1006,20 @@ void RhythmPatternExplorerAudioProcessor::triggerNote(juce::MidiBuffer& midiBuff
         velocity = unaccentedVelocityParam ? unaccentedVelocityParam->get() : 0.8f;
     }
     
-    // Send MIDI note
+    // GUARANTEED NOTE-OFF: Always add both note-on and note-off in the same call
     juce::MidiMessage noteOn = juce::MidiMessage::noteOn(1, noteNumber, velocity);
     juce::MidiMessage noteOff = juce::MidiMessage::noteOff(1, noteNumber, 0.0f);
     
+    // Add note-on at exact position
     midiBuffer.addEvent(noteOn, samplePosition);
-    midiBuffer.addEvent(noteOff, samplePosition + 100); // 100 samples note duration
     
+    // CRITICAL: Ensure note-off is always added, even if at same position
+    // Some hosts handle simultaneous note-on/off correctly as trigger events
+    midiBuffer.addEvent(noteOff, samplePosition + 1);
     
-    // MIDI effect mode - no audio synthesis
-    
+    // SAFETY: Also add a redundant note-off later in case the first one gets lost
+    // This ensures no notes get stuck, even if there are timing issues
+    midiBuffer.addEvent(juce::MidiMessage::noteOff(1, noteNumber, 0.0f), samplePosition + 10);
 }
 
 void RhythmPatternExplorerAudioProcessor::syncBPMWithHost(const juce::AudioPlayHead::CurrentPositionInfo& posInfo)
@@ -1570,23 +1549,9 @@ void RhythmPatternExplorerAudioProcessor::parseAndApplyUPI(const juce::String& u
             return;
         }
         
-        // Check for nested progressive transformations which can cause crashes
-        // EXPANDED: Catch both full patterns with scenes and individual scene parts
-        if (upiPattern.contains("B(") && upiPattern.contains(")B>")) {
-            // This catches both {100}B(3,21)B>17 (individual scene) and full pattern with |
-            // Use simpler equivalent to prevent crash
-            parseAndApplyUPI("B(3,21)", resetAccentPosition);
-            return;
-        }
+        // Double B notation like B(3,21)B>17 should work fine - let UPIParser handle it
         
-        // Check for any other problematic nested patterns
-        if ((upiPattern.contains("E(") && upiPattern.contains(")E>")) ||
-            (upiPattern.contains("W(") && upiPattern.contains(")W>")) ||
-            (upiPattern.contains("D(") && upiPattern.contains(")D>"))) {
-            // Nested progressive patterns are problematic - use safe fallback
-            parseAndApplyUPI("E(3,8)", resetAccentPosition);
-            return;
-        }
+        // Double notation patterns (E(n,s)E>target, W(n,s)W>target, D(n,s)D>target) should work fine - let UPIParser handle them
         
         // For progressive patterns, always re-parse to advance state
         bool isProgressive = upiPattern.contains("#");
@@ -1996,11 +1961,7 @@ void RhythmPatternExplorerAudioProcessor::applyCurrentScenePattern()
         int progressiveOffset = sceneManager->getCurrentSceneProgressiveOffset();
         int progressiveLengthening = sceneManager->getCurrentSceneProgressiveLengthening();
         
-        // CRITICAL PROTECTION: Check for problematic nested patterns before parsing
-        if (basePattern.contains("B(") && basePattern.contains(")B>")) {
-            // This is the problematic {100}B(3,21)B>17 pattern - use safe fallback
-            basePattern = "B(3,21)"; // Remove the problematic nested progressive
-        }
+        // Double B notation like B(3,21)B>17 should work fine - let UPIParser handle it
         
         // Parse the base pattern first
         parseAndApplyUPI(basePattern, true);
@@ -2044,11 +2005,7 @@ void RhythmPatternExplorerAudioProcessor::applyCurrentScenePattern()
         int progressiveOffset = sceneProgressiveOffsets[currentSceneIndex];
         int progressiveLengthening = sceneProgressiveLengthening[currentSceneIndex];
         
-        // CRITICAL PROTECTION: Check for problematic nested patterns before parsing (legacy fallback)
-        if (basePattern.contains("B(") && basePattern.contains(")B>")) {
-            // This is the problematic {100}B(3,21)B>17 pattern - use safe fallback
-            basePattern = "B(3,21)"; // Remove the problematic nested progressive
-        }
+        // Double B notation like B(3,21)B>17 should work fine - let UPIParser handle it (legacy fallback)
         
         // Parse the base pattern first
         parseAndApplyUPI(basePattern, true);
