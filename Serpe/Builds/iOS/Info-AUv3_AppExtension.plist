@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist>
+  <dict>
+    <key>LSRequiresIPhoneOS</key>
+    <true/>
+    <key>UIViewControllerBasedStatusBarAppearance</key>
+    <true/>
+    <key>UILaunchStoryboardName</key>
+    <string>LaunchScreen</string>
+    <key>CFBundleExecutable</key>
+    <string>${EXECUTABLE_NAME}</string>
+    <key>CFBundleIdentifier</key>
+    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>CFBundleName</key>
+    <string>Rhythm Pattern Explorer iPad</string>
+    <key>CFBundleDisplayName</key>
+    <string>Rhythm Pattern Explorer iPad</string>
+    <key>CFBundlePackageType</key>
+    <string>XPC!</string>
+    <key>CFBundleSignature</key>
+    <string>????</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.0</string>
+    <key>CFBundleVersion</key>
+    <string>1.0.0</string>
+    <key>NSHumanReadableCopyright</key>
+    <string></string>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+    <key>NSExtension</key>
+    <dict>
+      <key>NSExtensionPrincipalClass</key>
+      <string>RhythmPatternExploreriPadAUFactoryAUv3</string>
+      <key>NSExtensionPointIdentifier</key>
+      <string>com.apple.AudioUnit-UI</string>
+      <key>NSExtensionAttributes</key>
+      <dict>
+        <key>AudioComponents</key>
+        <array>
+          <dict>
+            <key>name</key>
+            <string>Enkerli: Rhythm Pattern Explorer iPad</string>
+            <key>description</key>
+            <string>Rhythm Pattern Explorer iPad</string>
+            <key>factoryFunction</key>
+            <string>RhythmPatternExploreriPadAUFactoryAUv3</string>
+            <key>manufacturer</key>
+            <string>Enke</string>
+            <key>type</key>
+            <string>aumi</string>
+            <key>subtype</key>
+            <string>RPEi</string>
+            <key>version</key>
+            <integer>65536</integer>
+            <key>sandboxSafe</key>
+            <true/>
+            <key>tags</key>
+            <array>
+              <string>Effects</string>
+              <string>MIDI</string>
+            </array>
+            <key>resourceUsage</key>
+            <dict>
+              <key>network.client</key>
+              <false/>
+              <key>temporary-exception.files.all.read-write</key>
+              <false/>
+            </dict>
+          </dict>
+        </array>
+      </dict>
+    </dict>
+  </dict>
+</plist>

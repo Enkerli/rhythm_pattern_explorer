@@ -16,20 +16,30 @@
     </GROUP>
     <GROUP id="{96A900E3-22A5-1BBF-BD7A-A481BEA56D93}" name="Source">
       <FILE id="SJvONR" name="PluginProcessor.cpp" compile="1" resource="0"
-            file="Source/PluginProcessor.cpp"/>
+            file="../../Serpe/Source/Platform/PluginProcessor.cpp"/>
       <FILE id="g0Pu0P" name="PluginProcessor.h" compile="0" resource="0"
-            file="Source/PluginProcessor.h"/>
+            file="../../Serpe/Source/Platform/PluginProcessor.h"/>
       <FILE id="SbUQRZ" name="PluginEditor.cpp" compile="1" resource="0"
-            file="Source/PluginEditor.cpp"/>
-      <FILE id="fEwa1c" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
-      <FILE id="PatEngH" name="PatternEngine.h" compile="0" resource="0" file="Source/PatternEngine.h"/>
-      <FILE id="PatEngC" name="PatternEngine.cpp" compile="1" resource="0" file="Source/PatternEngine.cpp"/>
-      <FILE id="UPIParH" name="UPIParser.h" compile="0" resource="0" file="Source/UPIParser.h"/>
-      <FILE id="UPIParC" name="UPIParser.cpp" compile="1" resource="0" file="Source/UPIParser.cpp"/>
-      <FILE id="PatUtlH" name="PatternUtils.h" compile="0" resource="0" file="Source/PatternUtils.h"/>
-      <FILE id="PatUtlC" name="PatternUtils.cpp" compile="1" resource="0" file="Source/PatternUtils.cpp"/>
-      <FILE id="QuantEngH" name="QuantizationEngine.h" compile="0" resource="0" file="Source/QuantizationEngine.h"/>
-      <FILE id="QuantEngC" name="QuantizationEngine.cpp" compile="1" resource="0" file="Source/QuantizationEngine.cpp"/>
+            file="../../Serpe/Source/Platform/PluginEditor.cpp"/>
+      <FILE id="fEwa1c" name="PluginEditor.h" compile="0" resource="0" file="../../Serpe/Source/Platform/PluginEditor.h"/>
+      <GROUP id="Core" name="Core">
+        <FILE id="PatEngH" name="PatternEngine.h" compile="0" resource="0" file="../../Serpe/Source/Core/PatternEngine.h"/>
+        <FILE id="PatEngC" name="PatternEngine.cpp" compile="1" resource="0" file="../../Serpe/Source/Core/PatternEngine.cpp"/>
+        <FILE id="UPIParH" name="UPIParser.h" compile="0" resource="0" file="../../Serpe/Source/Core/UPIParser.h"/>
+        <FILE id="UPIParC" name="UPIParser.cpp" compile="1" resource="0" file="../../Serpe/Source/Core/UPIParser.cpp"/>
+        <FILE id="PatUtlH" name="PatternUtils.h" compile="0" resource="0" file="../../Serpe/Source/Core/PatternUtils.h"/>
+        <FILE id="PatUtlC" name="PatternUtils.cpp" compile="1" resource="0" file="../../Serpe/Source/Core/PatternUtils.cpp"/>
+        <FILE id="QuantEngH" name="QuantizationEngine.h" compile="0" resource="0" file="../../Serpe/Source/Core/QuantizationEngine.h"/>
+        <FILE id="QuantEngC" name="QuantizationEngine.cpp" compile="1" resource="0" file="../../Serpe/Source/Core/QuantizationEngine.cpp"/>
+      </GROUP>
+      <GROUP id="Managers" name="Managers">
+        <FILE id="PresetMgrH" name="PresetManager.h" compile="0" resource="0" file="../../Serpe/Source/Managers/PresetManager.h"/>
+        <FILE id="PresetMgrC" name="PresetManager.cpp" compile="1" resource="0" file="../../Serpe/Source/Managers/PresetManager.cpp"/>
+        <FILE id="SceneMgrH" name="SceneManager.h" compile="0" resource="0" file="../../Serpe/Source/Managers/SceneManager.h"/>
+        <FILE id="SceneMgrC" name="SceneManager.cpp" compile="1" resource="0" file="../../Serpe/Source/Managers/SceneManager.cpp"/>
+        <FILE id="ProgMgrH" name="ProgressiveManager.h" compile="0" resource="0" file="../../Serpe/Source/Managers/ProgressiveManager.h"/>
+        <FILE id="ProgMgrC" name="ProgressiveManager.cpp" compile="1" resource="0" file="../../Serpe/Source/Managers/ProgressiveManager.cpp"/>
+      </GROUP>
       <FILE id="DebugH" name="DebugConfig.h" compile="0" resource="0" file="Source/DebugConfig.h"/>
       <FILE id="PatTestH" name="PatternTests.h" compile="0" resource="0" file="Source/PatternTests.h"/>
       <FILE id="PatTestC" name="PatternTests.cpp" compile="1" resource="0" file="Source/PatternTests.cpp"/>
@@ -52,10 +62,22 @@
   </MODULES>
   <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1" JUCE_VST3_CAN_REPLACE_VST2="0"/>
   <EXPORTFORMATS>
-    <XCODE_IPHONE targetFolder="Builds/iOS">
+    <XCODE_IPHONE targetFolder="Builds/iOS" iosBackgroundModes="iosBackgroundAudio"
+                  iosDevelopmentTeamID="BKHL8M84YX" bundleIdentifier="com.enkerli.serpe"
+                  iosAppGroups="" iCloudPermissions="0" pushNotifications="0" uiFileSharingEnabled="0"
+                  documentBrowserEnabled="0" iosBluetoothPermissionNeeded="0" iosBluetoothPermissionText=""
+                  microphonePermissionNeeded="0" microphonePermissionText="" cameraPermissionNeeded="0"
+                  cameraPermissionText="" iosScreenOrientations="UIInterfaceOrientationPortrait,UIInterfaceOrientationPortraitUpsideDown,UIInterfaceOrientationLandscapeLeft,UIInterfaceOrientationLandscapeRight"
+                  iPadScreenOrientations="UIInterfaceOrientationPortrait,UIInterfaceOrientationPortraitUpsideDown,UIInterfaceOrientationLandscapeLeft,UIInterfaceOrientationLandscapeRight"
+                  customPListEntries="" plistPreprocessorDefinitions="" extraLinkerFlags=""
+                  extraFrameworks="" postbuildCommand="" iosMinimumVersion="11.0"
+                  keepCustomXcodeSchemes="1" iosDeploymentTarget="15.0" enablePlugInBinaryCopyStep="1"
+                  stripLocalSymbols="1" iPadScreenOrientation="UIInterfaceOrientationPortrait,UIInterfaceOrientationLandscapeLeft,UIInterfaceOrientationLandscapeRight"
+                  iPhoneScreenOrientation="portrait" appSandbox="1" appSandboxInheritance="0"
+                  appSandboxOptions="" iosBackgroundAudio="1">
       <CONFIGURATIONS>
-        <CONFIGURATION isDebug="1" name="Debug" targetName="NewProject"/>
-        <CONFIGURATION isDebug="0" name="Release" targetName="NewProject"/>
+        <CONFIGURATION isDebug="1" name="Debug" targetName="NewProject" defines="SERPE_IPAD=1&#10;JUCE_DISABLE_ASSERTIONS=1&#10;JUCE_WEB_BROWSER=0"/>
+        <CONFIGURATION isDebug="0" name="Release" targetName="NewProject" defines="SERPE_IPAD=1&#10;JUCE_DISABLE_ASSERTIONS=1&#10;JUCE_WEB_BROWSER=0"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_audio_basics" path="../../../../../JUCE/modules"/>

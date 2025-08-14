@@ -12,7 +12,7 @@
     <key>CFBundleExecutable</key>
     <string>${EXECUTABLE_NAME}</string>
     <key>CFBundleIdentifier</key>
-    <string>com.Enkerli.RhythmPatternExploreriPad</string>
+    <string>com.enkerli.serpe</string>
     <key>CFBundleName</key>
     <string>Rhythm Pattern Explorer iPad</string>
     <key>CFBundleDisplayName</key>
@@ -38,6 +38,8 @@
       <string>UIInterfaceOrientationLandscapeRight</string>
     </array>
     <key>UIBackgroundModes</key>
-    <array/>
+    <array>
+      <string>audio</string>
+    </array>
   </dict>
 </plist>

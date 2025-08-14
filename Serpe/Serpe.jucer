@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<JUCERPROJECT id="Serpe" name="serpe" projectType="audioplug" useAppConfig="0"
+              addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1" pluginName="Rhythm Pattern Explorer iPad"
+              pluginDesc="Mathematical rhythm pattern generator and analyzer"
+              pluginManufacturer="Enkerli" pluginManufacturerCode="Enke" pluginCode="RPEi"
+              pluginChannelConfigs="{0,0}" pluginIsSynth="0" pluginWantsMidiIn="1"
+              pluginProducesMidiOut="1" pluginIsMidiEffectPlugin="1" pluginEditorRequiresKeys="0"
+              pluginAUExportPrefix="RhythmPatternExploreriPadAU" pluginRTASCategory="2"
+              aaxIdentifier="com.Enkerli.RhythmPatternExploreriPad" pluginAAXCategory="2"
+              companyName="enkerli" companyWebsite="https://github.com/enkerli/rhythm_pattern_explorer"
+              companyEmail="support@serpe.dev" reportAppUsage="1" projectLineFeed="&#10;"
+              version="1.0.0" defines="" pluginCharacteristicsValue="pluginWantsMidiIn,pluginProducesMidiOut,pluginIsMidiEffectPlugin"
+              pluginFormats="buildVST3,buildAU,buildAUv3,buildStandalone">
+  <MAINGROUP id="SerpeMain" name="Serpe">
+    <GROUP id="CoreAlgorithms" name="Core">
+      <FILE id="PatEngH" name="PatternEngine.h" compile="0" resource="0"
+            file="Source/Core/PatternEngine.h"/>
+      <FILE id="PatEngC" name="PatternEngine.cpp" compile="1" resource="0"
+            file="Source/Core/PatternEngine.cpp"/>
+      <FILE id="UPIParH" name="UPIParser.h" compile="0" resource="0" file="Source/Core/UPIParser.h"/>
+      <FILE id="UPIParC" name="UPIParser.cpp" compile="1" resource="0" file="Source/Core/UPIParser.cpp"/>
+      <FILE id="PatUtlH" name="PatternUtils.h" compile="0" resource="0" file="Source/Core/PatternUtils.h"/>
+      <FILE id="PatUtlC" name="PatternUtils.cpp" compile="1" resource="0"
+            file="Source/Core/PatternUtils.cpp"/>
+      <FILE id="QuantEngH" name="QuantizationEngine.h" compile="0" resource="0"
+            file="Source/Core/QuantizationEngine.h"/>
+      <FILE id="QuantEngC" name="QuantizationEngine.cpp" compile="1" resource="0"
+            file="Source/Core/QuantizationEngine.cpp"/>
+    </GROUP>
+    <GROUP id="Managers" name="Managers">
+      <FILE id="PresetMgrH" name="PresetManager.h" compile="0" resource="0"
+            file="Source/Managers/PresetManager.h"/>
+      <FILE id="PresetMgrC" name="PresetManager.cpp" compile="1" resource="0"
+            file="Source/Managers/PresetManager.cpp"/>
+      <FILE id="SceneMgrH" name="SceneManager.h" compile="0" resource="0"
+            file="Source/Managers/SceneManager.h"/>
+      <FILE id="SceneMgrC" name="SceneManager.cpp" compile="1" resource="0"
+            file="Source/Managers/SceneManager.cpp"/>
+      <FILE id="ProgMgrH" name="ProgressiveManager.h" compile="0" resource="0"
+            file="Source/Managers/ProgressiveManager.h"/>
+      <FILE id="ProgMgrC" name="ProgressiveManager.cpp" compile="1" resource="0"
+            file="Source/Managers/ProgressiveManager.cpp"/>
+    </GROUP>
+    <GROUP id="Platform" name="Platform">
+      <FILE id="PluginProcH" name="PluginProcessor.h" compile="0" resource="0"
+            file="Source/Platform/PluginProcessor.h"/>
+      <FILE id="PluginProcC" name="PluginProcessor.cpp" compile="1" resource="0"
+            file="Source/Platform/PluginProcessor.cpp"/>
+      <FILE id="PluginEditH" name="PluginEditor.h" compile="0" resource="0"
+            file="Source/Platform/PluginEditor.h"/>
+      <FILE id="PluginEditC" name="PluginEditor.cpp" compile="1" resource="0"
+            file="Source/Platform/PluginEditor.cpp"/>
+      <FILE id="PlatSpecH" name="PlatformSpecific.h" compile="0" resource="0"
+            file="Source/Platform/PlatformSpecific.h"/>
+    </GROUP>
+    <GROUP id="Tests" name="Tests">
+      <FILE id="CoreTestsH" name="CoreAlgorithmTests.h" compile="0" resource="0"
+            file="Source/Tests/CoreAlgorithmTests.h"/>
+      <FILE id="CoreTestsC" name="CoreAlgorithmTests.cpp" compile="1" resource="0"
+            file="Source/Tests/CoreAlgorithmTests.cpp"/>
+      <FILE id="PlatTestsH" name="PlatformTests.h" compile="0" resource="0"
+            file="Source/Tests/PlatformTests.h"/>
+      <FILE id="PlatTestsC" name="PlatformTests.cpp" compile="1" resource="0"
+            file="Source/Tests/PlatformTests.cpp"/>
+    </GROUP>
+    <GROUP id="Resources" name="Resources">
+      <FILE id="Icon32" name="plugin-icon-32.png" compile="0" resource="1"
+            file="Resources/plugin-icon-32.png"/>
+      <FILE id="Icon64" name="plugin-icon-64.png" compile="0" resource="1"
+            file="Resources/plugin-icon-64.png"/>
+      <FILE id="Icon128" name="plugin-icon-128.png" compile="0" resource="1"
+            file="Resources/plugin-icon-128.png"/>
+    </GROUP>
+  </MAINGROUP>
+  <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1" JUCE_VST3_CAN_REPLACE_VST2="0"/>
+  <EXPORTFORMATS>
+    <XCODE_MAC targetFolder="Builds/MacOSX" smallIcon="Icon64" bigIcon="Icon128"
+               externalLibraries="" extraDefs="" extraCompilerFlags="" extraLinkerFlags=""
+               extraFrameworks="" enableLegacyBuildSystem="0" microphonePermissionNeeded="0"
+               microphonePermissionText="" cameraPermissionNeeded="0" cameraPermissionText=""
+               iosBluetoothPermissionNeeded="0" iosBluetoothPermissionText=""
+               customPListEntries="" customXcodeResourceFolders="" iosAppGroups=""
+               postbuildCommand="" plistPreprocessorDefinitions="" iosRequiredArchitectures=""
+               macOSDeploymentTarget="10.13" macOSArchitecture="arm64,x86_64">
+      <CONFIGURATIONS>
+        <CONFIGURATION isDebug="1" name="Debug" targetName="Serpe" enablePluginBinaryCopyStep="1"
+                       stripLocalSymbols="0" linkTimeOptimisation="0" useRuntimeLibDLL="0"
+                       defines="DEBUG=1&#10;SERPE_DESKTOP=1"/>
+        <CONFIGURATION isDebug="0" name="Release" targetName="Serpe" enablePluginBinaryCopyStep="1"
+                       stripLocalSymbols="1" linkTimeOptimisation="1" useRuntimeLibDLL="0"
+                       defines="NDEBUG=1&#10;SERPE_DESKTOP=1"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_audio_basics" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_devices" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_formats" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_plugin_client" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_processors" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_utils" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_core" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_data_structures" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_events" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_graphics" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_gui_basics" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_gui_extra" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_dsp" path="/Applications/JUCE/modules"/>
+      </MODULEPATHS>
+    </XCODE_MAC>
+    <XCODE_IPHONE targetFolder="Builds/iOS" iosBackgroundModes="iosBackgroundAudio"
+                  smallIcon="Icon64" bigIcon="Icon128" iosDevelopmentTeamID=""
+                  iosAppGroups="" iCloudPermissions="0" pushNotifications="0" uiFileSharingEnabled="0"
+                  documentBrowserEnabled="0" iosBluetoothPermissionNeeded="0" iosBluetoothPermissionText=""
+                  microphonePermissionNeeded="0" microphonePermissionText="" cameraPermissionNeeded="0"
+                  cameraPermissionText="" iosScreenOrientations="UIInterfaceOrientationPortrait,UIInterfaceOrientationPortraitUpsideDown,UIInterfaceOrientationLandscapeLeft,UIInterfaceOrientationLandscapeRight"
+                  iPadScreenOrientations="UIInterfaceOrientationPortrait,UIInterfaceOrientationPortraitUpsideDown,UIInterfaceOrientationLandscapeLeft,UIInterfaceOrientationLandscapeRight"
+                  customPListEntries="" plistPreprocessorDefinitions="" extraLinkerFlags=""
+                  extraFrameworks="" postbuildCommand="" iosMinimumVersion="11.0"
+                  keepCustomXcodeSchemes="1" iosDeploymentTarget="15.0" enablePlugInBinaryCopyStep="1"
+                  stripLocalSymbols="1" iPadScreenOrientation="UIInterfaceOrientationPortrait,UIInterfaceOrientationLandscapeLeft,UIInterfaceOrientationLandscapeRight"
+                  iPhoneScreenOrientation="portrait" appSandbox="1" appSandboxInheritance="0"
+                  appSandboxOptions="" iosBackgroundAudio="1">
+      <CONFIGURATIONS>
+        <CONFIGURATION isDebug="1" name="Debug" iosArchitecture="arm64" targetName="Serpe"
+                       defines="DEBUG=1&#10;SERPE_IPAD=1&#10;JUCE_DISABLE_ASSERTIONS=1&#10;JUCE_WEB_BROWSER=0"/>
+        <CONFIGURATION isDebug="0" name="Release" iosArchitecture="arm64" targetName="Serpe"
+                       defines="NDEBUG=1&#10;SERPE_IPAD=1&#10;JUCE_DISABLE_ASSERTIONS=1&#10;JUCE_WEB_BROWSER=0"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_audio_basics" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_devices" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_formats" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_plugin_client" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_processors" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_utils" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_core" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_data_structures" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_events" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_graphics" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_gui_basics" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_gui_extra" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_dsp" path="/Applications/JUCE/modules"/>
+      </MODULEPATHS>
+    </XCODE_IPHONE>
+  </EXPORTFORMATS>
+  <MODULES>
+    <MODULE id="juce_audio_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_devices" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_formats" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_plugin_client" showAllCode="1" useLocalCopy="0"
+            useGlobalPath="1"/>
+    <MODULE id="juce_audio_processors" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_utils" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_core" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_data_structures" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_dsp" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_events" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_graphics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_gui_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_gui_extra" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+  </MODULES>
+</JUCERPROJECT>
