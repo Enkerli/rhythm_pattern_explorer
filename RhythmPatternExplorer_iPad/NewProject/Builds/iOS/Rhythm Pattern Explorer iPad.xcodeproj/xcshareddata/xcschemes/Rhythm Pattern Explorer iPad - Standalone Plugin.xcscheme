@@ -16,7 +16,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "801EC486CBA41A176144D8FB"
-               BuildableName = "NewProject.app"
+               BuildableName = "Rhythm Pattern Explorer iPad.app"
                BlueprintName = "Rhythm Pattern Explorer iPad - Standalone Plugin"
                ReferencedContainer = "container:Rhythm Pattern Explorer iPad.xcodeproj">
             </BuildableReference>
@@ -45,7 +45,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "801EC486CBA41A176144D8FB"
-            BuildableName = "NewProject.app"
+            BuildableName = "Rhythm Pattern Explorer iPad.app"
             BlueprintName = "Rhythm Pattern Explorer iPad - Standalone Plugin"
             ReferencedContainer = "container:Rhythm Pattern Explorer iPad.xcodeproj">
          </BuildableReference>
@@ -62,7 +62,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "801EC486CBA41A176144D8FB"
-            BuildableName = "NewProject.app"
+            BuildableName = "Rhythm Pattern Explorer iPad.app"
             BlueprintName = "Rhythm Pattern Explorer iPad - Standalone Plugin"
             ReferencedContainer = "container:Rhythm Pattern Explorer iPad.xcodeproj">
          </BuildableReference>
