@@ -1396,6 +1396,22 @@ std::vector<bool> UPIParser::parseAccentPattern(const juce::String& accentStr)
     if (trimmed.isEmpty())
         return {};
     
+    // Handle rotation in accent patterns: E(1,3)@-2
+    if (trimmed.contains("@"))
+    {
+        auto parts = tokenize(trimmed, "@");
+        if (parts.size() == 2)
+        {
+            auto basePattern = parseAccentPattern(parts[0].trim());
+            int rotationSteps = parts[1].trim().getIntValue();
+            if (!basePattern.empty())
+            {
+                // Negate rotation to make positive rotations go clockwise (webapp standard)
+                return PatternUtils::rotatePattern(basePattern, -rotationSteps);
+            }
+        }
+    }
+    
     // Handle Euclidean accent patterns: E(3,8)
     if (trimmed.startsWith("E(") && trimmed.endsWith(")"))
     {
@@ -1427,6 +1443,12 @@ std::vector<bool> UPIParser::parseAccentPattern(const juce::String& accentStr)
             
             return PatternUtils::generateBarlowTransformation(basePattern, onsets, false);
         }
+    }
+    
+    // Handle array patterns: [0,2]:3
+    if (trimmed.startsWith("[") && trimmed.contains("]"))
+    {
+        return parseArray(trimmed);
     }
     
     // Handle Morse code: .-- or .-.
