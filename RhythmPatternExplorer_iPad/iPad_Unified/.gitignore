@@ -1,0 +1,16 @@
+# JUCE auto-generated files
+JuceLibraryCode/
+
+# Xcode user-specific files
+*.xcuserstate
+*.xcuserdatad/
+project.xcworkspace/xcuserdata/
+
+# Build artifacts
+Builds/iOS/build/
+Builds/iOS/Tests/build/
+
+# Plugin installation files
+*.component
+*.vst3
+*.appex
