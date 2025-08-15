@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<JUCERPROJECT id="lOgYeA" name="Serpe" projectType="audioplug" useAppConfig="0"
+              addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1" pluginFormats="buildAAX,buildAUv3,buildStandalone"
+              companyName="Enkerli" pluginCharacteristicsValue="pluginIsMidiEffectPlugin,pluginProducesMidiOut,pluginWantsMidiIn"
+              pluginManufacturerCode="Enke" pluginCode="RPEi" pluginAUExportPrefix="SerpeAU"
+              pluginAAXIdentifier="com.enkerli.serpe" aaxIdentifier="com.enkerli.serpe"
+              pluginVSTCategory="kPlugCategEffect" pluginRTASCategory="2048"
+              pluginAAXCategory="2048" pluginVST3Category="Fx" bundleIdentifier="com.enkerli.serpe"
+              pluginManufacturerEmail="support@enkerli.com" pluginManufacturerWebsite="https://enkerli.com"
+              pluginDescription="Rhythm Pattern Explorer" displaySplashScreen="0"
+              reportAppUsage="0" splashScreenColour="Dark">
+  <MAINGROUP id="uIXukB" name="Serpe">
+    <GROUP id="{PLUGIN-ICONS}" name="Plugin Icons">
+      <FILE id="PluginIcon32" name="plugin-icon-32.png" compile="0" resource="1"
+            file="plugin-icon-32.png"/>
+      <FILE id="PluginIcon64" name="plugin-icon-64.png" compile="0" resource="1"
+            file="plugin-icon-64.png"/>
+      <FILE id="PluginIcon128" name="plugin-icon-128.png" compile="0" resource="1"
+            file="plugin-icon-128.png"/>
+    </GROUP>
+    <GROUP id="{96A900E3-22A5-1BBF-BD7A-A481BEA56D93}" name="Source">
+      <FILE id="SJvONR" name="PluginProcessor.cpp" compile="1" resource="0"
+            file="../../Serpe/Source/Platform/PluginProcessor.cpp"/>
+      <FILE id="g0Pu0P" name="PluginProcessor.h" compile="0" resource="0"
+            file="../../Serpe/Source/Platform/PluginProcessor.h"/>
+      <FILE id="SbUQRZ" name="PluginEditor.cpp" compile="1" resource="0"
+            file="../../Serpe/Source/Platform/PluginEditor.cpp"/>
+      <FILE id="fEwa1c" name="PluginEditor.h" compile="0" resource="0" file="../../Serpe/Source/Platform/PluginEditor.h"/>
+      <GROUP id="Core" name="Core">
+        <FILE id="PatEngH" name="PatternEngine.h" compile="0" resource="0"
+              file="../../Serpe/Source/Core/PatternEngine.h"/>
+        <FILE id="PatEngC" name="PatternEngine.cpp" compile="1" resource="0"
+              file="../../Serpe/Source/Core/PatternEngine.cpp"/>
+        <FILE id="UPIParH" name="UPIParser.h" compile="0" resource="0" file="../../Serpe/Source/Core/UPIParser.h"/>
+        <FILE id="UPIParC" name="UPIParser.cpp" compile="1" resource="0" file="../../Serpe/Source/Core/UPIParser.cpp"/>
+        <FILE id="PatUtlH" name="PatternUtils.h" compile="0" resource="0" file="../../Serpe/Source/Core/PatternUtils.h"/>
+        <FILE id="PatUtlC" name="PatternUtils.cpp" compile="1" resource="0"
+              file="../../Serpe/Source/Core/PatternUtils.cpp"/>
+        <FILE id="QuantEngH" name="QuantizationEngine.h" compile="0" resource="0"
+              file="../../Serpe/Source/Core/QuantizationEngine.h"/>
+        <FILE id="QuantEngC" name="QuantizationEngine.cpp" compile="1" resource="0"
+              file="../../Serpe/Source/Core/QuantizationEngine.cpp"/>
+      </GROUP>
+      <GROUP id="Managers" name="Managers">
+        <FILE id="PresetMgrH" name="PresetManager.h" compile="0" resource="0"
+              file="../../Serpe/Source/Managers/PresetManager.h"/>
+        <FILE id="PresetMgrC" name="PresetManager.cpp" compile="1" resource="0"
+              file="../../Serpe/Source/Managers/PresetManager.cpp"/>
+        <FILE id="SceneMgrH" name="SceneManager.h" compile="0" resource="0"
+              file="../../Serpe/Source/Managers/SceneManager.h"/>
+        <FILE id="SceneMgrC" name="SceneManager.cpp" compile="1" resource="0"
+              file="../../Serpe/Source/Managers/SceneManager.cpp"/>
+        <FILE id="ProgMgrH" name="ProgressiveManager.h" compile="0" resource="0"
+              file="../../Serpe/Source/Managers/ProgressiveManager.h"/>
+        <FILE id="ProgMgrC" name="ProgressiveManager.cpp" compile="1" resource="0"
+              file="../../Serpe/Source/Managers/ProgressiveManager.cpp"/>
+      </GROUP>
+      <FILE id="DebugH" name="DebugConfig.h" compile="0" resource="0" 
+            file="../../Serpe/Source/Platform/DebugConfig.h"/>
+    </GROUP>
+  </MAINGROUP>
+  <MODULES>
+    <MODULE id="juce_audio_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_devices" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_formats" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_plugin_client" showAllCode="1" useLocalCopy="0"
+            useGlobalPath="1"/>
+    <MODULE id="juce_audio_processors" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_utils" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_core" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_data_structures" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_events" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_graphics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_gui_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_gui_extra" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+  </MODULES>
+  <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1" JUCE_VST3_CAN_REPLACE_VST2="0"/>
+  <EXPORTFORMATS>
+    <XCODE_IPHONE targetFolder="Builds/iOS" iosBackgroundModes="iosBackgroundAudio"
+                  iosDevelopmentTeamID="BKHL8M84YX" bundleIdentifier="com.enkerli.serpe"
+                  iosAppGroups="" iCloudPermissions="0" pushNotifications="0" uiFileSharingEnabled="0"
+                  documentBrowserEnabled="0" iosBluetoothPermissionNeeded="0" iosBluetoothPermissionText=""
+                  microphonePermissionNeeded="0" microphonePermissionText="" cameraPermissionNeeded="0"
+                  cameraPermissionText="" iosScreenOrientations="UIInterfaceOrientationPortrait,UIInterfaceOrientationPortraitUpsideDown,UIInterfaceOrientationLandscapeLeft,UIInterfaceOrientationLandscapeRight"
+                  iPadScreenOrientations="UIInterfaceOrientationPortrait,UIInterfaceOrientationPortraitUpsideDown,UIInterfaceOrientationLandscapeLeft,UIInterfaceOrientationLandscapeRight"
+                  customPListEntries="" plistPreprocessorDefinitions="" extraLinkerFlags=""
+                  extraFrameworks="" postbuildCommand="" iosMinimumVersion="11.0"
+                  keepCustomXcodeSchemes="1" iosDeploymentTarget="15.0" enablePlugInBinaryCopyStep="1"
+                  stripLocalSymbols="1" iPadScreenOrientation="UIInterfaceOrientationPortrait,UIInterfaceOrientationLandscapeLeft,UIInterfaceOrientationLandscapeRight"
+                  iPhoneScreenOrientation="portrait" appSandbox="1" appSandboxInheritance="0"
+                  appSandboxOptions="" iosBackgroundAudio="1" bigIcon="PluginIcon128"
+                  smallIcon="PluginIcon32">
+      <CONFIGURATIONS>
+        <CONFIGURATION isDebug="1" name="Debug" targetName="Serpe" defines="SERPE_IPAD=1&#10;JUCE_DISABLE_ASSERTIONS=1&#10;JUCE_WEB_BROWSER=0"/>
+        <CONFIGURATION isDebug="0" name="Release" targetName="Serpe" defines="SERPE_IPAD=1&#10;JUCE_DISABLE_ASSERTIONS=1&#10;JUCE_WEB_BROWSER=0"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_audio_basics" path="../../../../../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_devices" path="../../../../../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_formats" path="../../../../../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_plugin_client" path="../../../../../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_processors" path="../../../../../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_utils" path="../../../../../JUCE/modules"/>
+        <MODULEPATH id="juce_core" path="../../../../../JUCE/modules"/>
+        <MODULEPATH id="juce_data_structures" path="../../../../../JUCE/modules"/>
+        <MODULEPATH id="juce_events" path="../../../../../JUCE/modules"/>
+        <MODULEPATH id="juce_graphics" path="../../../../../JUCE/modules"/>
+        <MODULEPATH id="juce_gui_basics" path="../../../../../JUCE/modules"/>
+        <MODULEPATH id="juce_gui_extra" path="../../../../../JUCE/modules"/>
+      </MODULEPATHS>
+    </XCODE_IPHONE>
+  </EXPORTFORMATS>
+</JUCERPROJECT>
