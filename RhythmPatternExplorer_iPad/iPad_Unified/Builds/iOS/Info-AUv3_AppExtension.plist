@@ -14,9 +14,9 @@
     <key>CFBundleIdentifier</key>
     <string>com.enkerli.serpe.serpeAUv3</string>
     <key>CFBundleName</key>
-    <string>Rhythm Pattern Explorer iPad</string>
+    <string>Serpe</string>
     <key>CFBundleDisplayName</key>
-    <string>Rhythm Pattern Explorer iPad</string>
+    <string>Serpe</string>
     <key>CFBundlePackageType</key>
     <string>XPC!</string>
     <key>CFBundleSignature</key>
@@ -32,7 +32,7 @@
     <key>NSExtension</key>
     <dict>
       <key>NSExtensionPrincipalClass</key>
-      <string>RhythmPatternExploreriPadAUFactoryAUv3</string>
+      <string>SerpeAUFactoryAUv3</string>
       <key>NSExtensionPointIdentifier</key>
       <string>com.apple.AudioUnit-UI</string>
       <key>NSExtensionAttributes</key>
@@ -41,11 +41,11 @@
         <array>
           <dict>
             <key>name</key>
-            <string>Enkerli: Rhythm Pattern Explorer iPad</string>
+            <string>Enkerli: Serpe</string>
             <key>description</key>
-            <string>Rhythm Pattern Explorer iPad</string>
+            <string>Serpe</string>
             <key>factoryFunction</key>
-            <string>RhythmPatternExploreriPadAUFactoryAUv3</string>
+            <string>SerpeAUFactoryAUv3</string>
             <key>manufacturer</key>
             <string>Enke</string>
             <key>type</key>

@@ -14,9 +14,9 @@
     <key>CFBundleIdentifier</key>
     <string>com.enkerli.serpe</string>
     <key>CFBundleName</key>
-    <string>Rhythm Pattern Explorer iPad</string>
+    <string>Serpe</string>
     <key>CFBundleDisplayName</key>
-    <string>Rhythm Pattern Explorer iPad</string>
+    <string>Serpe</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleSignature</key>

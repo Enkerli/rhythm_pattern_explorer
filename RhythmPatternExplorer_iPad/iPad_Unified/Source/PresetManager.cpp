@@ -201,7 +201,7 @@ PresetData PresetManager::getPresetData(const juce::String& name) const
 juce::File PresetManager::getPresetDirectory() const
 {
     // iOS apps must use userApplicationDataDirectory due to sandboxing
-    #if JUCE_IOS
+    #if SERPE_IPAD
         return juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
                .getChildFile("RhythmPatternExplorer")
                .getChildFile("Presets");
@@ -239,6 +239,9 @@ void PresetManager::createPresetDirectoryIfNeeded()
 void PresetManager::installFactoryPresets()
 {
     // Install comprehensive factory preset library with educational examples
+    juce::Logger::writeToLog("PresetManager: Installing factory presets...");
+    juce::Logger::writeToLog("PresetManager: Preset directory = " + getPresetDirectory().getFullPathName());
+    
     struct FactoryPreset {
         juce::String name, category, description, upi;
     };
@@ -270,11 +273,20 @@ void PresetManager::installFactoryPresets()
     {
         if (!presetExists(fp.name))
         {
+            juce::Logger::writeToLog("PresetManager: Creating factory preset: " + fp.name);
             auto factoryState = createFactoryPreset(fp.name, fp.category, fp.description, fp.upi);
-            savePreset(fp.name, fp.category, fp.description, factoryState, fp.upi);
+            bool saved = savePreset(fp.name, fp.category, fp.description, factoryState, fp.upi);
+            juce::Logger::writeToLog("PresetManager: Save result for " + fp.name + ": " + (saved ? "SUCCESS" : "FAILED"));
             factoryPresetNames.add(fp.name);
         }
+        else
+        {
+            juce::Logger::writeToLog("PresetManager: Factory preset already exists: " + fp.name);
+        }
     }
+    
+    juce::Logger::writeToLog("PresetManager: Factory preset installation complete. Total presets: " + juce::String(cachedPresets.size()));
+}
 }
 
 bool PresetManager::isFactoryPreset(const juce::String& name) const
