@@ -1106,12 +1106,12 @@ void SerpeAudioProcessor::syncPositionWithHost(const juce::AudioPlayHead::Curren
         // Detect loop restart (position jumped backward significantly)
         if (wasLooping && posInfo.ppqPosition < lastHostPosition - 0.1)
         {
-            // Loop restarted - reset pattern timing and accents
+            // Loop restarted - reset pattern timing but preserve accent flow
             currentStep.store(0);
             currentSample = 0;
-            globalOnsetCounter = 0;
-            uiAccentOffset = 0;
-            resetAccentSystem();
+            // CRITICAL: Do NOT reset globalOnsetCounter - accent patterns should flow across loop boundaries
+            // Only reset uiAccentOffset for UI display consistency
+            uiAccentOffset = globalOnsetCounter % (hasAccentPattern && !currentAccentPattern.empty() ? static_cast<int>(currentAccentPattern.size()) : 1);
             patternChanged.store(true);
         }
         
