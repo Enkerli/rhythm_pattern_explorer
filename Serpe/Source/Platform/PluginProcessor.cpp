@@ -29,6 +29,7 @@
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include <fstream>
 
 // ============================================================================
 // iOS-SPECIFIC WORKAROUND: JUCE String Assertion Fix
@@ -990,9 +991,33 @@ void SerpeAudioProcessor::processStep(juce::MidiBuffer& midiBuffer, int samplePo
         if (patternManuallyModified) {
             // SUSPENSION MODE: Use step-based accent logic (manual modifications)
             isAccented = shouldStepBeAccented(stepToProcess);
+            
+            // DEBUG: Log to file (every 5th call to avoid spam)
+            static int stepLogCount = 0;
+            if ((++stepLogCount % 5) == 0) {
+                std::ofstream logFile("/tmp/serpe_accent_debug.log", std::ios::app);
+                if (logFile.is_open()) {
+                    logFile << "ACCENT MODE: STEP-based - step: " << stepToProcess 
+                            << ", accentPatternSize: " << currentAccentPattern.size() 
+                            << ", result: " << (isAccented ? "ACCENT" : "normal") << std::endl;
+                    logFile.close();
+                }
+            }
         } else {
             // NORMAL MODE: Use onset-based accent logic (UPI patterns, progressive transformations)
             isAccented = shouldOnsetBeAccented(globalOnsetCounter);
+            
+            // DEBUG: Log to file (every 5th call to avoid spam)
+            static int onsetLogCount = 0;
+            if ((++onsetLogCount % 5) == 0) {
+                std::ofstream logFile("/tmp/serpe_accent_debug.log", std::ios::app);
+                if (logFile.is_open()) {
+                    logFile << "ACCENT MODE: ONSET-based - globalOnset: " << globalOnsetCounter 
+                            << ", accentPatternSize: " << currentAccentPattern.size() 
+                            << ", result: " << (isAccented ? "ACCENT" : "normal") << std::endl;
+                    logFile.close();
+                }
+            }
         }
         
         // Trigger MIDI note
@@ -1475,8 +1500,9 @@ void SerpeAudioProcessor::togglePatternStep(int stepIndex)
         // Apply the modified pattern
         patternEngine.setPattern(currentPattern);
         
-        // Resize accent pattern to match new pattern size
-        if (currentAccentPattern.size() != currentPattern.size()) {
+        // CRITICAL FIX: Only resize accent pattern for UI modifications, not UPI patterns
+        // UPI accent patterns should maintain their original size for onset-based logic
+        if (currentAccentPattern.size() != currentPattern.size() && accentPatternManuallyModified) {
             currentAccentPattern.resize(currentPattern.size(), false);
             suspendedAccentPattern = currentAccentPattern;
         }
@@ -1528,9 +1554,13 @@ void SerpeAudioProcessor::toggleAccentAtStep(int stepIndex)
     if (stepIndex < currentAccentPattern.size()) {
         currentAccentPattern[stepIndex] = !currentAccentPattern[stepIndex];
     } else {
-        // Pattern size mismatch - resize and toggle
-        currentAccentPattern.resize(currentPattern.size(), false);
-        currentAccentPattern[stepIndex] = !currentAccentPattern[stepIndex];
+        // Pattern size mismatch - only resize if this is a manually modified accent pattern
+        if (accentPatternManuallyModified) {
+            currentAccentPattern.resize(currentPattern.size(), false);
+        }
+        if (stepIndex < currentAccentPattern.size()) {
+            currentAccentPattern[stepIndex] = !currentAccentPattern[stepIndex];
+        }
     }
     
     // Update suspended accent pattern (this becomes the new cycle state)
@@ -1651,6 +1681,19 @@ void SerpeAudioProcessor::parseAndApplyUPI(const juce::String& upiPattern, bool 
         {
             hasAccentPattern = true;
             currentAccentPattern = parseResult.accentPattern;
+            
+            // DEBUG: Log accent pattern setup to file
+            std::ofstream logFile("/tmp/serpe_accent_debug.log", std::ios::app);
+            if (logFile.is_open()) {
+                logFile << "ACCENT SETUP - Pattern: " << upiPattern.toStdString() 
+                        << ", Size: " << currentAccentPattern.size() 
+                        << ", Pattern: ";
+                for (size_t i = 0; i < std::min(currentAccentPattern.size(), size_t(8)); i++) {
+                    logFile << (currentAccentPattern[i] ? "1" : "0");
+                }
+                logFile << std::endl;
+                logFile.close();
+            }
         }
         else
         {
@@ -2176,9 +2219,18 @@ bool SerpeAudioProcessor::shouldOnsetBeAccented(int onsetNumber) const
     if (!hasAccentPattern || currentAccentPattern.empty())
         return false;
     
-    // DEPRECATED: onset-based logic (kept for compatibility during transition)
+    // DEBUG: Log accent calculation
     int accentPosition = onsetNumber % static_cast<int>(currentAccentPattern.size());
-    return currentAccentPattern[accentPosition];
+    bool result = currentAccentPattern[accentPosition];
+    
+    // Log every 10th call to avoid spam
+    static int callCount = 0;
+    if ((++callCount % 10) == 0) {
+        DBG("ACCENT DEBUG - onset: " << onsetNumber << ", pattern size: " << currentAccentPattern.size() 
+            << ", accentPos: " << accentPosition << ", result: " << (result ? "ACCENT" : "normal"));
+    }
+    
+    return result;
 }
 
 bool SerpeAudioProcessor::shouldStepBeAccented(int stepIndex) const

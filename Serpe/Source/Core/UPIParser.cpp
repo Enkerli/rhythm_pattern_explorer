@@ -13,6 +13,7 @@
 #include "../Platform/DebugConfig.h"
 #include <cmath>
 #include <random>
+#include <fstream>
 #include <algorithm>
 #include <functional>
 
@@ -1393,6 +1394,14 @@ std::vector<bool> UPIParser::parseAccentPattern(const juce::String& accentStr)
 {
     juce::String trimmed = accentStr.trim();
     
+    // DEBUG: Log accent pattern entry point
+    std::ofstream logFile("/tmp/serpe_accent_debug.log", std::ios::app);
+    if (logFile.is_open()) {
+        logFile << "PARSE ACCENT ENTRY - Input: \"" << accentStr.toStdString() 
+                << "\", Trimmed: \"" << trimmed.toStdString() << "\"" << std::endl;
+        logFile.close();
+    }
+    
     if (trimmed.isEmpty())
         return {};
     
@@ -1407,13 +1416,32 @@ std::vector<bool> UPIParser::parseAccentPattern(const juce::String& accentStr)
             if (!basePattern.empty())
             {
                 // Negate rotation to make positive rotations go clockwise (webapp standard)
-                return PatternUtils::rotatePattern(basePattern, -rotationSteps);
+                auto result = PatternUtils::rotatePattern(basePattern, -rotationSteps);
+                
+                // DEBUG: Log rotation operation
+                std::ofstream logFile("/tmp/serpe_accent_debug.log", std::ios::app);
+                if (logFile.is_open()) {
+                    logFile << "ACCENT ROTATION - Input: " << trimmed.toStdString() 
+                            << ", base size=" << basePattern.size() << ", rotation=" << rotationSteps 
+                            << ", result size=" << result.size() << ", base=";
+                    for (size_t i = 0; i < std::min(basePattern.size(), size_t(8)); i++) {
+                        logFile << (basePattern[i] ? "1" : "0");
+                    }
+                    logFile << ", result=";
+                    for (size_t i = 0; i < std::min(result.size(), size_t(8)); i++) {
+                        logFile << (result[i] ? "1" : "0");
+                    }
+                    logFile << std::endl;
+                    logFile.close();
+                }
+                
+                return result;
             }
         }
     }
     
-    // Handle Euclidean accent patterns: E(3,8)
-    if (trimmed.startsWith("E(") && trimmed.endsWith(")"))
+    // Handle Euclidean accent patterns: E(3,8) or e(3,8)
+    if ((trimmed.startsWith("E(") || trimmed.startsWith("e(")) && trimmed.endsWith(")"))
     {
         auto content = trimmed.substring(2, trimmed.length() - 1);
         auto parts = juce::StringArray::fromTokens(content, ",", "");
@@ -1422,7 +1450,22 @@ std::vector<bool> UPIParser::parseAccentPattern(const juce::String& accentStr)
         {
             int onsets = parts[0].trim().getIntValue();
             int steps = parts[1].trim().getIntValue();
-            return parseEuclidean(onsets, steps);
+            auto result = parseEuclidean(onsets, steps);
+            
+            // DEBUG: Log Euclidean accent pattern parsing
+            std::ofstream logFile("/tmp/serpe_accent_debug.log", std::ios::app);
+            if (logFile.is_open()) {
+                logFile << "EUCLIDEAN ACCENT PARSE - Input: " << trimmed.toStdString() 
+                        << ", onsets=" << onsets << ", steps=" << steps 
+                        << ", result size=" << result.size() << ", pattern=";
+                for (size_t i = 0; i < std::min(result.size(), size_t(8)); i++) {
+                    logFile << (result[i] ? "1" : "0");
+                }
+                logFile << std::endl;
+                logFile.close();
+            }
+            
+            return result;
         }
     }
     
