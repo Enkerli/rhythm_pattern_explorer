@@ -1006,8 +1006,14 @@ void SerpeAudioProcessor::processStep(juce::MidiBuffer& midiBuffer, int samplePo
     int nextStep = (stepToProcess + 1) % static_cast<int>(pattern.size());
     if (nextStep == 0)
     {
-        // REMOVED: uiAccentOffset manipulation - globalOnsetCounter is single source of truth
-        // The accent position should flow naturally based on onset count, not be reset at cycle boundaries
+        // Update stable UI accent offset at cycle boundaries (only if not manually modified)
+        if (hasAccentPattern && !currentAccentPattern.empty() && !accentPatternManuallyModified)
+        {
+            uiAccentOffset = globalOnsetCounter % static_cast<int>(currentAccentPattern.size());
+        }
+        else if (hasAccentPattern && accentPatternManuallyModified)
+        {
+        }
         patternChanged.store(true); // UI can refresh at cycle boundaries
     }
 }
@@ -2218,8 +2224,8 @@ std::vector<bool> SerpeAudioProcessor::getCurrentAccentMap() const
     } else {
         // NORMAL MODE: Use onset-based accent mapping (UPI patterns, progressive transformations)
         // Calculate which onsets will occur in this cycle and their accent status
-        // Use globalOnsetCounter as single source of truth for accent position
-        int onsetNumber = globalOnsetCounter;
+        // When stopped, always start from position 0 to show accent pattern from beginning
+        int onsetNumber = isCurrentlyPlaying() ? uiAccentOffset : 0;
         
         for (int stepInCycle = 0; stepInCycle < static_cast<int>(currentPattern.size()); ++stepInCycle)
         {
