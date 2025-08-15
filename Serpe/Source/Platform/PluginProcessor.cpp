@@ -120,9 +120,6 @@ SerpeAudioProcessor::SerpeAudioProcessor()
     // Set up progressive offset engine for UPI parser
     UPIParser::setProgressiveOffsetEngine(&patternEngine);
     
-    // TEMPORARY: Disable ALL manager initialization for iOS debugging  
-    // The working NewProject has none of this complexity
-    #if !JUCE_IOS
     // Initialize encapsulated managers - TRANSITION: Running parallel with legacy for safety
     sceneManager = std::make_unique<SceneManager>();
     progressiveManager = std::make_unique<ProgressiveManager>();
@@ -132,7 +129,6 @@ SerpeAudioProcessor::SerpeAudioProcessor()
     } catch (...) {
         // Ignore preset installation errors to avoid initialization failure
     }
-    #endif
     
 }
 
@@ -529,6 +525,7 @@ void SerpeAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
         // RESTORED: Buffer-level step detection to prevent multiple triggers per step
         int patternStepCount = patternEngine.getStepCount();
         int currentBufferStep = static_cast<int>(stepsInCurrentCycle);
+        juce::ignoreUnused(patternStepCount);
         
         // Track the last processed step to detect boundaries
         static int lastProcessedStep = -1;

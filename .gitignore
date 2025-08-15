@@ -36,7 +36,21 @@
 # Log files and temporary files
 **/*.log
 **/logs/
+accent_debug*.log
+test_*
+debug_*
 
 # Temporary files
 **/Temporary*
 **/temp/
+*.tmp
+*.bak
+*~
+
+# IDE files
+.vscode/
+.idea/
+
+# Test binaries
+test_accent_*
+debug_bjorklund.js

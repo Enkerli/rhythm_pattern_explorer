@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXAggregateTarget section */
-		C51F04CB878CE09563D9F6BD /* serpe - All */ = {
+		C51F04CB878CE09563D9F6BD /* Serpe - All */ = {
 			isa = PBXAggregateTarget;
 			buildConfigurationList = 545FEC1001EC4DA7B034F192;
 			buildPhases = (
@@ -15,13 +15,12 @@
 			dependencies = (
 				58B768AA7186512D58FB5295,
 				40580B78D2EBD5D404BCF921,
-				49872EC8E12DD3D657658809,
 				6D9508F7960CD2A15B37F604,
 				89797BBEBE83FBC342104EB9,
 				F0571AF0EB70BB2361C17749,
 			);
-			name = "serpe - All";
-			productName = serpe;
+			name = "Serpe - All";
+			productName = Serpe;
 		};
 /* End PBXAggregateTarget section */
 
@@ -43,7 +42,6 @@
 		3AF944920CE7F6611B9C194A /* BinaryData.cpp */ = {isa = PBXBuildFile; fileRef = 30820CD97C80549C00FAC081; };
 		3B13BCC75DA195E8FE8F6A84 /* include_juce_gui_extra.mm */ = {isa = PBXBuildFile; fileRef = 45CB5E3B03CDE2ACC7AD98C6; };
 		3C6B9B77F1835E8C85D59958 /* UPIParser.cpp */ = {isa = PBXBuildFile; fileRef = AC4F6518AAF4B2F033522B77; };
-		3D936DB83CD9E7FEEC836A3E /* include_juce_audio_plugin_client_AUv3.mm */ = {isa = PBXBuildFile; fileRef = 848D0C467709C525025AF1F0; };
 		4115C9BAFD38F118DBE1B615 /* VST3 */ = {isa = PBXBuildFile; fileRef = 3B616F73F7D10D1351B1E4CC; };
 		4853357CEED43B3A4982CDFC /* include_juce_audio_plugin_client_Standalone.cpp */ = {isa = PBXBuildFile; fileRef = D2A44343041C5B8E163063DA; };
 		49AA93DD8D678F7134E0E2D2 /* Shared Code */ = {isa = PBXBuildFile; fileRef = 98D8F18DB713377D11D20B71; };
@@ -72,7 +70,6 @@
 		9EA74A1FA754FC2C79953936 /* PluginProcessor.cpp */ = {isa = PBXBuildFile; fileRef = 1D60D3FE58668AFA0F335779; };
 		ADBEC9EDE2496646E75F3404 /* include_juce_audio_plugin_client_VST3.mm */ = {isa = PBXBuildFile; fileRef = FCDDCCBCC1A5AF2DCE40F3C3; };
 		B8F6C29248CAA3BE6762A382 /* PluginEditor.cpp */ = {isa = PBXBuildFile; fileRef = 5A93FA1C34F0B0E685FDB726; };
-		BBC20048B62AF2F93D38B89E /* AUv3 AppExtension */ = {isa = PBXBuildFile; fileRef = E79F7CDBF4BE6CA3B69562EA; };
 		BBFD4B79ECF925B394220088 /* AudioToolbox.framework */ = {isa = PBXBuildFile; fileRef = 1FEAF93BA59B9FB1EF22F8CE; };
 		BF654E4609EA57B4AE56F098 /* include_juce_gui_basics.mm */ = {isa = PBXBuildFile; fileRef = C3234AA48D9D205317E5F1E2; };
 		C483DAC9DB62B79486BB38B9 /* Metal.framework */ = {isa = PBXBuildFile; fileRef = CFEF9E39DAC1A12C4F00DA7A; settings = { ATTRIBUTES = (Weak, ); }; };
@@ -81,24 +78,9 @@
 		D119175C96D8721F3420F7F7 /* include_juce_audio_plugin_client_ARA.cpp */ = {isa = PBXBuildFile; fileRef = D2FFA68F53D433B7C9CFE64E; };
 		D22CEB3EB791416CF5B74E07 /* IOKit.framework */ = {isa = PBXBuildFile; fileRef = FF4E0353BD60126B056F91A1; };
 		D7BC63B061ECD9A589AB9D47 /* AU */ = {isa = PBXBuildFile; fileRef = 61478930C29DB557D77D1622; };
-		E39E0CC7C9572E9F8FD34C85 /* AVFoundation.framework */ = {isa = PBXBuildFile; fileRef = 9028199A8446D191D8F4F953; };
 		E79D2A4316A3FE40ED6DB46B /* AudioUnit.framework */ = {isa = PBXBuildFile; fileRef = 59B8886ABC84C2009665866F; };
 		E9B88BF54BB014423651B6ED /* juce_VST3ManifestHelper.mm */ = {isa = PBXBuildFile; fileRef = 102E0313CB9D1AD308B0DEDE; settings = { COMPILER_FLAGS = "-fobjc-arc -w -DJUCE_SKIP_PRECOMPILED_HEADER"; }; };
 /* End PBXBuildFile section */
-
-/* Begin PBXCopyFilesBuildPhase section */
-		635F3FA5EEFDCF70D5AD958A /* Embed App Extensions */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				BBC20048B62AF2F93D38B89E,
-			);
-			name = "Embed App Extensions";
-			runOnlyForDeploymentPostprocessing = 0;
-			dstPath = "";
-			dstSubfolderSpec = 13;
-		};
-/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		0205FB14D973979E8F5B9DC6 /* juce_events */ /* juce_events */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_events; path = /Users/alex/JUCE/modules/juce_events; sourceTree = "<absolute>"; };
@@ -156,16 +138,12 @@
 		800DCD0C571C21C519C6A0DA /* JuceHeader.h */ /* JuceHeader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = JuceHeader.h; path = ../../JuceLibraryCode/JuceHeader.h; sourceTree = SOURCE_ROOT; };
 		80C1C9B722BA4C945F890341 /* PatternEngine.cpp */ /* PatternEngine.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = PatternEngine.cpp; path = ../../Source/Core/PatternEngine.cpp; sourceTree = SOURCE_ROOT; };
 		842A56545702D69FC19D3262 /* juce_dsp */ /* juce_dsp */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_dsp; path = /Users/alex/JUCE/modules/juce_dsp; sourceTree = "<absolute>"; };
-		848D0C467709C525025AF1F0 /* include_juce_audio_plugin_client_AUv3.mm */ /* include_juce_audio_plugin_client_AUv3.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_audio_plugin_client_AUv3.mm; path = ../../JuceLibraryCode/include_juce_audio_plugin_client_AUv3.mm; sourceTree = SOURCE_ROOT; };
 		8527DE7489219DB1FA129604 /* include_juce_core_CompilationTime.cpp */ /* include_juce_core_CompilationTime.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = include_juce_core_CompilationTime.cpp; path = ../../JuceLibraryCode/include_juce_core_CompilationTime.cpp; sourceTree = SOURCE_ROOT; };
 		858FAA6567B98445D2B1AF6B /* include_juce_audio_formats.mm */ /* include_juce_audio_formats.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_audio_formats.mm; path = ../../JuceLibraryCode/include_juce_audio_formats.mm; sourceTree = SOURCE_ROOT; };
-		8618C07A4499E096CC92C38B /* AUv3_AppExtension.entitlements */ /* AUv3_AppExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = AUv3_AppExtension.entitlements; path = AUv3_AppExtension.entitlements; sourceTree = SOURCE_ROOT; };
 		88D78A082CDE537448F656E5 /* RecentFilesMenuTemplate.nib */ /* RecentFilesMenuTemplate.nib */ = {isa = PBXFileReference; lastKnownFileType = file.nib; name = RecentFilesMenuTemplate.nib; path = RecentFilesMenuTemplate.nib; sourceTree = SOURCE_ROOT; };
 		8D579E7E827D3D79BDCA71DD /* UPIParser.h */ /* UPIParser.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = UPIParser.h; path = ../../Source/Core/UPIParser.h; sourceTree = SOURCE_ROOT; };
-		9028199A8446D191D8F4F953 /* AVFoundation.framework */ /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		908C1723025B0820F60A9011 /* PluginEditor.h */ /* PluginEditor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = PluginEditor.h; path = ../../Source/Platform/PluginEditor.h; sourceTree = SOURCE_ROOT; };
 		91C7902DA50E60B77D3058F5 /* Cocoa.framework */ /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
-		9619F9C039B50C82C6AE5F1E /* Info-AUv3_AppExtension.plist */ /* Info-AUv3_AppExtension.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "Info-AUv3_AppExtension.plist"; path = "Info-AUv3_AppExtension.plist"; sourceTree = SOURCE_ROOT; };
 		98D8F18DB713377D11D20B71 /* Shared Code */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libSerpe.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		9D35954560CD7C352D9E3A80 /* PluginProcessor.h */ /* PluginProcessor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = PluginProcessor.h; path = ../../Source/Platform/PluginProcessor.h; sourceTree = SOURCE_ROOT; };
 		9E95CC8F5008568FEEF14ECF /* include_juce_audio_processors_ara.cpp */ /* include_juce_audio_processors_ara.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = include_juce_audio_processors_ara.cpp; path = ../../JuceLibraryCode/include_juce_audio_processors_ara.cpp; sourceTree = SOURCE_ROOT; };
@@ -191,7 +169,6 @@
 		E014CD31103739378213EED2 /* juce_audio_utils */ /* juce_audio_utils */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_audio_utils; path = /Users/alex/JUCE/modules/juce_audio_utils; sourceTree = "<absolute>"; };
 		E28E77E27D0B8E7BA0746AFB /* DiscRecording.framework */ /* DiscRecording.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = DiscRecording.framework; path = System/Library/Frameworks/DiscRecording.framework; sourceTree = SDKROOT; };
 		E45DE6D46AB9B4DF7C2ABE21 /* MetalKit.framework */ /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = System/Library/Frameworks/MetalKit.framework; sourceTree = SDKROOT; };
-		E79F7CDBF4BE6CA3B69562EA /* AUv3 AppExtension */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = Serpe.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		F4CDF0D7075F3D764D3A8A8C /* CoreAlgorithmTests.h */ /* CoreAlgorithmTests.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = CoreAlgorithmTests.h; path = ../../Source/Tests/CoreAlgorithmTests.h; sourceTree = SOURCE_ROOT; };
 		FCDDCCBCC1A5AF2DCE40F3C3 /* include_juce_audio_plugin_client_VST3.mm */ /* include_juce_audio_plugin_client_VST3.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_audio_plugin_client_VST3.mm; path = ../../JuceLibraryCode/include_juce_audio_plugin_client_VST3.mm; sourceTree = SOURCE_ROOT; };
 		FD6D039A3716B6412C7F7FEC /* ProgressiveManager.cpp */ /* ProgressiveManager.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = ProgressiveManager.cpp; path = ../../Source/Managers/ProgressiveManager.cpp; sourceTree = SOURCE_ROOT; };
@@ -206,29 +183,6 @@
 				E79D2A4316A3FE40ED6DB46B,
 				66B4783C2F1345CFE36BC313,
 				BBFD4B79ECF925B394220088,
-				15B0427962997A6815C35F41,
-				018B04F0E33424F412234D97,
-				06B287D35BBFB6CA58A0A59C,
-				9148A6C9C637E5D57FBC2D80,
-				656D18AAB4C59A4E6EF1C5C4,
-				67E206B23090D762D1E10C78,
-				D22CEB3EB791416CF5B74E07,
-				24868896BCFE2E18DC7904BB,
-				841DA1C2139D5AAE8FFB60A9,
-				81928CFFB5F2E1D91EF37688,
-				C483DAC9DB62B79486BB38B9,
-				59319D4C0E112629FE002472,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		01BC34A5F1F4C65D06984885 = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				E79D2A4316A3FE40ED6DB46B,
-				66B4783C2F1345CFE36BC313,
-				BBFD4B79ECF925B394220088,
-				E39E0CC7C9572E9F8FD34C85,
 				15B0427962997A6815C35F41,
 				018B04F0E33424F412234D97,
 				06B287D35BBFB6CA58A0A59C,
@@ -330,7 +284,6 @@
 			children = (
 				3B616F73F7D10D1351B1E4CC,
 				61478930C29DB557D77D1622,
-				E79F7CDBF4BE6CA3B69562EA,
 				27AD22B315BF82CFA208BA87,
 				98D8F18DB713377D11D20B71,
 				5DCDC11E4B79508490BFBDE5,
@@ -343,7 +296,6 @@
 			children = (
 				737346F49281F8D957A326BA,
 				0B6C522B130A52889EAA1348,
-				9619F9C039B50C82C6AE5F1E,
 				CBC9FC64743846928D19630E,
 				CF46E8A6F4C8B7715CB03209,
 				88D78A082CDE537448F656E5,
@@ -425,7 +377,6 @@
 				59B8886ABC84C2009665866F,
 				4C2E9B5A6013C2D9DE3FC604,
 				1FEAF93BA59B9FB1EF22F8CE,
-				9028199A8446D191D8F4F953,
 				91C7902DA50E60B77D3058F5,
 				288A31BB1C8309D43D4AF112,
 				45E2B254A3319FD4AEEF5DDA,
@@ -453,7 +404,6 @@
 				D2FFA68F53D433B7C9CFE64E,
 				A77CD98EC6A05E5822B793CC,
 				65CD70B54DC307DD7D4BB644,
-				848D0C467709C525025AF1F0,
 				D2A44343041C5B8E163063DA,
 				FCDDCCBCC1A5AF2DCE40F3C3,
 				1B7766B8C325E281CD0843FC,
@@ -501,7 +451,7 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		203365587592589DD8672D8A /* serpe - Shared Code */ = {
+		203365587592589DD8672D8A /* Serpe - Shared Code */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = A883C828827F387E100CC870;
 			buildPhases = (
@@ -511,30 +461,12 @@
 			);
 			dependencies = (
 			);
-			name = "serpe - Shared Code";
-			productName = serpe;
+			name = "Serpe - Shared Code";
+			productName = Serpe;
 			productReference = 98D8F18DB713377D11D20B71;
 			productType = "com.apple.product-type.library.static";
 		};
-		5BFCC6C703EA0CB3FAC96304 /* serpe - AUv3 AppExtension */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = E15049250FF9DFC304FD2F18;
-			buildPhases = (
-				BBFD28F4AB141FF150AD233A,
-				C0AAAF34CC8F2B55BFCF35AB,
-				01BC34A5F1F4C65D06984885,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				6604576478E059A606090450,
-			);
-			name = "serpe - AUv3 AppExtension";
-			productName = serpe;
-			productReference = E79F7CDBF4BE6CA3B69562EA;
-			productType = "com.apple.product-type.app-extension";
-		};
-		6D2D869F32E726A0744DAF06 /* serpe - VST3 */ = {
+		6D2D869F32E726A0744DAF06 /* Serpe - VST3 */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = E7217593B70544CCFC86E2FD;
 			buildPhases = (
@@ -550,12 +482,12 @@
 				CD7DF8B4EF518A1EB6310EC9,
 				3B40D52BFEF87FC0F401F08F,
 			);
-			name = "serpe - VST3";
-			productName = serpe;
+			name = "Serpe - VST3";
+			productName = Serpe;
 			productReference = 3B616F73F7D10D1351B1E4CC;
 			productType = "com.apple.product-type.bundle";
 		};
-		AC4F22F9B9F626B75EDFF369 /* serpe - AU */ = {
+		AC4F22F9B9F626B75EDFF369 /* Serpe - AU */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = CB268A64ADED4D1F32C6E000;
 			buildPhases = (
@@ -569,32 +501,30 @@
 			dependencies = (
 				B5D1C8821914687A01A20375,
 			);
-			name = "serpe - AU";
-			productName = serpe;
+			name = "Serpe - AU";
+			productName = Serpe;
 			productReference = 61478930C29DB557D77D1622;
 			productType = "com.apple.product-type.bundle";
 		};
-		B45F583AB75610B9C41513D1 /* serpe - Standalone Plugin */ = {
+		B45F583AB75610B9C41513D1 /* Serpe - Standalone Plugin */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 8AF240806B4928BA0EE96E57;
 			buildPhases = (
 				D5A5C9D256CEEAEC82826113,
 				35726F89ECCDA4F9C38A7A82,
 				D16BF42628CCA1227D3A405D,
-				635F3FA5EEFDCF70D5AD958A,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				34F713665342A647AC4188FD,
-				04C446EFD3A946FE1FEB8CA1,
 			);
-			name = "serpe - Standalone Plugin";
-			productName = serpe;
+			name = "Serpe - Standalone Plugin";
+			productName = Serpe;
 			productReference = 27AD22B315BF82CFA208BA87;
 			productType = "com.apple.product-type.application";
 		};
-		E0F8A7482BCED1E063A82525 /* serpe - VST3 Manifest Helper */ = {
+		E0F8A7482BCED1E063A82525 /* Serpe - VST3 Manifest Helper */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = CAC6723BDBDFE2D0C0660E2C;
 			buildPhases = (
@@ -605,8 +535,8 @@
 			);
 			dependencies = (
 			);
-			name = "serpe - VST3 Manifest Helper";
-			productName = serpe;
+			name = "Serpe - VST3 Manifest Helper";
+			productName = Serpe;
 			productReference = 5DCDC11E4B79508490BFBDE5;
 			productType = "com.apple.product-type.tool";
 		};
@@ -618,7 +548,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1340;
-				ORGANIZATIONNAME = "enkerli";
+				ORGANIZATIONNAME = "Enkerli";
 				TargetAttributes = {
 					203365587592589DD8672D8A = {
 						SystemCapabilities = {
@@ -639,28 +569,6 @@
 							};
 							com.apple.Sandbox = {
 								enabled = 0;
-							};
-						};
-					};
-					5BFCC6C703EA0CB3FAC96304 = {
-						SystemCapabilities = {
-							com.apple.ApplicationGroups.iOS = {
-								enabled = 0;
-							};
-							com.apple.HardenedRuntime = {
-								enabled = 0;
-							};
-							com.apple.InAppPurchase = {
-								enabled = 0;
-							};
-							com.apple.InterAppAudio = {
-								enabled = 0;
-							};
-							com.apple.Push = {
-								enabled = 0;
-							};
-							com.apple.Sandbox = {
-								enabled = 1;
 							};
 						};
 					};
@@ -790,7 +698,6 @@
 				C51F04CB878CE09563D9F6BD,
 				6D2D869F32E726A0744DAF06,
 				AC4F22F9B9F626B75EDFF369,
-				5BFCC6C703EA0CB3FAC96304,
 				B45F583AB75610B9C41513D1,
 				203365587592589DD8672D8A,
 				E0F8A7482BCED1E063A82525,
@@ -808,14 +715,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		7630CA5FFC8EA6E080DA74D8 = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				637F25C8AFD2124DC4A12877,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		BBFD28F4AB141FF150AD233A = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -903,14 +802,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		C0AAAF34CC8F2B55BFCF35AB = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				3D936DB83CD9E7FEEC836A3E,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		E93741A05B927AB9EA29BD66 = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -950,10 +841,6 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		04C446EFD3A946FE1FEB8CA1 = {
-			isa = PBXTargetDependency;
-			target = 5BFCC6C703EA0CB3FAC96304;
-		};
 		34F713665342A647AC4188FD = {
 			isa = PBXTargetDependency;
 			target = 203365587592589DD8672D8A;
@@ -966,17 +853,9 @@
 			isa = PBXTargetDependency;
 			target = AC4F22F9B9F626B75EDFF369;
 		};
-		49872EC8E12DD3D657658809 = {
-			isa = PBXTargetDependency;
-			target = 5BFCC6C703EA0CB3FAC96304;
-		};
 		58B768AA7186512D58FB5295 = {
 			isa = PBXTargetDependency;
 			target = 6D2D869F32E726A0744DAF06;
-		};
-		6604576478E059A606090450 = {
-			isa = PBXTargetDependency;
-			target = 203365587592589DD8672D8A;
 		};
 		6D9508F7960CD2A15B37F604 = {
 			isa = PBXTargetDependency;
@@ -1051,13 +930,13 @@
 					"JucePlugin_Build_LV2=0",
 					"JucePlugin_Enable_IAA=0",
 					"JucePlugin_Enable_ARA=0",
-					"JucePlugin_Name=\\\"Rhythm\\ Pattern\\ Explorer\\ iPad\\\"",
+					"JucePlugin_Name=\\\"Serpe\\\"",
 					"JucePlugin_Desc=\\\"Mathematical\\ rhythm\\ pattern\\ generator\\ and\\ analyzer\\\"",
 					"JucePlugin_Manufacturer=\\\"Enkerli\\\"",
 					"JucePlugin_ManufacturerWebsite=\\\"https://github.com/enkerli/rhythm_pattern_explorer\\\"",
 					"JucePlugin_ManufacturerEmail=\\\"support@serpe.dev\\\"",
 					"JucePlugin_ManufacturerCode=0x456e6b65",
-					"JucePlugin_PluginCode=0x52504569",
+					"JucePlugin_PluginCode=0x52504564",
 					"JucePlugin_IsSynth=0",
 					"JucePlugin_WantsMidiInput=1",
 					"JucePlugin_ProducesMidiOutput=1",
@@ -1071,11 +950,11 @@
 					"JucePlugin_Vst3Category=\\\"Fx\\\"",
 					"JucePlugin_AUMainType=\\'aumi\\'",
 					"JucePlugin_AUSubType=JucePlugin_PluginCode",
-					"JucePlugin_AUExportPrefix=RhythmPatternExploreriPadAU",
-					"JucePlugin_AUExportPrefixQuoted=\\\"RhythmPatternExploreriPadAU\\\"",
+					"JucePlugin_AUExportPrefix=SerpeAU",
+					"JucePlugin_AUExportPrefixQuoted=\\\"SerpeAU\\\"",
 					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
-					"JucePlugin_CFBundleIdentifier=com.enkerli.serpe",
-					"JucePlugin_AAXIdentifier=com.Enkerli.RhythmPatternExploreriPad",
+					"JucePlugin_CFBundleIdentifier=com.Enkerli.Serpe",
+					"JucePlugin_AAXIdentifier=com.enkerli.serpe",
 					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
 					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
 					"JucePlugin_AAXCategory=2",
@@ -1083,13 +962,13 @@
 					"JucePlugin_AAXDisableMultiMono=0",
 					"JucePlugin_IAAType=0x6175726d",
 					"JucePlugin_IAASubType=JucePlugin_PluginCode",
-					"JucePlugin_IAAName=\\\"Enkerli:\\ Rhythm\\ Pattern\\ Explorer\\ iPad\\\"",
+					"JucePlugin_IAAName=\\\"Enkerli:\\ Serpe\\\"",
 					"JucePlugin_VSTNumMidiInputs=16",
 					"JucePlugin_VSTNumMidiOutputs=16",
 					"JucePlugin_ARAContentTypes=0",
 					"JucePlugin_ARATransformationFlags=0",
-					"JucePlugin_ARAFactoryID=\\\"com.enkerli.serpe.factory\\\"",
-					"JucePlugin_ARADocumentArchiveID=\\\"com.enkerli.serpe.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARAFactoryID=\\\"com.Enkerli.Serpe.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.Enkerli.Serpe.aradocumentarchive.1.0.0\\\"",
 					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
 					"JucePlugin_MaxNumInputChannels=0",
 					"JucePlugin_MaxNumOutputChannels=0",
@@ -1112,7 +991,7 @@
 				INFOPLIST_PREPROCESS = NO;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_HEADER_SEARCH_PATHS = "/Users/alex/JUCE/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode /Users/alex/JUCE/modules /Users/alex/JUCE/modules/juce_audio_plugin_client/AU";
-				PRODUCT_BUNDLE_IDENTIFIER = com.enkerli.serpe;
+				PRODUCT_BUNDLE_IDENTIFIER = com.Enkerli.Serpe;
 				PRODUCT_NAME = "juce_vst3_helper";
 				USE_HEADERMAP = NO;
 				VALID_ARCHS = "i386 x86_64 arm64 arm64e";
@@ -1161,13 +1040,13 @@
 					"JucePlugin_Build_LV2=0",
 					"JucePlugin_Enable_IAA=0",
 					"JucePlugin_Enable_ARA=0",
-					"JucePlugin_Name=\\\"Rhythm\\ Pattern\\ Explorer\\ iPad\\\"",
+					"JucePlugin_Name=\\\"Serpe\\\"",
 					"JucePlugin_Desc=\\\"Mathematical\\ rhythm\\ pattern\\ generator\\ and\\ analyzer\\\"",
 					"JucePlugin_Manufacturer=\\\"Enkerli\\\"",
 					"JucePlugin_ManufacturerWebsite=\\\"https://github.com/enkerli/rhythm_pattern_explorer\\\"",
 					"JucePlugin_ManufacturerEmail=\\\"support@serpe.dev\\\"",
 					"JucePlugin_ManufacturerCode=0x456e6b65",
-					"JucePlugin_PluginCode=0x52504569",
+					"JucePlugin_PluginCode=0x52504564",
 					"JucePlugin_IsSynth=0",
 					"JucePlugin_WantsMidiInput=1",
 					"JucePlugin_ProducesMidiOutput=1",
@@ -1181,11 +1060,11 @@
 					"JucePlugin_Vst3Category=\\\"Fx\\\"",
 					"JucePlugin_AUMainType=\\'aumi\\'",
 					"JucePlugin_AUSubType=JucePlugin_PluginCode",
-					"JucePlugin_AUExportPrefix=RhythmPatternExploreriPadAU",
-					"JucePlugin_AUExportPrefixQuoted=\\\"RhythmPatternExploreriPadAU\\\"",
+					"JucePlugin_AUExportPrefix=SerpeAU",
+					"JucePlugin_AUExportPrefixQuoted=\\\"SerpeAU\\\"",
 					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
-					"JucePlugin_CFBundleIdentifier=com.enkerli.serpe",
-					"JucePlugin_AAXIdentifier=com.Enkerli.RhythmPatternExploreriPad",
+					"JucePlugin_CFBundleIdentifier=com.Enkerli.Serpe",
+					"JucePlugin_AAXIdentifier=com.enkerli.serpe",
 					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
 					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
 					"JucePlugin_AAXCategory=2",
@@ -1193,13 +1072,13 @@
 					"JucePlugin_AAXDisableMultiMono=0",
 					"JucePlugin_IAAType=0x6175726d",
 					"JucePlugin_IAASubType=JucePlugin_PluginCode",
-					"JucePlugin_IAAName=\\\"Enkerli:\\ Rhythm\\ Pattern\\ Explorer\\ iPad\\\"",
+					"JucePlugin_IAAName=\\\"Enkerli:\\ Serpe\\\"",
 					"JucePlugin_VSTNumMidiInputs=16",
 					"JucePlugin_VSTNumMidiOutputs=16",
 					"JucePlugin_ARAContentTypes=0",
 					"JucePlugin_ARATransformationFlags=0",
-					"JucePlugin_ARAFactoryID=\\\"com.enkerli.serpe.factory\\\"",
-					"JucePlugin_ARADocumentArchiveID=\\\"com.enkerli.serpe.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARAFactoryID=\\\"com.Enkerli.Serpe.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.Enkerli.Serpe.aradocumentarchive.1.0.0\\\"",
 					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
 					"JucePlugin_MaxNumInputChannels=0",
 					"JucePlugin_MaxNumOutputChannels=0",
@@ -1226,7 +1105,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_HEADER_SEARCH_PATHS = "/Users/alex/JUCE/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode /Users/alex/JUCE/modules /Users/alex/JUCE/modules/juce_audio_plugin_client/AU";
 				OTHER_LDFLAGS = "-bundle -lSerpe";
-				PRODUCT_BUNDLE_IDENTIFIER = com.enkerli.serpe;
+				PRODUCT_BUNDLE_IDENTIFIER = com.Enkerli.Serpe;
 				PRODUCT_NAME = "Serpe";
 				USE_HEADERMAP = NO;
 				VALID_ARCHS = "i386 x86_64 arm64 arm64e";
@@ -1277,13 +1156,13 @@
 					"JucePlugin_Build_LV2=0",
 					"JucePlugin_Enable_IAA=0",
 					"JucePlugin_Enable_ARA=0",
-					"JucePlugin_Name=\\\"Rhythm\\ Pattern\\ Explorer\\ iPad\\\"",
+					"JucePlugin_Name=\\\"Serpe\\\"",
 					"JucePlugin_Desc=\\\"Mathematical\\ rhythm\\ pattern\\ generator\\ and\\ analyzer\\\"",
 					"JucePlugin_Manufacturer=\\\"Enkerli\\\"",
 					"JucePlugin_ManufacturerWebsite=\\\"https://github.com/enkerli/rhythm_pattern_explorer\\\"",
 					"JucePlugin_ManufacturerEmail=\\\"support@serpe.dev\\\"",
 					"JucePlugin_ManufacturerCode=0x456e6b65",
-					"JucePlugin_PluginCode=0x52504569",
+					"JucePlugin_PluginCode=0x52504564",
 					"JucePlugin_IsSynth=0",
 					"JucePlugin_WantsMidiInput=1",
 					"JucePlugin_ProducesMidiOutput=1",
@@ -1297,11 +1176,11 @@
 					"JucePlugin_Vst3Category=\\\"Fx\\\"",
 					"JucePlugin_AUMainType=\\'aumi\\'",
 					"JucePlugin_AUSubType=JucePlugin_PluginCode",
-					"JucePlugin_AUExportPrefix=RhythmPatternExploreriPadAU",
-					"JucePlugin_AUExportPrefixQuoted=\\\"RhythmPatternExploreriPadAU\\\"",
+					"JucePlugin_AUExportPrefix=SerpeAU",
+					"JucePlugin_AUExportPrefixQuoted=\\\"SerpeAU\\\"",
 					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
-					"JucePlugin_CFBundleIdentifier=com.enkerli.serpe",
-					"JucePlugin_AAXIdentifier=com.Enkerli.RhythmPatternExploreriPad",
+					"JucePlugin_CFBundleIdentifier=com.Enkerli.Serpe",
+					"JucePlugin_AAXIdentifier=com.enkerli.serpe",
 					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
 					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
 					"JucePlugin_AAXCategory=2",
@@ -1309,13 +1188,13 @@
 					"JucePlugin_AAXDisableMultiMono=0",
 					"JucePlugin_IAAType=0x6175726d",
 					"JucePlugin_IAASubType=JucePlugin_PluginCode",
-					"JucePlugin_IAAName=\\\"Enkerli:\\ Rhythm\\ Pattern\\ Explorer\\ iPad\\\"",
+					"JucePlugin_IAAName=\\\"Enkerli:\\ Serpe\\\"",
 					"JucePlugin_VSTNumMidiInputs=16",
 					"JucePlugin_VSTNumMidiOutputs=16",
 					"JucePlugin_ARAContentTypes=0",
 					"JucePlugin_ARATransformationFlags=0",
-					"JucePlugin_ARAFactoryID=\\\"com.enkerli.serpe.factory\\\"",
-					"JucePlugin_ARADocumentArchiveID=\\\"com.enkerli.serpe.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARAFactoryID=\\\"com.Enkerli.Serpe.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.Enkerli.Serpe.aradocumentarchive.1.0.0\\\"",
 					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
 					"JucePlugin_MaxNumInputChannels=0",
 					"JucePlugin_MaxNumOutputChannels=0",
@@ -1343,7 +1222,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_HEADER_SEARCH_PATHS = "/Users/alex/JUCE/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode /Users/alex/JUCE/modules /Users/alex/JUCE/modules/juce_audio_plugin_client/AU";
 				OTHER_LDFLAGS = "-bundle -lSerpe";
-				PRODUCT_BUNDLE_IDENTIFIER = com.enkerli.serpe;
+				PRODUCT_BUNDLE_IDENTIFIER = com.Enkerli.Serpe;
 				PRODUCT_NAME = "Serpe";
 				SEPARATE_STRIP = YES;
 				STRIPFLAGS = "-x";
@@ -1401,123 +1280,6 @@
 			};
 			name = Release;
 		};
-		1E6E09F7755F284E59AF1D4F /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
-				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_LINK_OBJC_RUNTIME = NO;
-				CODE_SIGN_ENTITLEMENTS = "AUv3_AppExtension.entitlements";
-				COMBINE_HIDPI_IMAGES = YES;
-				CONFIGURATION_BUILD_DIR = "$(PROJECT_DIR)/build/$(CONFIGURATION)";
-				DEAD_CODE_STRIPPING = YES;
-				DEPLOYMENT_POSTPROCESSING = YES;
-				EXCLUDED_ARCHS = "";
-				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
-				GCC_OPTIMIZATION_LEVEL = 3;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"_NDEBUG=1",
-					"NDEBUG=1",
-					"JUCE_PROJUCER_VERSION=0x80008",
-					"JUCE_MODULE_AVAILABLE_juce_audio_basics=1",
-					"JUCE_MODULE_AVAILABLE_juce_audio_devices=1",
-					"JUCE_MODULE_AVAILABLE_juce_audio_formats=1",
-					"JUCE_MODULE_AVAILABLE_juce_audio_plugin_client=1",
-					"JUCE_MODULE_AVAILABLE_juce_audio_processors=1",
-					"JUCE_MODULE_AVAILABLE_juce_audio_utils=1",
-					"JUCE_MODULE_AVAILABLE_juce_core=1",
-					"JUCE_MODULE_AVAILABLE_juce_data_structures=1",
-					"JUCE_MODULE_AVAILABLE_juce_dsp=1",
-					"JUCE_MODULE_AVAILABLE_juce_events=1",
-					"JUCE_MODULE_AVAILABLE_juce_graphics=1",
-					"JUCE_MODULE_AVAILABLE_juce_gui_basics=1",
-					"JUCE_MODULE_AVAILABLE_juce_gui_extra=1",
-					"JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1",
-					"JUCE_VST3_CAN_REPLACE_VST2=0",
-					"JUCE_STRICT_REFCOUNTEDPOINTER=1",
-					"JucePlugin_Build_VST=0",
-					"JucePlugin_Build_VST3=0",
-					"JucePlugin_Build_AU=0",
-					"JucePlugin_Build_AUv3=1",
-					"JucePlugin_Build_AAX=0",
-					"JucePlugin_Build_Standalone=0",
-					"JucePlugin_Build_Unity=0",
-					"JucePlugin_Build_LV2=0",
-					"JucePlugin_Enable_IAA=0",
-					"JucePlugin_Enable_ARA=0",
-					"JucePlugin_Name=\\\"Rhythm\\ Pattern\\ Explorer\\ iPad\\\"",
-					"JucePlugin_Desc=\\\"Mathematical\\ rhythm\\ pattern\\ generator\\ and\\ analyzer\\\"",
-					"JucePlugin_Manufacturer=\\\"Enkerli\\\"",
-					"JucePlugin_ManufacturerWebsite=\\\"https://github.com/enkerli/rhythm_pattern_explorer\\\"",
-					"JucePlugin_ManufacturerEmail=\\\"support@serpe.dev\\\"",
-					"JucePlugin_ManufacturerCode=0x456e6b65",
-					"JucePlugin_PluginCode=0x52504569",
-					"JucePlugin_IsSynth=0",
-					"JucePlugin_WantsMidiInput=1",
-					"JucePlugin_ProducesMidiOutput=1",
-					"JucePlugin_IsMidiEffect=1",
-					"JucePlugin_EditorRequiresKeyboardFocus=0",
-					"JucePlugin_Version=1.0.0",
-					"JucePlugin_VersionCode=0x10000",
-					"JucePlugin_VersionString=\\\"1.0.0\\\"",
-					"JucePlugin_VSTUniqueID=JucePlugin_PluginCode",
-					"JucePlugin_VSTCategory=kPlugCategEffect",
-					"JucePlugin_Vst3Category=\\\"Fx\\\"",
-					"JucePlugin_AUMainType=\\'aumi\\'",
-					"JucePlugin_AUSubType=JucePlugin_PluginCode",
-					"JucePlugin_AUExportPrefix=RhythmPatternExploreriPadAU",
-					"JucePlugin_AUExportPrefixQuoted=\\\"RhythmPatternExploreriPadAU\\\"",
-					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
-					"JucePlugin_CFBundleIdentifier=com.enkerli.serpe",
-					"JucePlugin_AAXIdentifier=com.Enkerli.RhythmPatternExploreriPad",
-					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
-					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
-					"JucePlugin_AAXCategory=2",
-					"JucePlugin_AAXDisableBypass=0",
-					"JucePlugin_AAXDisableMultiMono=0",
-					"JucePlugin_IAAType=0x6175726d",
-					"JucePlugin_IAASubType=JucePlugin_PluginCode",
-					"JucePlugin_IAAName=\\\"Enkerli:\\ Rhythm\\ Pattern\\ Explorer\\ iPad\\\"",
-					"JucePlugin_VSTNumMidiInputs=16",
-					"JucePlugin_VSTNumMidiOutputs=16",
-					"JucePlugin_ARAContentTypes=0",
-					"JucePlugin_ARATransformationFlags=0",
-					"JucePlugin_ARAFactoryID=\\\"com.enkerli.serpe.factory\\\"",
-					"JucePlugin_ARADocumentArchiveID=\\\"com.enkerli.serpe.aradocumentarchive.1.0.0\\\"",
-					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
-					"JucePlugin_MaxNumInputChannels=0",
-					"JucePlugin_MaxNumOutputChannels=0",
-					"JucePlugin_PreferredChannelConfigurations={0,0}",
-					"JUCE_STANDALONE_APPLICATION=JucePlugin_Build_Standalone",
-					"SERPE_DESKTOP=1",
-					"JUCER_XCODE_MAC_F6D2F4CF=1",
-					"JUCE_APP_VERSION=1.0.0",
-					"JUCE_APP_VERSION_HEX=0x10000",
-				);
-				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
-				HEADER_SEARCH_PATHS = (
-					"/Users/alex/JUCE/modules/juce_audio_processors/format_types/VST3_SDK",
-					"$(SRCROOT)/../../JuceLibraryCode",
-					"/Users/alex/JUCE/modules",
-					"/Users/alex/JUCE/modules/juce_audio_plugin_client/AU",
-					"$(inherited)",
-				);
-				INFOPLIST_FILE = Info-AUv3_AppExtension.plist;
-				INFOPLIST_PREPROCESS = NO;
-				LLVM_LTO = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MTL_HEADER_SEARCH_PATHS = "/Users/alex/JUCE/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode /Users/alex/JUCE/modules /Users/alex/JUCE/modules/juce_audio_plugin_client/AU";
-				OTHER_LDFLAGS = "-lSerpe";
-				PRODUCT_BUNDLE_IDENTIFIER = com.enkerli.serpe.serpeAUv3;
-				PRODUCT_NAME = "Serpe";
-				SEPARATE_STRIP = YES;
-				STRIPFLAGS = "-x";
-				USE_HEADERMAP = NO;
-				VALID_ARCHS = "i386 x86_64 arm64 arm64e";
-			};
-			name = Release;
-		};
 		22F6508E7A36DAB993DC1BA0 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1560,13 +1322,13 @@
 					"JucePlugin_Build_LV2=0",
 					"JucePlugin_Enable_IAA=0",
 					"JucePlugin_Enable_ARA=0",
-					"JucePlugin_Name=\\\"Rhythm\\ Pattern\\ Explorer\\ iPad\\\"",
+					"JucePlugin_Name=\\\"Serpe\\\"",
 					"JucePlugin_Desc=\\\"Mathematical\\ rhythm\\ pattern\\ generator\\ and\\ analyzer\\\"",
 					"JucePlugin_Manufacturer=\\\"Enkerli\\\"",
 					"JucePlugin_ManufacturerWebsite=\\\"https://github.com/enkerli/rhythm_pattern_explorer\\\"",
 					"JucePlugin_ManufacturerEmail=\\\"support@serpe.dev\\\"",
 					"JucePlugin_ManufacturerCode=0x456e6b65",
-					"JucePlugin_PluginCode=0x52504569",
+					"JucePlugin_PluginCode=0x52504564",
 					"JucePlugin_IsSynth=0",
 					"JucePlugin_WantsMidiInput=1",
 					"JucePlugin_ProducesMidiOutput=1",
@@ -1580,11 +1342,11 @@
 					"JucePlugin_Vst3Category=\\\"Fx\\\"",
 					"JucePlugin_AUMainType=\\'aumi\\'",
 					"JucePlugin_AUSubType=JucePlugin_PluginCode",
-					"JucePlugin_AUExportPrefix=RhythmPatternExploreriPadAU",
-					"JucePlugin_AUExportPrefixQuoted=\\\"RhythmPatternExploreriPadAU\\\"",
+					"JucePlugin_AUExportPrefix=SerpeAU",
+					"JucePlugin_AUExportPrefixQuoted=\\\"SerpeAU\\\"",
 					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
-					"JucePlugin_CFBundleIdentifier=com.enkerli.serpe",
-					"JucePlugin_AAXIdentifier=com.Enkerli.RhythmPatternExploreriPad",
+					"JucePlugin_CFBundleIdentifier=com.Enkerli.Serpe",
+					"JucePlugin_AAXIdentifier=com.enkerli.serpe",
 					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
 					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
 					"JucePlugin_AAXCategory=2",
@@ -1592,13 +1354,13 @@
 					"JucePlugin_AAXDisableMultiMono=0",
 					"JucePlugin_IAAType=0x6175726d",
 					"JucePlugin_IAASubType=JucePlugin_PluginCode",
-					"JucePlugin_IAAName=\\\"Enkerli:\\ Rhythm\\ Pattern\\ Explorer\\ iPad\\\"",
+					"JucePlugin_IAAName=\\\"Enkerli:\\ Serpe\\\"",
 					"JucePlugin_VSTNumMidiInputs=16",
 					"JucePlugin_VSTNumMidiOutputs=16",
 					"JucePlugin_ARAContentTypes=0",
 					"JucePlugin_ARATransformationFlags=0",
-					"JucePlugin_ARAFactoryID=\\\"com.enkerli.serpe.factory\\\"",
-					"JucePlugin_ARADocumentArchiveID=\\\"com.enkerli.serpe.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARAFactoryID=\\\"com.Enkerli.Serpe.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.Enkerli.Serpe.aradocumentarchive.1.0.0\\\"",
 					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
 					"JucePlugin_MaxNumInputChannels=0",
 					"JucePlugin_MaxNumOutputChannels=0",
@@ -1626,124 +1388,11 @@
 				MTL_HEADER_SEARCH_PATHS = "/Users/alex/JUCE/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode /Users/alex/JUCE/modules /Users/alex/JUCE/modules/juce_audio_plugin_client/AU";
 				OTHER_LDFLAGS = "-bundle -lSerpe";
 				OTHER_REZFLAGS = "-d ppc_$ppc -d i386_$i386 -d ppc64_$ppc64 -d x86_64_$x86_64 -d arm64_$arm64 -I /System/Library/Frameworks/CoreServices.framework/Frameworks/CarbonCore.framework/Versions/A/Headers -I \"$(DEVELOPER_DIR)/Extras/CoreAudio/AudioUnits/AUPublic/AUBase\" -I \"$(DEVELOPER_DIR)/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/AudioUnit.framework/Headers\"";
-				PRODUCT_BUNDLE_IDENTIFIER = com.enkerli.serpe;
+				PRODUCT_BUNDLE_IDENTIFIER = com.Enkerli.Serpe;
 				PRODUCT_NAME = "Serpe";
 				USE_HEADERMAP = NO;
 				VALID_ARCHS = "i386 x86_64 arm64 arm64e";
 				WRAPPER_EXTENSION = component;
-			};
-			name = Debug;
-		};
-		28BCAC7CB0DDB7E71CE4A84C /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
-				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_LINK_OBJC_RUNTIME = NO;
-				CODE_SIGN_ENTITLEMENTS = "AUv3_AppExtension.entitlements";
-				COMBINE_HIDPI_IMAGES = YES;
-				CONFIGURATION_BUILD_DIR = "$(PROJECT_DIR)/build/$(CONFIGURATION)";
-				COPY_PHASE_STRIP = NO;
-				EXCLUDED_ARCHS = "";
-				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"_DEBUG=1",
-					"DEBUG=1",
-					"JUCE_PROJUCER_VERSION=0x80008",
-					"JUCE_MODULE_AVAILABLE_juce_audio_basics=1",
-					"JUCE_MODULE_AVAILABLE_juce_audio_devices=1",
-					"JUCE_MODULE_AVAILABLE_juce_audio_formats=1",
-					"JUCE_MODULE_AVAILABLE_juce_audio_plugin_client=1",
-					"JUCE_MODULE_AVAILABLE_juce_audio_processors=1",
-					"JUCE_MODULE_AVAILABLE_juce_audio_utils=1",
-					"JUCE_MODULE_AVAILABLE_juce_core=1",
-					"JUCE_MODULE_AVAILABLE_juce_data_structures=1",
-					"JUCE_MODULE_AVAILABLE_juce_dsp=1",
-					"JUCE_MODULE_AVAILABLE_juce_events=1",
-					"JUCE_MODULE_AVAILABLE_juce_graphics=1",
-					"JUCE_MODULE_AVAILABLE_juce_gui_basics=1",
-					"JUCE_MODULE_AVAILABLE_juce_gui_extra=1",
-					"JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1",
-					"JUCE_VST3_CAN_REPLACE_VST2=0",
-					"JUCE_STRICT_REFCOUNTEDPOINTER=1",
-					"JucePlugin_Build_VST=0",
-					"JucePlugin_Build_VST3=0",
-					"JucePlugin_Build_AU=0",
-					"JucePlugin_Build_AUv3=1",
-					"JucePlugin_Build_AAX=0",
-					"JucePlugin_Build_Standalone=0",
-					"JucePlugin_Build_Unity=0",
-					"JucePlugin_Build_LV2=0",
-					"JucePlugin_Enable_IAA=0",
-					"JucePlugin_Enable_ARA=0",
-					"JucePlugin_Name=\\\"Rhythm\\ Pattern\\ Explorer\\ iPad\\\"",
-					"JucePlugin_Desc=\\\"Mathematical\\ rhythm\\ pattern\\ generator\\ and\\ analyzer\\\"",
-					"JucePlugin_Manufacturer=\\\"Enkerli\\\"",
-					"JucePlugin_ManufacturerWebsite=\\\"https://github.com/enkerli/rhythm_pattern_explorer\\\"",
-					"JucePlugin_ManufacturerEmail=\\\"support@serpe.dev\\\"",
-					"JucePlugin_ManufacturerCode=0x456e6b65",
-					"JucePlugin_PluginCode=0x52504569",
-					"JucePlugin_IsSynth=0",
-					"JucePlugin_WantsMidiInput=1",
-					"JucePlugin_ProducesMidiOutput=1",
-					"JucePlugin_IsMidiEffect=1",
-					"JucePlugin_EditorRequiresKeyboardFocus=0",
-					"JucePlugin_Version=1.0.0",
-					"JucePlugin_VersionCode=0x10000",
-					"JucePlugin_VersionString=\\\"1.0.0\\\"",
-					"JucePlugin_VSTUniqueID=JucePlugin_PluginCode",
-					"JucePlugin_VSTCategory=kPlugCategEffect",
-					"JucePlugin_Vst3Category=\\\"Fx\\\"",
-					"JucePlugin_AUMainType=\\'aumi\\'",
-					"JucePlugin_AUSubType=JucePlugin_PluginCode",
-					"JucePlugin_AUExportPrefix=RhythmPatternExploreriPadAU",
-					"JucePlugin_AUExportPrefixQuoted=\\\"RhythmPatternExploreriPadAU\\\"",
-					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
-					"JucePlugin_CFBundleIdentifier=com.enkerli.serpe",
-					"JucePlugin_AAXIdentifier=com.Enkerli.RhythmPatternExploreriPad",
-					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
-					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
-					"JucePlugin_AAXCategory=2",
-					"JucePlugin_AAXDisableBypass=0",
-					"JucePlugin_AAXDisableMultiMono=0",
-					"JucePlugin_IAAType=0x6175726d",
-					"JucePlugin_IAASubType=JucePlugin_PluginCode",
-					"JucePlugin_IAAName=\\\"Enkerli:\\ Rhythm\\ Pattern\\ Explorer\\ iPad\\\"",
-					"JucePlugin_VSTNumMidiInputs=16",
-					"JucePlugin_VSTNumMidiOutputs=16",
-					"JucePlugin_ARAContentTypes=0",
-					"JucePlugin_ARATransformationFlags=0",
-					"JucePlugin_ARAFactoryID=\\\"com.enkerli.serpe.factory\\\"",
-					"JucePlugin_ARADocumentArchiveID=\\\"com.enkerli.serpe.aradocumentarchive.1.0.0\\\"",
-					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
-					"JucePlugin_MaxNumInputChannels=0",
-					"JucePlugin_MaxNumOutputChannels=0",
-					"JucePlugin_PreferredChannelConfigurations={0,0}",
-					"JUCE_STANDALONE_APPLICATION=JucePlugin_Build_Standalone",
-					"SERPE_DESKTOP=1",
-					"JUCER_XCODE_MAC_F6D2F4CF=1",
-					"JUCE_APP_VERSION=1.0.0",
-					"JUCE_APP_VERSION_HEX=0x10000",
-				);
-				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
-				HEADER_SEARCH_PATHS = (
-					"/Users/alex/JUCE/modules/juce_audio_processors/format_types/VST3_SDK",
-					"$(SRCROOT)/../../JuceLibraryCode",
-					"/Users/alex/JUCE/modules",
-					"/Users/alex/JUCE/modules/juce_audio_plugin_client/AU",
-					"$(inherited)",
-				);
-				INFOPLIST_FILE = Info-AUv3_AppExtension.plist;
-				INFOPLIST_PREPROCESS = NO;
-				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MTL_HEADER_SEARCH_PATHS = "/Users/alex/JUCE/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode /Users/alex/JUCE/modules /Users/alex/JUCE/modules/juce_audio_plugin_client/AU";
-				OTHER_LDFLAGS = "-lSerpe";
-				PRODUCT_BUNDLE_IDENTIFIER = com.enkerli.serpe.serpeAUv3;
-				PRODUCT_NAME = "Serpe";
-				USE_HEADERMAP = NO;
-				VALID_ARCHS = "i386 x86_64 arm64 arm64e";
 			};
 			name = Debug;
 		};
@@ -1798,13 +1447,13 @@
 					"JucePlugin_Build_LV2=0",
 					"JucePlugin_Enable_IAA=0",
 					"JucePlugin_Enable_ARA=0",
-					"JucePlugin_Name=\\\"Rhythm\\ Pattern\\ Explorer\\ iPad\\\"",
+					"JucePlugin_Name=\\\"Serpe\\\"",
 					"JucePlugin_Desc=\\\"Mathematical\\ rhythm\\ pattern\\ generator\\ and\\ analyzer\\\"",
 					"JucePlugin_Manufacturer=\\\"Enkerli\\\"",
 					"JucePlugin_ManufacturerWebsite=\\\"https://github.com/enkerli/rhythm_pattern_explorer\\\"",
 					"JucePlugin_ManufacturerEmail=\\\"support@serpe.dev\\\"",
 					"JucePlugin_ManufacturerCode=0x456e6b65",
-					"JucePlugin_PluginCode=0x52504569",
+					"JucePlugin_PluginCode=0x52504564",
 					"JucePlugin_IsSynth=0",
 					"JucePlugin_WantsMidiInput=1",
 					"JucePlugin_ProducesMidiOutput=1",
@@ -1818,11 +1467,11 @@
 					"JucePlugin_Vst3Category=\\\"Fx\\\"",
 					"JucePlugin_AUMainType=\\'aumi\\'",
 					"JucePlugin_AUSubType=JucePlugin_PluginCode",
-					"JucePlugin_AUExportPrefix=RhythmPatternExploreriPadAU",
-					"JucePlugin_AUExportPrefixQuoted=\\\"RhythmPatternExploreriPadAU\\\"",
+					"JucePlugin_AUExportPrefix=SerpeAU",
+					"JucePlugin_AUExportPrefixQuoted=\\\"SerpeAU\\\"",
 					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
-					"JucePlugin_CFBundleIdentifier=com.enkerli.serpe",
-					"JucePlugin_AAXIdentifier=com.Enkerli.RhythmPatternExploreriPad",
+					"JucePlugin_CFBundleIdentifier=com.Enkerli.Serpe",
+					"JucePlugin_AAXIdentifier=com.enkerli.serpe",
 					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
 					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
 					"JucePlugin_AAXCategory=2",
@@ -1830,13 +1479,13 @@
 					"JucePlugin_AAXDisableMultiMono=0",
 					"JucePlugin_IAAType=0x6175726d",
 					"JucePlugin_IAASubType=JucePlugin_PluginCode",
-					"JucePlugin_IAAName=\\\"Enkerli:\\ Rhythm\\ Pattern\\ Explorer\\ iPad\\\"",
+					"JucePlugin_IAAName=\\\"Enkerli:\\ Serpe\\\"",
 					"JucePlugin_VSTNumMidiInputs=16",
 					"JucePlugin_VSTNumMidiOutputs=16",
 					"JucePlugin_ARAContentTypes=0",
 					"JucePlugin_ARATransformationFlags=0",
-					"JucePlugin_ARAFactoryID=\\\"com.enkerli.serpe.factory\\\"",
-					"JucePlugin_ARADocumentArchiveID=\\\"com.enkerli.serpe.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARAFactoryID=\\\"com.Enkerli.Serpe.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.Enkerli.Serpe.aradocumentarchive.1.0.0\\\"",
 					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
 					"JucePlugin_MaxNumInputChannels=0",
 					"JucePlugin_MaxNumOutputChannels=0",
@@ -1865,7 +1514,7 @@
 				MTL_HEADER_SEARCH_PATHS = "/Users/alex/JUCE/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode /Users/alex/JUCE/modules /Users/alex/JUCE/modules/juce_audio_plugin_client/AU";
 				OTHER_LDFLAGS = "-bundle -lSerpe";
 				OTHER_REZFLAGS = "-d ppc_$ppc -d i386_$i386 -d ppc64_$ppc64 -d x86_64_$x86_64 -d arm64_$arm64 -I /System/Library/Frameworks/CoreServices.framework/Frameworks/CarbonCore.framework/Versions/A/Headers -I \"$(DEVELOPER_DIR)/Extras/CoreAudio/AudioUnits/AUPublic/AUBase\" -I \"$(DEVELOPER_DIR)/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/AudioUnit.framework/Headers\"";
-				PRODUCT_BUNDLE_IDENTIFIER = com.enkerli.serpe;
+				PRODUCT_BUNDLE_IDENTIFIER = com.Enkerli.Serpe;
 				PRODUCT_NAME = "Serpe";
 				SEPARATE_STRIP = YES;
 				STRIPFLAGS = "-x";
@@ -1910,20 +1559,20 @@
 					"JucePlugin_Build_VST=0",
 					"JucePlugin_Build_VST3=1",
 					"JucePlugin_Build_AU=1",
-					"JucePlugin_Build_AUv3=1",
+					"JucePlugin_Build_AUv3=0",
 					"JucePlugin_Build_AAX=0",
 					"JucePlugin_Build_Standalone=1",
 					"JucePlugin_Build_Unity=0",
 					"JucePlugin_Build_LV2=0",
 					"JucePlugin_Enable_IAA=0",
 					"JucePlugin_Enable_ARA=0",
-					"JucePlugin_Name=\\\"Rhythm\\ Pattern\\ Explorer\\ iPad\\\"",
+					"JucePlugin_Name=\\\"Serpe\\\"",
 					"JucePlugin_Desc=\\\"Mathematical\\ rhythm\\ pattern\\ generator\\ and\\ analyzer\\\"",
 					"JucePlugin_Manufacturer=\\\"Enkerli\\\"",
 					"JucePlugin_ManufacturerWebsite=\\\"https://github.com/enkerli/rhythm_pattern_explorer\\\"",
 					"JucePlugin_ManufacturerEmail=\\\"support@serpe.dev\\\"",
 					"JucePlugin_ManufacturerCode=0x456e6b65",
-					"JucePlugin_PluginCode=0x52504569",
+					"JucePlugin_PluginCode=0x52504564",
 					"JucePlugin_IsSynth=0",
 					"JucePlugin_WantsMidiInput=1",
 					"JucePlugin_ProducesMidiOutput=1",
@@ -1937,11 +1586,11 @@
 					"JucePlugin_Vst3Category=\\\"Fx\\\"",
 					"JucePlugin_AUMainType=\\'aumi\\'",
 					"JucePlugin_AUSubType=JucePlugin_PluginCode",
-					"JucePlugin_AUExportPrefix=RhythmPatternExploreriPadAU",
-					"JucePlugin_AUExportPrefixQuoted=\\\"RhythmPatternExploreriPadAU\\\"",
+					"JucePlugin_AUExportPrefix=SerpeAU",
+					"JucePlugin_AUExportPrefixQuoted=\\\"SerpeAU\\\"",
 					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
-					"JucePlugin_CFBundleIdentifier=com.enkerli.serpe",
-					"JucePlugin_AAXIdentifier=com.Enkerli.RhythmPatternExploreriPad",
+					"JucePlugin_CFBundleIdentifier=com.Enkerli.Serpe",
+					"JucePlugin_AAXIdentifier=com.enkerli.serpe",
 					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
 					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
 					"JucePlugin_AAXCategory=2",
@@ -1949,13 +1598,13 @@
 					"JucePlugin_AAXDisableMultiMono=0",
 					"JucePlugin_IAAType=0x6175726d",
 					"JucePlugin_IAASubType=JucePlugin_PluginCode",
-					"JucePlugin_IAAName=\\\"Enkerli:\\ Rhythm\\ Pattern\\ Explorer\\ iPad\\\"",
+					"JucePlugin_IAAName=\\\"Enkerli:\\ Serpe\\\"",
 					"JucePlugin_VSTNumMidiInputs=16",
 					"JucePlugin_VSTNumMidiOutputs=16",
 					"JucePlugin_ARAContentTypes=0",
 					"JucePlugin_ARATransformationFlags=0",
-					"JucePlugin_ARAFactoryID=\\\"com.enkerli.serpe.factory\\\"",
-					"JucePlugin_ARADocumentArchiveID=\\\"com.enkerli.serpe.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARAFactoryID=\\\"com.Enkerli.Serpe.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.Enkerli.Serpe.aradocumentarchive.1.0.0\\\"",
 					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
 					"JucePlugin_MaxNumInputChannels=0",
 					"JucePlugin_MaxNumOutputChannels=0",
@@ -1978,7 +1627,7 @@
 				INSTALL_PATH = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_HEADER_SEARCH_PATHS = "/Users/alex/JUCE/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode /Users/alex/JUCE/modules /Users/alex/JUCE/modules/juce_audio_plugin_client/AU";
-				PRODUCT_BUNDLE_IDENTIFIER = com.enkerli.serpe;
+				PRODUCT_BUNDLE_IDENTIFIER = com.Enkerli.Serpe;
 				PRODUCT_NAME = "Serpe";
 				SKIP_INSTALL = YES;
 				USE_HEADERMAP = NO;
@@ -2078,13 +1727,13 @@
 					"JucePlugin_Build_LV2=0",
 					"JucePlugin_Enable_IAA=0",
 					"JucePlugin_Enable_ARA=0",
-					"JucePlugin_Name=\\\"Rhythm\\ Pattern\\ Explorer\\ iPad\\\"",
+					"JucePlugin_Name=\\\"Serpe\\\"",
 					"JucePlugin_Desc=\\\"Mathematical\\ rhythm\\ pattern\\ generator\\ and\\ analyzer\\\"",
 					"JucePlugin_Manufacturer=\\\"Enkerli\\\"",
 					"JucePlugin_ManufacturerWebsite=\\\"https://github.com/enkerli/rhythm_pattern_explorer\\\"",
 					"JucePlugin_ManufacturerEmail=\\\"support@serpe.dev\\\"",
 					"JucePlugin_ManufacturerCode=0x456e6b65",
-					"JucePlugin_PluginCode=0x52504569",
+					"JucePlugin_PluginCode=0x52504564",
 					"JucePlugin_IsSynth=0",
 					"JucePlugin_WantsMidiInput=1",
 					"JucePlugin_ProducesMidiOutput=1",
@@ -2098,11 +1747,11 @@
 					"JucePlugin_Vst3Category=\\\"Fx\\\"",
 					"JucePlugin_AUMainType=\\'aumi\\'",
 					"JucePlugin_AUSubType=JucePlugin_PluginCode",
-					"JucePlugin_AUExportPrefix=RhythmPatternExploreriPadAU",
-					"JucePlugin_AUExportPrefixQuoted=\\\"RhythmPatternExploreriPadAU\\\"",
+					"JucePlugin_AUExportPrefix=SerpeAU",
+					"JucePlugin_AUExportPrefixQuoted=\\\"SerpeAU\\\"",
 					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
-					"JucePlugin_CFBundleIdentifier=com.enkerli.serpe",
-					"JucePlugin_AAXIdentifier=com.Enkerli.RhythmPatternExploreriPad",
+					"JucePlugin_CFBundleIdentifier=com.Enkerli.Serpe",
+					"JucePlugin_AAXIdentifier=com.enkerli.serpe",
 					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
 					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
 					"JucePlugin_AAXCategory=2",
@@ -2110,13 +1759,13 @@
 					"JucePlugin_AAXDisableMultiMono=0",
 					"JucePlugin_IAAType=0x6175726d",
 					"JucePlugin_IAASubType=JucePlugin_PluginCode",
-					"JucePlugin_IAAName=\\\"Enkerli:\\ Rhythm\\ Pattern\\ Explorer\\ iPad\\\"",
+					"JucePlugin_IAAName=\\\"Enkerli:\\ Serpe\\\"",
 					"JucePlugin_VSTNumMidiInputs=16",
 					"JucePlugin_VSTNumMidiOutputs=16",
 					"JucePlugin_ARAContentTypes=0",
 					"JucePlugin_ARATransformationFlags=0",
-					"JucePlugin_ARAFactoryID=\\\"com.enkerli.serpe.factory\\\"",
-					"JucePlugin_ARADocumentArchiveID=\\\"com.enkerli.serpe.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARAFactoryID=\\\"com.Enkerli.Serpe.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.Enkerli.Serpe.aradocumentarchive.1.0.0\\\"",
 					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
 					"JucePlugin_MaxNumInputChannels=0",
 					"JucePlugin_MaxNumOutputChannels=0",
@@ -2141,7 +1790,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_HEADER_SEARCH_PATHS = "/Users/alex/JUCE/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode /Users/alex/JUCE/modules /Users/alex/JUCE/modules/juce_audio_plugin_client/AU";
 				OTHER_LDFLAGS = "-lSerpe";
-				PRODUCT_BUNDLE_IDENTIFIER = com.enkerli.serpe;
+				PRODUCT_BUNDLE_IDENTIFIER = com.Enkerli.Serpe;
 				PRODUCT_NAME = "Serpe";
 				SEPARATE_STRIP = YES;
 				STRIPFLAGS = "-x";
@@ -2193,13 +1842,13 @@
 					"JucePlugin_Build_LV2=0",
 					"JucePlugin_Enable_IAA=0",
 					"JucePlugin_Enable_ARA=0",
-					"JucePlugin_Name=\\\"Rhythm\\ Pattern\\ Explorer\\ iPad\\\"",
+					"JucePlugin_Name=\\\"Serpe\\\"",
 					"JucePlugin_Desc=\\\"Mathematical\\ rhythm\\ pattern\\ generator\\ and\\ analyzer\\\"",
 					"JucePlugin_Manufacturer=\\\"Enkerli\\\"",
 					"JucePlugin_ManufacturerWebsite=\\\"https://github.com/enkerli/rhythm_pattern_explorer\\\"",
 					"JucePlugin_ManufacturerEmail=\\\"support@serpe.dev\\\"",
 					"JucePlugin_ManufacturerCode=0x456e6b65",
-					"JucePlugin_PluginCode=0x52504569",
+					"JucePlugin_PluginCode=0x52504564",
 					"JucePlugin_IsSynth=0",
 					"JucePlugin_WantsMidiInput=1",
 					"JucePlugin_ProducesMidiOutput=1",
@@ -2213,11 +1862,11 @@
 					"JucePlugin_Vst3Category=\\\"Fx\\\"",
 					"JucePlugin_AUMainType=\\'aumi\\'",
 					"JucePlugin_AUSubType=JucePlugin_PluginCode",
-					"JucePlugin_AUExportPrefix=RhythmPatternExploreriPadAU",
-					"JucePlugin_AUExportPrefixQuoted=\\\"RhythmPatternExploreriPadAU\\\"",
+					"JucePlugin_AUExportPrefix=SerpeAU",
+					"JucePlugin_AUExportPrefixQuoted=\\\"SerpeAU\\\"",
 					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
-					"JucePlugin_CFBundleIdentifier=com.enkerli.serpe",
-					"JucePlugin_AAXIdentifier=com.Enkerli.RhythmPatternExploreriPad",
+					"JucePlugin_CFBundleIdentifier=com.Enkerli.Serpe",
+					"JucePlugin_AAXIdentifier=com.enkerli.serpe",
 					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
 					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
 					"JucePlugin_AAXCategory=2",
@@ -2225,13 +1874,13 @@
 					"JucePlugin_AAXDisableMultiMono=0",
 					"JucePlugin_IAAType=0x6175726d",
 					"JucePlugin_IAASubType=JucePlugin_PluginCode",
-					"JucePlugin_IAAName=\\\"Enkerli:\\ Rhythm\\ Pattern\\ Explorer\\ iPad\\\"",
+					"JucePlugin_IAAName=\\\"Enkerli:\\ Serpe\\\"",
 					"JucePlugin_VSTNumMidiInputs=16",
 					"JucePlugin_VSTNumMidiOutputs=16",
 					"JucePlugin_ARAContentTypes=0",
 					"JucePlugin_ARATransformationFlags=0",
-					"JucePlugin_ARAFactoryID=\\\"com.enkerli.serpe.factory\\\"",
-					"JucePlugin_ARADocumentArchiveID=\\\"com.enkerli.serpe.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARAFactoryID=\\\"com.Enkerli.Serpe.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.Enkerli.Serpe.aradocumentarchive.1.0.0\\\"",
 					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
 					"JucePlugin_MaxNumInputChannels=0",
 					"JucePlugin_MaxNumOutputChannels=0",
@@ -2255,7 +1904,7 @@
 				LLVM_LTO = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_HEADER_SEARCH_PATHS = "/Users/alex/JUCE/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode /Users/alex/JUCE/modules /Users/alex/JUCE/modules/juce_audio_plugin_client/AU";
-				PRODUCT_BUNDLE_IDENTIFIER = com.enkerli.serpe;
+				PRODUCT_BUNDLE_IDENTIFIER = com.Enkerli.Serpe;
 				PRODUCT_NAME = "juce_vst3_helper";
 				SEPARATE_STRIP = YES;
 				STRIPFLAGS = "-x";
@@ -2299,20 +1948,20 @@
 					"JucePlugin_Build_VST=0",
 					"JucePlugin_Build_VST3=1",
 					"JucePlugin_Build_AU=1",
-					"JucePlugin_Build_AUv3=1",
+					"JucePlugin_Build_AUv3=0",
 					"JucePlugin_Build_AAX=0",
 					"JucePlugin_Build_Standalone=1",
 					"JucePlugin_Build_Unity=0",
 					"JucePlugin_Build_LV2=0",
 					"JucePlugin_Enable_IAA=0",
 					"JucePlugin_Enable_ARA=0",
-					"JucePlugin_Name=\\\"Rhythm\\ Pattern\\ Explorer\\ iPad\\\"",
+					"JucePlugin_Name=\\\"Serpe\\\"",
 					"JucePlugin_Desc=\\\"Mathematical\\ rhythm\\ pattern\\ generator\\ and\\ analyzer\\\"",
 					"JucePlugin_Manufacturer=\\\"Enkerli\\\"",
 					"JucePlugin_ManufacturerWebsite=\\\"https://github.com/enkerli/rhythm_pattern_explorer\\\"",
 					"JucePlugin_ManufacturerEmail=\\\"support@serpe.dev\\\"",
 					"JucePlugin_ManufacturerCode=0x456e6b65",
-					"JucePlugin_PluginCode=0x52504569",
+					"JucePlugin_PluginCode=0x52504564",
 					"JucePlugin_IsSynth=0",
 					"JucePlugin_WantsMidiInput=1",
 					"JucePlugin_ProducesMidiOutput=1",
@@ -2326,11 +1975,11 @@
 					"JucePlugin_Vst3Category=\\\"Fx\\\"",
 					"JucePlugin_AUMainType=\\'aumi\\'",
 					"JucePlugin_AUSubType=JucePlugin_PluginCode",
-					"JucePlugin_AUExportPrefix=RhythmPatternExploreriPadAU",
-					"JucePlugin_AUExportPrefixQuoted=\\\"RhythmPatternExploreriPadAU\\\"",
+					"JucePlugin_AUExportPrefix=SerpeAU",
+					"JucePlugin_AUExportPrefixQuoted=\\\"SerpeAU\\\"",
 					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
-					"JucePlugin_CFBundleIdentifier=com.enkerli.serpe",
-					"JucePlugin_AAXIdentifier=com.Enkerli.RhythmPatternExploreriPad",
+					"JucePlugin_CFBundleIdentifier=com.Enkerli.Serpe",
+					"JucePlugin_AAXIdentifier=com.enkerli.serpe",
 					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
 					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
 					"JucePlugin_AAXCategory=2",
@@ -2338,13 +1987,13 @@
 					"JucePlugin_AAXDisableMultiMono=0",
 					"JucePlugin_IAAType=0x6175726d",
 					"JucePlugin_IAASubType=JucePlugin_PluginCode",
-					"JucePlugin_IAAName=\\\"Enkerli:\\ Rhythm\\ Pattern\\ Explorer\\ iPad\\\"",
+					"JucePlugin_IAAName=\\\"Enkerli:\\ Serpe\\\"",
 					"JucePlugin_VSTNumMidiInputs=16",
 					"JucePlugin_VSTNumMidiOutputs=16",
 					"JucePlugin_ARAContentTypes=0",
 					"JucePlugin_ARATransformationFlags=0",
-					"JucePlugin_ARAFactoryID=\\\"com.enkerli.serpe.factory\\\"",
-					"JucePlugin_ARADocumentArchiveID=\\\"com.enkerli.serpe.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARAFactoryID=\\\"com.Enkerli.Serpe.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.Enkerli.Serpe.aradocumentarchive.1.0.0\\\"",
 					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
 					"JucePlugin_MaxNumInputChannels=0",
 					"JucePlugin_MaxNumOutputChannels=0",
@@ -2368,7 +2017,7 @@
 				LLVM_LTO = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_HEADER_SEARCH_PATHS = "/Users/alex/JUCE/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode /Users/alex/JUCE/modules /Users/alex/JUCE/modules/juce_audio_plugin_client/AU";
-				PRODUCT_BUNDLE_IDENTIFIER = com.enkerli.serpe;
+				PRODUCT_BUNDLE_IDENTIFIER = com.Enkerli.Serpe;
 				PRODUCT_NAME = "Serpe";
 				SKIP_INSTALL = YES;
 				USE_HEADERMAP = NO;
@@ -2418,13 +2067,13 @@
 					"JucePlugin_Build_LV2=0",
 					"JucePlugin_Enable_IAA=0",
 					"JucePlugin_Enable_ARA=0",
-					"JucePlugin_Name=\\\"Rhythm\\ Pattern\\ Explorer\\ iPad\\\"",
+					"JucePlugin_Name=\\\"Serpe\\\"",
 					"JucePlugin_Desc=\\\"Mathematical\\ rhythm\\ pattern\\ generator\\ and\\ analyzer\\\"",
 					"JucePlugin_Manufacturer=\\\"Enkerli\\\"",
 					"JucePlugin_ManufacturerWebsite=\\\"https://github.com/enkerli/rhythm_pattern_explorer\\\"",
 					"JucePlugin_ManufacturerEmail=\\\"support@serpe.dev\\\"",
 					"JucePlugin_ManufacturerCode=0x456e6b65",
-					"JucePlugin_PluginCode=0x52504569",
+					"JucePlugin_PluginCode=0x52504564",
 					"JucePlugin_IsSynth=0",
 					"JucePlugin_WantsMidiInput=1",
 					"JucePlugin_ProducesMidiOutput=1",
@@ -2438,11 +2087,11 @@
 					"JucePlugin_Vst3Category=\\\"Fx\\\"",
 					"JucePlugin_AUMainType=\\'aumi\\'",
 					"JucePlugin_AUSubType=JucePlugin_PluginCode",
-					"JucePlugin_AUExportPrefix=RhythmPatternExploreriPadAU",
-					"JucePlugin_AUExportPrefixQuoted=\\\"RhythmPatternExploreriPadAU\\\"",
+					"JucePlugin_AUExportPrefix=SerpeAU",
+					"JucePlugin_AUExportPrefixQuoted=\\\"SerpeAU\\\"",
 					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
-					"JucePlugin_CFBundleIdentifier=com.enkerli.serpe",
-					"JucePlugin_AAXIdentifier=com.Enkerli.RhythmPatternExploreriPad",
+					"JucePlugin_CFBundleIdentifier=com.Enkerli.Serpe",
+					"JucePlugin_AAXIdentifier=com.enkerli.serpe",
 					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
 					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
 					"JucePlugin_AAXCategory=2",
@@ -2450,13 +2099,13 @@
 					"JucePlugin_AAXDisableMultiMono=0",
 					"JucePlugin_IAAType=0x6175726d",
 					"JucePlugin_IAASubType=JucePlugin_PluginCode",
-					"JucePlugin_IAAName=\\\"Enkerli:\\ Rhythm\\ Pattern\\ Explorer\\ iPad\\\"",
+					"JucePlugin_IAAName=\\\"Enkerli:\\ Serpe\\\"",
 					"JucePlugin_VSTNumMidiInputs=16",
 					"JucePlugin_VSTNumMidiOutputs=16",
 					"JucePlugin_ARAContentTypes=0",
 					"JucePlugin_ARATransformationFlags=0",
-					"JucePlugin_ARAFactoryID=\\\"com.enkerli.serpe.factory\\\"",
-					"JucePlugin_ARADocumentArchiveID=\\\"com.enkerli.serpe.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARAFactoryID=\\\"com.Enkerli.Serpe.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.Enkerli.Serpe.aradocumentarchive.1.0.0\\\"",
 					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
 					"JucePlugin_MaxNumInputChannels=0",
 					"JucePlugin_MaxNumOutputChannels=0",
@@ -2480,7 +2129,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_HEADER_SEARCH_PATHS = "/Users/alex/JUCE/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode /Users/alex/JUCE/modules /Users/alex/JUCE/modules/juce_audio_plugin_client/AU";
 				OTHER_LDFLAGS = "-lSerpe";
-				PRODUCT_BUNDLE_IDENTIFIER = com.enkerli.serpe;
+				PRODUCT_BUNDLE_IDENTIFIER = com.Enkerli.Serpe;
 				PRODUCT_NAME = "Serpe";
 				USE_HEADERMAP = NO;
 				VALID_ARCHS = "i386 x86_64 arm64 arm64e";
@@ -2540,15 +2189,6 @@
 			buildConfigurations = (
 				22F6508E7A36DAB993DC1BA0,
 				502FB011124A52AD3346E2BC,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
-		};
-		E15049250FF9DFC304FD2F18 = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				28BCAC7CB0DDB7E71CE4A84C,
-				1E6E09F7755F284E59AF1D4F,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

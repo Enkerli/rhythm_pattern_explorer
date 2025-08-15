@@ -1,17 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT id="Serpe" name="serpe" projectType="audioplug" useAppConfig="0"
-              addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1" pluginName="Rhythm Pattern Explorer iPad"
+<JUCERPROJECT id="Serpe" name="Serpe" projectType="audioplug" useAppConfig="0"
+              addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1" pluginName="Serpe"
               pluginDesc="Mathematical rhythm pattern generator and analyzer"
-              pluginManufacturer="Enkerli" pluginManufacturerCode="Enke" pluginCode="RPEi"
+              pluginManufacturer="Enkerli" pluginManufacturerCode="Enke" pluginCode="RPEd"
               pluginChannelConfigs="{0,0}" pluginIsSynth="0" pluginWantsMidiIn="1"
               pluginProducesMidiOut="1" pluginIsMidiEffectPlugin="1" pluginEditorRequiresKeys="0"
-              pluginAUExportPrefix="RhythmPatternExploreriPadAU" pluginRTASCategory="2"
-              aaxIdentifier="com.Enkerli.RhythmPatternExploreriPad" pluginAAXCategory="2"
-              companyName="enkerli" companyWebsite="https://github.com/enkerli/rhythm_pattern_explorer"
+              pluginAUExportPrefix="SerpeAU" pluginRTASCategory="2" aaxIdentifier="com.enkerli.serpe"
+              pluginAAXCategory="2" companyName="Enkerli" companyWebsite="https://github.com/enkerli/rhythm_pattern_explorer"
               companyEmail="support@serpe.dev" reportAppUsage="1" projectLineFeed="&#10;"
               version="1.0.0" defines="" pluginCharacteristicsValue="pluginWantsMidiIn,pluginProducesMidiOut,pluginIsMidiEffectPlugin"
-              pluginFormats="buildVST3,buildAU,buildAUv3,buildStandalone">
+              pluginFormats="buildVST3,buildAU,buildStandalone">
   <MAINGROUP id="SerpeMain" name="Serpe">
     <GROUP id="CoreAlgorithms" name="Core">
       <FILE id="PatEngH" name="PatternEngine.h" compile="0" resource="0"

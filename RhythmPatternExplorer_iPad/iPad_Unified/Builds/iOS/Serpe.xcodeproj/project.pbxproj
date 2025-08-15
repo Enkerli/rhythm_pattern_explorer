@@ -33,7 +33,6 @@
 		3301721C26A0B161B48B7551 /* CoreAudioKit.framework */ = {isa = PBXBuildFile; fileRef = 27C18A880182580C0C0FCAEB; };
 		38894F93F10688C70318154E /* AVFoundation.framework */ = {isa = PBXBuildFile; fileRef = B5F1276393E41812D32CF56B; };
 		41B51C1EC308D6935117B6D0 /* include_juce_audio_formats.mm */ = {isa = PBXBuildFile; fileRef = 10BF02B4F2485768B4723C24; };
-		4938B0AD8B5BF0E4657965F5 /* PatternTests.cpp */ = {isa = PBXBuildFile; fileRef = 558E452B3F492E9509A75833; };
 		4A1E122D5FD139BBF61FD08D /* include_juce_graphics_Harfbuzz.cpp */ = {isa = PBXBuildFile; fileRef = 1D3C8AAF31B4FBA0BAAE4DAE; };
 		4C5B3B9804901087D40C7763 /* Foundation.framework */ = {isa = PBXBuildFile; fileRef = 68DA17D0A7F58CD10D3AB6F7; };
 		4F5A9A6E15F546E23D6BCFFB /* UIKit.framework */ = {isa = PBXBuildFile; fileRef = F1FEE9DA7E5C22F418BD6A55; };
@@ -114,14 +113,13 @@
 		36EF793B75782209A6E7AEC7 /* JucePluginDefines.h */ /* JucePluginDefines.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = JucePluginDefines.h; path = ../../JuceLibraryCode/JucePluginDefines.h; sourceTree = SOURCE_ROOT; };
 		3C23D675C814A894508D6B29 /* Images.xcassets */ /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = Serpe/Images.xcassets; sourceTree = SOURCE_ROOT; };
 		3F59548B8879A5A1D2211076 /* juce_audio_processors */ /* juce_audio_processors */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_audio_processors; path = /Users/alex/JUCE/modules/juce_audio_processors; sourceTree = "<absolute>"; };
-		420312D54C23891F0F7FC52C /* PatternTests.h */ /* PatternTests.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = PatternTests.h; path = ../../Source/PatternTests.h; sourceTree = SOURCE_ROOT; };
 		43D1140967CB2CCE532E813B /* juce_audio_basics */ /* juce_audio_basics */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_audio_basics; path = /Users/alex/JUCE/modules/juce_audio_basics; sourceTree = "<absolute>"; };
 		4B4D76ABC7BF047509113E87 /* juce_audio_devices */ /* juce_audio_devices */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_audio_devices; path = /Users/alex/JUCE/modules/juce_audio_devices; sourceTree = "<absolute>"; };
 		4FC6F0AA43DD75B944CBB277 /* BinaryData.h */ /* BinaryData.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BinaryData.h; path = ../../JuceLibraryCode/BinaryData.h; sourceTree = SOURCE_ROOT; };
 		527F45141E5715FDD3BCAFE3 /* include_juce_core.mm */ /* include_juce_core.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_core.mm; path = ../../JuceLibraryCode/include_juce_core.mm; sourceTree = SOURCE_ROOT; };
-		558E452B3F492E9509A75833 /* PatternTests.cpp */ /* PatternTests.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = PatternTests.cpp; path = ../../Source/PatternTests.cpp; sourceTree = SOURCE_ROOT; };
 		597814918F229F3D657F4B33 /* CoreAudio.framework */ /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
 		5A1212C77FC7D9E9132CBD2A /* MetalKit.framework */ /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = System/Library/Frameworks/MetalKit.framework; sourceTree = SDKROOT; };
+		6012143E5FEF7942D53E451A /* DebugConfig.h */ /* DebugConfig.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = DebugConfig.h; path = ../../../../Serpe/Source/Platform/DebugConfig.h; sourceTree = SOURCE_ROOT; };
 		6087460B06C7FABABDDF7FDD /* PluginEditor.h */ /* PluginEditor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = PluginEditor.h; path = ../../../../Serpe/Source/Platform/PluginEditor.h; sourceTree = SOURCE_ROOT; };
 		6183254F1EF52C945269D6BE /* CoreMIDI.framework */ /* CoreMIDI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMIDI.framework; path = System/Library/Frameworks/CoreMIDI.framework; sourceTree = SDKROOT; };
 		6205BB4E86C30E662AFF1940 /* SceneManager.h */ /* SceneManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = SceneManager.h; path = ../../../../Serpe/Source/Managers/SceneManager.h; sourceTree = SOURCE_ROOT; };
@@ -137,7 +135,6 @@
 		80D9AED56B49772CAEC8C1F6 /* PatternEngine.cpp */ /* PatternEngine.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = PatternEngine.cpp; path = ../../../../Serpe/Source/Core/PatternEngine.cpp; sourceTree = SOURCE_ROOT; };
 		81D8D63770461DC7D647563B /* AudioToolbox.framework */ /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
 		849AF1ADCF1C55CEFED70340 /* juce_gui_basics */ /* juce_gui_basics */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_gui_basics; path = /Users/alex/JUCE/modules/juce_gui_basics; sourceTree = "<absolute>"; };
-		85BA5A147C944E4706B309AA /* DebugConfig.h */ /* DebugConfig.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = DebugConfig.h; path = ../../Source/DebugConfig.h; sourceTree = SOURCE_ROOT; };
 		982A0F098E1B38DCC2ED0B6E /* LaunchScreen.storyboard */ /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = LaunchScreen.storyboard; sourceTree = SOURCE_ROOT; };
 		99074112F6FC3D45232CBF7A /* PatternUtils.h */ /* PatternUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = PatternUtils.h; path = ../../../../Serpe/Source/Core/PatternUtils.h; sourceTree = SOURCE_ROOT; };
 		9A699340E15F770972DFD7F1 /* juce_audio_utils */ /* juce_audio_utils */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_audio_utils; path = /Users/alex/JUCE/modules/juce_audio_utils; sourceTree = "<absolute>"; };
@@ -374,9 +371,7 @@
 				6087460B06C7FABABDDF7FDD,
 				5B82785CB96A9DA8298F2ABE,
 				7E220B41071882ADEBEA1C6F,
-				85BA5A147C944E4706B309AA,
-				420312D54C23891F0F7FC52C,
-				558E452B3F492E9509A75833,
+				6012143E5FEF7942D53E451A,
 			);
 			name = Source;
 			sourceTree = "<group>";
@@ -634,7 +629,6 @@
 				ABD0A9DC6ED679F9E9F7390B,
 				AF886A5EDAFFDDC24C292EFC,
 				D75AD1D8C3A426202F02897C,
-				4938B0AD8B5BF0E4657965F5,
 				8197C03BA749462399E20BC3,
 				9B33AF5FF4B2011CA0ECECFA,
 				DEAF3C0B46C475BA9DA1ACCE,
