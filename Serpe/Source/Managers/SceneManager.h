@@ -128,7 +128,7 @@ private:
     // Helper Methods
     
     /**
-     * Check if a scene pattern has progressive offset (+N syntax)
+     * Check if a scene pattern has progressive offset (%N or +N syntax)
      */
     bool sceneHasProgressiveOffset(const juce::String& scenePattern) const;
     

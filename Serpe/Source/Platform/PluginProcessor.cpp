@@ -1294,7 +1294,7 @@ void SerpeAudioProcessor::setUPIInput(const juce::String& upiPattern)
     // Add to history when pattern is entered (not when restored from state)
     addToUPIHistory(upiPattern.trim());
     
-    // Check for progressive syntax: scenes first (pattern|pattern|pattern), then pattern+N (offset), pattern*N (lengthening)
+    // Check for progressive syntax: scenes first (pattern|pattern|pattern), then pattern%N (offset), pattern*N (lengthening)
     juce::String pattern = upiPattern.trim();
     
     // Store original UPI input if it contains progressive/scene syntax for later Tick/MIDI advancement

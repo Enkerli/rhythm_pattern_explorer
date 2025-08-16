@@ -1353,7 +1353,7 @@ void SerpeAudioProcessorEditor::createDocumentationHTML()
     htmlContent += "<tr><td>Quantization</td><td>Pattern;steps</td><td>E(5,17);13</td><td>Angular projection</td></tr>\n";
     htmlContent += "<tr><td>Accents</td><td>{accent}pattern</td><td>{100}E(3,8)</td><td>Suprasegmental layer</td></tr>\n";
     htmlContent += "<tr><td>Progressive Transform</td><td>Pattern>target</td><td>E(1,8)>8</td><td>Gradual evolution</td></tr>\n";
-    htmlContent += "<tr><td>Progressive Offset</td><td>Pattern+step</td><td>E(3,8)+2</td><td>Rotation per trigger</td></tr>\n";
+    htmlContent += "<tr><td>Progressive Offset</td><td>Pattern%step</td><td>E(3,8)%2</td><td>Rotation per trigger</td></tr>\n";
     htmlContent += "<tr><td>Progressive Length</td><td>Pattern*add</td><td>E(3,8)*3</td><td>Growth per trigger</td></tr>\n";
     htmlContent += "<tr><td>Scenes</td><td>Pat1|Pat2|Pat3</td><td>E(3,8)|B(5,13)</td><td>Manual cycling</td></tr>\n";
     htmlContent += "<tr><td>Combination</td><td>Pattern + Pattern</td><td>E(3,8) + B(2,5)</td><td>OR logic merge</td></tr>\n";
@@ -1992,7 +1992,7 @@ void SerpeAudioProcessorEditor::onPresetItemClicked(int index)
             else if (presetState.hasProperty("upiInput"))
                 upiPattern = presetState.getProperty("upiInput").toString();
             
-            // Check if this is a progressive offset pattern (contains +N)
+            // Check if this is a progressive offset pattern (contains %N or +N)
             bool isProgressiveOffset = false;
             if ((upiPattern.contains("%") && upiPattern.lastIndexOf("%") > 0) || (upiPattern.contains("+") && upiPattern.lastIndexOf("+") > 0)) {
                 if (upiPattern.contains("%") && upiPattern.lastIndexOf("%") > 0) {

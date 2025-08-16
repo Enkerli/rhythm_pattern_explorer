@@ -253,7 +253,7 @@ void PresetManager::installFactoryPresets()
         // Progressive Patterns - Dynamic evolution examples
         {"Tresillo Growth", "Progressive", "Tresillo growing to full quintillo", "E(3,8)>5"},
         {"Euclidean Evolution", "Progressive", "Single onset evolving to complex pattern", "E(1,16)>8"},
-        {"Rotating Rhythm", "Progressive", "Tresillo with progressive rotation", "E(3,8)+1"},
+        {"Rotating Rhythm", "Progressive", "Tresillo with progressive rotation", "E(3,8)%1"},
         
         // Accent Patterns - Suprasegmental accent layer examples
         {"Accented Tresillo", "Accent Patterns", "Tresillo with accent on first onset", "{100}E(3,8)"},
