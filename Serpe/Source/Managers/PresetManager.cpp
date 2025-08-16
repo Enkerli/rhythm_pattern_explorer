@@ -66,7 +66,7 @@ bool PresetManager::savePreset(const juce::String& name, const juce::String& cat
     
     // Feature detection for preset browser icons and functionality
     preset.hasScenes = upiPattern.contains("|");  // Scene separation with pipe
-    preset.hasProgressiveTransforms = upiPattern.contains(">") || upiPattern.contains("+") || upiPattern.contains("*");  // Various progressive operators
+    preset.hasProgressiveTransforms = upiPattern.contains(">") || upiPattern.contains("%") || upiPattern.contains("+") || upiPattern.contains("*");  // Various progressive operators
     preset.hasAccentPattern = upiPattern.contains("{") && upiPattern.contains("}");  // Accent pattern notation
     
     // If this is a new preset, set creation time
@@ -253,7 +253,7 @@ void PresetManager::installFactoryPresets()
         // Progressive Patterns - Dynamic evolution examples
         {"Tresillo Growth", "Progressive", "Tresillo growing to full quintillo", "E(3,8)>5"},
         {"Euclidean Evolution", "Progressive", "Single onset evolving to complex pattern", "E(1,16)>8"},
-        {"Rotating Rhythm", "Progressive", "Tresillo with progressive rotation", "E(3,8)+1"},
+        {"Rotating Rhythm", "Progressive", "Tresillo with progressive rotation", "E(3,8)%1"},
         
         // Accent Patterns - Suprasegmental accent layer examples
         {"Accented Tresillo", "Accent Patterns", "Tresillo with accent on first onset", "{100}E(3,8)"},

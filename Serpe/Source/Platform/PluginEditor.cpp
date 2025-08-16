@@ -200,12 +200,12 @@ SerpeAudioProcessorEditor::SerpeAudioProcessorEditor (SerpeAudioProcessor& p)
     addAndMakeVisible(presetLabel);
     presetLabel.setVisible(false);
     
-    // Debug label setup
-    debugLabel.setText("Debug: Loading...", juce::dontSendNotification);
-    debugLabel.setColour(juce::Label::textColourId, juce::Colours::yellow);
-    debugLabel.setJustificationType(juce::Justification::centredLeft);
-    debugLabel.setFont(juce::Font(12.0f));
-    addAndMakeVisible(debugLabel);
+    // Debug label setup (commented out - can be re-enabled for troubleshooting)
+    // debugLabel.setText("Debug: Loading...", juce::dontSendNotification);
+    // debugLabel.setColour(juce::Label::textColourId, juce::Colours::yellow);
+    // debugLabel.setJustificationType(juce::Justification::centredLeft);
+    // debugLabel.setFont(juce::Font(12.0f));
+    // addAndMakeVisible(debugLabel);
     
     // Preset management buttons
     savePresetButton.setButtonText("Save");
@@ -577,9 +577,9 @@ void SerpeAudioProcessorEditor::resized()
     // Remaining area is for the circle - MAXIMIZED for clean interface
     circleArea = area.expanded(100);
     
-    // Debug label at bottom (above version)
-    auto debugArea = getLocalBounds().removeFromBottom(40);
-    debugLabel.setBounds(debugArea.removeFromTop(20).reduced(10, 2));
+    // Debug label at bottom (above version) - commented out
+    // auto debugArea = getLocalBounds().removeFromBottom(40);
+    // debugLabel.setBounds(debugArea.removeFromTop(20).reduced(10, 2));
     
     // WebView documentation area (full plugin area when shown)
 #if SERPE_ENABLE_WEBVIEW
@@ -632,12 +632,12 @@ void SerpeAudioProcessorEditor::timerCallback()
     // Update step/scene button text
     updateStepSceneButton();
     
-    // Update debug display
-    juce::String debugText = "Triggers: " + juce::String(audioProcessor.getDebugTriggerCount()) +
-                            " | Active: " + juce::String(audioProcessor.getDebugActiveNotesCount()) +
-                            " | Offs: " + juce::String(audioProcessor.getDebugNoteOffsSent()) +
-                            " | Pos: " + juce::String(audioProcessor.getDebugAbsoluteSamplePos());
-    debugLabel.setText(debugText, juce::dontSendNotification);
+    // Update debug display (commented out - can be re-enabled for troubleshooting)
+    // juce::String debugText = "Triggers: " + juce::String(audioProcessor.getDebugTriggerCount()) +
+    //                         " | Active: " + juce::String(audioProcessor.getDebugActiveNotesCount()) +
+    //                         " | Offs: " + juce::String(audioProcessor.getDebugNoteOffsSent()) +
+    //                         " | Pos: " + juce::String(audioProcessor.getDebugAbsoluteSamplePos());
+    // debugLabel.setText(debugText, juce::dontSendNotification);
     
     auto currentHash = std::hash<std::string>{}(audioProcessor.getCurrentPatternDisplay().toStdString());
     int currentStep = audioProcessor.getCurrentStep();
@@ -1353,7 +1353,7 @@ void SerpeAudioProcessorEditor::createDocumentationHTML()
     htmlContent += "<tr><td>Quantization</td><td>Pattern;steps</td><td>E(5,17);13</td><td>Angular projection</td></tr>\n";
     htmlContent += "<tr><td>Accents</td><td>{accent}pattern</td><td>{100}E(3,8)</td><td>Suprasegmental layer</td></tr>\n";
     htmlContent += "<tr><td>Progressive Transform</td><td>Pattern>target</td><td>E(1,8)>8</td><td>Gradual evolution</td></tr>\n";
-    htmlContent += "<tr><td>Progressive Offset</td><td>Pattern+step</td><td>E(3,8)+2</td><td>Rotation per trigger</td></tr>\n";
+    htmlContent += "<tr><td>Progressive Offset</td><td>Pattern%step</td><td>E(3,8)%2</td><td>Rotation per trigger</td></tr>\n";
     htmlContent += "<tr><td>Progressive Length</td><td>Pattern*add</td><td>E(3,8)*3</td><td>Growth per trigger</td></tr>\n";
     htmlContent += "<tr><td>Scenes</td><td>Pat1|Pat2|Pat3</td><td>E(3,8)|B(5,13)</td><td>Manual cycling</td></tr>\n";
     htmlContent += "<tr><td>Combination</td><td>Pattern + Pattern</td><td>E(3,8) + B(2,5)</td><td>OR logic merge</td></tr>\n";
@@ -1992,12 +1992,18 @@ void SerpeAudioProcessorEditor::onPresetItemClicked(int index)
             else if (presetState.hasProperty("upiInput"))
                 upiPattern = presetState.getProperty("upiInput").toString();
             
-            // Check if this is a progressive offset pattern (contains +N)
+            // Check if this is a progressive offset pattern (contains %N or +N)
             bool isProgressiveOffset = false;
-            if (upiPattern.contains("+") && upiPattern.lastIndexOf("+") > 0) {
-                int lastPlusIndex = upiPattern.lastIndexOf("+");
-                juce::String afterPlus = upiPattern.substring(lastPlusIndex + 1).trim();
-                isProgressiveOffset = afterPlus.containsOnly("0123456789-") && afterPlus.isNotEmpty();
+            if ((upiPattern.contains("%") && upiPattern.lastIndexOf("%") > 0) || (upiPattern.contains("+") && upiPattern.lastIndexOf("+") > 0)) {
+                if (upiPattern.contains("%") && upiPattern.lastIndexOf("%") > 0) {
+                    int lastPercentIndex = upiPattern.lastIndexOf("%");
+                    juce::String afterPercent = upiPattern.substring(lastPercentIndex + 1).trim();
+                    isProgressiveOffset = afterPercent.containsOnly("0123456789-") && afterPercent.isNotEmpty();
+                } else if (upiPattern.contains("+") && upiPattern.lastIndexOf("+") > 0) {
+                    int lastPlusIndex = upiPattern.lastIndexOf("+");
+                    juce::String afterPlus = upiPattern.substring(lastPlusIndex + 1).trim();
+                    isProgressiveOffset = afterPlus.containsOnly("0123456789-") && afterPlus.isNotEmpty();
+                }
             }
             
             // Check if user is clicking the same progressive offset preset repeatedly

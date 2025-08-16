@@ -30,14 +30,31 @@ bool ProgressiveManager::hasAnyProgressiveFeatures(const juce::String& upiPatter
 
 bool ProgressiveManager::hasProgressiveOffset(const juce::String& upiPattern) const
 {
-    // Look for +N pattern (N can be negative)
+    // Look for %N pattern (N can be negative) - preferred syntax
+    if (upiPattern.contains("%"))
+    {
+        int lastPercentIndex = upiPattern.lastIndexOf("%");
+        if (lastPercentIndex > 0)
+        {
+            juce::String afterPercent = upiPattern.substring(lastPercentIndex + 1).trim();
+            if (afterPercent.containsOnly("0123456789-") && afterPercent.isNotEmpty())
+                return true;
+        }
+    }
+    
+    // Look for +N pattern (N can be negative) - legacy syntax
     if (upiPattern.contains("+"))
     {
         int lastPlusIndex = upiPattern.lastIndexOf("+");
         if (lastPlusIndex > 0)
         {
             juce::String afterPlus = upiPattern.substring(lastPlusIndex + 1).trim();
-            return afterPlus.containsOnly("0123456789-") && afterPlus.isNotEmpty();
+            // Check if this is NOT a pattern combination (no spaces around +)
+            juce::String beforePlus = upiPattern.substring(0, lastPlusIndex);
+            if (!beforePlus.endsWithChar(' ') && !afterPlus.startsWithChar(' '))
+            {
+                return afterPlus.containsOnly("0123456789-") && afterPlus.isNotEmpty();
+            }
         }
     }
     return false;
@@ -328,12 +345,24 @@ void ProgressiveManager::parseProgressiveNotation(const juce::String& pattern, P
     state.hasLengthening = false;
     state.hasTransformation = false;
     
-    // Parse progressive offset (+N)
+    // Parse progressive offset (%N or +N)
     if (hasProgressiveOffset(pattern))
     {
-        int lastPlusIndex = pattern.lastIndexOf("+");
-        juce::String afterPlus = pattern.substring(lastPlusIndex + 1).trim();
-        state.offsetStep = afterPlus.getIntValue();
+        // Check for % first (preferred syntax)
+        if (pattern.contains("%"))
+        {
+            int lastPercentIndex = pattern.lastIndexOf("%");
+            juce::String afterPercent = pattern.substring(lastPercentIndex + 1).trim();
+            state.offsetStep = afterPercent.getIntValue();
+        }
+        // Fall back to + syntax
+        else if (pattern.contains("+"))
+        {
+            int lastPlusIndex = pattern.lastIndexOf("+");
+            juce::String afterPlus = pattern.substring(lastPlusIndex + 1).trim();
+            state.offsetStep = afterPlus.getIntValue();
+        }
+        
         state.currentOffset = 0;
         state.triggerCount = 0;
         state.hasOffset = true;
@@ -475,6 +504,19 @@ juce::String ProgressiveManager::extractBasePattern(const juce::String& pattern)
             if (afterStar.containsOnly("0123456789") && afterStar.isNotEmpty())
             {
                 base = base.substring(0, starIndex).trim();
+            }
+        }
+    }
+    
+    if (base.contains("%"))
+    {
+        int percentIndex = base.lastIndexOf("%");
+        if (percentIndex > 0)
+        {
+            juce::String afterPercent = base.substring(percentIndex + 1).trim();
+            if (afterPercent.containsOnly("0123456789-") && afterPercent.isNotEmpty())
+            {
+                base = base.substring(0, percentIndex).trim();
             }
         }
     }

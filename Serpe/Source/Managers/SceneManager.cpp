@@ -29,21 +29,32 @@ void SceneManager::initializeScenes(const juce::StringArray& scenes)
         
         // Check if this scene has progressive syntax - exact replica
         bool hasProgressiveOffset = false;
-        if (scenePattern.contains("+") && scenePattern.lastIndexOf("+") > 0) 
+        if ((scenePattern.contains("%") && scenePattern.lastIndexOf("%") > 0) || (scenePattern.contains("+") && scenePattern.lastIndexOf("+") > 0)) 
         {
-            int lastPlusIndex = scenePattern.lastIndexOf("+");
-            juce::String afterPlus = scenePattern.substring(lastPlusIndex + 1).trim();
-            hasProgressiveOffset = afterPlus.containsOnly("0123456789-") && afterPlus.isNotEmpty();
+            if (scenePattern.contains("%") && scenePattern.lastIndexOf("%") > 0) {
+                int lastPercentIndex = scenePattern.lastIndexOf("%");
+                juce::String afterPercent = scenePattern.substring(lastPercentIndex + 1).trim();
+                hasProgressiveOffset = afterPercent.containsOnly("0123456789-") && afterPercent.isNotEmpty();
+            } else if (scenePattern.contains("+") && scenePattern.lastIndexOf("+") > 0) {
+                int lastPlusIndex = scenePattern.lastIndexOf("+");
+                juce::String afterPlus = scenePattern.substring(lastPlusIndex + 1).trim();
+                hasProgressiveOffset = afterPlus.containsOnly("0123456789-") && afterPlus.isNotEmpty();
+            }
         }
         
         bool hasProgressiveLengthening = scenePattern.contains("*") && scenePattern.lastIndexOf("*") > 0;
         
         if (hasProgressiveOffset) 
         {
-            // Parse offset syntax: pattern+N - exact replica
-            int plusIndex = scenePattern.lastIndexOf("+");
-            juce::String basePattern = scenePattern.substring(0, plusIndex).trim();
-            juce::String offsetStr = scenePattern.substring(plusIndex + 1).trim();
+            // Parse offset syntax: pattern%N or pattern+N - exact replica
+            int symbolIndex = -1;
+            if (scenePattern.contains("%")) {
+                symbolIndex = scenePattern.lastIndexOf("%");
+            } else if (scenePattern.contains("+")) {
+                symbolIndex = scenePattern.lastIndexOf("+");
+            }
+            juce::String basePattern = scenePattern.substring(0, symbolIndex).trim();
+            juce::String offsetStr = scenePattern.substring(symbolIndex + 1).trim();
             int step = offsetStr.getIntValue();
             
             sceneBasePatterns.push_back(basePattern);
@@ -180,11 +191,17 @@ void SceneManager::setCurrentSceneBaseLengthPattern(const std::vector<bool>& pat
 
 bool SceneManager::sceneHasProgressiveOffset(const juce::String& scenePattern) const
 {
-    if (scenePattern.contains("+") && scenePattern.lastIndexOf("+") > 0) 
+    if ((scenePattern.contains("%") && scenePattern.lastIndexOf("%") > 0) || (scenePattern.contains("+") && scenePattern.lastIndexOf("+") > 0)) 
     {
-        int lastPlusIndex = scenePattern.lastIndexOf("+");
-        juce::String afterPlus = scenePattern.substring(lastPlusIndex + 1).trim();
-        return afterPlus.containsOnly("0123456789-") && afterPlus.isNotEmpty();
+        if (scenePattern.contains("%") && scenePattern.lastIndexOf("%") > 0) {
+            int lastPercentIndex = scenePattern.lastIndexOf("%");
+            juce::String afterPercent = scenePattern.substring(lastPercentIndex + 1).trim();
+            return afterPercent.containsOnly("0123456789-") && afterPercent.isNotEmpty();
+        } else if (scenePattern.contains("+") && scenePattern.lastIndexOf("+") > 0) {
+            int lastPlusIndex = scenePattern.lastIndexOf("+");
+            juce::String afterPlus = scenePattern.substring(lastPlusIndex + 1).trim();
+            return afterPlus.containsOnly("0123456789-") && afterPlus.isNotEmpty();
+        }
     }
     return false;
 }

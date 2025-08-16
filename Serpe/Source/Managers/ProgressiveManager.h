@@ -30,7 +30,7 @@ class PatternEngine;
  * Manages all progressive pattern functionality for the Rhythm Pattern Explorer
  * 
  * Progressive patterns modify base patterns through repeated triggers:
- * - Progressive Offset (+N): E(3,8)+2 rotates pattern by +2 each trigger
+ * - Progressive Offset (%N): E(3,8)%2 rotates pattern by +2 each trigger
  * - Progressive Lengthening (*N): E(3,8)*3 adds 3 random steps each trigger
  * - Progressive Transformation (>N): B(1,17)B>17 evolves pattern toward target
  * 
@@ -51,13 +51,13 @@ public:
     // Progressive Pattern Analysis
     
     /**
-     * Check if pattern uses any progressive notation (+N, *N, >N)
+     * Check if pattern uses any progressive notation (%N, +N, *N, >N)
      * @param upiPattern UPI pattern string to analyze
      */
     bool hasAnyProgressiveFeatures(const juce::String& upiPattern) const;
     
     /**
-     * Check if pattern uses progressive offset (+N)
+     * Check if pattern uses progressive offset (%N or +N for legacy)
      */
     bool hasProgressiveOffset(const juce::String& upiPattern) const;
     
