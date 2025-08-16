@@ -360,7 +360,6 @@ Based on extensive research in:
 
 - **Repository**: https://github.com/enkerli/rhythm_pattern_explorer
 - **Issues**: Report via GitHub Issues
-- **Email**: support@rhythmpatternexplorer.com
 
 ## License
 
