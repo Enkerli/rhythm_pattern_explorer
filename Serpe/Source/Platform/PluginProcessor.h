@@ -226,6 +226,12 @@ public:
     bool checkPatternChanged(); // Check and reset pattern changed flag
     void resetAccentSystem();
     
+    // Debug info for UI display
+    int getDebugTriggerCount() const { return debugTriggerCount; }
+    int getDebugActiveNotesCount() const { return static_cast<int>(activeNotes.size()); }
+    int getDebugNoteOffsSent() const { return debugNoteOffsSent; }
+    int getDebugAbsoluteSamplePos() const { return absoluteSamplePosition; }
+    
     // Lascabettes quantization access for UI and processing
     bool getHasQuantization() const { return hasQuantization; }
     int getOriginalStepCount() const { return originalStepCount; }
@@ -247,6 +253,19 @@ private:
     int currentSample = 0;
     std::atomic<int> currentStep{0};
     bool wasPlaying = false;
+    
+    // Note tracking system for proper note duration management
+    struct ActiveNote {
+        int noteNumber;
+        int endSample;  // Absolute sample position when note should end
+        bool isActive;
+        
+        ActiveNote() : noteNumber(0), endSample(0), isActive(false) {}
+        ActiveNote(int note, int end) : noteNumber(note), endSample(end), isActive(true) {}
+    };
+    
+    std::vector<ActiveNote> activeNotes;
+    int absoluteSamplePosition = 0;  // Track absolute sample position across buffers
     
     // DAW transport sync
     bool useHostTransport = true;
@@ -322,6 +341,10 @@ private:
     // Pattern change notification for UI updates
     std::atomic<bool> patternChanged{false};
     
+    // Debug counters for UI display
+    std::atomic<int> debugTriggerCount{0};
+    std::atomic<int> debugNoteOffsSent{0};
+    
     // Accent system - single source of truth
     bool hasAccentPattern = false;
     std::vector<bool> currentAccentPattern;
@@ -356,6 +379,11 @@ private:
     void syncBPMWithHost(const juce::AudioPlayHead::CurrentPositionInfo& posInfo);
     void syncPositionWithHost(const juce::AudioPlayHead::CurrentPositionInfo& posInfo);
     void checkMidiInputForTriggers(juce::MidiBuffer& midiMessages);
+    
+    // Note tracking system methods
+    void addActiveNote(int noteNumber, int duration);
+    void processActiveNotes(juce::MidiBuffer& midiBuffer, int bufferSize);
+    void clearAllActiveNotes(juce::MidiBuffer& midiBuffer);
     
     
     // Pattern manipulation

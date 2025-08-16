@@ -202,6 +202,9 @@ private:
     // Background color state
     BackgroundColor currentBackgroundColor = BackgroundColor::Dark;
     
+    // Debug display
+    juce::Label debugLabel;
+    
     // Hover state for visual feedback
     int hoveredStepIndex = -1;  // -1 means no step is hovered
     bool isMouseInCircleArea = false;

@@ -200,6 +200,13 @@ SerpeAudioProcessorEditor::SerpeAudioProcessorEditor (SerpeAudioProcessor& p)
     addAndMakeVisible(presetLabel);
     presetLabel.setVisible(false);
     
+    // Debug label setup
+    debugLabel.setText("Debug: Loading...", juce::dontSendNotification);
+    debugLabel.setColour(juce::Label::textColourId, juce::Colours::yellow);
+    debugLabel.setJustificationType(juce::Justification::centredLeft);
+    debugLabel.setFont(juce::Font(12.0f));
+    addAndMakeVisible(debugLabel);
+    
     // Preset management buttons
     savePresetButton.setButtonText("Save");
     savePresetButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff48bb78));
@@ -570,6 +577,10 @@ void SerpeAudioProcessorEditor::resized()
     // Remaining area is for the circle - MAXIMIZED for clean interface
     circleArea = area.expanded(100);
     
+    // Debug label at bottom (above version)
+    auto debugArea = getLocalBounds().removeFromBottom(40);
+    debugLabel.setBounds(debugArea.removeFromTop(20).reduced(10, 2));
+    
     // WebView documentation area (full plugin area when shown)
 #if SERPE_ENABLE_WEBVIEW
     if (docsBrowser)
@@ -621,6 +632,12 @@ void SerpeAudioProcessorEditor::timerCallback()
     // Update step/scene button text
     updateStepSceneButton();
     
+    // Update debug display
+    juce::String debugText = "Triggers: " + juce::String(audioProcessor.getDebugTriggerCount()) +
+                            " | Active: " + juce::String(audioProcessor.getDebugActiveNotesCount()) +
+                            " | Offs: " + juce::String(audioProcessor.getDebugNoteOffsSent()) +
+                            " | Pos: " + juce::String(audioProcessor.getDebugAbsoluteSamplePos());
+    debugLabel.setText(debugText, juce::dontSendNotification);
     
     auto currentHash = std::hash<std::string>{}(audioProcessor.getCurrentPatternDisplay().toStdString());
     int currentStep = audioProcessor.getCurrentStep();

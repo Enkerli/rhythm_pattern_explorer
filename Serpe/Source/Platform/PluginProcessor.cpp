@@ -29,7 +29,9 @@
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "PlatformSpecific.h"
 #include <fstream>
+#include <algorithm>
 
 // ============================================================================
 // iOS-SPECIFIC WORKAROUND: JUCE String Assertion Fix
@@ -552,11 +554,22 @@ void SerpeAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
     
     if (wasPlaying && !finalIsPlaying)
     {
-        // Just stopped playing - reset position
+        // Just stopped playing - reset position and clear all active notes
         currentSample = 0;
         currentStep.store(0);
+        absoluteSamplePosition = 0;
+        clearAllActiveNotes(midiMessages);
         // Stopped playing - resetting position
     }
+    
+    // CRITICAL: Process active notes and send note-offs at proper times 
+    // MUST be called AFTER all note-ons have been added in this buffer
+    // This ensures note-offs appear in the same MIDI buffer as their corresponding note-ons
+    processActiveNotes(midiMessages, currentBufferSize);
+    
+    // CRITICAL: Update absolute sample position for note tracking AFTER processing
+    // This ensures the timing calculations are correct for the next buffer
+    absoluteSamplePosition += currentBufferSize;
     
     wasPlaying = finalIsPlaying;
 }
@@ -971,6 +984,7 @@ void SerpeAudioProcessor::updateTiming()
     double stepDurationInSeconds = patternDurationInSeconds / patternSteps;
     samplesPerStep = static_cast<int>(currentSampleRate * stepDurationInSeconds);
     
+    
     // Timing validation
     if (samplesPerStep <= 0) {
         samplesPerStep = static_cast<int>(currentSampleRate / 60.0); // Default to 1Hz fallback
@@ -1075,30 +1089,87 @@ void SerpeAudioProcessor::triggerNote(juce::MidiBuffer& midiBuffer, int samplePo
         velocity = unaccentedVelocityParam ? unaccentedVelocityParam->get() : 0.8f;
     }
     
-    // ========================================================================
-    // iPad AUv3 REDUNDANT NOTE-OFF SAFETY MECHANISM
-    // ========================================================================
-    // This redundancy is required due to AUv3 framework limitations where
-    // note-off messages are occasionally lost, causing stuck notes.
-    // Desktop AU/VST3 versions don't experience this issue.
-    
+    // Create and send note-on immediately
     juce::MidiMessage noteOn = juce::MidiMessage::noteOn(1, noteNumber, velocity);
-    juce::MidiMessage noteOff = juce::MidiMessage::noteOff(1, noteNumber, 0.0f);
-    
-    // Add note-on at exact position
     midiBuffer.addEvent(noteOn, samplePosition);
     
-    // PRIMARY NOTE-OFF: Immediate termination (1-tick duration)
-    // Creates trigger-style notes that match desktop behavior
-    midiBuffer.addEvent(noteOff, samplePosition + 1);
+    // Calculate note duration (use 80% of step duration for musical notes)
+    int noteDuration = static_cast<int>(samplesPerStep * 0.8);
+    if (noteDuration < 2048) noteDuration = 2048; // Minimum ~46ms at 44.1kHz for instrument compatibility
     
-    // SAFETY NOTE-OFF: Redundant termination to prevent stuck notes
-    // This backup ensures notes are terminated even if primary note-off is lost
-    // 10-sample delay provides safety margin while remaining musically insignificant
-    midiBuffer.addEvent(juce::MidiMessage::noteOff(1, noteNumber, 0.0f), samplePosition + 10);
+    // Debug counter for UI display
+    debugTriggerCount++;
     
-    // RESULT: Consistent 1-tick note duration matching desktop version
-    // All notes now properly terminate instead of lasting until end of recording
+    // Add note to tracking system for proper duration management
+    addActiveNote(noteNumber, noteDuration);
+}
+
+void SerpeAudioProcessor::addActiveNote(int noteNumber, int duration)
+{
+    // Calculate absolute end position for this note
+    int endPosition = absoluteSamplePosition + duration;
+    
+    // Add to active notes list
+    activeNotes.emplace_back(noteNumber, endPosition);
+}
+
+void SerpeAudioProcessor::processActiveNotes(juce::MidiBuffer& midiBuffer, int bufferSize)
+{
+    // CRITICAL: This method sends note-off messages for notes whose duration has expired
+    // TIMING REQUIREMENT: Must be called AFTER all note-ons have been added to midiBuffer
+    // CROSS-PLATFORM: iPadOS is more sensitive to incorrect timing than macOS
+    
+    // Process all active notes and send note-offs when their time is up
+    for (auto& note : activeNotes)
+    {
+        if (note.isActive && note.endSample >= absoluteSamplePosition && note.endSample < absoluteSamplePosition + bufferSize)
+        {
+            // Time to send note-off for this note
+            int bufferPosition = note.endSample - absoluteSamplePosition;
+            
+            // CRITICAL FIX: Ensure buffer position is valid
+            if (bufferPosition >= 0 && bufferPosition < bufferSize)
+            {
+                // CRITICAL FIX: Use proper velocity for note-off (some hosts/instruments need non-zero velocity)
+                juce::MidiMessage noteOff = juce::MidiMessage::noteOff(1, note.noteNumber, 0.5f);
+                midiBuffer.addEvent(noteOff, bufferPosition);
+                note.isActive = false;
+                
+                // Debug counter for UI display
+                debugNoteOffsSent++;
+            }
+            else
+            {
+                // Invalid buffer position - mark note as inactive but don't send note-off
+                note.isActive = false;
+            }
+        }
+    }
+    
+    // Clean up inactive notes periodically
+    if (activeNotes.size() > 100) // Prevent memory buildup
+    {
+        activeNotes.erase(
+            std::remove_if(activeNotes.begin(), activeNotes.end(), 
+                          [](const ActiveNote& note) { return !note.isActive; }),
+            activeNotes.end()
+        );
+    }
+}
+
+void SerpeAudioProcessor::clearAllActiveNotes(juce::MidiBuffer& midiBuffer)
+{
+    // Send immediate note-offs for all active notes
+    for (auto& note : activeNotes)
+    {
+        if (note.isActive)
+        {
+            juce::MidiMessage noteOff = juce::MidiMessage::noteOff(1, note.noteNumber, 0.0f);
+            midiBuffer.addEvent(noteOff, 0);
+            note.isActive = false;
+        }
+    }
+    activeNotes.clear();
 }
 
 void SerpeAudioProcessor::syncBPMWithHost(const juce::AudioPlayHead::CurrentPositionInfo& posInfo)
