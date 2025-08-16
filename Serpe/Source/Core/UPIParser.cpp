@@ -544,7 +544,7 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
     if (isMorsePattern(cleaned))
     {
         // M:SOS, L:1,3 .--, or direct morse like -.-- 
-        if (cleaned.startsWith("L:"))
+        if (cleaned.startsWith("l:"))
         {
             // Parse L:short,long pattern format
             juce::String params = cleaned.substring(2).trim();
@@ -1044,7 +1044,7 @@ static bool validateBinaryPattern(const juce::String& input)
 
 static bool validateMorsePattern(const juce::String& input)
 {
-    return input.startsWith("m:") || input.startsWith("L:") || input.containsOnly(".-");
+    return input.startsWith("m:") || input.startsWith("l:") || input.containsOnly(".-");
 }
 
 const std::map<UPIParser::PatternType, UPIParser::PatternRecognitionRule>& UPIParser::getPatternRules()
