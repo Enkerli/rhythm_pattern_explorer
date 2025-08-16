@@ -66,7 +66,7 @@ bool PresetManager::savePreset(const juce::String& name, const juce::String& cat
     
     // Feature detection for preset browser icons and functionality
     preset.hasScenes = upiPattern.contains("|");  // Scene separation with pipe
-    preset.hasProgressiveTransforms = upiPattern.contains(">") || upiPattern.contains("+") || upiPattern.contains("*");  // Various progressive operators
+    preset.hasProgressiveTransforms = upiPattern.contains(">") || upiPattern.contains("%") || upiPattern.contains("+") || upiPattern.contains("*");  // Various progressive operators
     preset.hasAccentPattern = upiPattern.contains("{") && upiPattern.contains("}");  // Accent pattern notation
     
     // If this is a new preset, set creation time

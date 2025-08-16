@@ -1994,10 +1994,16 @@ void SerpeAudioProcessorEditor::onPresetItemClicked(int index)
             
             // Check if this is a progressive offset pattern (contains +N)
             bool isProgressiveOffset = false;
-            if (upiPattern.contains("+") && upiPattern.lastIndexOf("+") > 0) {
-                int lastPlusIndex = upiPattern.lastIndexOf("+");
-                juce::String afterPlus = upiPattern.substring(lastPlusIndex + 1).trim();
-                isProgressiveOffset = afterPlus.containsOnly("0123456789-") && afterPlus.isNotEmpty();
+            if ((upiPattern.contains("%") && upiPattern.lastIndexOf("%") > 0) || (upiPattern.contains("+") && upiPattern.lastIndexOf("+") > 0)) {
+                if (upiPattern.contains("%") && upiPattern.lastIndexOf("%") > 0) {
+                    int lastPercentIndex = upiPattern.lastIndexOf("%");
+                    juce::String afterPercent = upiPattern.substring(lastPercentIndex + 1).trim();
+                    isProgressiveOffset = afterPercent.containsOnly("0123456789-") && afterPercent.isNotEmpty();
+                } else if (upiPattern.contains("+") && upiPattern.lastIndexOf("+") > 0) {
+                    int lastPlusIndex = upiPattern.lastIndexOf("+");
+                    juce::String afterPlus = upiPattern.substring(lastPlusIndex + 1).trim();
+                    isProgressiveOffset = afterPlus.containsOnly("0123456789-") && afterPlus.isNotEmpty();
+                }
             }
             
             // Check if user is clicking the same progressive offset preset repeatedly

@@ -53,6 +53,34 @@ UPIParser::ParseResult UPIParser::parse(const juce::String& input)
         }
     }
     
+    // Check for progressive offset patterns with % or + symbols
+    // Check % first (preferred syntax), then + (legacy)
+    if (basePattern.contains("%"))
+    {
+        int lastPercentIndex = basePattern.lastIndexOf("%");
+        if (lastPercentIndex > 0)
+        {
+            juce::String afterPercent = basePattern.substring(lastPercentIndex + 1).trim();
+            if (afterPercent.containsOnly("0123456789-") && afterPercent.isNotEmpty())
+            {
+                // This is a progressive offset pattern with % syntax
+                juce::String basePatternOnly = basePattern.substring(0, lastPercentIndex).trim();
+                int offsetValue = afterPercent.getIntValue();
+                
+                // Parse the base pattern
+                auto baseResult = parsePattern(basePatternOnly);
+                if (baseResult.isValid())
+                {
+                    baseResult.hasProgressiveOffset = true;
+                    baseResult.initialOffset = 0;
+                    baseResult.progressiveOffset = offsetValue;
+                    baseResult.patternName += "%" + juce::String(offsetValue);
+                    return baseResult;
+                }
+            }
+        }
+    }
+    
     // Check for combinations (+ or -) in the base pattern (without accents)
     // BUT first check if + represents a progressive offset (pattern+number)
     if (basePattern.contains("+") || basePattern.contains("-"))

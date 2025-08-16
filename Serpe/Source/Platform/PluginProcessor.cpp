@@ -1300,7 +1300,8 @@ void SerpeAudioProcessor::setUPIInput(const juce::String& upiPattern)
     // Store original UPI input if it contains progressive/scene syntax for later Tick/MIDI advancement
     bool hasProgressiveTransformation = pattern.contains(">");
     bool hasScenes = pattern.contains("|");
-    if (hasProgressiveTransformation || hasScenes) {
+    bool hasProgressiveOffsetSyntax = (pattern.contains("%") && pattern.lastIndexOf("%") > 0) || (pattern.contains("+") && pattern.lastIndexOf("+") > 0);
+    if (hasProgressiveTransformation || hasScenes || hasProgressiveOffsetSyntax) {
         originalUPIInput = pattern;
     } else {
         originalUPIInput.clear(); // Clear if no progressive syntax
@@ -1308,11 +1309,18 @@ void SerpeAudioProcessor::setUPIInput(const juce::String& upiPattern)
     
     // Check if + is followed by a number (progressive offset) vs pattern (combination)
     bool isProgressiveOffset = false;
-    if (!hasScenes && pattern.contains("+") && pattern.lastIndexOf("+") > 0) {
-        int lastPlusIndex = pattern.lastIndexOf("+");
-        juce::String afterPlus = pattern.substring(lastPlusIndex + 1).trim();
-        // Progressive offset if what follows + is purely numeric (including negative numbers)
-        isProgressiveOffset = afterPlus.containsOnly("0123456789-") && afterPlus.isNotEmpty();
+    if (!hasScenes && ((pattern.contains("%") && pattern.lastIndexOf("%") > 0) || (pattern.contains("+") && pattern.lastIndexOf("+") > 0))) {
+        // Check % first (preferred syntax), then + (legacy)
+        if (pattern.contains("%") && pattern.lastIndexOf("%") > 0) {
+            int lastPercentIndex = pattern.lastIndexOf("%");
+            juce::String afterPercent = pattern.substring(lastPercentIndex + 1).trim();
+            isProgressiveOffset = afterPercent.containsOnly("0123456789-") && afterPercent.isNotEmpty();
+        } else if (pattern.contains("+") && pattern.lastIndexOf("+") > 0) {
+            int lastPlusIndex = pattern.lastIndexOf("+");
+            juce::String afterPlus = pattern.substring(lastPlusIndex + 1).trim();
+            // Progressive offset if what follows + is purely numeric (including negative numbers)
+            isProgressiveOffset = afterPlus.containsOnly("0123456789-") && afterPlus.isNotEmpty();
+        }
     }
     
     bool isProgressiveLengthening = !hasScenes && pattern.contains("*") && pattern.lastIndexOf("*") > 0;
@@ -1360,18 +1368,29 @@ void SerpeAudioProcessor::setUPIInput(const juce::String& upiPattern)
                 
                 // Check if this scene has progressive syntax
                 bool hasProgressiveOffset = false;
-                if (scenePattern.contains("+") && scenePattern.lastIndexOf("+") > 0) {
-                    int lastPlusIndex = scenePattern.lastIndexOf("+");
-                    juce::String afterPlus = scenePattern.substring(lastPlusIndex + 1).trim();
-                    hasProgressiveOffset = afterPlus.containsOnly("0123456789");
+                if ((scenePattern.contains("%") && scenePattern.lastIndexOf("%") > 0) || (scenePattern.contains("+") && scenePattern.lastIndexOf("+") > 0)) {
+                    if (scenePattern.contains("%") && scenePattern.lastIndexOf("%") > 0) {
+                        int lastPercentIndex = scenePattern.lastIndexOf("%");
+                        juce::String afterPercent = scenePattern.substring(lastPercentIndex + 1).trim();
+                        hasProgressiveOffset = afterPercent.containsOnly("0123456789-");
+                    } else if (scenePattern.contains("+") && scenePattern.lastIndexOf("+") > 0) {
+                        int lastPlusIndex = scenePattern.lastIndexOf("+");
+                        juce::String afterPlus = scenePattern.substring(lastPlusIndex + 1).trim();
+                        hasProgressiveOffset = afterPlus.containsOnly("0123456789-");
+                    }
                 }
                 bool hasProgressiveLengthening = scenePattern.contains("*") && scenePattern.lastIndexOf("*") > 0;
                 
                 if (hasProgressiveOffset) {
-                    // Parse offset syntax: pattern+N
-                    int plusIndex = scenePattern.lastIndexOf("+");
-                    juce::String basePattern = scenePattern.substring(0, plusIndex).trim();
-                    juce::String offsetStr = scenePattern.substring(plusIndex + 1).trim();
+                    // Parse offset syntax: pattern%N or pattern+N
+                    int symbolIndex = -1;
+                    if (scenePattern.contains("%")) {
+                        symbolIndex = scenePattern.lastIndexOf("%");
+                    } else if (scenePattern.contains("+")) {
+                        symbolIndex = scenePattern.lastIndexOf("+");
+                    }
+                    juce::String basePattern = scenePattern.substring(0, symbolIndex).trim();
+                    juce::String offsetStr = scenePattern.substring(symbolIndex + 1).trim();
                     int step = offsetStr.getIntValue();
                     
                     sceneBasePatterns.push_back(basePattern);
@@ -1417,10 +1436,15 @@ void SerpeAudioProcessor::setUPIInput(const juce::String& upiPattern)
     }
     else if (isProgressiveOffset)
     {
-        // Handle progressive offset: pattern+N
-        int plusIndex = pattern.lastIndexOf("+");
-        juce::String newBasePattern = pattern.substring(0, plusIndex).trim();
-        juce::String stepStr = pattern.substring(plusIndex + 1).trim();
+        // Handle progressive offset: pattern%N or pattern+N
+        int symbolIndex = -1;
+        if (pattern.contains("%")) {
+            symbolIndex = pattern.lastIndexOf("%");
+        } else if (pattern.contains("+")) {
+            symbolIndex = pattern.lastIndexOf("+");
+        }
+        juce::String newBasePattern = pattern.substring(0, symbolIndex).trim();
+        juce::String stepStr = pattern.substring(symbolIndex + 1).trim();
         int newStep = stepStr.getIntValue();
         
         // Progressive offset debug logging
@@ -1929,7 +1953,7 @@ void SerpeAudioProcessor::checkMidiInputForTriggers(juce::MidiBuffer& midiMessag
             if (!currentUPIInput.isEmpty())
             {
                 // Check for progressive patterns and scenes
-                bool hasProgressiveOffset = currentUPIInput.contains("+") && currentUPIInput.lastIndexOf("+") > 0;
+                bool hasProgressiveOffset = (currentUPIInput.contains("%") && currentUPIInput.lastIndexOf("%") > 0) || (currentUPIInput.contains("+") && currentUPIInput.lastIndexOf("+") > 0);
                 bool hasProgressiveLengthening = currentUPIInput.contains("*") && currentUPIInput.lastIndexOf("*") > 0;
                 bool hasOldProgressiveOffset = currentUPIInput.contains("#");
                 bool hasProgressiveTransformation = currentUPIInput.contains(">"); // New progressive syntax
