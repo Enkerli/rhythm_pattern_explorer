@@ -200,12 +200,12 @@ SerpeAudioProcessorEditor::SerpeAudioProcessorEditor (SerpeAudioProcessor& p)
     addAndMakeVisible(presetLabel);
     presetLabel.setVisible(false);
     
-    // Debug label setup
-    debugLabel.setText("Debug: Loading...", juce::dontSendNotification);
-    debugLabel.setColour(juce::Label::textColourId, juce::Colours::yellow);
-    debugLabel.setJustificationType(juce::Justification::centredLeft);
-    debugLabel.setFont(juce::Font(12.0f));
-    addAndMakeVisible(debugLabel);
+    // Debug label setup (commented out - can be re-enabled for troubleshooting)
+    // debugLabel.setText("Debug: Loading...", juce::dontSendNotification);
+    // debugLabel.setColour(juce::Label::textColourId, juce::Colours::yellow);
+    // debugLabel.setJustificationType(juce::Justification::centredLeft);
+    // debugLabel.setFont(juce::Font(12.0f));
+    // addAndMakeVisible(debugLabel);
     
     // Preset management buttons
     savePresetButton.setButtonText("Save");
@@ -577,9 +577,9 @@ void SerpeAudioProcessorEditor::resized()
     // Remaining area is for the circle - MAXIMIZED for clean interface
     circleArea = area.expanded(100);
     
-    // Debug label at bottom (above version)
-    auto debugArea = getLocalBounds().removeFromBottom(40);
-    debugLabel.setBounds(debugArea.removeFromTop(20).reduced(10, 2));
+    // Debug label at bottom (above version) - commented out
+    // auto debugArea = getLocalBounds().removeFromBottom(40);
+    // debugLabel.setBounds(debugArea.removeFromTop(20).reduced(10, 2));
     
     // WebView documentation area (full plugin area when shown)
 #if SERPE_ENABLE_WEBVIEW
@@ -632,12 +632,12 @@ void SerpeAudioProcessorEditor::timerCallback()
     // Update step/scene button text
     updateStepSceneButton();
     
-    // Update debug display
-    juce::String debugText = "Triggers: " + juce::String(audioProcessor.getDebugTriggerCount()) +
-                            " | Active: " + juce::String(audioProcessor.getDebugActiveNotesCount()) +
-                            " | Offs: " + juce::String(audioProcessor.getDebugNoteOffsSent()) +
-                            " | Pos: " + juce::String(audioProcessor.getDebugAbsoluteSamplePos());
-    debugLabel.setText(debugText, juce::dontSendNotification);
+    // Update debug display (commented out - can be re-enabled for troubleshooting)
+    // juce::String debugText = "Triggers: " + juce::String(audioProcessor.getDebugTriggerCount()) +
+    //                         " | Active: " + juce::String(audioProcessor.getDebugActiveNotesCount()) +
+    //                         " | Offs: " + juce::String(audioProcessor.getDebugNoteOffsSent()) +
+    //                         " | Pos: " + juce::String(audioProcessor.getDebugAbsoluteSamplePos());
+    // debugLabel.setText(debugText, juce::dontSendNotification);
     
     auto currentHash = std::hash<std::string>{}(audioProcessor.getCurrentPatternDisplay().toStdString());
     int currentStep = audioProcessor.getCurrentStep();
