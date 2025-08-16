@@ -543,14 +543,44 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
     
     if (isMorsePattern(cleaned))
     {
-        // M:SOS or direct morse like -.-- 
-        juce::String morseCode = cleaned;
-        if (cleaned.startsWith("m:"))
+        // M:SOS, L:1,3 .--, or direct morse like -.-- 
+        if (cleaned.startsWith("L:"))
         {
-            morseCode = cleaned.substring(2).trim();
+            // Parse L:short,long pattern format
+            juce::String params = cleaned.substring(2).trim();
+            int spacePos = params.indexOfChar(' ');
+            if (spacePos > 0)
+            {
+                juce::String durationsStr = params.substring(0, spacePos);
+                juce::String morseCode = params.substring(spacePos + 1).trim();
+                
+                // Parse short,long durations
+                int commaPos = durationsStr.indexOfChar(',');
+                if (commaPos > 0)
+                {
+                    int shortDuration = durationsStr.substring(0, commaPos).getIntValue();
+                    int longDuration = durationsStr.substring(commaPos + 1).getIntValue();
+                    
+                    if (shortDuration > 0 && longDuration > 0)
+                    {
+                        auto pattern = parseMorseWithDurations(morseCode, shortDuration, longDuration);
+                        return createSuccess(pattern, "Morse L:" + juce::String(shortDuration) + "," + juce::String(longDuration) + " " + morseCode);
+                    }
+                }
+            }
+            return createError("Invalid L: format. Use L:short,long pattern (e.g., L:1,3 .-)");
         }
-        auto pattern = parseMorse(morseCode);
-        return createSuccess(pattern, "Morse: " + morseCode);
+        else
+        {
+            // M:SOS or direct morse like -.-- 
+            juce::String morseCode = cleaned;
+            if (cleaned.startsWith("m:"))
+            {
+                morseCode = cleaned.substring(2).trim();
+            }
+            auto pattern = parseMorse(morseCode);
+            return createSuccess(pattern, "Morse: " + morseCode);
+        }
     }
     
     if (isRandomPattern(cleaned))
@@ -901,6 +931,102 @@ std::vector<bool> UPIParser::parseMorse(const juce::String& morseStr)
     return pattern;
 }
 
+std::vector<bool> UPIParser::parseMorseWithDurations(const juce::String& morseStr, int shortDuration, int longDuration)
+{
+    std::vector<bool> pattern;
+    
+    // Simple morse code mapping with custom durations
+    juce::String processed = morseStr.toLowerCase();
+    
+    // Handle common morse patterns and letter-to-morse conversion (same as parseMorse)
+    if (processed == "sos")
+        processed = "...---...";
+    else if (processed == "cq")
+        processed = "-.-.--.-";
+    else {
+        // Multi-character letter sequence conversion
+        juce::String morseCode = "";
+        bool hasValidLetters = false;
+        
+        for (int i = 0; i < processed.length(); ++i) {
+            char letter = processed[i];
+            juce::String letterMorse = "";
+            
+            switch (letter) {
+                case 'a': letterMorse = ".-"; break;
+                case 'b': letterMorse = "-..."; break;
+                case 'c': letterMorse = "-.-."; break;
+                case 'd': letterMorse = "-.."; break;
+                case 'e': letterMorse = "."; break;
+                case 'f': letterMorse = "..-."; break;
+                case 'g': letterMorse = "--."; break;
+                case 'h': letterMorse = "...."; break;
+                case 'i': letterMorse = ".."; break;
+                case 'j': letterMorse = ".---"; break;
+                case 'k': letterMorse = "-.-"; break;
+                case 'l': letterMorse = ".-.."; break;
+                case 'm': letterMorse = "--"; break;
+                case 'n': letterMorse = "-."; break;
+                case 'o': letterMorse = "---"; break;
+                case 'p': letterMorse = ".--."; break;
+                case 'q': letterMorse = "--.-"; break;
+                case 'r': letterMorse = ".-."; break;
+                case 's': letterMorse = "..."; break;
+                case 't': letterMorse = "-"; break;
+                case 'u': letterMorse = "..-"; break;
+                case 'v': letterMorse = "...-"; break;
+                case 'w': letterMorse = ".--"; break;
+                case 'x': letterMorse = "-..-"; break;
+                case 'y': letterMorse = "-.--"; break;
+                case 'z': letterMorse = "--.."; break;
+                default: 
+                    // Keep non-letters as-is (for direct morse like '.-')
+                    letterMorse = juce::String::charToString(letter);
+                    break;
+            }
+            
+            if (letterMorse != juce::String::charToString(letter)) {
+                hasValidLetters = true;
+            }
+            
+            morseCode += letterMorse;
+        }
+        
+        // Only use converted morse if we found valid letters
+        if (hasValidLetters) {
+            processed = morseCode;
+        }
+    }
+    
+    // Convert morse to pattern with custom durations (. = short, - = long, space = rest)
+    for (int i = 0; i < processed.length(); ++i)
+    {
+        char c = processed[i];
+        if (c == '.')
+        {
+            // Short duration: onset followed by (shortDuration-1) rests
+            pattern.push_back(true);   // Onset
+            for (int j = 1; j < shortDuration; ++j) {
+                pattern.push_back(false);  // Rest
+            }
+        }
+        else if (c == '-')
+        {
+            // Long duration: onset followed by (longDuration-1) rests
+            pattern.push_back(true);   // Onset
+            for (int j = 1; j < longDuration; ++j) {
+                pattern.push_back(false);  // Rest
+            }
+        }
+        else if (c == ' ')
+        {
+            pattern.push_back(false);  // Rest
+        }
+    }
+    
+    return pattern;
+}
+
 //==============================================================================
 // Pattern transformations and utilities moved to PatternUtils namespace
 
@@ -918,7 +1044,7 @@ static bool validateBinaryPattern(const juce::String& input)
 
 static bool validateMorsePattern(const juce::String& input)
 {
-    return input.startsWith("m:") || input.containsOnly(".-");
+    return input.startsWith("m:") || input.startsWith("L:") || input.containsOnly(".-");
 }
 
 const std::map<UPIParser::PatternType, UPIParser::PatternRecognitionRule>& UPIParser::getPatternRules()

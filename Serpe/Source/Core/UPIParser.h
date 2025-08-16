@@ -80,6 +80,7 @@ public:
     static std::vector<bool> parseRandom(int onsets, int steps);
     static std::vector<bool> parseDecimal(int decimal, int stepCount);
     static std::vector<bool> parseMorse(const juce::String& morseStr);
+    static std::vector<bool> parseMorseWithDurations(const juce::String& morseStr, int shortDuration, int longDuration);
     
     // Accent pattern parsing
     static std::vector<bool> parseAccentPattern(const juce::String& accentStr);
