@@ -1797,9 +1797,38 @@ void SerpeAudioProcessor::parseAndApplyUPI(const juce::String& upiPattern, bool 
         }
         
         // Reset global onset counter and UI accent offset only when requested
+        // CRITICAL FIX: Preserve accent timing for equivalent patterns
         if (resetAccentPosition) {
-            globalOnsetCounter = 0;
-            uiAccentOffset = 0;
+            // Check if this is the same rhythm pattern with same accent pattern
+            bool isSamePattern = (parseResult.pattern == patternEngine.getCurrentPattern());
+            bool isSameAccentPattern = false;
+            
+            if (parseResult.hasAccentPattern && hasAccentPattern) {
+                isSameAccentPattern = (parseResult.accentPattern == currentAccentPattern);
+            } else if (!parseResult.hasAccentPattern && !hasAccentPattern) {
+                isSameAccentPattern = true; // Both have no accent pattern
+            }
+            
+            // Only reset if pattern or accent pattern actually changed
+            if (!isSamePattern || !isSameAccentPattern) {
+                globalOnsetCounter = 0;
+                uiAccentOffset = 0;
+                
+                // Debug logging for accent position resets
+                std::ofstream logFile("/tmp/serpe_accent_debug.log", std::ios::app);
+                if (logFile.is_open()) {
+                    logFile << "ACCENT RESET - Pattern changed: " << (!isSamePattern ? "YES" : "NO") 
+                            << ", Accent changed: " << (!isSameAccentPattern ? "YES" : "NO") << std::endl;
+                    logFile.close();
+                }
+            } else {
+                // Debug logging for accent position preservation
+                std::ofstream logFile("/tmp/serpe_accent_debug.log", std::ios::app);
+                if (logFile.is_open()) {
+                    logFile << "ACCENT PRESERVED - Same pattern and accent, globalOnset: " << globalOnsetCounter << std::endl;
+                    logFile.close();
+                }
+            }
         }
         
         // CRITICAL FIX: Always exit suspension mode when we get a new UPI pattern
