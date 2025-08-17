@@ -13,7 +13,6 @@
 #include "../Platform/DebugConfig.h"
 #include <cmath>
 #include <random>
-#include <fstream>
 #include <algorithm>
 #include <functional>
 
@@ -208,8 +207,13 @@ UPIParser::ParseResult UPIParser::parse(const juce::String& input)
         }
     }
     
-    // Check for space-separated stringing
-    if (cleaned.contains(" ") && !hasTransformationPrefix(cleaned))
+    // PATTERN BOUNDARY LOGIC: Handle space-separated pattern concatenation
+    // This splits input on spaces and concatenates the resulting patterns.
+    // IMPORTANT: Add exceptions here for patterns that contain meaningful spaces:
+    // - L: notation (L:1,3 .-) uses space to separate durations from morse code
+    // - Transformation prefixes (rev, comp, etc.) may contain spaces
+    // - Future patterns with internal spaces should be added to the exclusion list
+    if (cleaned.contains(" ") && !hasTransformationPrefix(cleaned) && !cleaned.startsWith("l:"))
     {
         auto parts = tokenize(cleaned, " ");
         if (parts.size() > 1)
@@ -252,6 +256,7 @@ UPIParser::ParseResult UPIParser::parse(const juce::String& input)
 UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
 {
     juce::String cleaned = cleanInput(input);
+    
     
     
     
@@ -541,9 +546,14 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
         return createSuccess(pattern, "Array: " + cleaned);
     }
     
-    if (isMorsePattern(cleaned))
+    bool morseCheck = isMorsePattern(cleaned);
+    
+    if (morseCheck)
     {
-        // M:SOS, L:1,3 .--, or direct morse like -.-- 
+        // L: CUSTOM DURATION MORSE PATTERNS
+        // Format: L:short,long morseCode (e.g., L:1,3 .-- or L:2,4 SOS)
+        // This allows custom step counts for dots (short) and dashes (long)
+        // instead of the default 1:2 ratio used by regular Morse patterns
         if (cleaned.startsWith("l:"))
         {
             // Parse L:short,long pattern format
@@ -564,7 +574,7 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
                     if (shortDuration > 0 && longDuration > 0)
                     {
                         auto pattern = parseMorseWithDurations(morseCode, shortDuration, longDuration);
-                        return createSuccess(pattern, "Morse L:" + juce::String(shortDuration) + "," + juce::String(longDuration) + " " + morseCode);
+                        return createSuccess(pattern, "L:" + juce::String(shortDuration) + "," + juce::String(longDuration) + " " + morseCode);
                     }
                 }
             }
@@ -935,6 +945,7 @@ std::vector<bool> UPIParser::parseMorseWithDurations(const juce::String& morseSt
 {
     std::vector<bool> pattern;
     
+    
     // Simple morse code mapping with custom durations
     juce::String processed = morseStr.toLowerCase();
     
@@ -1044,7 +1055,10 @@ static bool validateBinaryPattern(const juce::String& input)
 
 static bool validateMorsePattern(const juce::String& input)
 {
-    return input.startsWith("m:") || input.startsWith("l:") || input.containsOnly(".-");
+    bool result = input.startsWith("m:") || input.startsWith("l:") || input.containsOnly(".-");
+    
+    
+    return result;
 }
 
 const std::map<UPIParser::PatternType, UPIParser::PatternRecognitionRule>& UPIParser::getPatternRules()
@@ -1548,13 +1562,6 @@ std::vector<bool> UPIParser::parseAccentPattern(const juce::String& accentStr)
 {
     juce::String trimmed = accentStr.trim();
     
-    // DEBUG: Log accent pattern entry point
-    std::ofstream logFile("/tmp/serpe_accent_debug.log", std::ios::app);
-    if (logFile.is_open()) {
-        logFile << "PARSE ACCENT ENTRY - Input: \"" << accentStr.toStdString() 
-                << "\", Trimmed: \"" << trimmed.toStdString() << "\"" << std::endl;
-        logFile.close();
-    }
     
     if (trimmed.isEmpty())
         return {};
@@ -1572,22 +1579,6 @@ std::vector<bool> UPIParser::parseAccentPattern(const juce::String& accentStr)
                 // Negate rotation to make positive rotations go clockwise (webapp standard)
                 auto result = PatternUtils::rotatePattern(basePattern, -rotationSteps);
                 
-                // DEBUG: Log rotation operation
-                std::ofstream logFile("/tmp/serpe_accent_debug.log", std::ios::app);
-                if (logFile.is_open()) {
-                    logFile << "ACCENT ROTATION - Input: " << trimmed.toStdString() 
-                            << ", base size=" << basePattern.size() << ", rotation=" << rotationSteps 
-                            << ", result size=" << result.size() << ", base=";
-                    for (size_t i = 0; i < std::min(basePattern.size(), size_t(8)); i++) {
-                        logFile << (basePattern[i] ? "1" : "0");
-                    }
-                    logFile << ", result=";
-                    for (size_t i = 0; i < std::min(result.size(), size_t(8)); i++) {
-                        logFile << (result[i] ? "1" : "0");
-                    }
-                    logFile << std::endl;
-                    logFile.close();
-                }
                 
                 return result;
             }
@@ -1606,18 +1597,6 @@ std::vector<bool> UPIParser::parseAccentPattern(const juce::String& accentStr)
             int steps = parts[1].trim().getIntValue();
             auto result = parseEuclidean(onsets, steps);
             
-            // DEBUG: Log Euclidean accent pattern parsing
-            std::ofstream logFile("/tmp/serpe_accent_debug.log", std::ios::app);
-            if (logFile.is_open()) {
-                logFile << "EUCLIDEAN ACCENT PARSE - Input: " << trimmed.toStdString() 
-                        << ", onsets=" << onsets << ", steps=" << steps 
-                        << ", result size=" << result.size() << ", pattern=";
-                for (size_t i = 0; i < std::min(result.size(), size_t(8)); i++) {
-                    logFile << (result[i] ? "1" : "0");
-                }
-                logFile << std::endl;
-                logFile.close();
-            }
             
             return result;
         }
@@ -1648,9 +1627,34 @@ std::vector<bool> UPIParser::parseAccentPattern(const juce::String& accentStr)
         return parseArray(trimmed);
     }
     
-    // Handle Morse code: .-- or .-.
+    // Handle Morse code: .-- or .-. or L:1,3 .-
     if (trimmed.containsAnyOf(".-"))
     {
+        // Check for L: custom duration format first
+        if (trimmed.startsWith("l:"))
+        {
+            // Parse L:short,long pattern format
+            juce::String params = trimmed.substring(2).trim();
+            int spacePos = params.indexOfChar(' ');
+            if (spacePos > 0)
+            {
+                juce::String durationsStr = params.substring(0, spacePos);
+                juce::String morseCode = params.substring(spacePos + 1).trim();
+                
+                // Parse short,long durations
+                int commaPos = durationsStr.indexOfChar(',');
+                if (commaPos > 0)
+                {
+                    int shortDuration = durationsStr.substring(0, commaPos).getIntValue();
+                    int longDuration = durationsStr.substring(commaPos + 1).getIntValue();
+                    
+                    if (shortDuration > 0 && longDuration > 0)
+                    {
+                        return parseMorseWithDurations(morseCode, shortDuration, longDuration);
+                    }
+                }
+            }
+        }
         return parseMorse(trimmed);
     }
     
