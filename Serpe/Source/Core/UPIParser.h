@@ -25,6 +25,7 @@
  * - Binary: b10010010, 101010, 0x92:8
  * - Arrays: [0,3,6]:8
  * - Random: R(3,8), R(r,8)
+ * - Morse: M:SOS, L:1,3 .-, M:SOS{l}, M:HELP{w}
  * - Transformations: ~pattern, rev pattern
  * - Combinations: P(3,1)+P(5,0)
  * - And many more...
@@ -81,6 +82,7 @@ public:
     static std::vector<bool> parseDecimal(int decimal, int stepCount);
     static std::vector<bool> parseMorse(const juce::String& morseStr);
     static std::vector<bool> parseMorseWithDurations(const juce::String& morseStr, int shortDuration, int longDuration);
+    static std::pair<std::vector<bool>, std::vector<bool>> parseMorseWithAccents(const juce::String& morseStr, char accentMode, int shortDuration = 1, int longDuration = 2);
     
     // Accent pattern parsing
     static std::vector<bool> parseAccentPattern(const juce::String& accentStr);
