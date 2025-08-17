@@ -1120,14 +1120,10 @@ std::pair<std::vector<bool>, std::vector<bool>> UPIParser::parseMorseWithAccents
     std::vector<bool> pattern;
     std::vector<bool> accents;
     
-    // Process input: convert letters to morse if needed, handle spacing
+    // Process input: convert letters to morse if needed
     juce::String processed = morseStr.toLowerCase();
-    
-    // Letter to morse conversion with boundary tracking
-    bool hasValidLetters = false;
-    juce::String morseCode = "";
-    std::vector<int> letterBoundaries; // Positions where letters start
-    std::vector<int> wordBoundaries;   // Positions where words start
+    std::vector<int> letterStartPositions; // Pattern positions where letters start
+    std::vector<int> wordStartPositions;   // Pattern positions where words start
     
     if (processed.containsAnyOf("abcdefghijklmnopqrstuvwxyz"))
     {
@@ -1138,35 +1134,19 @@ std::pair<std::vector<bool>, std::vector<bool>> UPIParser::parseMorseWithAccents
         {
             juce::String word = words[wordIndex];
             
-            // Mark word boundary
-            if (wordIndex > 0)
-            {
-                // Add inter-word spacing (7 units in traditional Morse)
-                for (int i = 0; i < 7; ++i)
-                {
-                    morseCode += " ";
-                }
-            }
-            wordBoundaries.push_back(morseCode.length());
+            // Mark word start position
+            wordStartPositions.push_back(pattern.size());
             
             // Process each letter in the word
             for (int letterIndex = 0; letterIndex < word.length(); ++letterIndex)
             {
                 char letter = word[letterIndex];
+                
+                // Mark letter start position
+                letterStartPositions.push_back(pattern.size());
+                
+                // Convert letter to morse and generate pattern directly
                 juce::String letterMorse = "";
-                
-                // Mark letter boundary
-                if (letterIndex > 0)
-                {
-                    // Add inter-letter spacing (3 units in traditional Morse)
-                    for (int i = 0; i < 3; ++i)
-                    {
-                        morseCode += " ";
-                    }
-                }
-                letterBoundaries.push_back(morseCode.length());
-                
-                // Convert letter to morse
                 switch (letter) {
                     case 'a': letterMorse = ".-"; break;
                     case 'b': letterMorse = "-..."; break;
@@ -1200,71 +1180,71 @@ std::pair<std::vector<bool>, std::vector<bool>> UPIParser::parseMorseWithAccents
                         break;
                 }
                 
-                if (letterMorse != juce::String::charToString(letter)) {
-                    hasValidLetters = true;
+                // Convert morse symbols directly to pattern
+                for (int i = 0; i < letterMorse.length(); ++i)
+                {
+                    char c = letterMorse[i];
+                    if (c == '.')
+                    {
+                        // Short duration: onset followed by (shortDuration-1) rests
+                        pattern.push_back(true);   // Onset
+                        for (int j = 1; j < shortDuration; ++j) {
+                            pattern.push_back(false);  // Rest
+                        }
+                    }
+                    else if (c == '-')
+                    {
+                        // Long duration: onset followed by (longDuration-1) rests
+                        pattern.push_back(true);   // Onset
+                        for (int j = 1; j < longDuration; ++j) {
+                            pattern.push_back(false);  // Rest
+                        }
+                    }
                 }
-                
-                morseCode += letterMorse;
             }
-        }
-        
-        // Only use converted morse if we found valid letters
-        if (hasValidLetters) {
-            processed = morseCode;
         }
     }
     else
     {
         // Direct morse pattern like ".- ---" - treat each space-separated group as a letter
         auto groups = juce::StringArray::fromTokens(processed, " ", "");
-        morseCode = "";
+        
+        // If no spaces, treat entire string as one letter
+        if (groups.size() == 0) {
+            groups.add(processed);
+        }
         
         for (int groupIndex = 0; groupIndex < groups.size(); ++groupIndex)
         {
-            if (groupIndex > 0)
+            juce::String morseGroup = groups[groupIndex];
+            
+            // Mark both letter and word start (for direct morse, they're the same)
+            letterStartPositions.push_back(pattern.size());
+            if (groupIndex == 0 || accentMode == 'w') {
+                wordStartPositions.push_back(pattern.size());
+            }
+            
+            // Convert morse symbols directly to pattern
+            for (int i = 0; i < morseGroup.length(); ++i)
             {
-                // Add inter-letter spacing
-                for (int i = 0; i < 3; ++i)
+                char c = morseGroup[i];
+                if (c == '.')
                 {
-                    morseCode += " ";
+                    // Short duration: onset followed by (shortDuration-1) rests
+                    pattern.push_back(true);   // Onset
+                    for (int j = 1; j < shortDuration; ++j) {
+                        pattern.push_back(false);  // Rest
+                    }
+                }
+                else if (c == '-')
+                {
+                    // Long duration: onset followed by (longDuration-1) rests
+                    pattern.push_back(true);   // Onset
+                    for (int j = 1; j < longDuration; ++j) {
+                        pattern.push_back(false);  // Rest
+                    }
                 }
             }
-            letterBoundaries.push_back(morseCode.length());
-            morseCode += groups[groupIndex];
-        }
-        
-        processed = morseCode;
-        // For direct morse, each group is both a letter and a word
-        wordBoundaries = letterBoundaries;
-    }
-    
-    // Convert morse code to pattern with custom durations
-    int currentPatternPosition = 0;
-    for (int i = 0; i < processed.length(); ++i)
-    {
-        char c = processed[i];
-        if (c == '.')
-        {
-            // Short duration: onset followed by (shortDuration-1) rests
-            pattern.push_back(true);   // Onset
-            for (int j = 1; j < shortDuration; ++j) {
-                pattern.push_back(false);  // Rest
-            }
-            currentPatternPosition += shortDuration;
-        }
-        else if (c == '-')
-        {
-            // Long duration: onset followed by (longDuration-1) rests
-            pattern.push_back(true);   // Onset
-            for (int j = 1; j < longDuration; ++j) {
-                pattern.push_back(false);  // Rest
-            }
-            currentPatternPosition += longDuration;
-        }
-        else if (c == ' ')
-        {
-            pattern.push_back(false);  // Rest
-            currentPatternPosition += 1;
         }
     }
     
@@ -1274,72 +1254,22 @@ std::pair<std::vector<bool>, std::vector<bool>> UPIParser::parseMorseWithAccents
     if (accentMode == 'l')
     {
         // Letter accents: mark start of each letter
-        for (int boundary : letterBoundaries)
+        for (int pos : letterStartPositions)
         {
-            // Convert morse position to pattern position
-            int patternPos = 0;
-            int morsePos = 0;
-            
-            for (int i = 0; i < processed.length() && morsePos < boundary; ++i)
+            if (pos < accents.size())
             {
-                char c = processed[i];
-                if (c == '.')
-                {
-                    if (morsePos == boundary) break;
-                    patternPos += shortDuration;
-                }
-                else if (c == '-')
-                {
-                    if (morsePos == boundary) break;
-                    patternPos += longDuration;
-                }
-                else if (c == ' ')
-                {
-                    if (morsePos == boundary) break;
-                    patternPos += 1;
-                }
-                morsePos++;
-            }
-            
-            if (patternPos < accents.size())
-            {
-                accents[patternPos] = true;
+                accents[pos] = true;
             }
         }
     }
     else if (accentMode == 'w')
     {
         // Word accents: mark start of each word
-        for (int boundary : wordBoundaries)
+        for (int pos : wordStartPositions)
         {
-            // Convert morse position to pattern position
-            int patternPos = 0;
-            int morsePos = 0;
-            
-            for (int i = 0; i < processed.length() && morsePos < boundary; ++i)
+            if (pos < accents.size())
             {
-                char c = processed[i];
-                if (c == '.')
-                {
-                    if (morsePos == boundary) break;
-                    patternPos += shortDuration;
-                }
-                else if (c == '-')
-                {
-                    if (morsePos == boundary) break;
-                    patternPos += longDuration;
-                }
-                else if (c == ' ')
-                {
-                    if (morsePos == boundary) break;
-                    patternPos += 1;
-                }
-                morsePos++;
-            }
-            
-            if (patternPos < accents.size())
-            {
-                accents[patternPos] = true;
+                accents[pos] = true;
             }
         }
     }
