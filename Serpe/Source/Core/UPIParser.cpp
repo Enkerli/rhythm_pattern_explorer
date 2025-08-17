@@ -1248,28 +1248,52 @@ std::pair<std::vector<bool>, std::vector<bool>> UPIParser::parseMorseWithAccents
         }
     }
     
-    // Generate accent pattern based on mode
-    accents.resize(pattern.size(), false);
+    // Generate accent pattern based on onset indices (not pattern positions!)
+    // The accent system operates on onset numbering, so we need to map
+    // letter/word boundaries to onset indices rather than pattern positions
+    
+    // First, collect all onset positions in the pattern
+    std::vector<int> onsetPositions;
+    for (int i = 0; i < pattern.size(); ++i)
+    {
+        if (pattern[i])
+        {
+            onsetPositions.push_back(i);
+        }
+    }
+    
+    // Create accent pattern sized to number of onsets
+    accents.resize(onsetPositions.size(), false);
     
     if (accentMode == 'l')
     {
-        // Letter accents: mark start of each letter
-        for (int pos : letterStartPositions)
+        // Letter accents: find which onset index corresponds to each letter start
+        for (int letterStartPos : letterStartPositions)
         {
-            if (pos < accents.size())
+            // Find the onset index for this pattern position
+            for (int onsetIdx = 0; onsetIdx < onsetPositions.size(); ++onsetIdx)
             {
-                accents[pos] = true;
+                if (onsetPositions[onsetIdx] == letterStartPos)
+                {
+                    accents[onsetIdx] = true;
+                    break;
+                }
             }
         }
     }
     else if (accentMode == 'w')
     {
-        // Word accents: mark start of each word
-        for (int pos : wordStartPositions)
+        // Word accents: find which onset index corresponds to each word start
+        for (int wordStartPos : wordStartPositions)
         {
-            if (pos < accents.size())
+            // Find the onset index for this pattern position
+            for (int onsetIdx = 0; onsetIdx < onsetPositions.size(); ++onsetIdx)
             {
-                accents[pos] = true;
+                if (onsetPositions[onsetIdx] == wordStartPos)
+                {
+                    accents[onsetIdx] = true;
+                    break;
+                }
             }
         }
     }
