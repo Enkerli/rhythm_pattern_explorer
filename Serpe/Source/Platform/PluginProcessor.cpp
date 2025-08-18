@@ -547,6 +547,9 @@ void SerpeAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
             // Trigger the step ONCE per buffer
             processStep(midiMessages, samplePosition, currentBufferStep);
             
+            // DERIVED INDEXING: Advance monotonic transport tick
+            transportTick.fetch_add(1);
+            
             // Update current step
             currentStep.store(currentBufferStep);
         }
@@ -2424,6 +2427,72 @@ void SerpeAudioProcessor::addToUPIHistory(const juce::String& upiPattern)
     while (upiHistory.size() > MAX_UPI_HISTORY)
     {
         upiHistory.remove(upiHistory.size() - 1);
+    }
+}
+
+//==============================================================================
+// DERIVED INDEXING SYSTEM - Pure functions from monotonic clock
+
+uint32_t SerpeAudioProcessor::getCurrentRhythmIndex() const
+{
+    uint64_t tick = transportTick.load();
+    uint64_t base = baseTickRhythm.load();
+    auto* masks = currentMasks.load();
+    
+    if (!masks || masks->rhythmPeriod == 0) {
+        // Fallback to legacy system during transition
+        return static_cast<uint32_t>(currentStep.load());
+    }
+    
+    // Pure derived index: (tick - base) % period
+    return static_cast<uint32_t>((tick - base) % masks->rhythmPeriod);
+}
+
+uint32_t SerpeAudioProcessor::getCurrentAccentIndex() const
+{
+    uint64_t tick = transportTick.load();
+    uint64_t base = baseTickAccent.load();
+    auto* masks = currentMasks.load();
+    
+    if (!masks || masks->accentPeriod == 0) {
+        // Fallback to legacy system during transition
+        return static_cast<uint32_t>(globalOnsetCounter % (currentAccentPattern.empty() ? 1 : currentAccentPattern.size()));
+    }
+    
+    // Pure derived index: (tick - base) % period
+    return static_cast<uint32_t>((tick - base) % masks->accentPeriod);
+}
+
+bool SerpeAudioProcessor::shouldCurrentOnsetBeAccented() const
+{
+    auto* masks = currentMasks.load();
+    if (!masks || masks->rhythmMask.empty() || masks->accentMask.empty()) {
+        // Fallback to legacy system during transition
+        if (currentAccentPattern.empty()) return false;
+        int accentIdx = globalOnsetCounter % static_cast<int>(currentAccentPattern.size());
+        return currentAccentPattern[accentIdx];
+    }
+    
+    uint32_t rhythmIdx = getCurrentRhythmIndex();
+    
+    // Check if there's an onset at this rhythm step
+    if (rhythmIdx >= masks->rhythmMask.size() || !masks->rhythmMask[rhythmIdx]) {
+        return false; // No onset at this step
+    }
+    
+    if (masks->useOnsetIndexedAccents) {
+        // Accent pattern follows onset order (k-th onset gets accent pattern k)
+        if (rhythmIdx >= masks->onsetIndexForStep.size()) return false;
+        
+        uint32_t onsetIdx = masks->onsetIndexForStep[rhythmIdx];
+        uint32_t accentIdx = getCurrentAccentIndex();
+        uint32_t finalAccentIdx = (onsetIdx + accentIdx) % masks->accentPeriod;
+        
+        return finalAccentIdx < masks->accentMask.size() && masks->accentMask[finalAccentIdx];
+    } else {
+        // Accent pattern follows absolute step position
+        uint32_t accentIdx = getCurrentAccentIndex();
+        return accentIdx < masks->accentMask.size() && masks->accentMask[accentIdx];
     }
 }
 

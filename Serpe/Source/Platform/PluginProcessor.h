@@ -114,6 +114,12 @@ public:
     
     // Playback state
     int getCurrentStep() const { return currentStep.load(); }
+    
+    // DERIVED INDEXING FUNCTIONS - Pure functions from monotonic clock
+    uint32_t getCurrentRhythmIndex() const;
+    uint32_t getCurrentAccentIndex() const;
+    bool shouldCurrentOnsetBeAccented() const;
+    uint64_t getTransportTick() const { return transportTick.load(); }
     bool isCurrentlyPlaying() const { 
         // REFINED: Check if we're getting recent processBlock calls AND transport is playing
         double currentTime = juce::Time::getMillisecondCounter();
@@ -345,7 +351,30 @@ private:
     std::atomic<int> debugTriggerCount{0};
     std::atomic<int> debugNoteOffsSent{0};
     
-    // Accent system - single source of truth
+    // DERIVED INDEXING SYSTEM - Monotonic clock with derived indices
+    std::atomic<uint64_t> transportTick{0};      // Monotonic, never reset, audio-thread only
+    std::atomic<uint64_t> baseTickRhythm{0};     // Phase-locked at pattern acceptance
+    std::atomic<uint64_t> baseTickAccent{0};     // Phase-locked at accent acceptance
+    
+    // Immutable pattern data structure
+    struct PatternMasks {
+        std::vector<bool> rhythmMask;            // [0..nR-1] step-indexed rhythm
+        std::vector<bool> accentMask;            // [0..nA-1] accent pattern  
+        std::vector<uint32_t> onsetSteps;        // precomputed onset positions
+        std::vector<uint32_t> onsetIndexForStep; // inverse mapping step->onset index
+        uint32_t rhythmPeriod{0};
+        uint32_t accentPeriod{0};
+        bool useOnsetIndexedAccents{true};       // mode: onset-indexed vs step-indexed
+        
+        PatternMasks() = default;
+        ~PatternMasks() = default;
+        PatternMasks(const PatternMasks&) = delete;
+        PatternMasks& operator=(const PatternMasks&) = delete;
+    };
+    
+    std::atomic<PatternMasks*> currentMasks{nullptr};  // Atomic pointer for thread-safe swaps
+    
+    // Accent system - single source of truth (EXISTING SYSTEM - DO NOT MODIFY)
     bool hasAccentPattern = false;
     std::vector<bool> currentAccentPattern;
     int globalOnsetCounter = 0;           // Single source of truth: counts all onsets since pattern start
