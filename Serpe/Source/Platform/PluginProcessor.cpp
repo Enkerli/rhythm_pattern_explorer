@@ -1812,16 +1812,39 @@ void SerpeAudioProcessor::parseAndApplyUPI(const juce::String& upiPattern, bool 
             // CRITICAL FIX: Always synchronize globalOnsetCounter with current rhythm position
             // This ensures accent patterns align with rhythm patterns regardless of pattern similarity
             
-            // Calculate how many onsets should have occurred at current rhythm position
-            int currentRhythmStep = getCurrentStep();
-            int newGlobalOnsetCounter = 0;
+            // CRITICAL FIX: Calculate total onsets across all cycles since pattern start
+            // getCurrentStep() returns cyclic position, but we need absolute onset count
             
-            // Count onsets from position 0 to current step in the new pattern
-            for (int step = 0; step < currentRhythmStep && step < static_cast<int>(parseResult.pattern.size()); step++) {
+            // First, calculate how many complete cycles have occurred
+            // We need to access the absolute step count, not the cyclic step count
+            int patternLength = static_cast<int>(parseResult.pattern.size());
+            int currentCyclicStep = getCurrentStep(); // This is within current cycle (0 to pattern length)
+            
+            // Count onsets in one complete cycle of the new pattern
+            int onsetsPerCycle = 0;
+            for (int step = 0; step < patternLength; step++) {
                 if (parseResult.pattern[step]) {
-                    newGlobalOnsetCounter++;
+                    onsetsPerCycle++;
                 }
             }
+            
+            // Since we can't easily get the absolute step count from here,
+            // we'll use the current globalOnsetCounter as a reference and adjust it
+            // based on the expected position within the current cycle
+            int expectedOnsetsAtCurrentCyclicStep = 0;
+            for (int step = 0; step < currentCyclicStep && step < patternLength; step++) {
+                if (parseResult.pattern[step]) {
+                    expectedOnsetsAtCurrentCyclicStep++;
+                }
+            }
+            
+            // Calculate how many complete cycles we should have had
+            int oldGlobalOnsetCounter = globalOnsetCounter; // Save for debug logging
+            int currentOnsetModulo = onsetsPerCycle > 0 ? (globalOnsetCounter % onsetsPerCycle) : 0;
+            int completeCycles = onsetsPerCycle > 0 ? ((globalOnsetCounter - currentOnsetModulo) / onsetsPerCycle) : 0;
+            
+            // The new global onset counter should be complete cycles + current position
+            int newGlobalOnsetCounter = completeCycles * onsetsPerCycle + expectedOnsetsAtCurrentCyclicStep;
             
             globalOnsetCounter = newGlobalOnsetCounter;
             uiAccentOffset = hasAccentPattern && !currentAccentPattern.empty() ? 
@@ -1832,9 +1855,11 @@ void SerpeAudioProcessor::parseAndApplyUPI(const juce::String& upiPattern, bool 
             if (logFile.is_open()) {
                 logFile << "ACCENT SYNC - Pattern changed: " << (!isSamePattern ? "YES" : "NO") 
                         << ", Accent changed: " << (!isSameAccentPattern ? "YES" : "NO")
-                        << ", RhythmStep: " << currentRhythmStep 
-                        << ", GlobalOnset: " << newGlobalOnsetCounter 
-                        << ", PatternSize: " << parseResult.pattern.size() << std::endl;
+                        << ", CyclicStep: " << currentCyclicStep 
+                        << ", CompleteCycles: " << completeCycles 
+                        << ", OnsetsPerCycle: " << onsetsPerCycle
+                        << ", OldGlobalOnset: " << oldGlobalOnsetCounter 
+                        << ", NewGlobalOnset: " << newGlobalOnsetCounter << std::endl;
                 logFile.close();
             }
         }
