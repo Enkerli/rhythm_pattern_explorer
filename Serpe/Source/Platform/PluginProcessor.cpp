@@ -1045,26 +1045,15 @@ void SerpeAudioProcessor::processStep(juce::MidiBuffer& midiBuffer, int samplePo
     int nextStep = (stepToProcess + 1) % static_cast<int>(pattern.size());
     if (nextStep == 0)
     {
-        // CRITICAL FIX: Reset globalOnsetCounter at pattern cycle boundaries
-        // This ensures rhythm and accent patterns stay synchronized
-        globalOnsetCounter = 0;
-        
         // Update stable UI accent offset at cycle boundaries (only if not manually modified)
         if (hasAccentPattern && !currentAccentPattern.empty() && !accentPatternManuallyModified)
         {
-            uiAccentOffset = 0; // Always start at 0 after reset
+            uiAccentOffset = globalOnsetCounter % static_cast<int>(currentAccentPattern.size());
         }
         else if (hasAccentPattern && accentPatternManuallyModified)
         {
         }
         patternChanged.store(true); // UI can refresh at cycle boundaries
-        
-        // Debug logging for cycle reset
-        std::ofstream logFile("/tmp/serpe_accent_debug.log", std::ios::app);
-        if (logFile.is_open()) {
-            logFile << "CYCLE RESET - globalOnsetCounter reset to 0 at pattern cycle boundary" << std::endl;
-            logFile.close();
-        }
     }
 }
 
@@ -1810,18 +1799,32 @@ void SerpeAudioProcessor::parseAndApplyUPI(const juce::String& upiPattern, bool 
         // CRITICAL FIX: Synchronize globalOnsetCounter with current rhythm position
         // This ensures both rhythm and accent patterns start at position 0 synchronously
         if (resetAccentPosition) {
-            // CRITICAL FIX: Simple reset approach - always reset globalOnsetCounter to 0
-            // This eliminates all complex cycle calculation logic that was causing morphing
-            globalOnsetCounter = 0;
-            uiAccentOffset = 0;
+            // CRITICAL FIX: Only reset when UPI pattern actually changes
+            // This preserves polymeter while fixing morphing during pattern changes
+            bool upiChanged = (upiPattern != lastParsedUPI);
             
-            // Debug logging for accent position synchronization
-            std::ofstream logFile("/tmp/serpe_accent_debug.log", std::ios::app);
-            if (logFile.is_open()) {
-                logFile << "ACCENT SYNC - Action: RESET to 0"
-                        << ", NewGlobalOnset: " << globalOnsetCounter 
-                        << ", CurrentUPI: " << upiPattern.toStdString() << std::endl;
-                logFile.close();
+            if (upiChanged) {
+                globalOnsetCounter = 0;
+                uiAccentOffset = 0;
+                
+                // Debug logging for accent position synchronization
+                std::ofstream logFile("/tmp/serpe_accent_debug.log", std::ios::app);
+                if (logFile.is_open()) {
+                    logFile << "ACCENT SYNC - UPI CHANGED, Action: RESET to 0"
+                            << ", NewGlobalOnset: " << globalOnsetCounter 
+                            << ", CurrentUPI: " << upiPattern.toStdString()
+                            << ", LastUPI: " << lastParsedUPI.toStdString() << std::endl;
+                    logFile.close();
+                }
+            } else {
+                // Same UPI - preserve polymeter, no reset
+                std::ofstream logFile("/tmp/serpe_accent_debug.log", std::ios::app);
+                if (logFile.is_open()) {
+                    logFile << "ACCENT SYNC - SAME UPI, Action: PRESERVE polymeter"
+                            << ", GlobalOnset: " << globalOnsetCounter 
+                            << ", UPI: " << upiPattern.toStdString() << std::endl;
+                    logFile.close();
+                }
             }
         }
         
