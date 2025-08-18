@@ -352,6 +352,9 @@ private:
     int uiAccentOffset = 0;               // Stable accent offset for UI display (updates only at cycle boundaries)
     bool accentPatternManuallyModified = false; // Flag to prevent automatic accent cycling after manual edits
     bool patternManuallyModified = false;       // Flag to indicate pattern has been manually edited (suspension mode)
+    bool pendingPatternChange = false;          // Flag to prevent globalOnsetCounter increment during pattern changes
+    bool forceAccentAtZero = false;             // Flag to force first accent calculation to use position 0
+    int patternChangeResetCounter = -1;         // When >= 0, use this counter instead of globalOnsetCounter
     std::vector<bool> suspendedRhythmPattern;   // Preserve manually modified rhythm pattern
     std::vector<bool> suspendedAccentPattern;   // Preserve manually modified accent pattern
     

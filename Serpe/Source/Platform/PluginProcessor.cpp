@@ -1019,7 +1019,35 @@ void SerpeAudioProcessor::processStep(juce::MidiBuffer& midiBuffer, int samplePo
             }
         } else {
             // NORMAL MODE: Use onset-based accent logic (UPI patterns, progressive transformations)
-            isAccented = shouldOnsetBeAccented(globalOnsetCounter);
+            int accentPosition;
+            
+            // CRITICAL FIX: Use reset counter during pattern changes for consistent accent positions
+            if (patternChangeResetCounter >= 0) {
+                accentPosition = patternChangeResetCounter;
+                
+                // Debug logging
+                std::ofstream logFile("/tmp/serpe_accent_debug.log", std::ios::app);
+                if (logFile.is_open()) {
+                    logFile << "RESET COUNTER MODE - Using position " << accentPosition 
+                            << " instead of globalOnset " << globalOnsetCounter << std::endl;
+                    logFile.close();
+                }
+                
+                // CRITICAL FIX: Clear BOTH flags together after reset counter is used
+                patternChangeResetCounter = -1;    // Disable reset counter
+                pendingPatternChange = false;      // Allow globalOnsetCounter increment again
+                
+                // Debug logging for complete flag clearance
+                std::ofstream logFile2("/tmp/serpe_accent_debug.log", std::ios::app);
+                if (logFile2.is_open()) {
+                    logFile2 << "RESET COMPLETE - Both flags cleared, normal mode resumed" << std::endl;
+                    logFile2.close();
+                }
+            } else {
+                accentPosition = globalOnsetCounter;
+            }
+            
+            isAccented = shouldOnsetBeAccented(accentPosition);
             
             // DEBUG: Log to file (every 5th call to avoid spam)
             static int onsetLogCount = 0;
@@ -1027,6 +1055,7 @@ void SerpeAudioProcessor::processStep(juce::MidiBuffer& midiBuffer, int samplePo
                 std::ofstream logFile("/tmp/serpe_accent_debug.log", std::ios::app);
                 if (logFile.is_open()) {
                     logFile << "ACCENT MODE: ONSET-based - globalOnset: " << globalOnsetCounter 
+                            << ", accentPos: " << accentPosition
                             << ", accentPatternSize: " << currentAccentPattern.size() 
                             << ", result: " << (isAccented ? "ACCENT" : "normal") << std::endl;
                     logFile.close();
@@ -1038,7 +1067,24 @@ void SerpeAudioProcessor::processStep(juce::MidiBuffer& midiBuffer, int samplePo
         triggerNote(midiBuffer, samplePosition, isAccented);
         
         // Advance the global onset counter (single source of truth)
-        globalOnsetCounter++;
+        // CRITICAL FIX: Only increment if no pattern change is pending
+        if (!pendingPatternChange) {
+            globalOnsetCounter++;
+            
+            // Debug logging for normal increment
+            std::ofstream logFile("/tmp/serpe_accent_debug.log", std::ios::app);
+            if (logFile.is_open()) {
+                logFile << "NORMAL INCREMENT - globalOnsetCounter now " << globalOnsetCounter << std::endl;
+                logFile.close();
+            }
+        } else {
+            // Debug logging for blocked increment
+            std::ofstream logFile("/tmp/serpe_accent_debug.log", std::ios::app);
+            if (logFile.is_open()) {
+                logFile << "INCREMENT BLOCKED - pendingPatternChange=true, counter stays " << globalOnsetCounter << std::endl;
+                logFile.close();
+            }
+        }
     }
     
     // Notify UI of cycle completion for pattern change updates
@@ -1290,6 +1336,33 @@ void SerpeAudioProcessor::syncPositionWithHost(const juce::AudioPlayHead::Curren
 void SerpeAudioProcessor::setUPIInput(const juce::String& upiPattern)
 {
     juce::ScopedLock lock(processingLock);
+    
+    // CRITICAL FIX: COMPLETE accent system reset on ANY pattern entry
+    // User requirement: "any time Enter is pressed...there should be a reset to step 0"
+    // This applies whether or not the pattern actually changes
+    globalOnsetCounter = 0;
+    uiAccentOffset = 0;
+    
+    // NUCLEAR OPTION: Force complete accent system restart
+    // This ensures ALL subsequent accent calculations start from position 0
+    currentStep.store(0);         // Reset rhythm position to step 0
+    absoluteSamplePosition = 0;   // Reset absolute sample tracking
+    
+    // Clear all existing note tracking to prevent timing conflicts
+    activeNotes.clear();
+    
+    pendingPatternChange = true;  // CRITICAL: Prevent audio thread from incrementing counter
+    forceAccentAtZero = true;     // Force next accent calculation to use position 0
+    patternChangeResetCounter = 0; // Use reset counter for this processing cycle
+    
+    // Debug logging for universal reset
+    std::ofstream logFile("/tmp/serpe_accent_debug.log", std::ios::app);
+    if (logFile.is_open()) {
+        logFile << "UNIVERSAL RESET - UPI entry detected: " << upiPattern.trim().toStdString() 
+                << ", Previous: " << currentUPIInput.trim().toStdString() 
+                << ", GlobalOnset reset to 0, PendingChange=true, ForceZero=true" << std::endl;
+        logFile.close();
+    }
     
     // Add to history when pattern is entered (not when restored from state)
     addToUPIHistory(upiPattern.trim());
@@ -1728,6 +1801,35 @@ void SerpeAudioProcessor::parseAndApplyUPI(const juce::String& upiPattern, bool 
             return;
         }
         
+        // CRITICAL FIX: COMPLETE accent system reset when resetAccentPosition=true
+        // User requirement: "any time Enter is pressed...there should be a reset to step 0" 
+        // This ensures reset happens for ALL pattern entry methods (Enter, Tick, MIDI, presets)
+        juce::String previousUPI = lastParsedUPI;
+        if (resetAccentPosition) {
+            globalOnsetCounter = 0;
+            uiAccentOffset = 0;
+            
+            // NUCLEAR OPTION: Force complete system restart to prevent displacement
+            currentStep.store(0);         // Reset rhythm position to step 0
+            absoluteSamplePosition = 0;   // Reset absolute sample tracking
+            
+            // Clear all existing note tracking to prevent timing conflicts
+            activeNotes.clear();
+            
+            pendingPatternChange = true;  // Block counter increments during pattern application
+            forceAccentAtZero = true;     // Force next accent calculation to use position 0
+            patternChangeResetCounter = 0; // Use reset counter for this processing cycle
+            
+            // Debug logging for universal reset
+            std::ofstream logFile("/tmp/serpe_accent_debug.log", std::ios::app);
+            if (logFile.is_open()) {
+                logFile << "UNIVERSAL PARSEANDAPPLY RESET - Pattern: " << upiPattern.toStdString() 
+                        << ", Previous: " << previousUPI.toStdString() 
+                        << ", GlobalOnset reset to 0, PendingChange=true, ForceZero=true" << std::endl;
+                logFile.close();
+            }
+        }
+        
         // Double B notation like B(3,21)B>17 should work fine - let UPIParser handle it
         
         // Double notation patterns (E(n,s)E>target, W(n,s)W>target, D(n,s)D>target) should work fine - let UPIParser handle them
@@ -1799,32 +1901,32 @@ void SerpeAudioProcessor::parseAndApplyUPI(const juce::String& upiPattern, bool 
         // CRITICAL FIX: Synchronize globalOnsetCounter with current rhythm position
         // This ensures both rhythm and accent patterns start at position 0 synchronously
         if (resetAccentPosition) {
-            // CRITICAL FIX: Only reset when UPI pattern actually changes
-            // This preserves polymeter while fixing morphing during pattern changes
-            bool upiChanged = (upiPattern != lastParsedUPI);
+            // UNIVERSAL RESET: Always reset to position 0 on ANY pattern entry
+            // User requirement: reset should happen regardless of pattern change
+            globalOnsetCounter = 0;
+            uiAccentOffset = 0;
             
-            if (upiChanged) {
-                globalOnsetCounter = 0;
-                uiAccentOffset = 0;
-                
-                // Debug logging for accent position synchronization
-                std::ofstream logFile("/tmp/serpe_accent_debug.log", std::ios::app);
-                if (logFile.is_open()) {
-                    logFile << "ACCENT SYNC - UPI CHANGED, Action: RESET to 0"
-                            << ", NewGlobalOnset: " << globalOnsetCounter 
-                            << ", CurrentUPI: " << upiPattern.toStdString()
-                            << ", LastUPI: " << lastParsedUPI.toStdString() << std::endl;
-                    logFile.close();
-                }
-            } else {
-                // Same UPI - preserve polymeter, no reset
-                std::ofstream logFile("/tmp/serpe_accent_debug.log", std::ios::app);
-                if (logFile.is_open()) {
-                    logFile << "ACCENT SYNC - SAME UPI, Action: PRESERVE polymeter"
-                            << ", GlobalOnset: " << globalOnsetCounter 
-                            << ", UPI: " << upiPattern.toStdString() << std::endl;
-                    logFile.close();
-                }
+            // Debug logging for universal accent position synchronization
+            std::ofstream logFile("/tmp/serpe_accent_debug.log", std::ios::app);
+            if (logFile.is_open()) {
+                logFile << "ACCENT SYNC - UNIVERSAL RESET to 0"
+                        << ", NewGlobalOnset: " << globalOnsetCounter 
+                        << ", CurrentUPI: " << upiPattern.toStdString()
+                        << ", PreviousUPI: " << previousUPI.toStdString() << std::endl;
+                logFile.close();
+            }
+        }
+        
+        // CRITICAL FIX: Keep both pendingPatternChange AND reset counter active for audio processing
+        // These will be cleared when the reset counter is actually used in accent calculation
+        if (pendingPatternChange) {
+            // NOTE: Keep BOTH flags active until reset counter is used in audio processing
+            
+            // Debug logging for pattern application
+            std::ofstream logFile("/tmp/serpe_accent_debug.log", std::ios::app);
+            if (logFile.is_open()) {
+                logFile << "PATTERN APPLIED - Both PendingChange and ResetCounter KEPT ACTIVE for audio processing" << std::endl;
+                logFile.close();
             }
         }
         
