@@ -1045,15 +1045,26 @@ void SerpeAudioProcessor::processStep(juce::MidiBuffer& midiBuffer, int samplePo
     int nextStep = (stepToProcess + 1) % static_cast<int>(pattern.size());
     if (nextStep == 0)
     {
+        // CRITICAL FIX: Reset globalOnsetCounter at pattern cycle boundaries
+        // This ensures rhythm and accent patterns stay synchronized
+        globalOnsetCounter = 0;
+        
         // Update stable UI accent offset at cycle boundaries (only if not manually modified)
         if (hasAccentPattern && !currentAccentPattern.empty() && !accentPatternManuallyModified)
         {
-            uiAccentOffset = globalOnsetCounter % static_cast<int>(currentAccentPattern.size());
+            uiAccentOffset = 0; // Always start at 0 after reset
         }
         else if (hasAccentPattern && accentPatternManuallyModified)
         {
         }
         patternChanged.store(true); // UI can refresh at cycle boundaries
+        
+        // Debug logging for cycle reset
+        std::ofstream logFile("/tmp/serpe_accent_debug.log", std::ios::app);
+        if (logFile.is_open()) {
+            logFile << "CYCLE RESET - globalOnsetCounter reset to 0 at pattern cycle boundary" << std::endl;
+            logFile.close();
+        }
     }
 }
 
@@ -1799,67 +1810,17 @@ void SerpeAudioProcessor::parseAndApplyUPI(const juce::String& upiPattern, bool 
         // CRITICAL FIX: Synchronize globalOnsetCounter with current rhythm position
         // This ensures both rhythm and accent patterns start at position 0 synchronously
         if (resetAccentPosition) {
-            // Check if this is the same rhythm pattern with same accent pattern
-            bool isSamePattern = (parseResult.pattern == patternEngine.getCurrentPattern());
-            bool isSameAccentPattern = false;
-            
-            if (parseResult.hasAccentPattern && hasAccentPattern) {
-                isSameAccentPattern = (parseResult.accentPattern == currentAccentPattern);
-            } else if (!parseResult.hasAccentPattern && !hasAccentPattern) {
-                isSameAccentPattern = true; // Both have no accent pattern
-            }
-            
-            // CRITICAL FIX: Always synchronize globalOnsetCounter with current rhythm position
-            // This ensures accent patterns align with rhythm patterns regardless of pattern similarity
-            
-            // CRITICAL FIX: Calculate total onsets across all cycles since pattern start
-            // getCurrentStep() returns cyclic position, but we need absolute onset count
-            
-            // First, calculate how many complete cycles have occurred
-            // We need to access the absolute step count, not the cyclic step count
-            int patternLength = static_cast<int>(parseResult.pattern.size());
-            int currentCyclicStep = getCurrentStep(); // This is within current cycle (0 to pattern length)
-            
-            // Count onsets in one complete cycle of the new pattern
-            int onsetsPerCycle = 0;
-            for (int step = 0; step < patternLength; step++) {
-                if (parseResult.pattern[step]) {
-                    onsetsPerCycle++;
-                }
-            }
-            
-            // Since we can't easily get the absolute step count from here,
-            // we'll use the current globalOnsetCounter as a reference and adjust it
-            // based on the expected position within the current cycle
-            int expectedOnsetsAtCurrentCyclicStep = 0;
-            for (int step = 0; step < currentCyclicStep && step < patternLength; step++) {
-                if (parseResult.pattern[step]) {
-                    expectedOnsetsAtCurrentCyclicStep++;
-                }
-            }
-            
-            // Calculate how many complete cycles we should have had
-            int oldGlobalOnsetCounter = globalOnsetCounter; // Save for debug logging
-            int currentOnsetModulo = onsetsPerCycle > 0 ? (globalOnsetCounter % onsetsPerCycle) : 0;
-            int completeCycles = onsetsPerCycle > 0 ? ((globalOnsetCounter - currentOnsetModulo) / onsetsPerCycle) : 0;
-            
-            // The new global onset counter should be complete cycles + current position
-            int newGlobalOnsetCounter = completeCycles * onsetsPerCycle + expectedOnsetsAtCurrentCyclicStep;
-            
-            globalOnsetCounter = newGlobalOnsetCounter;
-            uiAccentOffset = hasAccentPattern && !currentAccentPattern.empty() ? 
-                globalOnsetCounter % static_cast<int>(currentAccentPattern.size()) : 0;
+            // CRITICAL FIX: Simple reset approach - always reset globalOnsetCounter to 0
+            // This eliminates all complex cycle calculation logic that was causing morphing
+            globalOnsetCounter = 0;
+            uiAccentOffset = 0;
             
             // Debug logging for accent position synchronization
             std::ofstream logFile("/tmp/serpe_accent_debug.log", std::ios::app);
             if (logFile.is_open()) {
-                logFile << "ACCENT SYNC - Pattern changed: " << (!isSamePattern ? "YES" : "NO") 
-                        << ", Accent changed: " << (!isSameAccentPattern ? "YES" : "NO")
-                        << ", CyclicStep: " << currentCyclicStep 
-                        << ", CompleteCycles: " << completeCycles 
-                        << ", OnsetsPerCycle: " << onsetsPerCycle
-                        << ", OldGlobalOnset: " << oldGlobalOnsetCounter 
-                        << ", NewGlobalOnset: " << newGlobalOnsetCounter << std::endl;
+                logFile << "ACCENT SYNC - Action: RESET to 0"
+                        << ", NewGlobalOnset: " << globalOnsetCounter 
+                        << ", CurrentUPI: " << upiPattern.toStdString() << std::endl;
                 logFile.close();
             }
         }
