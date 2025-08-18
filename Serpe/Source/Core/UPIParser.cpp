@@ -1135,7 +1135,7 @@ std::pair<std::vector<bool>, std::vector<bool>> UPIParser::parseMorseWithAccents
             juce::String word = words[wordIndex];
             
             // Mark word start position
-            wordStartPositions.push_back(pattern.size());
+            wordStartPositions.push_back(static_cast<int>(pattern.size()));
             
             // Process each letter in the word
             for (int letterIndex = 0; letterIndex < word.length(); ++letterIndex)
@@ -1143,7 +1143,7 @@ std::pair<std::vector<bool>, std::vector<bool>> UPIParser::parseMorseWithAccents
                 char letter = word[letterIndex];
                 
                 // Mark letter start position
-                letterStartPositions.push_back(pattern.size());
+                letterStartPositions.push_back(static_cast<int>(pattern.size()));
                 
                 // Convert letter to morse and generate pattern directly
                 juce::String letterMorse = "";
@@ -1219,9 +1219,9 @@ std::pair<std::vector<bool>, std::vector<bool>> UPIParser::parseMorseWithAccents
             juce::String morseGroup = groups[groupIndex];
             
             // Mark both letter and word start (for direct morse, they're the same)
-            letterStartPositions.push_back(pattern.size());
+            letterStartPositions.push_back(static_cast<int>(pattern.size()));
             if (groupIndex == 0 || accentMode == 'w') {
-                wordStartPositions.push_back(pattern.size());
+                wordStartPositions.push_back(static_cast<int>(pattern.size()));
             }
             
             // Convert morse symbols directly to pattern
