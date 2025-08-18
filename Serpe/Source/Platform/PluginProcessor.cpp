@@ -1796,8 +1796,8 @@ void SerpeAudioProcessor::parseAndApplyUPI(const juce::String& upiPattern, bool 
             currentAccentPattern.clear();
         }
         
-        // Reset global onset counter and UI accent offset only when requested
-        // CRITICAL FIX: Preserve accent timing for equivalent patterns
+        // CRITICAL FIX: Synchronize globalOnsetCounter with current rhythm position
+        // This ensures both rhythm and accent patterns start at position 0 synchronously
         if (resetAccentPosition) {
             // Check if this is the same rhythm pattern with same accent pattern
             bool isSamePattern = (parseResult.pattern == patternEngine.getCurrentPattern());
@@ -1809,16 +1809,31 @@ void SerpeAudioProcessor::parseAndApplyUPI(const juce::String& upiPattern, bool 
                 isSameAccentPattern = true; // Both have no accent pattern
             }
             
-            // Only reset if pattern or accent pattern actually changed
+            // Always synchronize globalOnsetCounter with current rhythm position
+            // This fixes accent morphing when switching between different patterns
             if (!isSamePattern || !isSameAccentPattern) {
-                globalOnsetCounter = 0;
-                uiAccentOffset = 0;
+                // Calculate how many onsets should have occurred at current rhythm position
+                int currentRhythmStep = getCurrentStep();
+                int newGlobalOnsetCounter = 0;
                 
-                // Debug logging for accent position resets
+                // Count onsets from position 0 to current step in the new pattern
+                for (int step = 0; step < currentRhythmStep && step < static_cast<int>(parseResult.pattern.size()); step++) {
+                    if (parseResult.pattern[step] == '1') {
+                        newGlobalOnsetCounter++;
+                    }
+                }
+                
+                globalOnsetCounter = newGlobalOnsetCounter;
+                uiAccentOffset = hasAccentPattern && !currentAccentPattern.empty() ? 
+                    globalOnsetCounter % static_cast<int>(currentAccentPattern.size()) : 0;
+                
+                // Debug logging for accent position synchronization
                 std::ofstream logFile("/tmp/serpe_accent_debug.log", std::ios::app);
                 if (logFile.is_open()) {
-                    logFile << "ACCENT RESET - Pattern changed: " << (!isSamePattern ? "YES" : "NO") 
-                            << ", Accent changed: " << (!isSameAccentPattern ? "YES" : "NO") << std::endl;
+                    logFile << "ACCENT SYNC - Pattern changed: " << (!isSamePattern ? "YES" : "NO") 
+                            << ", Accent changed: " << (!isSameAccentPattern ? "YES" : "NO")
+                            << ", RhythmStep: " << currentRhythmStep 
+                            << ", NewGlobalOnset: " << newGlobalOnsetCounter << std::endl;
                     logFile.close();
                 }
             } else {
