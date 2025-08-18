@@ -1022,17 +1022,23 @@ void SerpeAudioProcessor::processStep(juce::MidiBuffer& midiBuffer, int samplePo
                 }
             }
         } else {
-            // NORMAL MODE: Use onset-based accent logic (UPI patterns, progressive transformations)
-            isAccented = shouldOnsetBeAccented(globalOnsetCounter);
+            // DERIVED INDEXING: Pure function approach - f(tick, base, masks) → accent
+            isAccented = shouldCurrentOnsetBeAccented();
             
-            // DEBUG: Log to file (every 5th call to avoid spam)
-            static int onsetLogCount = 0;
-            if ((++onsetLogCount % 5) == 0) {
-                std::ofstream logFile("/tmp/serpe_accent_debug.log", std::ios::app);
+            // DEBUG: Log derived indexing calculations
+            static int derivedLogCount = 0;
+            if ((++derivedLogCount % 5) == 0) {
+                auto* masks = currentMasks.load();
+                std::ofstream logFile("/tmp/serpe_derived_debug.log", std::ios::app);
                 if (logFile.is_open()) {
-                    logFile << "ACCENT MODE: ONSET-based - globalOnset: " << globalOnsetCounter 
-                            << ", accentPatternSize: " << currentAccentPattern.size() 
-                            << ", result: " << (isAccented ? "ACCENT" : "normal") << std::endl;
+                    logFile << "DERIVED INDEXING - tick: " << transportTick.load() 
+                            << ", rhythmIdx: " << getCurrentRhythmIndex()
+                            << ", accentIdx: " << getCurrentAccentIndex();
+                    if (masks) {
+                        logFile << ", rhythmPeriod: " << masks->rhythmPeriod
+                                << ", accentPeriod: " << masks->accentPeriod;
+                    }
+                    logFile << ", result: " << (isAccented ? "ACCENT" : "normal") << std::endl;
                     logFile.close();
                 }
             }
@@ -1293,6 +1299,14 @@ void SerpeAudioProcessor::syncPositionWithHost(const juce::AudioPlayHead::Curren
 
 void SerpeAudioProcessor::setUPIInput(const juce::String& upiPattern)
 {
+    // DERIVED INDEXING: Parse and create immutable masks immediately
+    buildPatternMasksFromUPI(upiPattern);
+    
+    // DERIVED INDEXING: Phase-lock to current transport tick
+    uint64_t currentTick = transportTick.load();
+    baseTickRhythm.store(currentTick);
+    baseTickAccent.store(currentTick);
+    
     juce::ScopedLock lock(processingLock);
     
     // Add to history when pattern is entered (not when restored from state)
@@ -2495,6 +2509,83 @@ bool SerpeAudioProcessor::shouldCurrentOnsetBeAccented() const
         uint32_t accentIdx = getCurrentAccentIndex();
         return accentIdx < masks->accentMask.size() && masks->accentMask[accentIdx];
     }
+}
+
+//==============================================================================
+// PATTERN MASK BUILDING - Canonical pattern creation
+
+void SerpeAudioProcessor::buildPatternMasksFromUPI(const juce::String& upiInput)
+{
+    // Parse UPI to get rhythm and accent patterns
+    auto parseResult = UPIParser::parse(upiInput);
+    if (parseResult.type == UPIParser::ParseResult::Error) {
+        return; // Keep current masks if parsing fails
+    }
+    
+    // Create new immutable masks
+    auto newMasks = std::make_unique<PatternMasks>();
+    
+    // Build canonical rhythm mask
+    const auto& pattern = parseResult.pattern;
+    newMasks->rhythmPeriod = static_cast<uint32_t>(pattern.size());
+    newMasks->rhythmMask.resize(newMasks->rhythmPeriod);
+    for (size_t i = 0; i < pattern.size(); ++i) {
+        newMasks->rhythmMask[i] = pattern[i];
+    }
+    
+    // Build onset mapping for onset-indexed accents
+    newMasks->onsetSteps.clear();
+    newMasks->onsetIndexForStep.resize(newMasks->rhythmPeriod, 0);
+    for (uint32_t step = 0; step < newMasks->rhythmPeriod; ++step) {
+        if (newMasks->rhythmMask[step]) {
+            newMasks->onsetIndexForStep[step] = static_cast<uint32_t>(newMasks->onsetSteps.size());
+            newMasks->onsetSteps.push_back(step);
+        }
+    }
+    
+    // Build canonical accent mask from UPI accent pattern
+    if (parseResult.hasAccentPattern && !parseResult.accentPattern.empty()) {
+        // Use accent pattern from UPI parsing (e.g., {10} → [1,0,1,0,1,0,1,0,1,0])
+        newMasks->accentPeriod = static_cast<uint32_t>(parseResult.accentPattern.size());
+        newMasks->accentMask.resize(newMasks->accentPeriod);
+        for (size_t i = 0; i < parseResult.accentPattern.size(); ++i) {
+            newMasks->accentMask[i] = parseResult.accentPattern[i];
+        }
+    } else {
+        // No accent pattern in UPI - create default alternating pattern based on rhythm
+        // This ensures we always have a valid accent pattern
+        uint32_t onsetCount = static_cast<uint32_t>(newMasks->onsetSteps.size());
+        if (onsetCount > 0) {
+            newMasks->accentPeriod = onsetCount;
+            newMasks->accentMask.resize(newMasks->accentPeriod);
+            // Alternate: first onset accented, second not, etc.
+            for (uint32_t i = 0; i < newMasks->accentPeriod; ++i) {
+                newMasks->accentMask[i] = (i % 2 == 0);
+            }
+        } else {
+            // Fallback: single accent
+            newMasks->accentPeriod = 1;
+            newMasks->accentMask = {true};
+        }
+    }
+    
+    // Use onset-indexed mode for UPI patterns (as per original design)
+    newMasks->useOnsetIndexedAccents = true;
+    
+    // Debug logging
+    std::ofstream logFile("/tmp/serpe_derived_debug.log", std::ios::app);
+    if (logFile.is_open()) {
+        logFile << "PATTERN BUILT: " << upiInput.toStdString()
+                << " rhythmPeriod=" << newMasks->rhythmPeriod 
+                << " accentPeriod=" << newMasks->accentPeriod 
+                << " onsetCount=" << newMasks->onsetSteps.size()
+                << " hasAccentPattern=" << parseResult.hasAccentPattern << std::endl;
+        logFile.close();
+    }
+    
+    // Atomically replace the masks
+    auto* oldMasks = currentMasks.exchange(newMasks.release());
+    delete oldMasks;
 }
 
 //==============================================================================

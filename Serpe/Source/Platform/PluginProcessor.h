@@ -120,6 +120,9 @@ public:
     uint32_t getCurrentAccentIndex() const;
     bool shouldCurrentOnsetBeAccented() const;
     uint64_t getTransportTick() const { return transportTick.load(); }
+    
+    // PATTERN MASK BUILDING - Canonical pattern creation
+    void buildPatternMasksFromUPI(const juce::String& upiInput);
     bool isCurrentlyPlaying() const { 
         // REFINED: Check if we're getting recent processBlock calls AND transport is playing
         double currentTime = juce::Time::getMillisecondCounter();
