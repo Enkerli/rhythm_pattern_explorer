@@ -56,3 +56,4 @@
 
 [Rest of the file remains unchanged...]
 - User disapproves of premature celebration and self-praise. Emphasizes thoughtful work.
+- Request a test in the DAW any time a new build can be run.

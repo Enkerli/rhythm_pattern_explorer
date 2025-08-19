@@ -1003,7 +1003,7 @@ void SerpeAudioProcessor::processStep(juce::MidiBuffer& midiBuffer, int samplePo
     if (stepToProcess < pattern.size() && pattern[stepToProcess])
     {
         // This step has an onset - determine if it should be accented
-        // Use appropriate accent logic based on suspension mode
+        // DERIVED INDEXING: Use new system with legacy fallback
         bool isAccented;
         if (patternManuallyModified) {
             // SUSPENSION MODE: Use step-based accent logic (manual modifications)
@@ -1021,16 +1021,26 @@ void SerpeAudioProcessor::processStep(juce::MidiBuffer& midiBuffer, int samplePo
                 }
             }
         } else {
-            // NORMAL MODE: Use onset-based accent logic (UPI patterns, progressive transformations)
-            isAccented = shouldOnsetBeAccented(globalOnsetCounter);
+            // DERIVED INDEXING: Use new derived indexing system
+            isAccented = shouldCurrentOnsetBeAccented();
             
-            // DEBUG: Log to file (every 5th call to avoid spam)
-            static int onsetLogCount = 0;
-            if ((++onsetLogCount % 5) == 0) {
-                std::ofstream logFile("/tmp/serpe_accent_debug.log", std::ios::app);
+            // DEBUG: Log derived indexing details
+            static int derivedLogCount = 0;
+            if ((++derivedLogCount % 5) == 0) {
+                std::ofstream logFile("/tmp/serpe_derived_debug.log", std::ios::app);
                 if (logFile.is_open()) {
-                    logFile << "ACCENT MODE: ONSET-based - globalOnset: " << globalOnsetCounter 
-                            << ", accentPatternSize: " << currentAccentPattern.size() 
+                    uint64_t tick = transportTick.load();
+                    uint32_t rhythmIdx = getCurrentRhythmIndex();
+                    uint32_t accentIdx = getCurrentAccentIndex();
+                    auto* masks = currentMasks.load();
+                    uint32_t rhythmPeriod = masks ? masks->rhythmPeriod : 0;
+                    uint32_t accentPeriod = masks ? masks->accentPeriod : 0;
+                    
+                    logFile << "DERIVED INDEXING - tick: " << tick 
+                            << ", rhythmIdx: " << rhythmIdx 
+                            << ", accentIdx: " << accentIdx 
+                            << ", rhythmPeriod: " << rhythmPeriod 
+                            << ", accentPeriod: " << accentPeriod 
                             << ", result: " << (isAccented ? "ACCENT" : "normal") << std::endl;
                     logFile.close();
                 }
