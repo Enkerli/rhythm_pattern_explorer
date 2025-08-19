@@ -1850,12 +1850,18 @@ void SerpeAudioProcessor::parseAndApplyUPI(const juce::String& upiPattern, bool 
         auto* oldMasks = currentMasks.exchange(newMasks);
         delete oldMasks; // Clean up old masks
         
-        // DEBUG: Log pattern mask creation
+        // DERIVED INDEXING: Phase-lock pattern bases at pattern acceptance
+        uint64_t currentTick = transportTick.load();
+        baseTickRhythm.store(currentTick);
+        baseTickAccent.store(currentTick);
+        
+        // DEBUG: Log pattern mask creation and phase locking
         std::ofstream logFile("/tmp/serpe_pattern_acceptance.log", std::ios::app);
         if (logFile.is_open()) {
             logFile << "PATTERN ACCEPTED: " << upiPattern.toStdString() 
                     << " rhythmPeriod=" << newMasks->rhythmPeriod 
                     << " accentPeriod=" << newMasks->accentPeriod << std::endl;
+            logFile << "PHASE LOCK APPLIED: tick=" << currentTick << std::endl;
             logFile.close();
         }
         
