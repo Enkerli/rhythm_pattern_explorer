@@ -138,6 +138,9 @@ SerpeAudioProcessor::SerpeAudioProcessor()
 
 SerpeAudioProcessor::~SerpeAudioProcessor()
 {
+    // DERIVED INDEXING: Clean up pattern masks
+    auto* masks = currentMasks.exchange(nullptr);
+    delete masks;
 }
 
 //==============================================================================
@@ -1807,6 +1810,53 @@ void SerpeAudioProcessor::parseAndApplyUPI(const juce::String& upiPattern, bool 
         {
             hasAccentPattern = false;
             currentAccentPattern.clear();
+        }
+        
+        // DERIVED INDEXING: Create pattern masks from parsed data
+        auto* newMasks = new PatternMasks();
+        
+        // Build rhythm mask from pattern engine
+        auto rhythmPattern = patternEngine.getCurrentPattern();
+        newMasks->rhythmMask = rhythmPattern;
+        newMasks->rhythmPeriod = static_cast<uint32_t>(rhythmPattern.size());
+        
+        // Build accent mask from parsed accent pattern
+        if (hasAccentPattern && !currentAccentPattern.empty()) {
+            newMasks->accentMask = currentAccentPattern;
+            newMasks->accentPeriod = static_cast<uint32_t>(currentAccentPattern.size());
+            newMasks->useOnsetIndexedAccents = true; // Default to onset-indexed
+            
+            // Precompute onset positions and inverse mapping
+            newMasks->onsetSteps.clear();
+            newMasks->onsetIndexForStep.resize(rhythmPattern.size(), 0);
+            
+            uint32_t onsetIdx = 0;
+            for (uint32_t step = 0; step < rhythmPattern.size(); ++step) {
+                if (rhythmPattern[step]) {
+                    newMasks->onsetSteps.push_back(step);
+                    newMasks->onsetIndexForStep[step] = onsetIdx;
+                    onsetIdx++;
+                }
+            }
+        } else {
+            newMasks->accentMask.clear();
+            newMasks->accentPeriod = 0;
+            newMasks->useOnsetIndexedAccents = true;
+            newMasks->onsetSteps.clear();
+            newMasks->onsetIndexForStep.clear();
+        }
+        
+        // Atomic swap of pattern masks
+        auto* oldMasks = currentMasks.exchange(newMasks);
+        delete oldMasks; // Clean up old masks
+        
+        // DEBUG: Log pattern mask creation
+        std::ofstream logFile("/tmp/serpe_pattern_acceptance.log", std::ios::app);
+        if (logFile.is_open()) {
+            logFile << "PATTERN ACCEPTED: " << upiPattern.toStdString() 
+                    << " rhythmPeriod=" << newMasks->rhythmPeriod 
+                    << " accentPeriod=" << newMasks->accentPeriod << std::endl;
+            logFile.close();
         }
         
         // Reset global onset counter and UI accent offset only when requested
