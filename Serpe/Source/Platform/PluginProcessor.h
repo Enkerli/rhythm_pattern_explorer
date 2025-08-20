@@ -291,7 +291,20 @@ private:
     std::atomic<int> currentStep{0};  // Legacy - will be replaced by derived indices
     bool wasPlaying = false;
     
-    // PHASE 1: Monotonic Transport Tick System
+    /**
+     * PHASE 1: MONOTONIC TRANSPORT TICK SYSTEM
+     * 
+     * This is the heart of the derived indices architecture that eliminates accent swirling.
+     * All timing calculations derive from these atomic counters, ensuring consistency
+     * between UI and MIDI systems.
+     * 
+     * transportTick: Monotonically increasing step counter, never decreases during playback
+     * baseTickRhythm: Reference point for rhythm pattern position calculation  
+     * baseTickAccent: Reference point for accent pattern position (can have phase offset)
+     * 
+     * Key insight: Instead of maintaining mutable step counters that can drift,
+     * we calculate current positions mathematically from these base references.
+     */
     std::atomic<uint64_t> transportTick{0};           // Monotonic step counter
     std::atomic<uint64_t> baseTickRhythm{0};          // Rhythm reference point  
     std::atomic<uint64_t> baseTickAccent{0};          // Accent reference point

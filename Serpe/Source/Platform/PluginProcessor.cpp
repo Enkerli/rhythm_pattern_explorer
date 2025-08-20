@@ -1087,6 +1087,19 @@ void SerpeAudioProcessor::processStep(juce::MidiBuffer& midiBuffer, int samplePo
     int nextStep = (stepToProcess + 1) % static_cast<int>(pattern.size());
     if (nextStep == 0)
     {
+        /**
+         * UI ACCENT OFFSET CYCLE BOUNDARY UPDATE
+         * 
+         * This is where we synchronize the UI accent display with the current MIDI state.
+         * By updating only at cycle boundaries (nextStep == 0), we ensure:
+         * 
+         * 1. UI accent markers remain stable during cycle playback
+         * 2. UI eventually catches up to any MIDI accent progression
+         * 3. No rapid visual updates that cause "swirling"
+         * 
+         * The modulo operation ensures the UI always shows the correct accent pattern
+         * position, even for complex polymetric relationships.
+         */
         // Update stable UI accent offset at cycle boundaries (only if not manually modified)
         if (hasAccentPattern && !currentAccentPattern.empty() && !accentPatternManuallyModified)
         {
@@ -2387,6 +2400,21 @@ bool SerpeAudioProcessor::shouldStepBeAccented(int stepIndex) const
 
 std::vector<bool> SerpeAudioProcessor::getCurrentAccentMap() const
 {
+    /**
+     * UI ACCENT DISPLAY SYNCHRONIZATION ARCHITECTURE
+     * 
+     * This function calculates which steps in the current rhythm pattern should display
+     * accent markers in the UI. CRITICAL: The UI and MIDI systems must always be synchronized
+     * to prevent "accent swirling" where visual markers shift continuously.
+     * 
+     * SYNCHRONIZATION STRATEGY:
+     * - MIDI: Uses real-time derived onset count for immediate accent triggering
+     * - UI: Uses stable uiAccentOffset that updates only at cycle boundaries
+     * - Both systems derive from the same monotonic transportTick source
+     * 
+     * This prevents rapid UI updates while maintaining perfect MIDI timing accuracy.
+     */
+    
     // DEBUG: Log UI accent map requests
     static int uiCallCount = 0;
     if ((++uiCallCount % 10) == 0) {
@@ -2424,12 +2452,22 @@ std::vector<bool> SerpeAudioProcessor::getCurrentAccentMap() const
         }
     } else {
         // NORMAL MODE: Use onset-based accent mapping (UPI patterns, progressive transformations)
-        // DETERMINISTIC APPROACH: Use stable UI accent offset that updates only at cycle boundaries
-        // This prevents rapid UI changes while maintaining sync with MIDI
+        /**
+         * CRITICAL ACCENT SWIRLING PREVENTION:
+         * 
+         * The key insight is that UI and MIDI accent calculations must be independent
+         * but synchronized. MIDI needs real-time accuracy, UI needs stability.
+         * 
+         * - MIDI (in processStep()): Uses getCurrentOnsetCount() for immediate accuracy
+         * - UI (here): Uses uiAccentOffset which only updates at cycle boundaries
+         * 
+         * Both derive from the same transportTick, ensuring synchronization while
+         * preventing the rapid UI updates that caused visual "swirling".
+         * 
+         * uiAccentOffset is updated in processStep() when nextStep == 0 (cycle boundary)
+         * This means UI accent markers remain stable during cycle playback.
+         */
         int onsetNumber = uiAccentOffset; // Use stable UI offset (updated at cycle boundaries)
-        
-        // PHASE 0.3: Drift detection disabled - focusing on swirling fix
-        // validateCounterConsistency();
         
         for (int stepInCycle = 0; stepInCycle < static_cast<int>(currentPattern.size()); ++stepInCycle)
         {
