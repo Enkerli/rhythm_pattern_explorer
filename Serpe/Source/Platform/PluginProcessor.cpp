@@ -1049,8 +1049,11 @@ void SerpeAudioProcessor::processStep(juce::MidiBuffer& midiBuffer, int samplePo
         if (useNewAccentSystem) {
             // NEW ROBUST ACCENT SYSTEM: Use AccentSequence with O(1) lookup
             if (currentAccentSequence && currentAccentSequence->isValid()) {
-                // Use the step directly - AccentSequence handles the sequence internally
-                isAccented = currentAccentSequence->isAccentedAtStep(stepToProcess);
+                // Calculate proper sequence position from transport tick
+                uint64_t currentTick = transportTick.load();
+                uint64_t baseTick = baseTickRhythm.load();
+                uint32_t stepInSequence = static_cast<uint32_t>((currentTick - baseTick) % currentAccentSequence->getSequenceLength());
+                isAccented = currentAccentSequence->isAccentedAtStep(stepInSequence);
                 
                 // DEBUG: Log new system usage (minimal logging)
                 static int newSystemLogCount = 0;
