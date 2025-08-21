@@ -2401,9 +2401,8 @@ bool SerpeAudioProcessor::shouldStepBeAccented(int stepIndex) const
 std::vector<bool> SerpeAudioProcessor::getCurrentAccentMap() const
 {
     // LEGACY ACCENT SYSTEM: Pre-calculated map with complex regeneration logic
-    // ACCENT PERSISTENCE FIX: Always regenerate when accentMapNeedsUpdate is set,
-    // including when switching to unaccented patterns
-    if (accentMapNeedsUpdate.load()) {
+    if (accentMapNeedsUpdate.load() || 
+        (hasAccentPattern && !currentAccentPattern.empty() && !patternManuallyModified)) {
         const_cast<SerpeAudioProcessor*>(this)->generatePreCalculatedAccentMap();
     }
     
