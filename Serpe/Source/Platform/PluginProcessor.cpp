@@ -1081,6 +1081,41 @@ void SerpeAudioProcessor::processStep(juce::MidiBuffer& midiBuffer, int samplePo
             }
         }
         
+        // TEMPORARY: Parallel testing to validate AccentSequence (Phase 1: Checkpoint 1.3)
+        // This ensures new AccentSequence produces identical results to current system
+        if (currentAccentSequence && currentAccentSequence->isValid()) {
+            uint64_t currentTick = transportTick.load();
+            uint64_t baseTick = baseTickRhythm.load();
+            uint32_t stepInSequence = static_cast<uint32_t>((currentTick - baseTick) % currentAccentSequence->getSequenceLength());
+            bool newAccent = currentAccentSequence->isAccentedAtStep(stepInSequence);
+            
+            // ASSERTION: Both systems must produce identical results
+            if (newAccent != isAccented) {
+                DBG("ACCENT MISMATCH! Step: " << stepToProcess 
+                    << ", Old: " << (isAccented ? "true" : "false") 
+                    << ", New: " << (newAccent ? "true" : "false")
+                    << ", stepInSequence: " << (int)stepInSequence
+                    << ", currentTick: " << (long long)currentTick
+                    << ", baseTick: " << (long long)baseTick);
+                
+                // Log detailed state for debugging
+                std::ofstream logFile("/tmp/serpe_accent_mismatch.log", std::ios::app);
+                if (logFile.is_open()) {
+                    logFile << "MISMATCH - Step: " << stepToProcess
+                            << ", Old: " << (isAccented ? "true" : "false")
+                            << ", New: " << (newAccent ? "true" : "false")
+                            << ", stepInSequence: " << stepInSequence
+                            << ", onsetCount: " << getCurrentOnsetCount()
+                            << ", sequenceLength: " << currentAccentSequence->getSequenceLength()
+                            << std::endl;
+                    logFile.close();
+                }
+                
+                // Use old system for now, but flag the issue
+                jassertfalse; // This should never happen in debug builds
+            }
+        }
+        
         // Trigger MIDI note
         triggerNote(midiBuffer, samplePosition, isAccented);
         
