@@ -2617,29 +2617,30 @@ void SerpeAudioProcessor::setPatternWithPhaseSync(const std::vector<bool>& rhyth
     
     accentMapNeedsUpdate.store(true); // Mark accent map for regeneration
     
-    // Calculate new base tick to preserve current step position
+    // PHASE 2: Simplified pattern change logic based on accent system
     if (!rhythmPattern.empty()) {
-        // For progressive patterns, be more conservative with base tick calculation
-        // since the pattern itself changes due to rotation
-        bool isProgressivePattern = (accentPhaseOffset != 0) || 
-                                   currentUPIInput.contains("%") || 
-                                   currentUPIInput.contains("+");
-        
-        uint64_t newBase;
-        if (isProgressivePattern) {
-            // For progressive patterns, align to current tick to avoid confusion
-            newBase = currentTick;
+        if (useNewAccentSystem) {
+            // NEW ROBUST SYSTEM: Simple base tick management
+            // AccentSequence handles its own sequencing, so we just need a reference point
+            baseTickRhythm.store(currentTick); // Simple: new patterns start from current tick
+            baseTickAccent.store(currentTick + accentPhaseOffset);
         } else {
-            // For static patterns, preserve step position
-            uint32_t safeDerivedStep = currentDerivedStep % static_cast<uint32_t>(rhythmPattern.size());
-            newBase = currentTick - safeDerivedStep;
+            // LEGACY SYSTEM: Complex base tick recalculation (for rollback)
+            bool isProgressivePattern = (accentPhaseOffset != 0) || 
+                                       currentUPIInput.contains("%") || 
+                                       currentUPIInput.contains("+");
+            
+            uint64_t newBase;
+            if (isProgressivePattern) {
+                newBase = currentTick;
+            } else {
+                uint32_t safeDerivedStep = currentDerivedStep % static_cast<uint32_t>(rhythmPattern.size());
+                newBase = currentTick - safeDerivedStep;
+            }
+            
+            baseTickRhythm.store(newBase);
+            baseTickAccent.store(newBase + accentPhaseOffset);
         }
-        
-        baseTickRhythm.store(newBase);
-        baseTickAccent.store(newBase + accentPhaseOffset);
-        
-        // Sync legacy step
-        // currentStep.store(safeDerivedStep); // REMOVED: Using derived indices
     }
     
     // Update AccentSequence with new patterns (Phase 1: Compatibility Layer)
