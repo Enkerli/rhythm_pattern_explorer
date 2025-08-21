@@ -433,7 +433,7 @@ private:
     std::unique_ptr<AccentSequence> currentAccentSequence; // Immutable accent sequence for robust lookups
     
     // PHASE 2: Feature flag for gradual migration to new accent system
-    bool useNewAccentSystem = true; // Feature flag: false = current system, true = AccentSequence system
+    bool useNewAccentSystem = false; // Feature flag: false = current system, true = AccentSequence system
     
     // Parameters - implementation details
     juce::AudioParameterBool* useHostTransportParam;
