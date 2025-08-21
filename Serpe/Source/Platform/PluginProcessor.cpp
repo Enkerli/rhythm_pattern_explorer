@@ -2729,7 +2729,8 @@ void SerpeAudioProcessor::generatePreCalculatedAccentMap()
     // Accent map generation - removed excessive logging for performance
     
     if (!hasAccentPattern || currentAccentPattern.empty()) {
-        // No accents - map is already all false
+        // No accents - clear the accent map to all false
+        std::fill(preCalculatedAccentMap.begin(), preCalculatedAccentMap.end(), false);
         accentMapNeedsUpdate.store(false);
         return;
     }
