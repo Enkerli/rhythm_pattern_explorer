@@ -1049,10 +1049,8 @@ void SerpeAudioProcessor::processStep(juce::MidiBuffer& midiBuffer, int samplePo
         if (useNewAccentSystem) {
             // NEW ROBUST ACCENT SYSTEM: Use AccentSequence with O(1) lookup
             if (currentAccentSequence && currentAccentSequence->isValid()) {
-                uint64_t currentTick = transportTick.load();
-                uint64_t baseTick = baseTickRhythm.load();
-                uint32_t stepInSequence = static_cast<uint32_t>((currentTick - baseTick) % currentAccentSequence->getSequenceLength());
-                isAccented = currentAccentSequence->isAccentedAtStep(stepInSequence);
+                // Use the step directly - AccentSequence handles the sequence internally
+                isAccented = currentAccentSequence->isAccentedAtStep(stepToProcess);
                 
                 // DEBUG: Log new system usage (minimal logging)
                 static int newSystemLogCount = 0;
@@ -2935,15 +2933,22 @@ void SerpeAudioProcessor::updateAccentSequence()
         // Get current patterns
         std::vector<bool> rhythmPattern = patternEngine.getCurrentPattern();
         
+        // DEBUG: Log accent pattern state
+        DBG("AccentSequence DEBUG - hasAccentPattern: " << (hasAccentPattern ? "true" : "false")
+            << ", currentAccentPattern.size(): " << (int)currentAccentPattern.size()
+            << ", rhythmPattern.size(): " << (int)rhythmPattern.size());
+        
         if (!hasAccentPattern || currentAccentPattern.empty())
         {
             // No accent pattern - create sequence that returns no accents
             currentAccentSequence = std::make_unique<AccentSequence>(rhythmPattern, std::vector<bool>());
+            DBG("AccentSequence created with NO accents");
         }
         else
         {
             // Create new immutable accent sequence
             currentAccentSequence = std::make_unique<AccentSequence>(rhythmPattern, currentAccentPattern);
+            DBG("AccentSequence created with accents - pattern size: " << (int)currentAccentPattern.size());
         }
         
         DBG("AccentSequence updated: " << currentAccentSequence->getDebugInfo());
