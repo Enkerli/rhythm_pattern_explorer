@@ -1043,70 +1043,14 @@ void SerpeAudioProcessor::processStep(juce::MidiBuffer& midiBuffer, int samplePo
     // CRITICAL FIX: Only trigger if this step has an onset in the pattern
     if (stepToProcess < pattern.size() && pattern[stepToProcess])
     {
-        // PHASE 2: Accent decision logic with feature flag for migration
+        // LEGACY ACCENT SYSTEM: Current accent logic
         bool isAccented;
-        
-        if (useNewAccentSystem) {
-            // NEW ROBUST ACCENT SYSTEM: Use AccentSequence with O(1) lookup
-            if (currentAccentSequence && currentAccentSequence->isValid()) {
-                // Calculate proper sequence position from transport tick
-                uint64_t currentTick = transportTick.load();
-                uint64_t baseTick = baseTickRhythm.load();
-                uint32_t stepInSequence = static_cast<uint32_t>((currentTick - baseTick) % currentAccentSequence->getSequenceLength());
-                isAccented = currentAccentSequence->isAccentedAtStep(stepInSequence);
-                
-                // DEBUG: Log new system usage (minimal logging)
-                static int newSystemLogCount = 0;
-                if ((++newSystemLogCount % 20) == 0) {
-                    DBG("NEW ACCENT SYSTEM: step=" << stepToProcess << ", accented=" << (isAccented ? "true" : "false"));
-                }
-            } else {
-                isAccented = false; // No accent sequence = no accents
-            }
+        if (patternManuallyModified) {
+            // SUSPENSION MODE: Use step-based accent logic (manual modifications)
+            isAccented = shouldStepBeAccented(stepToProcess);
         } else {
-            // LEGACY ACCENT SYSTEM: Current fragile logic (for rollback)
-            if (patternManuallyModified) {
-                // SUSPENSION MODE: Use step-based accent logic (manual modifications)
-                isAccented = shouldStepBeAccented(stepToProcess);
-            } else {
-                // NORMAL MODE: Use onset-based accent logic (UPI patterns, progressive transformations)
-                isAccented = shouldOnsetBeAccented(getCurrentOnsetCount());
-            }
-            
-            // DEBUG: Log legacy system usage (reduced logging)
-            static int legacySystemLogCount = 0;
-            if ((++legacySystemLogCount % 50) == 0) {
-                DBG("LEGACY ACCENT SYSTEM: step=" << stepToProcess << ", accented=" << (isAccented ? "true" : "false"));
-            }
-        }
-        
-        // PHASE 2: Parallel validation (only when using legacy system for migration safety)
-        if (!useNewAccentSystem && currentAccentSequence && currentAccentSequence->isValid()) {
-            uint64_t currentTick = transportTick.load();
-            uint64_t baseTick = baseTickRhythm.load();
-            uint32_t stepInSequence = static_cast<uint32_t>((currentTick - baseTick) % currentAccentSequence->getSequenceLength());
-            bool newAccent = currentAccentSequence->isAccentedAtStep(stepInSequence);
-            
-            // ASSERTION: Both systems must produce identical results
-            if (newAccent != isAccented) {
-                DBG("MIGRATION VALIDATION FAILED! Step: " << stepToProcess 
-                    << ", Legacy: " << (isAccented ? "true" : "false") 
-                    << ", New: " << (newAccent ? "true" : "false"));
-                
-                // Log detailed state for debugging migration issues
-                std::ofstream logFile("/tmp/serpe_migration_mismatch.log", std::ios::app);
-                if (logFile.is_open()) {
-                    logFile << "MIGRATION_MISMATCH - Step: " << stepToProcess
-                            << ", Legacy: " << (isAccented ? "true" : "false")
-                            << ", New: " << (newAccent ? "true" : "false")
-                            << ", stepInSequence: " << stepInSequence
-                            << std::endl;
-                    logFile.close();
-                }
-                
-                // Continue with legacy result but flag for investigation
-                jassertfalse;
-            }
+            // NORMAL MODE: Use onset-based accent logic (UPI patterns, progressive transformations)
+            isAccented = shouldOnsetBeAccented(getCurrentOnsetCount());
         }
         
         // Trigger MIDI note
@@ -1140,12 +1084,10 @@ void SerpeAudioProcessor::processStep(juce::MidiBuffer& midiBuffer, int samplePo
             // DETERMINISTIC: Use the exact same cumulative onset count that MIDI used
             // This ensures UI accent markers match MIDI accent timing perfectly
             uint32_t midiOnsetCount = lastMidiOnsetCount.load();
+            
+            // Both systems use the same calculation: accent pattern offset
             int accentPatternSize = static_cast<int>(currentAccentPattern.size());
-            
-            // UI accent offset matches MIDI: use same cumulative onset count
             uiAccentOffset = static_cast<int>(midiOnsetCount % accentPatternSize);
-            
-            // UI accent offset now uses identical calculation as MIDI (cumulative onset count)
         }
         else if (hasAccentPattern && accentPatternManuallyModified)
         {
@@ -1843,6 +1785,9 @@ void SerpeAudioProcessor::parseAndApplyUPI(const juce::String& upiPattern, bool 
     
     if (parseResult.isValid())
     {
+        // DEBUG: Log what was parsed
+        DBG("UPI Parse: pattern='" << upiPattern << "', hasAccent=" << (parseResult.hasAccentPattern ? "true" : "false") 
+            << ", accentSize=" << (int)parseResult.accentPattern.size());
         
         // PHASE 2: Apply the parsed pattern via queue for phase-locking
         queuePatternUpdate(parseResult.pattern, parseResult.accentPattern, parseResult.hasAccentPattern, 0);
@@ -2455,35 +2400,13 @@ bool SerpeAudioProcessor::shouldStepBeAccented(int stepIndex) const
 
 std::vector<bool> SerpeAudioProcessor::getCurrentAccentMap() const
 {
-    /**
-     * PHASE 2: UI ACCENT MAP WITH FEATURE FLAG FOR MIGRATION
-     * 
-     * Uses either the new robust AccentSequence system or legacy pre-calculated map
-     * based on the feature flag. Ensures UI and MIDI use identical accent calculations.
-     */
-    
-    if (useNewAccentSystem) {
-        // NEW ROBUST ACCENT SYSTEM: Direct lookup from AccentSequence
-        if (currentAccentSequence && currentAccentSequence->isValid()) {
-            uint64_t currentTick = transportTick.load();
-            uint64_t baseTick = baseTickRhythm.load();
-            uint32_t stepsIntoSequence = static_cast<uint32_t>((currentTick - baseTick) % currentAccentSequence->getSequenceLength());
-            
-            return currentAccentSequence->getAccentMapForCycle(stepsIntoSequence);
-        } else {
-            // No accent sequence - return empty map
-            std::vector<bool> rhythmPattern = patternEngine.getCurrentPattern();
-            return std::vector<bool>(rhythmPattern.size(), false);
-        }
-    } else {
-        // LEGACY ACCENT SYSTEM: Pre-calculated map with complex regeneration logic
-        if (accentMapNeedsUpdate.load() || 
-            (hasAccentPattern && !currentAccentPattern.empty() && !patternManuallyModified)) {
-            const_cast<SerpeAudioProcessor*>(this)->generatePreCalculatedAccentMap();
-        }
-        
-        return preCalculatedAccentMap;
+    // LEGACY ACCENT SYSTEM: Pre-calculated map with complex regeneration logic
+    if (accentMapNeedsUpdate.load() || 
+        (hasAccentPattern && !currentAccentPattern.empty() && !patternManuallyModified)) {
+        const_cast<SerpeAudioProcessor*>(this)->generatePreCalculatedAccentMap();
     }
+    
+    return preCalculatedAccentMap;
 }
 
 bool SerpeAudioProcessor::checkPatternChanged()
@@ -2586,6 +2509,7 @@ void SerpeAudioProcessor::processPatternUpdates()
         hasAccentPattern = update.hasAccent;
         currentAccentPattern = update.accentPattern;
         
+        
         accentMapNeedsUpdate.store(true); // Mark accent map for regeneration
         patternChanged.store(true); // Notify UI
     }
@@ -2618,34 +2542,24 @@ void SerpeAudioProcessor::setPatternWithPhaseSync(const std::vector<bool>& rhyth
     
     accentMapNeedsUpdate.store(true); // Mark accent map for regeneration
     
-    // PHASE 2: Simplified pattern change logic based on accent system
+    // LEGACY SYSTEM: Complex base tick recalculation
     if (!rhythmPattern.empty()) {
-        if (useNewAccentSystem) {
-            // NEW ROBUST SYSTEM: Simple base tick management
-            // AccentSequence handles its own sequencing, so we just need a reference point
-            baseTickRhythm.store(currentTick); // Simple: new patterns start from current tick
-            baseTickAccent.store(currentTick + accentPhaseOffset);
+        bool isProgressivePattern = (accentPhaseOffset != 0) || 
+                                   currentUPIInput.contains("%") || 
+                                   currentUPIInput.contains("+");
+        
+        uint64_t newBase;
+        if (isProgressivePattern) {
+            newBase = currentTick;
         } else {
-            // LEGACY SYSTEM: Complex base tick recalculation (for rollback)
-            bool isProgressivePattern = (accentPhaseOffset != 0) || 
-                                       currentUPIInput.contains("%") || 
-                                       currentUPIInput.contains("+");
-            
-            uint64_t newBase;
-            if (isProgressivePattern) {
-                newBase = currentTick;
-            } else {
-                uint32_t safeDerivedStep = currentDerivedStep % static_cast<uint32_t>(rhythmPattern.size());
-                newBase = currentTick - safeDerivedStep;
-            }
-            
-            baseTickRhythm.store(newBase);
-            baseTickAccent.store(newBase + accentPhaseOffset);
+            uint32_t safeDerivedStep = currentDerivedStep % static_cast<uint32_t>(rhythmPattern.size());
+            newBase = currentTick - safeDerivedStep;
         }
+        
+        baseTickRhythm.store(newBase);
+        baseTickAccent.store(newBase + accentPhaseOffset);
     }
     
-    // Update AccentSequence with new patterns (Phase 1: Compatibility Layer)
-    updateAccentSequence();
     
     patternChanged.store(true);
 }
@@ -2900,68 +2814,7 @@ void SerpeAudioProcessor::generatePreCalculatedAccentMap()
     accentMapNeedsUpdate.store(false);
 }
 
-//==============================================================================
-// NEW ROBUST ACCENT SYSTEM (Phase 1: Compatibility Layer)
-//==============================================================================
 
-bool SerpeAudioProcessor::isStepAccentedNew(uint32_t step) const
-{
-    if (!currentAccentSequence || !currentAccentSequence->isValid())
-        return false;
-    
-    return currentAccentSequence->isAccentedAtStep(step);
-}
-
-std::vector<bool> SerpeAudioProcessor::getAccentMapNew() const
-{
-    if (!currentAccentSequence || !currentAccentSequence->isValid())
-    {
-        // Return empty map if no accent sequence
-        std::vector<bool> rhythmPattern = patternEngine.getCurrentPattern();
-        return std::vector<bool>(rhythmPattern.size(), false);
-    }
-    
-    // Get accent map for current cycle based on transport position
-    uint64_t currentTick = transportTick.load();
-    uint64_t baseTick = baseTickRhythm.load();
-    uint32_t stepsIntoSequence = static_cast<uint32_t>((currentTick - baseTick) % currentAccentSequence->getSequenceLength());
-    
-    return currentAccentSequence->getAccentMapForCycle(stepsIntoSequence);
-}
-
-void SerpeAudioProcessor::updateAccentSequence()
-{
-    try
-    {
-        // Get current patterns
-        std::vector<bool> rhythmPattern = patternEngine.getCurrentPattern();
-        
-        // DEBUG: Log accent pattern state
-        DBG("AccentSequence DEBUG - hasAccentPattern: " << (hasAccentPattern ? "true" : "false")
-            << ", currentAccentPattern.size(): " << (int)currentAccentPattern.size()
-            << ", rhythmPattern.size(): " << (int)rhythmPattern.size());
-        
-        if (!hasAccentPattern || currentAccentPattern.empty())
-        {
-            // No accent pattern - create sequence that returns no accents
-            currentAccentSequence = std::make_unique<AccentSequence>(rhythmPattern, std::vector<bool>());
-            DBG("AccentSequence created with NO accents");
-        }
-        else
-        {
-            // Create new immutable accent sequence
-            currentAccentSequence = std::make_unique<AccentSequence>(rhythmPattern, currentAccentPattern);
-            DBG("AccentSequence created with accents - pattern size: " << (int)currentAccentPattern.size());
-        }
-        
-        DBG("AccentSequence updated: " << currentAccentSequence->getDebugInfo());
-    }
-    catch (const std::exception& e)
-    {
-        DBG("Failed to create AccentSequence: " << e.what());
-        currentAccentSequence.reset(); // Clear invalid sequence
-    }
-}
 
 //==============================================================================
 // This creates new instances of the plugin..

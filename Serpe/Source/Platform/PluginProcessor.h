@@ -13,7 +13,6 @@
 #include <JuceHeader.h>
 #include "../Core/PatternEngine.h"
 #include "../Core/UPIParser.h"
-#include "../Core/AccentSequence.h"
 #include "../Managers/SceneManager.h"
 #include "../Managers/ProgressiveManager.h"
 #include "../Managers/PresetManager.h"
@@ -262,15 +261,7 @@ public:
     void resetAccentSystem();
     void generatePreCalculatedAccentMap(); // Generate deterministic accent map for UI
     
-    // PHASE 2: Feature flag control for gradual migration
-    void setUseNewAccentSystem(bool enabled) { useNewAccentSystem = enabled; }
-    bool isUsingNewAccentSystem() const { return useNewAccentSystem; }
     
-    // NEW ROBUST ACCENT SYSTEM (Phase 1: Compatibility Layer)
-    // Compatibility methods that delegate to AccentSequence for gradual migration
-    bool isStepAccentedNew(uint32_t step) const;           // O(1) accent lookup using AccentSequence
-    std::vector<bool> getAccentMapNew() const;             // UI accent map from AccentSequence
-    void updateAccentSequence();                           // Create new AccentSequence when patterns change
     
     // Debug info for UI display
     int getDebugTriggerCount() const { return debugTriggerCount; }
@@ -429,11 +420,6 @@ private:
     std::vector<bool> preCalculatedAccentMap;   // Maps step index -> should be accented
     mutable std::atomic<bool> accentMapNeedsUpdate{true}; // Flag to regenerate map when pattern changes
     
-    // NEW ROBUST ACCENT SYSTEM (Phase 1: Compatibility Layer)
-    std::unique_ptr<AccentSequence> currentAccentSequence; // Immutable accent sequence for robust lookups
-    
-    // PHASE 2: Feature flag for gradual migration to new accent system
-    bool useNewAccentSystem = false; // Feature flag: false = current system, true = AccentSequence system
     
     // Parameters - implementation details
     juce::AudioParameterBool* useHostTransportParam;
