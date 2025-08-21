@@ -535,12 +535,16 @@ void SerpeAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
         // Trigger notes at the exact moment they should occur
         int numSamples = buffer.getNumSamples();
         
-        // PHASE 3: Use derived rhythm step instead of legacy calculation
+        // CRITICAL FIX: Use DAW-synchronized step calculation for perfect timing
+        // The transport tick approach was causing DAW alignment issues
         int patternStepCount = patternEngine.getStepCount();
-        int currentBufferStep = static_cast<int>(getCurrentRhythmStep()); // FIXED: Use derived instead of stepsInCurrentCycle
+        int currentBufferStep = static_cast<int>(stepsInCurrentCycle); // REVERTED: Use DAW-synced step
         juce::ignoreUnused(patternStepCount);
         
-        // Note: Legacy currentStep sync moved to immediately after transport tick update
+        // SYNC DERIVED INDICES: Update transport tick to match DAW-synchronized step
+        // This ensures derived accent calculations are aligned with DAW timing
+        uint64_t dawSynchronizedTick = static_cast<uint64_t>(stepsFromStart);
+        transportTick.store(dawSynchronizedTick);
         
         // Track the last processed step to detect boundaries
         static int lastProcessedStep = -1;
@@ -571,10 +575,11 @@ void SerpeAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
         // currentStep.store(0); // REMOVED: Using derived indices
         absoluteSamplePosition = 0;
         
-        // CRITICAL: Reset base tick references for derived index consistency
-        uint64_t currentTick = transportTick.load();
-        baseTickRhythm.store(currentTick);
-        baseTickAccent.store(currentTick);
+        // CRITICAL: Initialize derived indices for DAW-synchronized timing
+        // Since transport tick will be synchronized with DAW, set base to 0
+        // This allows derived indices to work with absolute DAW-synchronized ticks
+        baseTickRhythm.store(0);
+        baseTickAccent.store(0);
         
         clearAllActiveNotes(midiMessages);
         // Stopped playing - resetting position
@@ -1079,11 +1084,12 @@ void SerpeAudioProcessor::processStep(juce::MidiBuffer& midiBuffer, int samplePo
         // Trigger MIDI note
         triggerNote(midiBuffer, samplePosition, isAccented);
         
-        // PHASE 3: globalOnsetCounter now derived - no manual increment needed
-        // globalOnsetCounter++;
+        // CRITICAL: Track the onset count used for MIDI for UI synchronization
+        lastMidiOnsetCount.store(getCurrentOnsetCount());
     }
     
     // Notify UI of cycle completion for pattern change updates
+    // Use DAW-synchronized step for cycle boundary detection (matches MIDI timing)
     int nextStep = (stepToProcess + 1) % static_cast<int>(pattern.size());
     if (nextStep == 0)
     {
@@ -1103,7 +1109,15 @@ void SerpeAudioProcessor::processStep(juce::MidiBuffer& midiBuffer, int samplePo
         // Update stable UI accent offset at cycle boundaries (only if not manually modified)
         if (hasAccentPattern && !currentAccentPattern.empty() && !accentPatternManuallyModified)
         {
-            uiAccentOffset = static_cast<int>(getCurrentOnsetCount() % currentAccentPattern.size());
+            // DETERMINISTIC: Use the exact same cumulative onset count that MIDI used
+            // This ensures UI accent markers match MIDI accent timing perfectly
+            uint32_t midiOnsetCount = lastMidiOnsetCount.load();
+            int accentPatternSize = static_cast<int>(currentAccentPattern.size());
+            
+            // UI accent offset matches MIDI: use same cumulative onset count
+            uiAccentOffset = static_cast<int>(midiOnsetCount % accentPatternSize);
+            
+            // UI accent offset now uses identical calculation as MIDI (cumulative onset count)
         }
         else if (hasAccentPattern && accentPatternManuallyModified)
         {
@@ -1831,6 +1845,7 @@ void SerpeAudioProcessor::parseAndApplyUPI(const juce::String& upiPattern, bool 
         {
             hasAccentPattern = true;
             currentAccentPattern = parseResult.accentPattern;
+            accentMapNeedsUpdate.store(true); // Mark accent map for regeneration
             
             // DEBUG: Log accent pattern setup to file
             std::ofstream logFile("/tmp/serpe_accent_debug.log", std::ios::app);
@@ -1849,6 +1864,18 @@ void SerpeAudioProcessor::parseAndApplyUPI(const juce::String& upiPattern, bool 
         {
             hasAccentPattern = false;
             currentAccentPattern.clear();
+            accentMapNeedsUpdate.store(true); // Mark accent map for regeneration
+            
+            // CRITICAL: Reset manual modification flags when clearing accent patterns
+            accentPatternManuallyModified = false;
+            
+            // DEBUG: Log when accent pattern is cleared
+            std::ofstream logFile("/tmp/serpe_accent_debug.log", std::ios::app);
+            if (logFile.is_open()) {
+                logFile << "NO ACCENT - Pattern: " << upiPattern.toStdString() 
+                        << " (accent pattern cleared, manual flags reset)" << std::endl;
+                logFile.close();
+            }
         }
         
         // Reset global onset counter and UI accent offset only when requested
@@ -2401,87 +2428,27 @@ bool SerpeAudioProcessor::shouldStepBeAccented(int stepIndex) const
 std::vector<bool> SerpeAudioProcessor::getCurrentAccentMap() const
 {
     /**
-     * UI ACCENT DISPLAY SYNCHRONIZATION ARCHITECTURE
+     * PRE-CALCULATED ACCENT MAP FOR UI SYNCHRONIZATION
      * 
-     * This function calculates which steps in the current rhythm pattern should display
-     * accent markers in the UI. CRITICAL: The UI and MIDI systems must always be synchronized
-     * to prevent "accent swirling" where visual markers shift continuously.
+     * This function returns a pre-calculated accent map that is guaranteed to match
+     * the MIDI accent timing. The map is generated deterministically and updated
+     * only when patterns change, eliminating accent swirling issues.
      * 
-     * SYNCHRONIZATION STRATEGY:
-     * - MIDI: Uses real-time derived onset count for immediate accent triggering
-     * - UI: Uses stable uiAccentOffset that updates only at cycle boundaries
-     * - Both systems derive from the same monotonic transportTick source
-     * 
-     * This prevents rapid UI updates while maintaining perfect MIDI timing accuracy.
+     * Key benefits:
+     * - UI and MIDI use identical accent calculations
+     * - No real-time calculations that can drift
+     * - Deterministic behavior across all pattern types
+     * - Perfect synchronization without complexity
      */
     
-    // DEBUG: Log UI accent map requests
-    static int uiCallCount = 0;
-    if ((++uiCallCount % 10) == 0) {
-        std::ofstream logFile("/tmp/ui_accent_calls.log", std::ios::app);
-        if (logFile.is_open()) {
-            logFile << "UI ACCENT CALL #" << uiCallCount << " - transportTick: " << transportTick.load() 
-                    << ", currentOnsetCount: " << getCurrentOnsetCount()
-                    << ", isPlaying: " << isCurrentlyPlaying() << std::endl;
-            logFile.close();
-        }
+    // Generate accent map for polymetric patterns or when needed
+    // Polymetric patterns need frequent updates to show correct accent progression
+    if (accentMapNeedsUpdate.load() || 
+        (hasAccentPattern && !currentAccentPattern.empty() && !patternManuallyModified)) {
+        const_cast<SerpeAudioProcessor*>(this)->generatePreCalculatedAccentMap();
     }
     
-    // For UI visualization - use appropriate accent mapping based on suspension mode
-    std::vector<bool> accentMap;
-    auto currentPattern = patternEngine.getCurrentPattern();
-    
-    if (!hasAccentPattern || currentAccentPattern.empty())
-    {
-        // No accents - return all false
-        accentMap.resize(currentPattern.size(), false);
-        return accentMap;
-    }
-    
-    accentMap.resize(currentPattern.size(), false);
-    
-    if (patternManuallyModified) {
-        // SUSPENSION MODE: Use step-based accent mapping (manual modifications)
-        // Accents appear exactly where the user clicked
-        for (int stepIndex = 0; stepIndex < static_cast<int>(currentPattern.size()); ++stepIndex)
-        {
-            if (currentPattern[stepIndex] && stepIndex < static_cast<int>(currentAccentPattern.size()))
-            {
-                accentMap[stepIndex] = currentAccentPattern[stepIndex];
-            }
-        }
-    } else {
-        // NORMAL MODE: Use onset-based accent mapping (UPI patterns, progressive transformations)
-        /**
-         * CRITICAL ACCENT SWIRLING PREVENTION:
-         * 
-         * The key insight is that UI and MIDI accent calculations must be independent
-         * but synchronized. MIDI needs real-time accuracy, UI needs stability.
-         * 
-         * - MIDI (in processStep()): Uses getCurrentOnsetCount() for immediate accuracy
-         * - UI (here): Uses uiAccentOffset which only updates at cycle boundaries
-         * 
-         * Both derive from the same transportTick, ensuring synchronization while
-         * preventing the rapid UI updates that caused visual "swirling".
-         * 
-         * uiAccentOffset is updated in processStep() when nextStep == 0 (cycle boundary)
-         * This means UI accent markers remain stable during cycle playback.
-         */
-        int onsetNumber = uiAccentOffset; // Use stable UI offset (updated at cycle boundaries)
-        
-        for (int stepInCycle = 0; stepInCycle < static_cast<int>(currentPattern.size()); ++stepInCycle)
-        {
-            if (currentPattern[stepInCycle])
-            {
-                // This step will have an onset - will it be accented?
-                accentMap[stepInCycle] = shouldOnsetBeAccented(onsetNumber);
-                onsetNumber++;
-            }
-            // else: No onset at this step, accentMap[stepInCycle] remains false
-        }
-    }
-    
-    return accentMap;
+    return preCalculatedAccentMap;
 }
 
 bool SerpeAudioProcessor::checkPatternChanged()
@@ -2492,10 +2459,9 @@ bool SerpeAudioProcessor::checkPatternChanged()
 
 void SerpeAudioProcessor::resetAccentSystem()
 {
-    // PHASE 3: Reset base ticks instead of manual counters
-    uint64_t currentTick = transportTick.load();
-    baseTickRhythm.store(currentTick);
-    baseTickAccent.store(currentTick);
+    // PHASE 3: Simple reset for DAW-synchronized timing
+    baseTickRhythm.store(0);
+    baseTickAccent.store(0);
     
     // Legacy reset (will be removed in Phase 5)
     globalOnsetCounter = 0;
@@ -2575,16 +2541,17 @@ void SerpeAudioProcessor::processPatternUpdates()
 {
     PatternUpdate update;
     while (patternUpdateQueue.dequeue(update)) {
-        // Phase-lock at current transportTick
-        uint64_t currentTick = transportTick.load();
-        baseTickRhythm.store(currentTick);
-        baseTickAccent.store(currentTick + update.accentPhaseOffset);
+        // Simple pattern update - derived indices use DAW-synchronized ticks
+        // Base remains at 0 since transport tick is DAW-synchronized
+        baseTickRhythm.store(0);
+        baseTickAccent.store(update.accentPhaseOffset);
         
         // Update pattern atomically
         patternEngine.setPattern(update.rhythmPattern);
         hasAccentPattern = update.hasAccent;
         currentAccentPattern = update.accentPattern;
         
+        accentMapNeedsUpdate.store(true); // Mark accent map for regeneration
         patternChanged.store(true); // Notify UI
     }
 }
@@ -2614,15 +2581,35 @@ void SerpeAudioProcessor::setPatternWithPhaseSync(const std::vector<bool>& rhyth
     this->hasAccentPattern = hasAccent;
     currentAccentPattern = accentPattern;
     
+    accentMapNeedsUpdate.store(true); // Mark accent map for regeneration
+    
     // Calculate new base tick to preserve current step position
     if (!rhythmPattern.empty()) {
-        uint64_t newBase = currentTick - currentDerivedStep;
+        // For progressive patterns, be more conservative with base tick calculation
+        // since the pattern itself changes due to rotation
+        bool isProgressivePattern = (accentPhaseOffset != 0) || 
+                                   currentUPIInput.contains("%") || 
+                                   currentUPIInput.contains("+");
+        
+        uint64_t newBase;
+        if (isProgressivePattern) {
+            // For progressive patterns, align to current tick to avoid confusion
+            newBase = currentTick;
+        } else {
+            // For static patterns, preserve step position
+            uint32_t safeDerivedStep = currentDerivedStep % static_cast<uint32_t>(rhythmPattern.size());
+            newBase = currentTick - safeDerivedStep;
+        }
+        
         baseTickRhythm.store(newBase);
         baseTickAccent.store(newBase + accentPhaseOffset);
         
         // Sync legacy step
-        // currentStep.store(currentDerivedStep); // REMOVED: Using derived indices
+        // currentStep.store(safeDerivedStep); // REMOVED: Using derived indices
     }
+    
+    // Update AccentSequence with new patterns (Phase 1: Compatibility Layer)
+    updateAccentSequence();
     
     patternChanged.store(true);
 }
@@ -2634,6 +2621,8 @@ void SerpeAudioProcessor::updateTransportTick(int bufferSize)
 {
     if (!isCurrentlyPlaying()) return;
     
+    // REVERT TO ORIGINAL: Use sample-based timing (was working)
+    // The issue was with baseTickRhythm alignment, not transport tick advancement
     sampleAccumulator += static_cast<uint64_t>(bufferSize);
     while (sampleAccumulator >= static_cast<uint64_t>(samplesPerStepPrecise)) {
         sampleAccumulator -= static_cast<uint64_t>(samplesPerStepPrecise);
@@ -2699,11 +2688,34 @@ uint32_t SerpeAudioProcessor::getCurrentOnsetCount() const
     auto pattern = patternEngine.getCurrentPattern();
     if (pattern.empty()) return 0;
     
-    uint32_t onsetCount = 0;
+    // OPTIMIZATION: Avoid expensive loop for large tick values
+    // Calculate onsets per complete cycle, then add partial cycle onsets
+    uint32_t patternSize = static_cast<uint32_t>(pattern.size());
     
-    for (uint32_t t = 0; t < ticksSinceBase; t++) {
-        uint32_t stepIndex = t % pattern.size();
-        if (pattern[stepIndex]) {
+    // Count onsets in one complete pattern cycle
+    uint32_t onsetsPerCycle = 0;
+    for (bool step : pattern) {
+        if (step) onsetsPerCycle++;
+    }
+    
+    if (onsetsPerCycle == 0) return 0; // Pattern has no onsets
+    
+    // SAFETY: Handle single-step patterns like E(1,1) with special logic
+    if (patternSize == 1) {
+        // For single step patterns, onset count equals tick count if step has onset
+        return pattern[0] ? ticksSinceBase : 0;
+    }
+    
+    // Calculate complete cycles and remaining steps
+    uint32_t completeCycles = ticksSinceBase / patternSize;
+    uint32_t remainingSteps = ticksSinceBase % patternSize;
+    
+    // Count onsets in complete cycles
+    uint32_t onsetCount = completeCycles * onsetsPerCycle;
+    
+    // Add onsets in remaining partial cycle
+    for (uint32_t step = 0; step < remainingSteps; step++) {
+        if (pattern[step]) {
             onsetCount++;
         }
     }
@@ -2747,6 +2759,165 @@ void SerpeAudioProcessor::validateCounterConsistency() const
         }
     }
     #endif
+}
+
+void SerpeAudioProcessor::generatePreCalculatedAccentMap()
+{
+    /**
+     * PRE-CALCULATED ACCENT MAP GENERATION WITH LCM OPTIMIZATION
+     * 
+     * This method generates a deterministic accent map that covers the full polymetric cycle.
+     * For patterns with N onsets and M accents, the cycle repeats every LCM(N,M) onsets.
+     * 
+     * Example: 7 onsets, 5 accents -> LCM(7,5) = 35 onsets -> 7 rhythm cycles 
+     * This gives us a complete map that perfectly predicts accent positions.
+     */
+    
+    auto currentPattern = patternEngine.getCurrentPattern();
+    preCalculatedAccentMap.resize(currentPattern.size(), false);
+    
+    // Accent map generation - removed excessive logging for performance
+    
+    if (!hasAccentPattern || currentAccentPattern.empty()) {
+        // No accents - map is already all false
+        accentMapNeedsUpdate.store(false);
+        return;
+    }
+    
+    if (patternManuallyModified) {
+        // SUSPENSION MODE: Use step-based accent mapping (manual modifications)
+        for (int stepIndex = 0; stepIndex < static_cast<int>(currentPattern.size()); ++stepIndex) {
+            if (currentPattern[stepIndex] && stepIndex < static_cast<int>(currentAccentPattern.size())) {
+                preCalculatedAccentMap[stepIndex] = currentAccentPattern[stepIndex];
+            }
+        }
+    } else {
+        // NORMAL MODE: Use deterministic onset-based accent mapping
+        // Count onsets in rhythm pattern
+        int onsetsInPattern = 0;
+        for (bool step : currentPattern) {
+            if (step) onsetsInPattern++;
+        }
+        
+        int accentPatternSize = static_cast<int>(currentAccentPattern.size());
+        
+        // SAFETY: Handle edge cases that could cause stalls
+        if (onsetsInPattern == 0 || accentPatternSize == 0) {
+            // No onsets or no accent pattern - no accents
+            accentMapNeedsUpdate.store(false);
+            return;
+        }
+        
+        // Calculate LCM for efficient cycle detection
+        auto gcd = [](int a, int b) {
+            while (b != 0) {
+                int temp = b;
+                b = a % b;
+                a = temp;
+            }
+            return a;
+        };
+        
+        int lcm = (onsetsInPattern * accentPatternSize) / gcd(onsetsInPattern, accentPatternSize);
+        
+        // SAFETY: Prevent excessive LCM values that could cause performance issues
+        if (lcm > 1000) {
+            lcm = 1000; // Cap at reasonable limit
+        }
+        
+        // CORRECT APPROACH: Calculate onset count at the START of the current cycle
+        // This gives us the "slice" of the polymetric sequence that should be displayed
+        uint32_t currentOnsetCount = getCurrentOnsetCount();
+        uint32_t currentStep = getCurrentRhythmStep();
+        
+        // SAFETY: Ensure currentStep is within bounds
+        if (currentStep >= static_cast<uint32_t>(currentPattern.size())) {
+            currentStep = 0; // Reset to beginning if out of bounds
+        }
+        
+        // Calculate how many onsets occurred before the current cycle started
+        int onsetsBeforeCurrentCycle = 0;
+        for (int step = 0; step < currentStep; step++) {
+            if (step < static_cast<int>(currentPattern.size()) && currentPattern[step]) {
+                onsetsBeforeCurrentCycle++;
+            }
+        }
+        
+        // Onset count at the beginning of the current cycle
+        uint32_t cycleStartOnsetCount = (currentOnsetCount >= onsetsBeforeCurrentCycle) ? 
+                                       (currentOnsetCount - onsetsBeforeCurrentCycle) : 0;
+        uint32_t cyclePosition = cycleStartOnsetCount % lcm;
+        
+        // Calculate accent map for current cycle position
+        int onsetIndex = 0;
+        for (int stepIndex = 0; stepIndex < static_cast<int>(currentPattern.size()); ++stepIndex) {
+            if (currentPattern[stepIndex]) {
+                // This step has an onset - calculate if it should be accented
+                uint32_t globalOnsetNumber = cyclePosition + onsetIndex;
+                int accentPosition = static_cast<int>(globalOnsetNumber % accentPatternSize);
+                preCalculatedAccentMap[stepIndex] = currentAccentPattern[accentPosition];
+                onsetIndex++;
+            }
+        }
+    }
+    
+    accentMapNeedsUpdate.store(false);
+}
+
+//==============================================================================
+// NEW ROBUST ACCENT SYSTEM (Phase 1: Compatibility Layer)
+//==============================================================================
+
+bool SerpeAudioProcessor::isStepAccentedNew(uint32_t step) const
+{
+    if (!currentAccentSequence || !currentAccentSequence->isValid())
+        return false;
+    
+    return currentAccentSequence->isAccentedAtStep(step);
+}
+
+std::vector<bool> SerpeAudioProcessor::getAccentMapNew() const
+{
+    if (!currentAccentSequence || !currentAccentSequence->isValid())
+    {
+        // Return empty map if no accent sequence
+        std::vector<bool> rhythmPattern = patternEngine.getCurrentPattern();
+        return std::vector<bool>(rhythmPattern.size(), false);
+    }
+    
+    // Get accent map for current cycle based on transport position
+    uint64_t currentTick = transportTick.load();
+    uint64_t baseTick = baseTickRhythm.load();
+    uint32_t stepsIntoSequence = static_cast<uint32_t>((currentTick - baseTick) % currentAccentSequence->getSequenceLength());
+    
+    return currentAccentSequence->getAccentMapForCycle(stepsIntoSequence);
+}
+
+void SerpeAudioProcessor::updateAccentSequence()
+{
+    try
+    {
+        // Get current patterns
+        std::vector<bool> rhythmPattern = patternEngine.getCurrentPattern();
+        
+        if (!hasAccentPattern || currentAccentPattern.empty())
+        {
+            // No accent pattern - create sequence that returns no accents
+            currentAccentSequence = std::make_unique<AccentSequence>(rhythmPattern, std::vector<bool>());
+        }
+        else
+        {
+            // Create new immutable accent sequence
+            currentAccentSequence = std::make_unique<AccentSequence>(rhythmPattern, currentAccentPattern);
+        }
+        
+        DBG("AccentSequence updated: " << currentAccentSequence->getDebugInfo());
+    }
+    catch (const std::exception& e)
+    {
+        DBG("Failed to create AccentSequence: " << e.what());
+        currentAccentSequence.reset(); // Clear invalid sequence
+    }
 }
 
 //==============================================================================

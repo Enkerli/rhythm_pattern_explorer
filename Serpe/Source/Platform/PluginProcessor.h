@@ -13,6 +13,7 @@
 #include <JuceHeader.h>
 #include "../Core/PatternEngine.h"
 #include "../Core/UPIParser.h"
+#include "../Core/AccentSequence.h"
 #include "../Managers/SceneManager.h"
 #include "../Managers/ProgressiveManager.h"
 #include "../Managers/PresetManager.h"
@@ -259,6 +260,13 @@ public:
     std::vector<bool> getCurrentAccentMap() const;
     bool checkPatternChanged(); // Check and reset pattern changed flag
     void resetAccentSystem();
+    void generatePreCalculatedAccentMap(); // Generate deterministic accent map for UI
+    
+    // NEW ROBUST ACCENT SYSTEM (Phase 1: Compatibility Layer)
+    // Compatibility methods that delegate to AccentSequence for gradual migration
+    bool isStepAccentedNew(uint32_t step) const;           // O(1) accent lookup using AccentSequence
+    std::vector<bool> getAccentMapNew() const;             // UI accent map from AccentSequence
+    void updateAccentSequence();                           // Create new AccentSequence when patterns change
     
     // Debug info for UI display
     int getDebugTriggerCount() const { return debugTriggerCount; }
@@ -308,6 +316,7 @@ private:
     std::atomic<uint64_t> transportTick{0};           // Monotonic step counter
     std::atomic<uint64_t> baseTickRhythm{0};          // Rhythm reference point  
     std::atomic<uint64_t> baseTickAccent{0};          // Accent reference point
+    std::atomic<uint32_t> lastMidiOnsetCount{0};      // Track MIDI onset count for UI sync
     double samplesPerStepPrecise = 0.0;               // Precise step timing
     uint64_t sampleAccumulator = 0;                   // For precise step timing
     
@@ -411,6 +420,13 @@ private:
     bool patternManuallyModified = false;       // Flag to indicate pattern has been manually edited (suspension mode)
     std::vector<bool> suspendedRhythmPattern;   // Preserve manually modified rhythm pattern
     std::vector<bool> suspendedAccentPattern;   // Preserve manually modified accent pattern
+    
+    // Pre-calculated deterministic accent map for UI synchronization  
+    std::vector<bool> preCalculatedAccentMap;   // Maps step index -> should be accented
+    mutable std::atomic<bool> accentMapNeedsUpdate{true}; // Flag to regenerate map when pattern changes
+    
+    // NEW ROBUST ACCENT SYSTEM (Phase 1: Compatibility Layer)
+    std::unique_ptr<AccentSequence> currentAccentSequence; // Immutable accent sequence for robust lookups
     
     // Parameters - implementation details
     juce::AudioParameterBool* useHostTransportParam;
