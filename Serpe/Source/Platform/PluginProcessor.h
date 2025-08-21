@@ -262,6 +262,10 @@ public:
     void resetAccentSystem();
     void generatePreCalculatedAccentMap(); // Generate deterministic accent map for UI
     
+    // PHASE 2: Feature flag control for gradual migration
+    void setUseNewAccentSystem(bool enabled) { useNewAccentSystem = enabled; }
+    bool isUsingNewAccentSystem() const { return useNewAccentSystem; }
+    
     // NEW ROBUST ACCENT SYSTEM (Phase 1: Compatibility Layer)
     // Compatibility methods that delegate to AccentSequence for gradual migration
     bool isStepAccentedNew(uint32_t step) const;           // O(1) accent lookup using AccentSequence
@@ -427,6 +431,9 @@ private:
     
     // NEW ROBUST ACCENT SYSTEM (Phase 1: Compatibility Layer)
     std::unique_ptr<AccentSequence> currentAccentSequence; // Immutable accent sequence for robust lookups
+    
+    // PHASE 2: Feature flag for gradual migration to new accent system
+    bool useNewAccentSystem = false; // Feature flag: false = current system, true = AccentSequence system
     
     // Parameters - implementation details
     juce::AudioParameterBool* useHostTransportParam;
