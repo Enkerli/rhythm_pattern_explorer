@@ -1502,7 +1502,7 @@ void SerpeAudioProcessor::setUPIInput(const juce::String& upiPattern)
             // New progressive pattern - reset and start
             basePattern = newBasePattern;
             progressiveStep = newStep;
-            progressiveOffset = 0; // Start with no offset, advance on subsequent triggers
+            progressiveOffset = newStep; // Start with first offset
             
         }
         

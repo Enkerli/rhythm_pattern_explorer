@@ -199,7 +199,6 @@ public:
         progressiveOffset += progressiveStep; // Legacy fallback
     }
     int getProgressiveOffset() const { 
-        // TRANSITION: Use ProgressiveManager if available, fallback to legacy for safety
         if (progressiveManager && progressiveManager->hasProgressiveState(currentUPIInput)) {
             return progressiveManager->getProgressiveOffsetValue(currentUPIInput);
         }
