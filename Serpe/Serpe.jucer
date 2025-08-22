@@ -26,6 +26,10 @@
             file="Source/Core/QuantizationEngine.h"/>
       <FILE id="QuantEngC" name="QuantizationEngine.cpp" compile="1" resource="0"
             file="Source/Core/QuantizationEngine.cpp"/>
+      <FILE id="AccentSeqH" name="AccentSequence.h" compile="0" resource="0"
+            file="Source/Core/AccentSequence.h"/>
+      <FILE id="AccentSeqC" name="AccentSequence.cpp" compile="1" resource="0"
+            file="Source/Core/AccentSequence.cpp"/>
     </GROUP>
     <GROUP id="Managers" name="Managers">
       <FILE id="PresetMgrH" name="PresetManager.h" compile="0" resource="0"
@@ -62,6 +66,8 @@
             file="Source/Tests/PlatformTests.h"/>
       <FILE id="PlatTestsC" name="PlatformTests.cpp" compile="1" resource="0"
             file="Source/Tests/PlatformTests.cpp"/>
+      <FILE id="AccentSeqTestsC" name="AccentSequenceTests.cpp" compile="1"
+            resource="0" file="Source/Tests/AccentSequenceTests.cpp"/>
     </GROUP>
     <GROUP id="Resources" name="Resources">
       <FILE id="Icon32" name="plugin-icon-32.png" compile="0" resource="1"

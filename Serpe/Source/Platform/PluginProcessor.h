@@ -17,6 +17,34 @@
 #include "../Managers/ProgressiveManager.h"
 #include "../Managers/PresetManager.h"
 #include "PlatformSpecific.h"
+#include <atomic>
+#include <array>
+
+//==============================================================================
+// PHASE 2: Lock-Free Pattern Update Queue
+
+struct PatternUpdate {
+    std::vector<bool> rhythmPattern;
+    std::vector<bool> accentPattern;
+    bool hasAccent = false;
+    int accentPhaseOffset = 0;  // User-controlled offset
+    
+    PatternUpdate() = default;
+    PatternUpdate(const std::vector<bool>& rhythm, const std::vector<bool>& accent, bool accent_enabled, int offset = 0)
+        : rhythmPattern(rhythm), accentPattern(accent), hasAccent(accent_enabled), accentPhaseOffset(offset) {}
+};
+
+class PatternUpdateQueue {
+    static constexpr size_t QUEUE_SIZE = 16;
+    std::array<PatternUpdate, QUEUE_SIZE> queue;
+    std::atomic<size_t> writeIndex{0};
+    std::atomic<size_t> readIndex{0};
+    
+public:
+    bool enqueue(const PatternUpdate& update);
+    bool dequeue(PatternUpdate& update);
+    bool isEmpty() const;
+};
 
 //==============================================================================
 /**
@@ -113,7 +141,10 @@ public:
     void setEnableLoopSync(bool enable) { enableLoopSync = enable; }
     
     // Playback state
-    int getCurrentStep() const { return currentStep.load(); }
+    int getCurrentStep() const { 
+        // PHASE 0.2: Test derived approach - keep legacy for validation
+        return getDerivedRhythmStep(); 
+    }
     bool isCurrentlyPlaying() const { 
         // REFINED: Check if we're getting recent processBlock calls AND transport is playing
         double currentTime = juce::Time::getMillisecondCounter();
@@ -162,16 +193,17 @@ public:
         progressiveOffset = 0; // Legacy fallback
     }
     void advanceProgressiveOffset() { 
-        if (progressiveManager) {
-            progressiveManager->triggerProgressive(currentUPIInput, patternEngine);
-        }
+        // TEMPORARY: Disable ProgressiveManager to isolate legacy system
+        // if (progressiveManager) {
+        //     progressiveManager->triggerProgressive(currentUPIInput, patternEngine);
+        // }
         progressiveOffset += progressiveStep; // Legacy fallback
     }
     int getProgressiveOffset() const { 
-        // TRANSITION: Use ProgressiveManager if available, fallback to legacy for safety
-        if (progressiveManager && progressiveManager->hasProgressiveState(currentUPIInput)) {
-            return progressiveManager->getProgressiveOffsetValue(currentUPIInput);
-        }
+        // TEMPORARY: Disable ProgressiveManager to isolate legacy system
+        // if (progressiveManager && progressiveManager->hasProgressiveState(currentUPIInput)) {
+        //     return progressiveManager->getProgressiveOffsetValue(currentUPIInput);
+        // }
         return progressiveOffset; // Legacy fallback
     }
     
@@ -219,12 +251,18 @@ public:
     // Accent system access for UI and processing
     bool getHasAccentPattern() const { return hasAccentPattern; }
     const std::vector<bool>& getCurrentAccentPattern() const { return currentAccentPattern; }
-    int getGlobalOnsetCounter() const { return globalOnsetCounter; }
+    int getGlobalOnsetCounter() const { 
+        // PHASE 3: Use derived onset count
+        return static_cast<int>(getCurrentOnsetCount()); 
+    }
     bool shouldOnsetBeAccented(int onsetNumber) const; // DEPRECATED: onset-based logic
     bool shouldStepBeAccented(int stepIndex) const;    // NEW: step-based logic for MIDI alignment
     std::vector<bool> getCurrentAccentMap() const;
     bool checkPatternChanged(); // Check and reset pattern changed flag
     void resetAccentSystem();
+    void generatePreCalculatedAccentMap(); // Generate deterministic accent map for UI
+    
+    
     
     // Debug info for UI display
     int getDebugTriggerCount() const { return debugTriggerCount; }
@@ -245,14 +283,38 @@ private:
     // Pattern Engine
     PatternEngine patternEngine;
     
+    // PHASE 2: Pattern Update Queue for thread-safe pattern changes
+    PatternUpdateQueue patternUpdateQueue;
+    
     // MIDI effect mode - no audio synthesis components needed
     
     // Timing and sequencing
     double currentSampleRate = 44100.0;
     int samplesPerStep = 0;
     int currentSample = 0;
-    std::atomic<int> currentStep{0};
+    std::atomic<int> currentStep{0};  // Legacy - will be replaced by derived indices
     bool wasPlaying = false;
+    
+    /**
+     * PHASE 1: MONOTONIC TRANSPORT TICK SYSTEM
+     * 
+     * This is the heart of the derived indices architecture that eliminates accent swirling.
+     * All timing calculations derive from these atomic counters, ensuring consistency
+     * between UI and MIDI systems.
+     * 
+     * transportTick: Monotonically increasing step counter, never decreases during playback
+     * baseTickRhythm: Reference point for rhythm pattern position calculation  
+     * baseTickAccent: Reference point for accent pattern position (can have phase offset)
+     * 
+     * Key insight: Instead of maintaining mutable step counters that can drift,
+     * we calculate current positions mathematically from these base references.
+     */
+    std::atomic<uint64_t> transportTick{0};           // Monotonic step counter
+    std::atomic<uint64_t> baseTickRhythm{0};          // Rhythm reference point  
+    std::atomic<uint64_t> baseTickAccent{0};          // Accent reference point
+    std::atomic<uint32_t> lastMidiOnsetCount{0};      // Track MIDI onset count for UI sync
+    double samplesPerStepPrecise = 0.0;               // Precise step timing
+    uint64_t sampleAccumulator = 0;                   // For precise step timing
     
     // Note tracking system for proper note duration management
     struct ActiveNote {
@@ -355,6 +417,11 @@ private:
     std::vector<bool> suspendedRhythmPattern;   // Preserve manually modified rhythm pattern
     std::vector<bool> suspendedAccentPattern;   // Preserve manually modified accent pattern
     
+    // Pre-calculated deterministic accent map for UI synchronization  
+    std::vector<bool> preCalculatedAccentMap;   // Maps step index -> should be accented
+    mutable std::atomic<bool> accentMapNeedsUpdate{true}; // Flag to regenerate map when pattern changes
+    
+    
     // Parameters - implementation details
     juce::AudioParameterBool* useHostTransportParam;
     juce::AudioParameterInt* midiNoteParam;
@@ -379,6 +446,27 @@ private:
     void syncBPMWithHost(const juce::AudioPlayHead::CurrentPositionInfo& posInfo);
     void syncPositionWithHost(const juce::AudioPlayHead::CurrentPositionInfo& posInfo);
     void checkMidiInputForTriggers(juce::MidiBuffer& midiMessages);
+    
+    // PHASE 1: Monotonic Transport Tick helper methods
+    void updateTransportTick(int bufferSize);
+    uint32_t getCurrentRhythmStep() const;
+    uint32_t getCurrentAccentStep() const;
+    
+    // PHASE 2: Pattern Update Queue methods
+    void processPatternUpdates();
+    void queuePatternUpdate(const std::vector<bool>& rhythmPattern, const std::vector<bool>& accentPattern = {}, bool hasAccent = false, int accentPhaseOffset = 0);
+    
+    // PHASE 3: Derived onset counting
+    uint32_t getCurrentOnsetCount() const;
+    
+    // PHASE 3: Emergency fix for direct pattern setting
+    void setPatternWithPhaseSync(const std::vector<bool>& rhythmPattern, const std::vector<bool>& accentPattern = {}, bool hasAccent = false, int accentPhaseOffset = 0);
+    
+    // PHASE 0: Derived index functions - proof of concept
+    uint64_t getMonotonicTick() const;
+    uint32_t getDerivedRhythmStep() const;
+    uint32_t getDerivedAccentStep() const;
+    void validateCounterConsistency() const; // Debug validation
     
     // Note tracking system methods
     void addActiveNote(int noteNumber, int duration);
