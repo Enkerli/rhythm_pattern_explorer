@@ -193,15 +193,17 @@ public:
         progressiveOffset = 0; // Legacy fallback
     }
     void advanceProgressiveOffset() { 
-        if (progressiveManager) {
-            progressiveManager->triggerProgressive(currentUPIInput, patternEngine);
-        }
+        // TEMPORARY: Disable ProgressiveManager to isolate legacy system
+        // if (progressiveManager) {
+        //     progressiveManager->triggerProgressive(currentUPIInput, patternEngine);
+        // }
         progressiveOffset += progressiveStep; // Legacy fallback
     }
     int getProgressiveOffset() const { 
-        if (progressiveManager && progressiveManager->hasProgressiveState(currentUPIInput)) {
-            return progressiveManager->getProgressiveOffsetValue(currentUPIInput);
-        }
+        // TEMPORARY: Disable ProgressiveManager to isolate legacy system
+        // if (progressiveManager && progressiveManager->hasProgressiveState(currentUPIInput)) {
+        //     return progressiveManager->getProgressiveOffsetValue(currentUPIInput);
+        // }
         return progressiveOffset; // Legacy fallback
     }
     

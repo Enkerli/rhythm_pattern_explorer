@@ -1486,8 +1486,6 @@ void SerpeAudioProcessor::setUPIInput(const juce::String& upiPattern)
         juce::String stepStr = pattern.substring(symbolIndex + 1).trim();
         int newStep = stepStr.getIntValue();
         
-        // Progressive offset debug logging
-        
         // If same base pattern, advance offset; if different, reset
         if (basePattern == newBasePattern && progressiveStep == newStep)
         {
@@ -1506,18 +1504,9 @@ void SerpeAudioProcessor::setUPIInput(const juce::String& upiPattern)
             
         }
         
-        // Parse the base pattern first, then apply progressive offset via rotation
+        // Parse the base pattern first
+        // Progressive rotation will be applied in processPatternUpdates() after queued pattern is set
         parseAndApplyUPI(basePattern);
-        
-        // Apply progressive offset by rotating the generated pattern
-        if (progressiveOffset != 0)
-        {
-            auto currentPattern = patternEngine.getCurrentPattern();
-            // Use negative rotation for clockwise progression (positive offset = clockwise)
-            auto rotatedPattern = PatternUtils::rotatePattern(currentPattern, -progressiveOffset);
-            patternEngine.setPattern(rotatedPattern);
-            
-        }
     }
     else if (isProgressiveLengthening)
     {
@@ -2509,6 +2498,24 @@ void SerpeAudioProcessor::processPatternUpdates()
         hasAccentPattern = update.hasAccent;
         currentAccentPattern = update.accentPattern;
         
+        // CRITICAL FIX: Apply progressive rotation AFTER base pattern is set
+        // This ensures rotation isn't overwritten by queued pattern updates
+        // 
+        // PROBLEM: Progressive patterns like E(3,8)%1 were showing correct text but not
+        // offsetting audio properly. Pattern would only offset when reaching specific
+        // states instead of on each trigger.
+        //
+        // ROOT CAUSE: handleUPIInput() applied rotation immediately after parseAndApplyUPI(),
+        // but parseAndApplyUPI() enqueues the base pattern. When processPatternUpdates()
+        // dequeued the base pattern, it overwrote the rotated pattern.
+        //
+        // SOLUTION: Move progressive rotation here, after base pattern is applied from queue.
+        // This ensures rotation persists and is applied on every audio buffer cycle.
+        if (progressiveOffset != 0) {
+            auto currentPattern = patternEngine.getCurrentPattern();
+            auto rotatedPattern = PatternUtils::rotatePattern(currentPattern, -progressiveOffset);
+            patternEngine.setPattern(rotatedPattern);
+        }
         
         accentMapNeedsUpdate.store(true); // Mark accent map for regeneration
         patternChanged.store(true); // Notify UI
