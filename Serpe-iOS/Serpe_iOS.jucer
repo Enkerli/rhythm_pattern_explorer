@@ -21,42 +21,42 @@
     </GROUP>
     <GROUP id="{96A900E3-22A5-1BBF-BD7A-A481BEA56D93}" name="Source">
       <FILE id="SJvONR" name="PluginProcessor.cpp" compile="1" resource="0"
-            file="../../Serpe/Source/Platform/PluginProcessor.cpp"/>
+            file="../Serpe/Source/Platform/PluginProcessor.cpp"/>
       <FILE id="g0Pu0P" name="PluginProcessor.h" compile="0" resource="0"
-            file="../../Serpe/Source/Platform/PluginProcessor.h"/>
+            file="../Serpe/Source/Platform/PluginProcessor.h"/>
       <FILE id="SbUQRZ" name="PluginEditor.cpp" compile="1" resource="0"
-            file="../../Serpe/Source/Platform/PluginEditor.cpp"/>
-      <FILE id="fEwa1c" name="PluginEditor.h" compile="0" resource="0" file="../../Serpe/Source/Platform/PluginEditor.h"/>
+            file="../Serpe/Source/Platform/PluginEditor.cpp"/>
+      <FILE id="fEwa1c" name="PluginEditor.h" compile="0" resource="0" file="../Serpe/Source/Platform/PluginEditor.h"/>
       <GROUP id="Core" name="Core">
         <FILE id="PatEngH" name="PatternEngine.h" compile="0" resource="0"
-              file="../../Serpe/Source/Core/PatternEngine.h"/>
+              file="../Serpe/Source/Core/PatternEngine.h"/>
         <FILE id="PatEngC" name="PatternEngine.cpp" compile="1" resource="0"
-              file="../../Serpe/Source/Core/PatternEngine.cpp"/>
-        <FILE id="UPIParH" name="UPIParser.h" compile="0" resource="0" file="../../Serpe/Source/Core/UPIParser.h"/>
-        <FILE id="UPIParC" name="UPIParser.cpp" compile="1" resource="0" file="../../Serpe/Source/Core/UPIParser.cpp"/>
-        <FILE id="PatUtlH" name="PatternUtils.h" compile="0" resource="0" file="../../Serpe/Source/Core/PatternUtils.h"/>
+              file="../Serpe/Source/Core/PatternEngine.cpp"/>
+        <FILE id="UPIParH" name="UPIParser.h" compile="0" resource="0" file="../Serpe/Source/Core/UPIParser.h"/>
+        <FILE id="UPIParC" name="UPIParser.cpp" compile="1" resource="0" file="../Serpe/Source/Core/UPIParser.cpp"/>
+        <FILE id="PatUtlH" name="PatternUtils.h" compile="0" resource="0" file="../Serpe/Source/Core/PatternUtils.h"/>
         <FILE id="PatUtlC" name="PatternUtils.cpp" compile="1" resource="0"
-              file="../../Serpe/Source/Core/PatternUtils.cpp"/>
+              file="../Serpe/Source/Core/PatternUtils.cpp"/>
         <FILE id="QuantEngH" name="QuantizationEngine.h" compile="0" resource="0"
-              file="../../Serpe/Source/Core/QuantizationEngine.h"/>
+              file="../Serpe/Source/Core/QuantizationEngine.h"/>
         <FILE id="QuantEngC" name="QuantizationEngine.cpp" compile="1" resource="0"
-              file="../../Serpe/Source/Core/QuantizationEngine.cpp"/>
+              file="../Serpe/Source/Core/QuantizationEngine.cpp"/>
       </GROUP>
       <GROUP id="Managers" name="Managers">
         <FILE id="PresetMgrH" name="PresetManager.h" compile="0" resource="0"
-              file="../../Serpe/Source/Managers/PresetManager.h"/>
+              file="../Serpe/Source/Managers/PresetManager.h"/>
         <FILE id="PresetMgrC" name="PresetManager.cpp" compile="1" resource="0"
-              file="../../Serpe/Source/Managers/PresetManager.cpp"/>
+              file="../Serpe/Source/Managers/PresetManager.cpp"/>
         <FILE id="SceneMgrH" name="SceneManager.h" compile="0" resource="0"
-              file="../../Serpe/Source/Managers/SceneManager.h"/>
+              file="../Serpe/Source/Managers/SceneManager.h"/>
         <FILE id="SceneMgrC" name="SceneManager.cpp" compile="1" resource="0"
-              file="../../Serpe/Source/Managers/SceneManager.cpp"/>
+              file="../Serpe/Source/Managers/SceneManager.cpp"/>
         <FILE id="ProgMgrH" name="ProgressiveManager.h" compile="0" resource="0"
-              file="../../Serpe/Source/Managers/ProgressiveManager.h"/>
+              file="../Serpe/Source/Managers/ProgressiveManager.h"/>
         <FILE id="ProgMgrC" name="ProgressiveManager.cpp" compile="1" resource="0"
-              file="../../Serpe/Source/Managers/ProgressiveManager.cpp"/>
+              file="../Serpe/Source/Managers/ProgressiveManager.cpp"/>
       </GROUP>
-      <FILE id="DebugH" name="DebugConfig.h" compile="0" resource="0" file="../../Serpe/Source/Platform/DebugConfig.h"/>
+      <FILE id="DebugH" name="DebugConfig.h" compile="0" resource="0" file="../Serpe/Source/Platform/DebugConfig.h"/>
     </GROUP>
   </MAINGROUP>
   <MODULES>

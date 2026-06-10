@@ -6,24 +6,41 @@ A comprehensive system for generating, analyzing, and manipulating rhythmic patt
 
 ## Project Structure
 
-This repository is organized into two main components:
+This repository is organized into three main components:
 
 > **Note**: For backward compatibility, `app/` in the project root is a symbolic link to `WebApp/app/`
 
-### 🎛️ Plugin/ - Audio Plugin Implementation
+### 🎛️ Serpe/ - Audio Plugin Implementation (desktop)
 ```
-Plugin/
-├── Source/                  # C++ plugin source code
-├── RhythmPatternExplorer.jucer  # JUCE project file
-├── Builds/                  # Xcode build files
-├── Tests/                   # Comprehensive test suites
-├── Documentation/           # Plugin-specific docs
-└── README.md               # Plugin development guide
+Serpe/
+├── Source/                  # Single shared C++ source tree
+│   ├── Core/               # Pattern engine, UPI parser, quantization
+│   ├── Managers/           # Presets, scenes, progressive transforms
+│   ├── Platform/           # Processor/editor, platform glue
+│   └── Tests/              # Test suites
+├── Serpe.jucer             # JUCE project (macOS exporters)
+├── Builds/                 # Generated Xcode projects
+└── Documentation/          # Plugin-specific docs
 ```
 
-**Formats**: Audio Unit (AU), VST3, Standalone  
-**Platform**: macOS (iOS experimental)  
+**Formats**: Audio Unit (AU), VST3, Standalone — plugin code `RPEd`  
+**Platform**: macOS  
 **Status**: ✅ Production ready
+
+### 📱 Serpe-iOS/ - iPad AUv3
+```
+Serpe-iOS/
+├── Serpe_iOS.jucer         # JUCE project (iOS exporter)
+└── Builds/iOS/             # Generated Xcode project (AUv3 AppExtension)
+```
+
+Contains **no duplicated sources** — it references `Serpe/Source` directly.
+Kept as a separate thin project because the shipped plugin identities differ
+(iPad AUv3 = `RPEi`, bundle `com.enkerli.serpe`); see `SERPE_UNIFICATION_PLAN.md`.
+
+**Formats**: AUv3 (MIDI effect) + Standalone host app  
+**Platform**: iPadOS  
+**Status**: ✅ Stable
 
 ### 🌐 WebApp/ - Web Application (Reference Implementation)
 ```
@@ -43,14 +60,15 @@ WebApp/
 
 ### Using the Plugin (Recommended for Music Production)
 ```bash
-# Navigate to plugin directory
-cd Plugin/
+# Desktop (macOS AU/VST3/Standalone)
+open Serpe/Serpe.jucer            # or: Serpe/Builds/MacOSX/serpe.xcodeproj
 
-# Open JUCE project
-open RhythmPatternExplorer.jucer
-
-# Build and install (see Plugin/README.md for details)
+# iPad (AUv3)
+open Serpe-iOS/Serpe_iOS.jucer    # or: Serpe-iOS/Builds/iOS/Serpe.xcodeproj
 ```
+
+If `JuceLibraryCode/` is missing or JUCE modules moved, regenerate with
+`Projucer --resave <project>.jucer` first (module path: `/Applications/JUCE/modules`).
 
 ### Using the Web App (For Development/Reference)
 ```bash

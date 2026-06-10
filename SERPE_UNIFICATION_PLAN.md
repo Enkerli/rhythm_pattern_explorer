@@ -12,9 +12,11 @@ The plan below is largely **historical**. Verified state of `main`:
   `../../Serpe/Source/...` directly. `Plugin/` is gone.
 - ✅ **Desktop unified project builds.** `Serpe/Serpe.jucer` → `Builds/MacOSX`
   (AU + VST3 + Standalone): `** BUILD SUCCEEDED **` (Release, 2026-06-10).
-- ✅ **iPad project builds.** `RhythmPatternExplorer_iPad/iPad_Unified` →
-  `Serpe - AUv3 AppExtension` + Standalone: `** BUILD SUCCEEDED **`
-  (Release, unsigned, 2026-06-10).
+- ✅ **iPad project builds.** `Serpe-iOS/` (renamed 2026-06-10 from
+  `RhythmPatternExplorer_iPad/iPad_Unified`, jucer renamed to `Serpe_iOS.jucer`,
+  source refs adjusted to `../Serpe/Source`) → `Serpe - AUv3 AppExtension` +
+  Standalone: `** BUILD SUCCEEDED **` (Release, unsigned, 2026-06-10).
+  Plugin identity preserved: `RPEi`, `com.enkerli.serpe`.
 - ✅ **Clean-clone builds restored.** `JuceLibraryCode/` had been deleted in the
   MEGA-CLEANUP commit, so neither Xcode project compiled from a fresh clone.
   Both are regenerated (Projucer 8) and committed (~2.4 MB each). If they're ever
@@ -33,9 +35,10 @@ sessions) on whichever platform changes. **Current end-state: one source tree,
 two thin `.jucer` files with correct identities.** That delivers all the
 de-duplication value; the remaining step is a product decision:
 
-- **Option A (recommended): keep two `.jucer`s.** Nothing breaks. Rename the
-  legacy directory (`RhythmPatternExplorer_iPad/iPad_Unified` →  `Serpe-iOS/`)
-  for clarity when convenient.
+- **Option A (chosen, 2026-06-10): keep two `.jucer`s.** Nothing breaks. The
+  legacy directory is now `Serpe-iOS/` at the repository root (wrapper folder
+  removed; its duplicate CC0 LICENSE dropped, `Clip6.midi` and
+  `Info.plist.template` moved inside).
 - **Option B: true single project.** Add `buildAUv3` to `Serpe.jucer`'s
   `pluginFormats` and accept that the iPad AUv3 becomes `RPEd` — existing iPad
   sessions will see a "missing plugin" once, then users re-insert. Only worth it
