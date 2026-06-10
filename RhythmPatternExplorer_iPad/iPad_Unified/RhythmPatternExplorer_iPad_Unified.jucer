@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="lOgYeA" name="Serpe" projectType="audioplug" useAppConfig="0"
-              addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1" pluginFormats="buildAAX,buildAUv3,buildStandalone"
+              addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1" pluginFormats="buildAUv3,buildStandalone"
               companyName="Enkerli" pluginCharacteristicsValue="pluginIsMidiEffectPlugin,pluginProducesMidiOut,pluginWantsMidiIn"
               pluginManufacturerCode="Enke" pluginCode="RPEi" pluginAUExportPrefix="SerpeAU"
               pluginAAXIdentifier="com.enkerli.serpe" aaxIdentifier="com.enkerli.serpe"
@@ -56,8 +56,7 @@
         <FILE id="ProgMgrC" name="ProgressiveManager.cpp" compile="1" resource="0"
               file="../../Serpe/Source/Managers/ProgressiveManager.cpp"/>
       </GROUP>
-      <FILE id="DebugH" name="DebugConfig.h" compile="0" resource="0" 
-            file="../../Serpe/Source/Platform/DebugConfig.h"/>
+      <FILE id="DebugH" name="DebugConfig.h" compile="0" resource="0" file="../../Serpe/Source/Platform/DebugConfig.h"/>
     </GROUP>
   </MAINGROUP>
   <MODULES>
@@ -67,6 +66,8 @@
     <MODULE id="juce_audio_plugin_client" showAllCode="0" useLocalCopy="0"
             useGlobalPath="1"/>
     <MODULE id="juce_audio_processors" showAllCode="0" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_processors_headless" showAllCode="1" useLocalCopy="0"
+            useGlobalPath="1"/>
     <MODULE id="juce_audio_utils" showAllCode="0" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_core" showAllCode="0" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_data_structures" showAllCode="0" useLocalCopy="0" useGlobalPath="1"/>
@@ -110,6 +111,7 @@
         <MODULEPATH id="juce_graphics" path="/Applications/JUCE/modules"/>
         <MODULEPATH id="juce_gui_basics" path="/Applications/JUCE/modules"/>
         <MODULEPATH id="juce_gui_extra" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_processors_headless" path="../../../../../../Applications/JUCE/modules"/>
       </MODULEPATHS>
     </XCODE_IPHONE>
   </EXPORTFORMATS>

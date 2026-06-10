@@ -1,8 +1,59 @@
 # Serpe Project Unification Plan
 **Sequence Editor, Rhythmic Pattern Explorer**
 
-## Executive Summary
-This document outlines the complete strategy for consolidating the desktop and iPad implementations into a single, unified Xcode project called "Serpe". The plan prioritizes safety, documentation, and incremental progress.
+---
+
+## STATUS (2026-06-10 audit) — source unification is DONE; one decision remains
+
+The plan below is largely **historical**. Verified state of `main`:
+
+- ✅ **Single source tree.** All C++ lives in `Serpe/Source/{Core,Managers,Platform,Tests}`.
+  The iPad project contains **no duplicated sources** — its `.jucer` references
+  `../../Serpe/Source/...` directly. `Plugin/` is gone.
+- ✅ **Desktop unified project builds.** `Serpe/Serpe.jucer` → `Builds/MacOSX`
+  (AU + VST3 + Standalone): `** BUILD SUCCEEDED **` (Release, 2026-06-10).
+- ✅ **iPad project builds.** `RhythmPatternExplorer_iPad/iPad_Unified` →
+  `Serpe - AUv3 AppExtension` + Standalone: `** BUILD SUCCEEDED **`
+  (Release, unsigned, 2026-06-10).
+- ✅ **Clean-clone builds restored.** `JuceLibraryCode/` had been deleted in the
+  MEGA-CLEANUP commit, so neither Xcode project compiled from a fresh clone.
+  Both are regenerated (Projucer 8) and committed (~2.4 MB each). If they're ever
+  removed again: `Projucer --resave <project>.jucer` is the required first build step.
+  Module path is `/Applications/JUCE/modules` (machine-specific; CMake migration
+  would fix this properly).
+- ✅ **AAX flag removed** from the iPad `.jucer` (meaningless on iOS, confusing).
+
+### Why "one .jucer for everything" stays intentionally unfinished
+
+The shipped plugin identities differ per platform: desktop = `RPEd`,
+iPad = `RPEi` (manufacturer `Enke`, iPad bundle `com.enkerli.serpe`).
+Projucer plugin codes are **project-wide**, so a single `.jucer` would force one
+code on both platforms — breaking existing host sessions (AUM projects, DAW
+sessions) on whichever platform changes. **Current end-state: one source tree,
+two thin `.jucer` files with correct identities.** That delivers all the
+de-duplication value; the remaining step is a product decision:
+
+- **Option A (recommended): keep two `.jucer`s.** Nothing breaks. Rename the
+  legacy directory (`RhythmPatternExplorer_iPad/iPad_Unified` →  `Serpe-iOS/`)
+  for clarity when convenient.
+- **Option B: true single project.** Add `buildAUv3` to `Serpe.jucer`'s
+  `pluginFormats` and accept that the iPad AUv3 becomes `RPEd` — existing iPad
+  sessions will see a "missing plugin" once, then users re-insert. Only worth it
+  if the iPad user base is effectively just the developer.
+
+Note: `Serpe.jucer`'s iOS exporter currently only produces a Standalone app
+(no `buildAUv3`), so `Serpe/Builds/iOS` is not the shipping iPad artifact —
+the legacy project is.
+
+### Other loose ends spotted
+- `Serpe/Source/Platform/*_Original.{cpp,h}` are referenced by no project —
+  attic candidates once the accent-migration work (AccentSequence, used only by
+  tests so far) lands or is abandoned.
+- `Serpe/Source/Platform/DebugConfig.h` is in the iPad jucer but not the
+  desktop one; `AccentSequence.{cpp,h}` and `AccentMigrationTests.cpp` are
+  desktop-only. Harmless, but worth aligning when next touching the jucers.
+
+---
 
 ## Current State Analysis
 

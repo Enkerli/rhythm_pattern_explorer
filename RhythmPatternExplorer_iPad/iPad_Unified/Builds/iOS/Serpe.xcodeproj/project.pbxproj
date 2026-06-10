@@ -26,14 +26,18 @@
 		013322551B01CA4C92333998 /* PatternEngine.cpp */ = {isa = PBXBuildFile; fileRef = 80D9AED56B49772CAEC8C1F6; };
 		02A279B893E32DA28F3F9B1E /* include_juce_audio_plugin_client_ARA.cpp */ = {isa = PBXBuildFile; fileRef = 06EBE2101E3570A1FCEEABE6; };
 		04B0786AE3B852F17DD7769D /* MetalKit.framework */ = {isa = PBXBuildFile; fileRef = 5A1212C77FC7D9E9132CBD2A; settings = { ATTRIBUTES = (Weak, ); }; };
+		0DF8E9820FA3496C0FD87C31 /* include_juce_audio_processors_headless_ara.cpp */ = {isa = PBXBuildFile; fileRef = 9F8B203A2F863A5509AC2D2B; };
 		0EF8C86B809BA66E159597E2 /* QuartzCore.framework */ = {isa = PBXBuildFile; fileRef = BD04B4C14C5C149CDFD271DC; };
-		1170684BB1484ABA67BF0769 /* include_juce_audio_processors_ara.cpp */ = {isa = PBXBuildFile; fileRef = 7357BA9BD33DD23B41898B81; };
 		152C638F68F0C303A090A3FA /* Metal.framework */ = {isa = PBXBuildFile; fileRef = 28737EB3D2CF313B9B10109C; settings = { ATTRIBUTES = (Weak, ); }; };
 		22E356F1537D6610EDF07E4D /* Accelerate.framework */ = {isa = PBXBuildFile; fileRef = A3FAE436B2288E967CCF3BEB; };
 		3301721C26A0B161B48B7551 /* CoreAudioKit.framework */ = {isa = PBXBuildFile; fileRef = 27C18A880182580C0C0FCAEB; };
+		36075780FCCBFDFDF5C32054 /* include_juce_gui_basics_3.cpp */ = {isa = PBXBuildFile; fileRef = 7D47CCE2BBE39F2D42CE0EEF; };
 		38894F93F10688C70318154E /* AVFoundation.framework */ = {isa = PBXBuildFile; fileRef = B5F1276393E41812D32CF56B; };
 		41B51C1EC308D6935117B6D0 /* include_juce_audio_formats.mm */ = {isa = PBXBuildFile; fileRef = 10BF02B4F2485768B4723C24; };
+		435B10E45F6497472DE4AAB8 /* UniformTypeIdentifiers.framework */ = {isa = PBXBuildFile; fileRef = 286E77FAA77866FE31AC5703; settings = { ATTRIBUTES = (Weak, ); }; };
 		4A1E122D5FD139BBF61FD08D /* include_juce_graphics_Harfbuzz.cpp */ = {isa = PBXBuildFile; fileRef = 1D3C8AAF31B4FBA0BAAE4DAE; };
+		4A56AA2AC9DED8C0A1A59C25 /* include_juce_audio_processors_headless.mm */ = {isa = PBXBuildFile; fileRef = BBC301EC68AC1F8A39FCC41D; };
+		4AD003A2EBFDD45B95BC22C0 /* include_juce_gui_basics_5.cpp */ = {isa = PBXBuildFile; fileRef = BC5F6C52538DD1D14838F605; };
 		4C5B3B9804901087D40C7763 /* Foundation.framework */ = {isa = PBXBuildFile; fileRef = 68DA17D0A7F58CD10D3AB6F7; };
 		4F5A9A6E15F546E23D6BCFFB /* UIKit.framework */ = {isa = PBXBuildFile; fileRef = F1FEE9DA7E5C22F418BD6A55; };
 		52920DCE451B5511CBF8E82C /* UPIParser.cpp */ = {isa = PBXBuildFile; fileRef = 7084C3AA80F4FC3A5AABEC64; };
@@ -41,6 +45,7 @@
 		61BA203A17CDBD8BB9AED57D /* include_juce_audio_plugin_client_Standalone.cpp */ = {isa = PBXBuildFile; fileRef = D4D7E8EACC9131771CD74550; };
 		6266B053C523806E83A6BA49 /* include_juce_audio_plugin_client_AUv3.mm */ = {isa = PBXBuildFile; fileRef = A90245DE114CB93810FED4AD; };
 		63F925C7C39F2CEC162773A7 /* QuantizationEngine.cpp */ = {isa = PBXBuildFile; fileRef = C3CC02064DF926A8861925F3; };
+		6F888CE85F224FC30B7F1A9F /* include_juce_gui_basics_2.cpp */ = {isa = PBXBuildFile; fileRef = BA8E28EEDEA1582446A95849; };
 		7C2812B8A3D311A93CACFC15 /* AUv3 AppExtension */ = {isa = PBXBuildFile; fileRef = B67F5F615B3BF085AFF94D1D; };
 		7DB52955FA9BD4D5705E8A4D /* PluginProcessor.cpp */ = {isa = PBXBuildFile; fileRef = DAD0868F1CD0F1C027AC636A; };
 		7E209D1FCEEC94B794DD1F1F /* include_juce_gui_extra.mm */ = {isa = PBXBuildFile; fileRef = 2190A2D7BDD8BC6F23E8A1E3; };
@@ -57,17 +62,19 @@
 		A37728BFE6913C027EFC095C /* include_juce_graphics.mm */ = {isa = PBXBuildFile; fileRef = C001989156DC91A65EE73CFD; };
 		ABD0A9DC6ED679F9E9F7390B /* PresetManager.cpp */ = {isa = PBXBuildFile; fileRef = B366FE9FE20F1F48904D8E8B; };
 		AF886A5EDAFFDDC24C292EFC /* SceneManager.cpp */ = {isa = PBXBuildFile; fileRef = 807C235BB7628BE13F97C899; };
-		B1B0D5B027314703240996A8 /* include_juce_audio_processors_lv2_libs.cpp */ = {isa = PBXBuildFile; fileRef = 70C63074860D29F9A5DCF563; };
 		B66F8E96C27CDFE47E1454DB /* include_juce_data_structures.mm */ = {isa = PBXBuildFile; fileRef = FC390F2B3DD3E68EB6176F18; };
 		B9C70071EFDE4E4F985BCFFB /* Standalone Plugin */ = {isa = PBXBuildFile; fileRef = 28FCF839D0AED3866D4AA40A; };
+		BA294C923626E43311C2362A /* include_juce_gui_basics_4.cpp */ = {isa = PBXBuildFile; fileRef = DC361C8F7F81C1A96D591E47; };
 		BBBA99E5F5E772348BCEB4B4 /* include_juce_core.mm */ = {isa = PBXBuildFile; fileRef = 527F45141E5715FDD3BCAFE3; };
 		BC7B9C47985D2C01BBD895DD /* UserNotifications.framework */ = {isa = PBXBuildFile; fileRef = C445022394E69507C645C379; settings = { ATTRIBUTES = (Weak, ); }; };
+		C13D7EA420CAB685CBEA15B0 /* include_juce_graphics_Sheenbidi.c */ = {isa = PBXBuildFile; fileRef = 6B84895C9553CA028200EF24; };
 		C754C0E5AC75B208A4AE1C77 /* PatternUtils.cpp */ = {isa = PBXBuildFile; fileRef = ED5D7DDC58E3D192F0A70979; };
 		C75DF4EEFC7740C5C7BED12B /* PluginEditor.cpp */ = {isa = PBXBuildFile; fileRef = E8529E8A50393BC6EBE8329B; };
 		CD9DEDFF58D933E8ECDC8AB4 /* CoreServices.framework */ = {isa = PBXBuildFile; fileRef = C856CF06D4C6CD2E00C932AF; };
 		D75AD1D8C3A426202F02897C /* ProgressiveManager.cpp */ = {isa = PBXBuildFile; fileRef = D1DE2A0622A0E2CD54A0E032; };
 		DEAF3C0B46C475BA9DA1ACCE /* include_juce_audio_devices.mm */ = {isa = PBXBuildFile; fileRef = D40FA72E7145550E0A869D21; };
 		E7CDE3B68C757C58C0BD95FA /* LaunchScreen.storyboard */ = {isa = PBXBuildFile; fileRef = 982A0F098E1B38DCC2ED0B6E; };
+		E8818B8E51EF3563D712DC99 /* include_juce_audio_processors_headless_lv2_libs.cpp */ = {isa = PBXBuildFile; fileRef = 7975625B437912238C9FD0E4; };
 		EF04CA719C207FF75A14B4BC /* CoreImage.framework */ = {isa = PBXBuildFile; fileRef = 12BC79F26C15B35D10D44DCE; };
 		F1969AD56A0CC4FECC66257C /* Shared Code */ = {isa = PBXBuildFile; fileRef = 02FCEC3F8BF9E1E542B4B071; };
 		F32C9845ACC76C51E942E47E /* include_juce_events.mm */ = {isa = PBXBuildFile; fileRef = A09D2DEF7594CE9DF855F438; };
@@ -76,13 +83,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		7886DF73A0503EAA784512E5 /* Embed App Extensions */ = {
+		985A1DC0F4C2722106087B58 /* Embed AUv3 App Extension */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				7C2812B8A3D311A93CACFC15,
 			);
-			name = "Embed App Extensions";
+			name = "Embed AUv3 App Extension";
 			runOnlyForDeploymentPostprocessing = 0;
 			dstPath = "";
 			dstSubfolderSpec = 13;
@@ -103,6 +110,7 @@
 		2190A2D7BDD8BC6F23E8A1E3 /* include_juce_gui_extra.mm */ /* include_juce_gui_extra.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_gui_extra.mm; path = ../../JuceLibraryCode/include_juce_gui_extra.mm; sourceTree = SOURCE_ROOT; };
 		2321222BD5F35D9D35A4CA5D /* WebKit.framework */ /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
 		27C18A880182580C0C0FCAEB /* CoreAudioKit.framework */ /* CoreAudioKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudioKit.framework; path = System/Library/Frameworks/CoreAudioKit.framework; sourceTree = SDKROOT; };
+		286E77FAA77866FE31AC5703 /* UniformTypeIdentifiers.framework */ /* UniformTypeIdentifiers.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UniformTypeIdentifiers.framework; path = System/Library/Frameworks/UniformTypeIdentifiers.framework; sourceTree = SDKROOT; };
 		28737EB3D2CF313B9B10109C /* Metal.framework */ /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
 		28FCF839D0AED3866D4AA40A /* Standalone Plugin */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Serpe.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2A8B8BCB4E0090F0ADA30CD1 /* All.entitlements */ /* All.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = All.entitlements; path = All.entitlements; sourceTree = SOURCE_ROOT; };
@@ -119,10 +127,12 @@
 		6183254F1EF52C945269D6BE /* CoreMIDI.framework */ /* CoreMIDI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMIDI.framework; path = System/Library/Frameworks/CoreMIDI.framework; sourceTree = SDKROOT; };
 		6205BB4E86C30E662AFF1940 /* SceneManager.h */ /* SceneManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = SceneManager.h; path = ../../../../Serpe/Source/Managers/SceneManager.h; sourceTree = SOURCE_ROOT; };
 		68DA17D0A7F58CD10D3AB6F7 /* Foundation.framework */ /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		6B84895C9553CA028200EF24 /* include_juce_graphics_Sheenbidi.c */ /* include_juce_graphics_Sheenbidi.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = include_juce_graphics_Sheenbidi.c; path = ../../JuceLibraryCode/include_juce_graphics_Sheenbidi.c; sourceTree = SOURCE_ROOT; };
 		6C4778AC75217B8ADF0FE60F /* plugin-icon-64.png */ /* plugin-icon-64.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "plugin-icon-64.png"; path = "../../plugin-icon-64.png"; sourceTree = SOURCE_ROOT; };
 		7084C3AA80F4FC3A5AABEC64 /* UPIParser.cpp */ /* UPIParser.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = UPIParser.cpp; path = ../../../../Serpe/Source/Core/UPIParser.cpp; sourceTree = SOURCE_ROOT; };
-		70C63074860D29F9A5DCF563 /* include_juce_audio_processors_lv2_libs.cpp */ /* include_juce_audio_processors_lv2_libs.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = include_juce_audio_processors_lv2_libs.cpp; path = ../../JuceLibraryCode/include_juce_audio_processors_lv2_libs.cpp; sourceTree = SOURCE_ROOT; };
-		7357BA9BD33DD23B41898B81 /* include_juce_audio_processors_ara.cpp */ /* include_juce_audio_processors_ara.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = include_juce_audio_processors_ara.cpp; path = ../../JuceLibraryCode/include_juce_audio_processors_ara.cpp; sourceTree = SOURCE_ROOT; };
+		75E9FDF114B574026C8DE9E1 /* juce_audio_processors_headless */ /* juce_audio_processors_headless */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_audio_processors_headless; path = /Applications/JUCE/modules/juce_audio_processors_headless; sourceTree = "<absolute>"; };
+		7975625B437912238C9FD0E4 /* include_juce_audio_processors_headless_lv2_libs.cpp */ /* include_juce_audio_processors_headless_lv2_libs.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = include_juce_audio_processors_headless_lv2_libs.cpp; path = ../../JuceLibraryCode/include_juce_audio_processors_headless_lv2_libs.cpp; sourceTree = SOURCE_ROOT; };
+		7D47CCE2BBE39F2D42CE0EEF /* include_juce_gui_basics_3.cpp */ /* include_juce_gui_basics_3.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = include_juce_gui_basics_3.cpp; path = ../../JuceLibraryCode/include_juce_gui_basics_3.cpp; sourceTree = SOURCE_ROOT; };
 		7DDC3CE78DFA99483606D958 /* CoreText.framework */ /* CoreText.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreText.framework; path = System/Library/Frameworks/CoreText.framework; sourceTree = SDKROOT; };
 		807C235BB7628BE13F97C899 /* SceneManager.cpp */ /* SceneManager.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = SceneManager.cpp; path = ../../../../Serpe/Source/Managers/SceneManager.cpp; sourceTree = SOURCE_ROOT; };
 		80D9AED56B49772CAEC8C1F6 /* PatternEngine.cpp */ /* PatternEngine.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = PatternEngine.cpp; path = ../../../../Serpe/Source/Core/PatternEngine.cpp; sourceTree = SOURCE_ROOT; };
@@ -130,6 +140,7 @@
 		982A0F098E1B38DCC2ED0B6E /* LaunchScreen.storyboard */ /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = LaunchScreen.storyboard; sourceTree = SOURCE_ROOT; };
 		99074112F6FC3D45232CBF7A /* PatternUtils.h */ /* PatternUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = PatternUtils.h; path = ../../../../Serpe/Source/Core/PatternUtils.h; sourceTree = SOURCE_ROOT; };
 		9AC4ED73FCDD037F86D4E845 /* plugin-icon-32.png */ /* plugin-icon-32.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "plugin-icon-32.png"; path = "../../plugin-icon-32.png"; sourceTree = SOURCE_ROOT; };
+		9F8B203A2F863A5509AC2D2B /* include_juce_audio_processors_headless_ara.cpp */ /* include_juce_audio_processors_headless_ara.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = include_juce_audio_processors_headless_ara.cpp; path = ../../JuceLibraryCode/include_juce_audio_processors_headless_ara.cpp; sourceTree = SOURCE_ROOT; };
 		A09D2DEF7594CE9DF855F438 /* include_juce_events.mm */ /* include_juce_events.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_events.mm; path = ../../JuceLibraryCode/include_juce_events.mm; sourceTree = SOURCE_ROOT; };
 		A3FAE436B2288E967CCF3BEB /* Accelerate.framework */ /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 		A568B45AB5C61E2C2409038C /* PluginProcessor.h */ /* PluginProcessor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = PluginProcessor.h; path = ../../../../Serpe/Source/Platform/PluginProcessor.h; sourceTree = SOURCE_ROOT; };
@@ -139,6 +150,9 @@
 		B4F1CFDA514E0C34F3B5E9EC /* JuceHeader.h */ /* JuceHeader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = JuceHeader.h; path = ../../JuceLibraryCode/JuceHeader.h; sourceTree = SOURCE_ROOT; };
 		B5F1276393E41812D32CF56B /* AVFoundation.framework */ /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		B67F5F615B3BF085AFF94D1D /* AUv3 AppExtension */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = Serpe.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		BA8E28EEDEA1582446A95849 /* include_juce_gui_basics_2.cpp */ /* include_juce_gui_basics_2.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = include_juce_gui_basics_2.cpp; path = ../../JuceLibraryCode/include_juce_gui_basics_2.cpp; sourceTree = SOURCE_ROOT; };
+		BBC301EC68AC1F8A39FCC41D /* include_juce_audio_processors_headless.mm */ /* include_juce_audio_processors_headless.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_audio_processors_headless.mm; path = ../../JuceLibraryCode/include_juce_audio_processors_headless.mm; sourceTree = SOURCE_ROOT; };
+		BC5F6C52538DD1D14838F605 /* include_juce_gui_basics_5.cpp */ /* include_juce_gui_basics_5.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = include_juce_gui_basics_5.cpp; path = ../../JuceLibraryCode/include_juce_gui_basics_5.cpp; sourceTree = SOURCE_ROOT; };
 		BD04B4C14C5C149CDFD271DC /* QuartzCore.framework */ /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		C001989156DC91A65EE73CFD /* include_juce_graphics.mm */ /* include_juce_graphics.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_graphics.mm; path = ../../JuceLibraryCode/include_juce_graphics.mm; sourceTree = SOURCE_ROOT; };
 		C3CC02064DF926A8861925F3 /* QuantizationEngine.cpp */ /* QuantizationEngine.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = QuantizationEngine.cpp; path = ../../../../Serpe/Source/Core/QuantizationEngine.cpp; sourceTree = SOURCE_ROOT; };
@@ -152,6 +166,7 @@
 		D627B674554C5BAD088EAB75 /* Standalone_Plugin.entitlements */ /* Standalone_Plugin.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Standalone_Plugin.entitlements; path = Standalone_Plugin.entitlements; sourceTree = SOURCE_ROOT; };
 		D7BD68A510F734723F1FF381 /* AUv3_AppExtension.entitlements */ /* AUv3_AppExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = AUv3_AppExtension.entitlements; path = AUv3_AppExtension.entitlements; sourceTree = SOURCE_ROOT; };
 		DAD0868F1CD0F1C027AC636A /* PluginProcessor.cpp */ /* PluginProcessor.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = PluginProcessor.cpp; path = ../../../../Serpe/Source/Platform/PluginProcessor.cpp; sourceTree = SOURCE_ROOT; };
+		DC361C8F7F81C1A96D591E47 /* include_juce_gui_basics_4.cpp */ /* include_juce_gui_basics_4.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = include_juce_gui_basics_4.cpp; path = ../../JuceLibraryCode/include_juce_gui_basics_4.cpp; sourceTree = SOURCE_ROOT; };
 		DD821D21B2B2776E11B78456 /* Shared_Code.entitlements */ /* Shared_Code.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Shared_Code.entitlements; path = Shared_Code.entitlements; sourceTree = SOURCE_ROOT; };
 		E3056A93E56C57C2D18ACAC7 /* BinaryData.cpp */ /* BinaryData.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = BinaryData.cpp; path = ../../JuceLibraryCode/BinaryData.cpp; sourceTree = SOURCE_ROOT; };
 		E8529E8A50393BC6EBE8329B /* PluginEditor.cpp */ /* PluginEditor.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = PluginEditor.cpp; path = ../../../../Serpe/Source/Platform/PluginEditor.cpp; sourceTree = SOURCE_ROOT; };
@@ -185,6 +200,7 @@
 				85279306B5675B9BE9894D76,
 				152C638F68F0C303A090A3FA,
 				04B0786AE3B852F17DD7769D,
+				435B10E45F6497472DE4AAB8,
 				BC7B9C47985D2C01BBD895DD,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -209,6 +225,7 @@
 				85279306B5675B9BE9894D76,
 				152C638F68F0C303A090A3FA,
 				04B0786AE3B852F17DD7769D,
+				435B10E45F6497472DE4AAB8,
 				BC7B9C47985D2C01BBD895DD,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -228,8 +245,9 @@
 				A90245DE114CB93810FED4AD,
 				D4D7E8EACC9131771CD74550,
 				C9409414989EF6EDB8466B9B,
-				7357BA9BD33DD23B41898B81,
-				70C63074860D29F9A5DCF563,
+				BBC301EC68AC1F8A39FCC41D,
+				9F8B203A2F863A5509AC2D2B,
+				7975625B437912238C9FD0E4,
 				C7FF494611523F50FBB7D9D6,
 				527F45141E5715FDD3BCAFE3,
 				F3DFBAE770987A03D2154B57,
@@ -237,7 +255,12 @@
 				A09D2DEF7594CE9DF855F438,
 				C001989156DC91A65EE73CFD,
 				1D3C8AAF31B4FBA0BAAE4DAE,
+				6B84895C9553CA028200EF24,
 				FEEBF4AB1B1FD1561FA3A0CB,
+				BA8E28EEDEA1582446A95849,
+				7D47CCE2BBE39F2D42CE0EEF,
+				DC361C8F7F81C1A96D591E47,
+				BC5F6C52538DD1D14838F605,
 				2190A2D7BDD8BC6F23E8A1E3,
 				B4F1CFDA514E0C34F3B5E9EC,
 				36EF793B75782209A6E7AEC7,
@@ -300,6 +323,7 @@
 				2321222BD5F35D9D35A4CA5D,
 				28737EB3D2CF313B9B10109C,
 				5A1212C77FC7D9E9132CBD2A,
+				286E77FAA77866FE31AC5703,
 				C445022394E69507C645C379,
 			);
 			name = Frameworks;
@@ -319,6 +343,7 @@
 			isa = PBXGroup;
 			children = (
 				79F35344D1B343D736B1BA94,
+				BB56E471DC0581EEE43720CC,
 				2CD83623C912D4CE2880DBAF,
 				361DF8FD2A06E7A26B6A13BD,
 				5EBDD1D7873412E5E31B0C04,
@@ -363,6 +388,14 @@
 			name = Source;
 			sourceTree = "<group>";
 		};
+		BB56E471DC0581EEE43720CC /* JUCE Modules */ = {
+			isa = PBXGroup;
+			children = (
+				75E9FDF114B574026C8DE9E1,
+			);
+			name = "JUCE Modules";
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -388,7 +421,7 @@
 				A324D1457C8A8F32DE729CC8,
 				89800D007AC1EA75F04CEADE,
 				93C20B7784677FDE8C2F1B07,
-				7886DF73A0503EAA784512E5,
+				985A1DC0F4C2722106087B58,
 			);
 			buildRules = (
 			);
@@ -603,8 +636,9 @@
 				41B51C1EC308D6935117B6D0,
 				02A279B893E32DA28F3F9B1E,
 				8634E3E6A6E2D03C7F427C5C,
-				1170684BB1484ABA67BF0769,
-				B1B0D5B027314703240996A8,
+				4A56AA2AC9DED8C0A1A59C25,
+				0DF8E9820FA3496C0FD87C31,
+				E8818B8E51EF3563D712DC99,
 				872B5FF0BC2B9465CC84B6E9,
 				BBBA99E5F5E772348BCEB4B4,
 				9BB3076A46D1ED1EB6E27587,
@@ -612,7 +646,12 @@
 				F32C9845ACC76C51E942E47E,
 				A37728BFE6913C027EFC095C,
 				4A1E122D5FD139BBF61FD08D,
+				C13D7EA420CAB685CBEA15B0,
 				FAA6F2DEEB0F093A7FA5A56E,
+				6F888CE85F224FC30B7F1A9F,
+				36075780FCCBFDFDF5C32054,
+				BA294C923626E43311C2362A,
+				4AD003A2EBFDD45B95BC22C0,
 				7E209D1FCEEC94B794DD1F1F,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -650,7 +689,6 @@
 		1DE9C96930DCE854E5BE1885 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
@@ -670,6 +708,7 @@
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = NO;
@@ -700,15 +739,16 @@
 		4B61CFC908EE49BF70C20D8C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CODE_SIGN_ENTITLEMENTS = "AUv3_AppExtension.entitlements";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				COMBINE_HIDPI_IMAGES = YES;
 				CONFIGURATION_BUILD_DIR = "$(PROJECT_DIR)/build/$(CONFIGURATION)";
 				DEAD_CODE_STRIPPING = YES;
+				DEPLOYMENT_POSTPROCESSING = NO;
 				DEVELOPMENT_TEAM = BKHL8M84YX;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
 				GCC_OPTIMIZATION_LEVEL = 3;
@@ -716,12 +756,13 @@
 					"_NDEBUG=1",
 					"NDEBUG=1",
 					"JUCE_CONTENT_SHARING=1",
-					"JUCE_PROJUCER_VERSION=0x80008",
+					"JUCE_PROJUCER_VERSION=0x8000d",
 					"JUCE_MODULE_AVAILABLE_juce_audio_basics=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_devices=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_formats=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_plugin_client=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_processors=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_processors_headless=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_utils=1",
 					"JUCE_MODULE_AVAILABLE_juce_core=1",
 					"JUCE_MODULE_AVAILABLE_juce_data_structures=1",
@@ -793,17 +834,17 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				HEADER_SEARCH_PATHS = (
 					"$(SRCROOT)/../../JuceLibraryCode",
-					"/Users/alex/JUCE/modules",
-					"/Users/alex/JUCE/modules/juce_audio_plugin_client/AU",
+					"/Applications/JUCE/modules",
+					"/Applications/JUCE/modules/juce_audio_plugin_client/AU",
 					"$(inherited)",
 				);
 				INFOPLIST_FILE = Info-AUv3_AppExtension.plist;
 				INFOPLIST_PREPROCESS = NO;
 				LLVM_LTO = YES;
-				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/../../JuceLibraryCode /Users/alex/JUCE/modules /Users/alex/JUCE/modules/juce_audio_plugin_client/AU";
-				OTHER_CFLAGS = "-Wno-unused-variable -Wno-unused-parameter";
-				OTHER_CPLUSPLUSFLAGS = "-Wno-unused-variable -Wno-unused-parameter";
-				OTHER_LDFLAGS = "-lSerpe";
+				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/../../JuceLibraryCode /Applications/JUCE/modules /Applications/JUCE/modules/juce_audio_plugin_client/AU";
+				OTHER_CFLAGS = "$(inherited) -Wno-unused-variable -Wno-unused-parameter";
+				OTHER_CPLUSPLUSFLAGS = "$(inherited) -Wno-unused-variable -Wno-unused-parameter";
+				OTHER_LDFLAGS = "$(inherited) -lSerpe";
 				PRODUCT_BUNDLE_IDENTIFIER = com.enkerli.serpe.serpeAUv3;
 				PRODUCT_NAME = "Serpe";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -814,15 +855,16 @@
 		76D263ABAFABD427C9EBB141 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CODE_SIGN_ENTITLEMENTS = "AUv3_AppExtension.entitlements";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				COMBINE_HIDPI_IMAGES = YES;
 				CONFIGURATION_BUILD_DIR = "$(PROJECT_DIR)/build/$(CONFIGURATION)";
 				COPY_PHASE_STRIP = NO;
+				DEPLOYMENT_POSTPROCESSING = NO;
 				DEVELOPMENT_TEAM = BKHL8M84YX;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_OPTIMIZATION_LEVEL = 0;
@@ -830,12 +872,13 @@
 					"_DEBUG=1",
 					"DEBUG=1",
 					"JUCE_CONTENT_SHARING=1",
-					"JUCE_PROJUCER_VERSION=0x80008",
+					"JUCE_PROJUCER_VERSION=0x8000d",
 					"JUCE_MODULE_AVAILABLE_juce_audio_basics=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_devices=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_formats=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_plugin_client=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_processors=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_processors_headless=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_utils=1",
 					"JUCE_MODULE_AVAILABLE_juce_core=1",
 					"JUCE_MODULE_AVAILABLE_juce_data_structures=1",
@@ -907,16 +950,16 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				HEADER_SEARCH_PATHS = (
 					"$(SRCROOT)/../../JuceLibraryCode",
-					"/Users/alex/JUCE/modules",
-					"/Users/alex/JUCE/modules/juce_audio_plugin_client/AU",
+					"/Applications/JUCE/modules",
+					"/Applications/JUCE/modules/juce_audio_plugin_client/AU",
 					"$(inherited)",
 				);
 				INFOPLIST_FILE = Info-AUv3_AppExtension.plist;
 				INFOPLIST_PREPROCESS = NO;
-				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/../../JuceLibraryCode /Users/alex/JUCE/modules /Users/alex/JUCE/modules/juce_audio_plugin_client/AU";
-				OTHER_CFLAGS = "-Wno-unused-variable -Wno-unused-parameter";
-				OTHER_CPLUSPLUSFLAGS = "-Wno-unused-variable -Wno-unused-parameter";
-				OTHER_LDFLAGS = "-lSerpe";
+				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/../../JuceLibraryCode /Applications/JUCE/modules /Applications/JUCE/modules/juce_audio_plugin_client/AU";
+				OTHER_CFLAGS = "$(inherited) -Wno-unused-variable -Wno-unused-parameter";
+				OTHER_CPLUSPLUSFLAGS = "$(inherited) -Wno-unused-variable -Wno-unused-parameter";
+				OTHER_LDFLAGS = "$(inherited) -lSerpe";
 				PRODUCT_BUNDLE_IDENTIFIER = com.enkerli.serpe.serpeAUv3;
 				PRODUCT_NAME = "Serpe";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -927,15 +970,16 @@
 		9D43AE0188618F8666B18C83 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CODE_SIGN_ENTITLEMENTS = "Shared_Code.entitlements";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				COMBINE_HIDPI_IMAGES = YES;
 				CONFIGURATION_BUILD_DIR = "$(PROJECT_DIR)/build/$(CONFIGURATION)";
 				DEAD_CODE_STRIPPING = YES;
+				DEPLOYMENT_POSTPROCESSING = NO;
 				DEVELOPMENT_TEAM = BKHL8M84YX;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
 				GCC_OPTIMIZATION_LEVEL = 3;
@@ -943,12 +987,13 @@
 					"_NDEBUG=1",
 					"NDEBUG=1",
 					"JUCE_CONTENT_SHARING=1",
-					"JUCE_PROJUCER_VERSION=0x80008",
+					"JUCE_PROJUCER_VERSION=0x8000d",
 					"JUCE_MODULE_AVAILABLE_juce_audio_basics=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_devices=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_formats=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_plugin_client=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_processors=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_processors_headless=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_utils=1",
 					"JUCE_MODULE_AVAILABLE_juce_core=1",
 					"JUCE_MODULE_AVAILABLE_juce_data_structures=1",
@@ -1021,15 +1066,16 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				HEADER_SEARCH_PATHS = (
 					"$(SRCROOT)/../../JuceLibraryCode",
-					"/Users/alex/JUCE/modules",
-					"/Users/alex/JUCE/modules/juce_audio_plugin_client/AU",
+					"/Applications/JUCE/modules",
+					"/Applications/JUCE/modules/juce_audio_plugin_client/AU",
 					"$(inherited)",
 				);
 				INSTALL_PATH = "@executable_path/Frameworks";
 				LLVM_LTO = YES;
-				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/../../JuceLibraryCode /Users/alex/JUCE/modules /Users/alex/JUCE/modules/juce_audio_plugin_client/AU";
-				OTHER_CFLAGS = "-Wno-unused-variable -Wno-unused-parameter";
-				OTHER_CPLUSPLUSFLAGS = "-Wno-unused-variable -Wno-unused-parameter";
+				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/../../JuceLibraryCode /Applications/JUCE/modules /Applications/JUCE/modules/juce_audio_plugin_client/AU";
+				OTHER_CFLAGS = "$(inherited) -Wno-unused-variable -Wno-unused-parameter";
+				OTHER_CPLUSPLUSFLAGS = "$(inherited) -Wno-unused-variable -Wno-unused-parameter";
+				OTHER_LDFLAGS = "$(inherited)";
 				PRODUCT_BUNDLE_IDENTIFIER = com.enkerli.serpe;
 				PRODUCT_NAME = "Serpe";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1041,15 +1087,16 @@
 		A16EF42F379CF271E8ABA3F7 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CODE_SIGN_ENTITLEMENTS = "Standalone_Plugin.entitlements";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				COMBINE_HIDPI_IMAGES = YES;
 				CONFIGURATION_BUILD_DIR = "$(PROJECT_DIR)/build/$(CONFIGURATION)";
 				COPY_PHASE_STRIP = NO;
+				DEPLOYMENT_POSTPROCESSING = NO;
 				DEVELOPMENT_TEAM = BKHL8M84YX;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_OPTIMIZATION_LEVEL = 0;
@@ -1057,12 +1104,13 @@
 					"_DEBUG=1",
 					"DEBUG=1",
 					"JUCE_CONTENT_SHARING=1",
-					"JUCE_PROJUCER_VERSION=0x80008",
+					"JUCE_PROJUCER_VERSION=0x8000d",
 					"JUCE_MODULE_AVAILABLE_juce_audio_basics=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_devices=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_formats=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_plugin_client=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_processors=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_processors_headless=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_utils=1",
 					"JUCE_MODULE_AVAILABLE_juce_core=1",
 					"JUCE_MODULE_AVAILABLE_juce_data_structures=1",
@@ -1134,16 +1182,16 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				HEADER_SEARCH_PATHS = (
 					"$(SRCROOT)/../../JuceLibraryCode",
-					"/Users/alex/JUCE/modules",
-					"/Users/alex/JUCE/modules/juce_audio_plugin_client/AU",
+					"/Applications/JUCE/modules",
+					"/Applications/JUCE/modules/juce_audio_plugin_client/AU",
 					"$(inherited)",
 				);
 				INFOPLIST_FILE = Info-Standalone_Plugin.plist;
 				INFOPLIST_PREPROCESS = NO;
-				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/../../JuceLibraryCode /Users/alex/JUCE/modules /Users/alex/JUCE/modules/juce_audio_plugin_client/AU";
-				OTHER_CFLAGS = "-Wno-unused-variable -Wno-unused-parameter";
-				OTHER_CPLUSPLUSFLAGS = "-Wno-unused-variable -Wno-unused-parameter";
-				OTHER_LDFLAGS = "-lSerpe";
+				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/../../JuceLibraryCode /Applications/JUCE/modules /Applications/JUCE/modules/juce_audio_plugin_client/AU";
+				OTHER_CFLAGS = "$(inherited) -Wno-unused-variable -Wno-unused-parameter";
+				OTHER_CPLUSPLUSFLAGS = "$(inherited) -Wno-unused-variable -Wno-unused-parameter";
+				OTHER_LDFLAGS = "$(inherited) -lSerpe";
 				PRODUCT_BUNDLE_IDENTIFIER = com.enkerli.serpe;
 				PRODUCT_NAME = "Serpe";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1154,15 +1202,16 @@
 		C215DB0E1EA35E6B0CF498D9 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CODE_SIGN_ENTITLEMENTS = "All.entitlements";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				COMBINE_HIDPI_IMAGES = YES;
 				CONFIGURATION_BUILD_DIR = "$(PROJECT_DIR)/build/$(CONFIGURATION)";
 				COPY_PHASE_STRIP = NO;
+				DEPLOYMENT_POSTPROCESSING = NO;
 				DEVELOPMENT_TEAM = BKHL8M84YX;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_OPTIMIZATION_LEVEL = 0;
@@ -1170,12 +1219,13 @@
 					"_DEBUG=1",
 					"DEBUG=1",
 					"JUCE_CONTENT_SHARING=1",
-					"JUCE_PROJUCER_VERSION=0x80008",
+					"JUCE_PROJUCER_VERSION=0x8000d",
 					"JUCE_MODULE_AVAILABLE_juce_audio_basics=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_devices=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_formats=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_plugin_client=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_processors=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_processors_headless=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_utils=1",
 					"JUCE_MODULE_AVAILABLE_juce_core=1",
 					"JUCE_MODULE_AVAILABLE_juce_data_structures=1",
@@ -1247,14 +1297,14 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				HEADER_SEARCH_PATHS = (
 					"$(SRCROOT)/../../JuceLibraryCode",
-					"/Users/alex/JUCE/modules",
-					"/Users/alex/JUCE/modules/juce_audio_plugin_client/AU",
+					"/Applications/JUCE/modules",
+					"/Applications/JUCE/modules/juce_audio_plugin_client/AU",
 					"$(inherited)",
 				);
-				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/../../JuceLibraryCode /Users/alex/JUCE/modules /Users/alex/JUCE/modules/juce_audio_plugin_client/AU";
-				OTHER_CFLAGS = "-Wno-unused-variable -Wno-unused-parameter";
-				OTHER_CPLUSPLUSFLAGS = "-Wno-unused-variable -Wno-unused-parameter";
-				OTHER_LDFLAGS = "-lSerpe";
+				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/../../JuceLibraryCode /Applications/JUCE/modules /Applications/JUCE/modules/juce_audio_plugin_client/AU";
+				OTHER_CFLAGS = "$(inherited) -Wno-unused-variable -Wno-unused-parameter";
+				OTHER_CPLUSPLUSFLAGS = "$(inherited) -Wno-unused-variable -Wno-unused-parameter";
+				OTHER_LDFLAGS = "$(inherited) -lSerpe";
 				PRODUCT_BUNDLE_IDENTIFIER = com.enkerli.serpe;
 				PRODUCT_NAME = "Serpe";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1265,15 +1315,16 @@
 		C595017CD7063E59923B7DB1 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CODE_SIGN_ENTITLEMENTS = "All.entitlements";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				COMBINE_HIDPI_IMAGES = YES;
 				CONFIGURATION_BUILD_DIR = "$(PROJECT_DIR)/build/$(CONFIGURATION)";
 				DEAD_CODE_STRIPPING = YES;
+				DEPLOYMENT_POSTPROCESSING = NO;
 				DEVELOPMENT_TEAM = BKHL8M84YX;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
 				GCC_OPTIMIZATION_LEVEL = 3;
@@ -1281,12 +1332,13 @@
 					"_NDEBUG=1",
 					"NDEBUG=1",
 					"JUCE_CONTENT_SHARING=1",
-					"JUCE_PROJUCER_VERSION=0x80008",
+					"JUCE_PROJUCER_VERSION=0x8000d",
 					"JUCE_MODULE_AVAILABLE_juce_audio_basics=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_devices=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_formats=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_plugin_client=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_processors=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_processors_headless=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_utils=1",
 					"JUCE_MODULE_AVAILABLE_juce_core=1",
 					"JUCE_MODULE_AVAILABLE_juce_data_structures=1",
@@ -1358,15 +1410,15 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				HEADER_SEARCH_PATHS = (
 					"$(SRCROOT)/../../JuceLibraryCode",
-					"/Users/alex/JUCE/modules",
-					"/Users/alex/JUCE/modules/juce_audio_plugin_client/AU",
+					"/Applications/JUCE/modules",
+					"/Applications/JUCE/modules/juce_audio_plugin_client/AU",
 					"$(inherited)",
 				);
 				LLVM_LTO = YES;
-				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/../../JuceLibraryCode /Users/alex/JUCE/modules /Users/alex/JUCE/modules/juce_audio_plugin_client/AU";
-				OTHER_CFLAGS = "-Wno-unused-variable -Wno-unused-parameter";
-				OTHER_CPLUSPLUSFLAGS = "-Wno-unused-variable -Wno-unused-parameter";
-				OTHER_LDFLAGS = "-lSerpe";
+				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/../../JuceLibraryCode /Applications/JUCE/modules /Applications/JUCE/modules/juce_audio_plugin_client/AU";
+				OTHER_CFLAGS = "$(inherited) -Wno-unused-variable -Wno-unused-parameter";
+				OTHER_CPLUSPLUSFLAGS = "$(inherited) -Wno-unused-variable -Wno-unused-parameter";
+				OTHER_LDFLAGS = "$(inherited) -lSerpe";
 				PRODUCT_BUNDLE_IDENTIFIER = com.enkerli.serpe;
 				PRODUCT_NAME = "Serpe";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1377,15 +1429,16 @@
 		CD3FB2DF233CAC9C57B316AD /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CODE_SIGN_ENTITLEMENTS = "Shared_Code.entitlements";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				COMBINE_HIDPI_IMAGES = YES;
 				CONFIGURATION_BUILD_DIR = "$(PROJECT_DIR)/build/$(CONFIGURATION)";
 				COPY_PHASE_STRIP = NO;
+				DEPLOYMENT_POSTPROCESSING = NO;
 				DEVELOPMENT_TEAM = BKHL8M84YX;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_OPTIMIZATION_LEVEL = 0;
@@ -1393,12 +1446,13 @@
 					"_DEBUG=1",
 					"DEBUG=1",
 					"JUCE_CONTENT_SHARING=1",
-					"JUCE_PROJUCER_VERSION=0x80008",
+					"JUCE_PROJUCER_VERSION=0x8000d",
 					"JUCE_MODULE_AVAILABLE_juce_audio_basics=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_devices=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_formats=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_plugin_client=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_processors=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_processors_headless=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_utils=1",
 					"JUCE_MODULE_AVAILABLE_juce_core=1",
 					"JUCE_MODULE_AVAILABLE_juce_data_structures=1",
@@ -1471,14 +1525,15 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				HEADER_SEARCH_PATHS = (
 					"$(SRCROOT)/../../JuceLibraryCode",
-					"/Users/alex/JUCE/modules",
-					"/Users/alex/JUCE/modules/juce_audio_plugin_client/AU",
+					"/Applications/JUCE/modules",
+					"/Applications/JUCE/modules/juce_audio_plugin_client/AU",
 					"$(inherited)",
 				);
 				INSTALL_PATH = "@executable_path/Frameworks";
-				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/../../JuceLibraryCode /Users/alex/JUCE/modules /Users/alex/JUCE/modules/juce_audio_plugin_client/AU";
-				OTHER_CFLAGS = "-Wno-unused-variable -Wno-unused-parameter";
-				OTHER_CPLUSPLUSFLAGS = "-Wno-unused-variable -Wno-unused-parameter";
+				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/../../JuceLibraryCode /Applications/JUCE/modules /Applications/JUCE/modules/juce_audio_plugin_client/AU";
+				OTHER_CFLAGS = "$(inherited) -Wno-unused-variable -Wno-unused-parameter";
+				OTHER_CPLUSPLUSFLAGS = "$(inherited) -Wno-unused-variable -Wno-unused-parameter";
+				OTHER_LDFLAGS = "$(inherited)";
 				PRODUCT_BUNDLE_IDENTIFIER = com.enkerli.serpe;
 				PRODUCT_NAME = "Serpe";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1490,7 +1545,6 @@
 		EE7FE91717635A31DBB34D69 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
@@ -1510,6 +1564,7 @@
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = NO;
@@ -1541,15 +1596,16 @@
 		F887E954E14020AC0C6D9749 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CODE_SIGN_ENTITLEMENTS = "Standalone_Plugin.entitlements";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				COMBINE_HIDPI_IMAGES = YES;
 				CONFIGURATION_BUILD_DIR = "$(PROJECT_DIR)/build/$(CONFIGURATION)";
 				DEAD_CODE_STRIPPING = YES;
+				DEPLOYMENT_POSTPROCESSING = NO;
 				DEVELOPMENT_TEAM = BKHL8M84YX;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
 				GCC_OPTIMIZATION_LEVEL = 3;
@@ -1557,12 +1613,13 @@
 					"_NDEBUG=1",
 					"NDEBUG=1",
 					"JUCE_CONTENT_SHARING=1",
-					"JUCE_PROJUCER_VERSION=0x80008",
+					"JUCE_PROJUCER_VERSION=0x8000d",
 					"JUCE_MODULE_AVAILABLE_juce_audio_basics=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_devices=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_formats=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_plugin_client=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_processors=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_processors_headless=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_utils=1",
 					"JUCE_MODULE_AVAILABLE_juce_core=1",
 					"JUCE_MODULE_AVAILABLE_juce_data_structures=1",
@@ -1634,17 +1691,17 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				HEADER_SEARCH_PATHS = (
 					"$(SRCROOT)/../../JuceLibraryCode",
-					"/Users/alex/JUCE/modules",
-					"/Users/alex/JUCE/modules/juce_audio_plugin_client/AU",
+					"/Applications/JUCE/modules",
+					"/Applications/JUCE/modules/juce_audio_plugin_client/AU",
 					"$(inherited)",
 				);
 				INFOPLIST_FILE = Info-Standalone_Plugin.plist;
 				INFOPLIST_PREPROCESS = NO;
 				LLVM_LTO = YES;
-				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/../../JuceLibraryCode /Users/alex/JUCE/modules /Users/alex/JUCE/modules/juce_audio_plugin_client/AU";
-				OTHER_CFLAGS = "-Wno-unused-variable -Wno-unused-parameter";
-				OTHER_CPLUSPLUSFLAGS = "-Wno-unused-variable -Wno-unused-parameter";
-				OTHER_LDFLAGS = "-lSerpe";
+				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/../../JuceLibraryCode /Applications/JUCE/modules /Applications/JUCE/modules/juce_audio_plugin_client/AU";
+				OTHER_CFLAGS = "$(inherited) -Wno-unused-variable -Wno-unused-parameter";
+				OTHER_CPLUSPLUSFLAGS = "$(inherited) -Wno-unused-variable -Wno-unused-parameter";
+				OTHER_LDFLAGS = "$(inherited) -lSerpe";
 				PRODUCT_BUNDLE_IDENTIFIER = com.enkerli.serpe;
 				PRODUCT_NAME = "Serpe";
 				PROVISIONING_PROFILE_SPECIFIER = "";
