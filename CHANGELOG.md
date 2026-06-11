@@ -1,5 +1,26 @@
 # Rhythm Pattern Explorer - Changelog
 
+## Unreleased — ⚠️ BREAKING: strict MSB-first numeric notation
+
+Binary/octal/decimal/hex pattern notation now follows the suite-wide
+convention (see music-suite CONVENTIONS.md): **the first step is the
+leftmost bit, i.e. the most significant bit of an ordinary numeral.**
+
+- `1011` = 0xB = 11 (hit · rest · hit · hit); tresillo `10010010` = **0x92**
+  = 146 (previously 0x49 under the old leftmost-=-LSB rule).
+- Hex/octal digits are no longer reversed on input; hex/octal/decimal
+  display renders the plain numeral (leading zero digits dropped; the `:N`
+  step count preserves leading rests).
+- Applies identically to the webapp (`PatternConverter`) and the plugin
+  (`UPIParser::parseDecimal`/`parseNumericPattern`,
+  `PatternUtils::getHexString`/`getOctalString`/`getDecimalString`).
+- **Saved presets or documents that stored patterns in hex/octal/decimal
+  notation under the old convention will parse differently.** Binary
+  notation (`b…`), Euclidean (`E(k,n)`), polygon, and onset-array forms
+  are unaffected.
+- Verified: webapp converter agrees with `@enkerli/theory` codecs on
+  1,000 randomized patterns (decimal, hex, round-trip).
+
 ## v0.02a - Major Timing Fixes Release
 
 ### 🎯 **Critical Timing Issues Resolved**

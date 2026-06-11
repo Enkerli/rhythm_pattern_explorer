@@ -78,37 +78,35 @@ class PatternConverter {
     }
     
     /**
-     * Convert binary string to decimal representation using strict left-to-right notation
+     * Convert binary string to decimal (strict MSB-first numeral)
      * 
      * @param {string} binaryString - Binary pattern string
      * @returns {number} Decimal representation of the pattern
      * 
      * @example
-     * PatternConverter.toDecimal("1000")  // Left-to-right notation
-     * // Returns: 1 (leftmost bit = LSB = 2^0 = 1)
+     * PatternConverter.toDecimal("1000")  // MSB-first numeral
+     * // Returns: 8 (leftmost bit = MSB = 2^3 = 8)
      * 
-     * PatternConverter.toDecimal("0100")  // Left-to-right notation  
-     * // Returns: 2 (second bit = 2^1 = 2)
+     * PatternConverter.toDecimal("0100")  // MSB-first numeral
+     * // Returns: 4 (second bit = 2^2 = 4)
      * 
-     * PatternConverter.toDecimal("10001111")  // Left-to-right notation
-     * // Returns: 31 (0x1F in hex)
+     * PatternConverter.toDecimal("10001111")  // MSB-first numeral
+     * // Returns: 143 (0x8F in hex)
      * 
-     * Strict Left-to-Right Notation (matches plugin implementation):
-     * - Leftmost bit has least significant value (2^0)
-     * - Each subsequent bit doubles in value (2^1, 2^2, etc.)
-     * - This ensures 1000 = 0x1, 0100 = 0x2, 0010 = 0x4, 0001 = 0x8
-     * - Consistent with plugin hex display for pattern synchronization
+     * Strict MSB-first notation (suite-wide convention, matches plugin):
+     * - The pattern string is an ordinary binary numeral
+     * - First step = leftmost bit = most significant bit
+     * - This ensures 1000 = 0x8, 0100 = 0x4, 0010 = 0x2, 0001 = 0x1
+     * - 1011 = 0xB; tresillo 10010010 = 0x92
      */
     static toDecimal(binaryString) {
         if (!binaryString) return 0;
         
-        // Use strict left-to-right notation: leftmost bit is LSB
+        // Strict MSB-first: the binary string is an ordinary binary numeral
+        // (first step = leftmost bit = most significant bit).
         let decimal = 0;
         for (let i = 0; i < binaryString.length; i++) {
-            if (binaryString[i] === '1') {
-                // Left-to-right: bit at position i contributes 2^i
-                decimal |= (1 << i);
-            }
+            decimal = decimal * 2 + (binaryString[i] === '1' ? 1 : 0);
         }
         return decimal;
     }
@@ -122,7 +120,7 @@ class PatternConverter {
     }
     
     /**
-     * Convert pattern directly to hex using strict left-to-right nibble processing
+     * Convert pattern directly to hex (strict MSB-first numeral)
      * Matches plugin implementation for consistent hex representation
      */
     static toHexFromPattern(steps, stepCount) {
@@ -136,41 +134,19 @@ class PatternConverter {
     static toHexFromBinary(binaryString) {
         if (!binaryString) return '0x0';
         
-        let hex = '';
-        const stepCount = binaryString.length;
-        
-        // Process pattern in 4-bit groups from left to right
-        for (let groupStart = 0; groupStart < stepCount; groupStart += 4) {
-            let nibbleValue = 0;
-            
-            // Process 4 bits in this group (or fewer if at the end)
-            for (let bitInGroup = 0; bitInGroup < 4 && (groupStart + bitInGroup) < stepCount; bitInGroup++) {
-                if (binaryString[groupStart + bitInGroup] === '1') {
-                    // Left-to-right: first bit in group is LSB of this nibble
-                    nibbleValue |= (1 << bitInGroup);
-                }
-            }
-            
-            hex += nibbleValue.toString(16).toUpperCase();
-        }
-        
-        return '0x' + hex;
+        // Strict MSB-first: the pattern is an ordinary binary numeral,
+        // so its hex form is just that numeral in base 16.
+        // BigInt keeps long patterns (>32 steps) exact.
+        const value = BigInt('0b' + binaryString);
+        return '0x' + value.toString(16).toUpperCase();
     }
     
     /**
      * Convert decimal to binary with specified step count
      */
     static toBinaryFromDecimal(decimal, stepCount) {
-        const steps = new Array(stepCount).fill(false);
-        
-        // Set bits according to left-to-right notation
-        for (let i = 0; i < stepCount; i++) {
-            if (decimal & (1 << i)) {
-                steps[i] = true;
-            }
-        }
-        
-        return steps.map(step => step ? '1' : '0').join('');
+        // Strict MSB-first: left-pad the binary numeral to the step count.
+        return BigInt(decimal).toString(2).padStart(stepCount, '0');
     }
     
     /**
@@ -182,7 +158,7 @@ class PatternConverter {
     }
     
     /**
-     * Convert pattern directly to octal using strict left-to-right 3-bit processing
+     * Convert pattern directly to octal (strict MSB-first numeral)
      * Matches plugin implementation for consistent octal representation
      */
     static toOctalFromPattern(steps, stepCount) {
@@ -196,39 +172,23 @@ class PatternConverter {
     static toOctalFromBinary(binaryString) {
         if (!binaryString) return 'o0';
         
-        let octal = '';
-        const stepCount = binaryString.length;
-        
-        // Process pattern in 3-bit groups from left to right
-        for (let groupStart = 0; groupStart < stepCount; groupStart += 3) {
-            let octalDigit = 0;
-            
-            // Process 3 bits in this group (or fewer if at the end)
-            for (let bitInGroup = 0; bitInGroup < 3 && (groupStart + bitInGroup) < stepCount; bitInGroup++) {
-                if (binaryString[groupStart + bitInGroup] === '1') {
-                    // Left-to-right: first bit in group is LSB of this octal digit
-                    octalDigit |= (1 << bitInGroup);
-                }
-            }
-            
-            octal += octalDigit.toString();
-        }
-        
-        return 'o' + octal;
+        // Strict MSB-first: ordinary binary numeral rendered in base 8.
+        const value = BigInt('0b' + binaryString);
+        return 'o' + value.toString(8);
     }
     
     static fromDecimalWithSteps(decimal, stepCount) {
         if (decimal === 0) return { steps: new Array(stepCount).fill(false), stepCount };
         
-        // Convert using strict left-to-right notation (matches plugin implementation)
-        // where leftmost bit is LSB (least significant bit)
+        // Strict MSB-first: step 0 is the most significant bit of the
+        // stepCount-wide binary numeral.
         const steps = new Array(stepCount).fill(false);
-        
-        // Set bits according to left-to-right notation
-        for (let i = 0; i < stepCount; i++) {
-            if (decimal & (1 << i)) {
+        let value = BigInt(decimal);
+        for (let i = stepCount - 1; i >= 0; i--) {
+            if (value & 1n) {
                 steps[i] = true;
             }
+            value >>= 1n;
         }
         
         return {
@@ -251,12 +211,12 @@ class PatternConverter {
         if (numericDecimal === 0) return { steps: [false], stepCount: 1 };
         
         const stepCount = Math.max(minSteps, Math.floor(Math.log2(numericDecimal)) + 1);
-        // Use strict left-to-right notation (matches plugin implementation)
+        // Strict MSB-first numeral (matches plugin implementation)
         return this.fromDecimalWithSteps(numericDecimal, stepCount);
     }
     
     static fromHex(hexString) {
-        // Handle colon notation: "0x49:8" or "49:8"
+        // Handle colon notation: "0x92:8" or "49:8"
         if (hexString.includes(':')) {
             const [hexPart, stepsPart] = hexString.split(':');
             const stepCount = parseInt(stepsPart);
@@ -1342,7 +1302,7 @@ class UnifiedPatternParser {
             if (pattern) return pattern;
         }
         
-        // Hexadecimal notation: 0x49:8 or 49:8 (with step count) or 0x49 or 49 (if looks like hex)
+        // Hexadecimal notation: 0x92:8 or 92:8 (with step count) or 0x92 or 92 (if looks like hex)
         const hexMatch = cleaned.match(/^(0x)?([0-9a-f]+)(?::(\d+))?$/i);
         if (hexMatch && (hexMatch[1] || /[a-f]/i.test(hexMatch[2]))) {
             const pattern = PatternConverter.fromHex(cleaned);
@@ -1910,7 +1870,7 @@ class UnifiedPatternParser {
         
         // Regular pattern formatting
         const binary = PatternConverter.toBinary(pattern.steps, pattern.stepCount);
-        // Use strict left-to-right notation (matches plugin implementation)
+        // Strict MSB-first numeral (matches plugin implementation)
         const decimal = PatternConverter.toDecimal(binary);
         const hex = PatternConverter.toHexFromPattern(pattern.steps, pattern.stepCount);
         const octal = PatternConverter.toOctalFromPattern(pattern.steps, pattern.stepCount);

@@ -878,14 +878,15 @@ std::vector<bool> UPIParser::parseRandom(int onsets, int steps)
 
 std::vector<bool> UPIParser::parseDecimal(int decimal, int stepCount)
 {
-    std::vector<bool> pattern;
-    pattern.reserve(stepCount);
-    
-    // Convert decimal to binary, LEFT-TO-RIGHT: leftmost bit = LSB (least significant bit first)
-    // This gives strict left-to-right hex notation where 1000 = 0x1, 0100 = 0x2, etc.
-    for (int i = 0; i < stepCount; ++i)
+    // Strict MSB-first (suite-wide convention): step 0 is the most
+    // significant bit of the stepCount-wide binary numeral, so 1000 = 0x8,
+    // 1011 = 0xB, tresillo 10010010 = 0x92.
+    std::vector<bool> pattern(stepCount, false);
+    unsigned long long value = static_cast<unsigned long long>(decimal);
+    for (int i = stepCount - 1; i >= 0 && value > 0; --i)
     {
-        pattern.push_back((decimal & (1 << i)) != 0);
+        pattern[static_cast<size_t>(i)] = (value & 1ULL) != 0;
+        value >>= 1;
     }
     
     return pattern;
@@ -1517,11 +1518,10 @@ UPIParser::ParseResult UPIParser::parseNumericPattern(const juce::String& input,
             break;
             
         case NumericBase::Octal:
-            // Parse octal with strict left-to-right notation where octal digits are reversed
+            // Strict MSB-first: octal digits in ordinary order
             decimal = 0;
             
-            // Process octal digits in reverse order for left-to-right bit mapping
-            for (int i = content.length() - 1; i >= 0; --i)
+            for (int i = 0; i < content.length(); ++i)
             {
                 int octalDigit = content[i] - '0';
                 
@@ -1535,12 +1535,10 @@ UPIParser::ParseResult UPIParser::parseNumericPattern(const juce::String& input,
             break;
             
         case NumericBase::Hexadecimal:
-            // Parse hex with strict left-to-right notation where hex digits are reversed
-            // So 0x94 becomes 0x49 to produce left-to-right bit interpretation 
+            // Strict MSB-first: hex digits in ordinary order (0x92 = 10010010)
             decimal = 0;
             
-            // Process hex digits in reverse order for left-to-right bit mapping
-            for (int i = content.length() - 1; i >= 0; --i)
+            for (int i = 0; i < content.length(); ++i)
             {
                 int hexDigit;
                 if (content[i] >= '0' && content[i] <= '9')

@@ -324,10 +324,11 @@ namespace PatternUtils
     }
     
     /**
-     * LEFT-TO-RIGHT HEX NOTATION SYSTEM
+     * STRICT MSB-FIRST HEX NOTATION (suite-wide convention)
      * 
-     * Converts a binary pattern to hexadecimal using the plugin's unique left-to-right
-     * bit ordering system. This is the OPPOSITE of standard computer science notation
+     * Converts a binary pattern to hexadecimal by reading the pattern as an
+     * ordinary binary numeral: the first step is the leftmost (most
+     * significant) bit. This matches standard computer-science notation
      * but provides intuitive pattern input for musicians.
      * 
      * BIT ORDERING CONVENTION:
@@ -344,47 +345,42 @@ namespace PatternUtils
      * 
      * USER WORKFLOW:
      * 1. User types: 0x94:8
-     * 2. Input parser uses digit-reversal to handle left-to-right convention  
+     * 2. Input parser reads digits in ordinary order (standard numerals)
      * 3. Pattern engine generates: 10010010
      * 4. This function displays: 0x94 (using normal digit order)
      * 
      * This ensures round-trip consistency: input notation matches display notation.
      * 
      * @param pattern Binary pattern to convert
-     * @return Hex string in 0xABCD format using left-to-right bit ordering
+     * @return Hex string in 0xABCD format (MSB-first numeral)
      */
     juce::String getHexString(const std::vector<bool>& pattern)
     {
         if (pattern.empty())
             return "0x0";
         
-        // Convert pattern to hex using strict left-to-right notation
-        // Process in 4-bit groups from left to right
+        // Strict MSB-first (suite-wide convention): the pattern is an
+        // ordinary binary numeral (step 0 = leftmost = most significant bit),
+        // so its hex form is that numeral in base 16: 1011 = 0xB,
+        // tresillo 10010010 = 0x92. Nibbles are grouped from the RIGHT
+        // (standard numeric grouping); leading zero digits are dropped.
         juce::String hex;
-        int stepCount = static_cast<int>(pattern.size());
+        const int stepCount = static_cast<int>(pattern.size());
         
-        // Process pattern in 4-bit groups from left to right (normal digit order for display)
-        for (int groupStart = 0; groupStart < stepCount; groupStart += 4)
+        for (int groupEnd = stepCount; groupEnd > 0; groupEnd -= 4)
         {
             int nibbleValue = 0;
-            
-            // Process 4 bits in this group (or fewer if at the end)  
-            for (int bitInGroup = 0; bitInGroup < 4 && (groupStart + bitInGroup) < stepCount; ++bitInGroup)
+            const int groupStart = std::max(0, groupEnd - 4);
+            for (int i = groupStart; i < groupEnd; ++i)
             {
-                if (pattern[groupStart + bitInGroup])
-                {
-                    // CRITICAL: Left-to-right mapping - bit position maps directly to nibble bit
-                    // groupStart=0, bitInGroup=0 → pattern[0] → nibble bit 0 (LSB)
-                    // groupStart=0, bitInGroup=1 → pattern[1] → nibble bit 1
-                    // groupStart=0, bitInGroup=2 → pattern[2] → nibble bit 2  
-                    // groupStart=0, bitInGroup=3 → pattern[3] → nibble bit 3 (MSB of nibble)
-                    nibbleValue |= (1 << bitInGroup);
-                }
+                nibbleValue = (nibbleValue << 1) | (pattern[static_cast<size_t>(i)] ? 1 : 0);
             }
-            
-            // Convert nibble to hex and append (normal left-to-right digit order)
-            hex += juce::String::toHexString(nibbleValue).toUpperCase();
+            hex = juce::String::toHexString(nibbleValue).toUpperCase() + hex;
         }
+        
+        // Drop leading zero digits (keep at least one)
+        while (hex.length() > 1 && hex[0] == '0')
+            hex = hex.substring(1);
         
         return "0x" + hex;
     }
@@ -394,28 +390,24 @@ namespace PatternUtils
         if (pattern.empty())
             return "o0";
         
-        // Convert pattern to octal using strict left-to-right notation
-        // Process in 3-bit groups from left to right
+        // Strict MSB-first: ordinary binary numeral rendered in base 8,
+        // 3-bit groups from the RIGHT, leading zero digits dropped.
         juce::String octal;
-        int stepCount = static_cast<int>(pattern.size());
+        const int stepCount = static_cast<int>(pattern.size());
         
-        // Process pattern in 3-bit groups from left to right
-        for (int groupStart = 0; groupStart < stepCount; groupStart += 3)
+        for (int groupEnd = stepCount; groupEnd > 0; groupEnd -= 3)
         {
             int octalDigit = 0;
-            
-            // Process 3 bits in this group (or fewer if at the end)
-            for (int bitInGroup = 0; bitInGroup < 3 && (groupStart + bitInGroup) < stepCount; ++bitInGroup)
+            const int groupStart = std::max(0, groupEnd - 3);
+            for (int i = groupStart; i < groupEnd; ++i)
             {
-                if (pattern[groupStart + bitInGroup])
-                {
-                    // Left-to-right: each bit position maps directly to bit position in octal digit
-                    octalDigit |= (1 << bitInGroup);
-                }
+                octalDigit = (octalDigit << 1) | (pattern[static_cast<size_t>(i)] ? 1 : 0);
             }
-            
-            octal += juce::String(octalDigit);
+            octal = juce::String(octalDigit) + octal;
         }
+        
+        while (octal.length() > 1 && octal[0] == '0')
+            octal = octal.substring(1);
         
         return "o" + octal;
     }
@@ -425,23 +417,17 @@ namespace PatternUtils
         if (pattern.empty())
             return "d0";
         
-        // Convert pattern to decimal using strict left-to-right notation
-        // Process the entire pattern where leftmost bit is LSB
-        int decimal = 0;
-        int stepCount = static_cast<int>(pattern.size());
+        // Strict MSB-first: the pattern is an ordinary binary numeral
+        // (step 0 = most significant bit).
+        unsigned long long decimal = 0;
+        const int stepCount = static_cast<int>(pattern.size());
         
-        // Build decimal value by reading pattern left-to-right
-        // where leftmost bit has lowest positional value
         for (int i = 0; i < stepCount; ++i)
         {
-            if (pattern[i])
-            {
-                // Left-to-right: bit at position i contributes 2^i
-                decimal |= (1 << i);
-            }
+            decimal = (decimal << 1) | (pattern[static_cast<size_t>(i)] ? 1ULL : 0ULL);
         }
         
-        return "d" + juce::String(decimal);
+        return "d" + juce::String(static_cast<juce::int64>(decimal));
     }
     
     
