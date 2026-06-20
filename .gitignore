@@ -60,3 +60,4 @@ debug_*
 # Test binaries
 test_accent_*
 debug_bjorklund.js
+signing.local.cmake

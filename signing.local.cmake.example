@@ -1,0 +1,13 @@
+# Per-machine code-signing override — copy to `signing.local.cmake` (gitignored).
+#
+# The Apple Developer team is specific to the machine and the account logged in
+# to Xcode, so it is never committed. With no signing.local.cmake, Xcode fills
+# in this machine's default account when you open the generated project.
+#
+# Pin a team only if the default isn't what you want. Find the team id in
+# Xcode ▸ Settings ▸ Accounts (select the team → it's the 10-char id), or:
+#   defaults read com.apple.dt.Xcode IDEProvisioningTeamByIdentifier
+#
+# Use the *full* developer team (not a free "Personal Team") for AUv3/device.
+set(CMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "XXXXXXXXXX")
+set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_STYLE  "Automatic")

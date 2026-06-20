@@ -8,16 +8,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED YES)
 include("${CMAKE_CURRENT_SOURCE_DIR}/enkerli-juce/cmake/EnkerliPlugin.cmake")
 enkerli_resolve_juce()
 
-# Force the iOS signing team project-wide. The archetype passes DEVELOPMENT_TEAM
-# to juce_add_plugin, but CMake's Xcode generator still fills every target with
-# the machine's *default* Apple account team (here B2623T4238) — so the project
-# came up needing a manual switch to the intended team. Setting the Xcode
-# attribute before any target is created applies it to all of them (SharedCode,
-# Standalone, AUv3, install). Must precede enkerli_add_*_plugin.
-if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
-    set(CMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "${ENKERLI_IOS_TEAM_ID}")
-    set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic")
-endif()
+# Per-machine signing override (gitignored). The Apple team is account- and
+# machine-specific, so it is NOT committed — pinning the wrong one here makes
+# Xcode show "unknown account". Without an override, Xcode auto-fills the
+# machine's default account. To pin a team, copy signing.local.cmake.example to
+# signing.local.cmake and set it there. Must precede enkerli_add_*_plugin so the
+# Xcode attribute reaches every target (SharedCode, Standalone, AUv3, install).
+include("${CMAKE_CURRENT_SOURCE_DIR}/signing.local.cmake" OPTIONAL)
 
 # ── Plugin (midi_effect / aumi archetype) ───────────────────────────────────
 # Identity is load-bearing: PLUGIN_CODE RPEd, manufacturer Enke, bundle
