@@ -69,35 +69,41 @@ target_include_directories(Serpe PRIVATE
     Source Source/Core Source/Managers Source/Platform Source/WebUI)
 
 # ── WebUI: bundle the React app (esbuild) and embed it as binary data ─────────
-set(WEBUI_DIR  "${CMAKE_CURRENT_SOURCE_DIR}/Source/WebUI")
-set(WEBUI_DIST "${WEBUI_DIR}/dist")
+# esbuild produces a SINGLE output (bundle.js) into the build tree; CSS and the
+# icon are inlined into it (--loader:.css=text / .svg=dataurl). index.html is a
+# static source consumed directly. One generated output + static inputs avoids
+# the Xcode build-graph cycle that multi-output custom commands trigger.
+set(WEBUI_DIR   "${CMAKE_CURRENT_SOURCE_DIR}/Source/WebUI")
+set(WEBUI_BUILD "${CMAKE_CURRENT_BINARY_DIR}/webui")
 
 find_program(NPXCMD npx)
 if(NPXCMD)
     file(GLOB_RECURSE WEBUI_SRC
         "${WEBUI_DIR}/main.jsx" "${WEBUI_DIR}/*.js"
-        "${WEBUI_DIR}/engine/*.js" "${WEBUI_DIR}/styles/*.css" "${WEBUI_DIR}/index.html")
+        "${WEBUI_DIR}/engine/*.js" "${WEBUI_DIR}/styles/*.css" "${WEBUI_DIR}/assets/*.svg")
     add_custom_command(
-        OUTPUT  "${WEBUI_DIST}/bundle.js" "${WEBUI_DIST}/bundle.css" "${WEBUI_DIST}/index.html"
+        OUTPUT  "${WEBUI_BUILD}/bundle.js"
+        COMMAND "${CMAKE_COMMAND}" -E make_directory "${WEBUI_BUILD}"
         COMMAND "${NPXCMD}" esbuild "${WEBUI_DIR}/main.jsx"
                     --bundle "--inject:${WEBUI_DIR}/react-globals.js"
+                    --loader:.css=text --loader:.svg=dataurl
                     "--define:process.env.NODE_ENV=\"production\"" --minify
-                    "--outfile=${WEBUI_DIST}/bundle.js"
-        COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${WEBUI_DIR}/index.html" "${WEBUI_DIST}/index.html"
+                    "--outfile=${WEBUI_BUILD}/bundle.js"
         DEPENDS ${WEBUI_SRC}
         WORKING_DIRECTORY "${WEBUI_DIR}"
         COMMENT "Bundling Serpe WebUI with esbuild"
         VERBATIM)
-    add_custom_target(SerpeWebUIBundle DEPENDS "${WEBUI_DIST}/bundle.js")
+    add_custom_target(SerpeWebUIBundle DEPENDS "${WEBUI_BUILD}/bundle.js")
+else()
+    message(WARNING "npx not found — Serpe WebUI bundle.js must be pre-built at ${WEBUI_BUILD}/bundle.js")
 endif()
 
 juce_add_binary_data(SerpeWebUI
     HEADER_NAME BinaryDataWebUI.h
     NAMESPACE   BinaryData
     SOURCES
-        "${WEBUI_DIST}/index.html"
-        "${WEBUI_DIST}/bundle.js"
-        "${WEBUI_DIST}/bundle.css")
+        "${WEBUI_DIR}/index.html"
+        "${WEBUI_BUILD}/bundle.js")
 if(NPXCMD)
     add_dependencies(SerpeWebUI SerpeWebUIBundle)
 endif()

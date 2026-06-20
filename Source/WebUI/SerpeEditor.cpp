@@ -16,11 +16,10 @@ std::optional<juce::WebBrowserComponent::Resource>
 SerpeEditor::provideResource (const juce::String& path)
 {
     struct Entry { const char* data; int size; juce::String mime; };
-    static const std::array<std::pair<const char*, Entry>, 4> table {{
+    static const std::array<std::pair<const char*, Entry>, 3> table {{
         { "/",           { BinaryData::index_html, BinaryData::index_htmlSize, "text/html; charset=utf-8" } },
         { "/index.html", { BinaryData::index_html, BinaryData::index_htmlSize, "text/html; charset=utf-8" } },
         { "/bundle.js",  { BinaryData::bundle_js,  BinaryData::bundle_jsSize,  "application/javascript"   } },
-        { "/bundle.css", { BinaryData::bundle_css, BinaryData::bundle_cssSize, "text/css; charset=utf-8"  } },
     }};
 
     for (auto& [key, entry] : table)

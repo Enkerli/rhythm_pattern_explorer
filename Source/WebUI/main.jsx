@@ -3,15 +3,24 @@
 // Runs standalone in the browser and inside the JUCE WebView (bridge no-ops
 // when JUCE is absent).
 
-import './styles/tokens.css';
-import './styles/components.css';
-import './styles/serpe.css';
+// CSS is imported as text (esbuild --loader:.css=text) and injected at runtime,
+// so the build produces a single bundle.js (no separate bundle.css). This keeps
+// the JUCE binary-data step to two artifacts and avoids an Xcode build cycle.
+import tokensCss from './styles/tokens.css';
+import componentsCss from './styles/components.css';
+import serpeCss from './styles/serpe.css';
+{
+  const el = document.createElement('style');
+  el.textContent = [tokensCss, componentsCss, serpeCss].join('\n');
+  document.head.appendChild(el);
+}
 
 import { parseUPI, euclid, polygon, rotate, invert, complement,
          barlowTransform, indispensabilityWeights, onsetCount } from './engine/upi.js';
 import { analyse } from './engine/analysis.js';
 import { createCircleView, createStepView } from './engine/render.js';
 import { initJuceBridge, sendParamActual, sendUPI, juceAvailable } from './juce-bridge.js';
+import serpeIcon from './assets/serpe-icon.svg';  // esbuild --loader:.svg=dataurl → inlined
 
 const { useState, useRef, useEffect, useMemo, createElement: h } = React;
 
@@ -254,7 +263,7 @@ function SerpeApp() {
   return h('div', { className: 'serpe' + (dense ? ' es-dense' : ''), id: 'serpe' },
     // top bar
     h('div', { className: 'serpe-top' },
-      h('div', { className: 'title' }, h('img', { src: 'assets/serpe-icon.svg', alt: '' }), 'Serpe'),
+      h('div', { className: 'title' }, h('img', { src: serpeIcon, alt: '' }), 'Serpe'),
       h('div', { className: 'transport' },
         h('button', { className: 'tbtn play' + (playing ? ' on' : ''), onClick: play, title: 'Play / pause', 'aria-label': 'Play' },
           playing
