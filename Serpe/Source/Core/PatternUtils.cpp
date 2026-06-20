@@ -332,22 +332,22 @@ namespace PatternUtils
      * but provides intuitive pattern input for musicians.
      * 
      * BIT ORDERING CONVENTION:
-     * - Leftmost bit = Least Significant Bit (LSB) 
-     * - Rightmost bit = Most Significant Bit (MSB)
-     * - Each hex digit represents 4 consecutive pattern steps
-     * 
+     * - Leftmost bit (first step) = Most Significant Bit (MSB)
+     * - Rightmost bit (last step) = Least Significant Bit (LSB)
+     * - The hex form is just that binary numeral in base 16
+     *
      * CRITICAL EXAMPLES:
-     * - Pattern 1000 → 0x1 (leftmost bit is LSB, so bit 0 = 1)
-     * - Pattern 0100 → 0x2 (second bit is bit 1, so 2^1 = 2)
-     * - Pattern 0010 → 0x4 (third bit is bit 2, so 2^2 = 4)  
-     * - Pattern 0001 → 0x8 (rightmost bit is MSB, so 2^3 = 8)
-     * - Pattern 10010010 → 0x94 (tresillo: 1*1 + 0*2 + 0*4 + 1*8 = 9, then 0*1 + 0*2 + 1*4 + 0*8 = 4)
-     * 
+     * - Pattern 1000 → 0x8 (leftmost bit is MSB, so 2^3 = 8)
+     * - Pattern 0100 → 0x4 (second bit, so 2^2 = 4)
+     * - Pattern 0010 → 0x2 (third bit, so 2^1 = 2)
+     * - Pattern 0001 → 0x1 (rightmost bit is LSB, so 2^0 = 1)
+     * - Pattern 10010010 → 0x92 (tresillo: ordinary binary numeral = 146 = 0x92)
+     *
      * USER WORKFLOW:
-     * 1. User types: 0x94:8
+     * 1. User types: 0x92:8
      * 2. Input parser reads digits in ordinary order (standard numerals)
      * 3. Pattern engine generates: 10010010
-     * 4. This function displays: 0x94 (using normal digit order)
+     * 4. This function displays: 0x92 (using normal digit order)
      * 
      * This ensures round-trip consistency: input notation matches display notation.
      * 
