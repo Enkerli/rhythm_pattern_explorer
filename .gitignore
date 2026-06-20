@@ -61,3 +61,11 @@ debug_*
 test_accent_*
 debug_bjorklund.js
 signing.local.cmake
+
+# WebUI build artifacts
+Source/WebUI/node_modules/
+Source/WebUI/dist/
+
+# Claude Design handoff bundle (reference; kept local)
+Music Suite UI-handoff.zip
+music-suite-ui/

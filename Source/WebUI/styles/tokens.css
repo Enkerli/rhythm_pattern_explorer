@@ -1,0 +1,158 @@
+/**
+ * @enkerli/ui — design tokens v0.2: the "paper & ink" language.
+ *
+ * Codified from the suite's two most mature UIs rather than invented:
+ * Vane (warm cream surfaces, warm dark counterpart, per-dimension accent
+ * colors, Inter/JetBrains Mono, soft 20/14/10 radii) and DrawnQurve
+ * (the same paper palette — its --paper-bg IS Vane's panel2 — plus serif
+ * and hand display faces). See packages/ui/DESIGN.md.
+ *
+ * Theming: LIGHT IS THE DEFAULT design target; dark is a first-class
+ * variant. Resolution order: [data-theme="light"|"dark"] wins; otherwise
+ * the OS preference applies. theme.js provides the persisted toggle.
+ *
+ * Accessibility ground rules encoded here:
+ *  - color is never the only channel (dimension dots pair with labels)
+ *  - touch targets ≥ 44px on coarse pointers (controls scale up)
+ *  - motion respects prefers-reduced-motion
+ */
+
+:root {
+  /* ── Type ────────────────────────────────────────────────────────── */
+  --es-font-sans: "Inter Tight", Inter, -apple-system, BlinkMacSystemFont,
+                  "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  --es-font-mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+  /* Optional display voices (DrawnQurve's flavor — opt-in per app) */
+  --es-font-serif: "Domine", Georgia, "Iowan Old Style", serif;
+  --es-font-hand: "Caveat", "Segoe Script", cursive;
+
+  --es-text-xs: 0.6875rem;  /* 11px — dense plugin labels */
+  --es-text-sm: 0.8125rem;  /* 13px */
+  --es-text-md: 1rem;       /* 16px — body */
+  --es-text-lg: 1.25rem;
+  --es-text-xl: 1.5625rem;
+
+  /* ── Spacing ─────────────────────────────────────────────────────── */
+  --es-space-1: 0.25rem;
+  --es-space-2: 0.5rem;
+  --es-space-3: 0.75rem;
+  --es-space-4: 1rem;
+  --es-space-6: 1.5rem;
+  --es-gap: 10px;
+
+  /* ── Shape (the Vane radii) ──────────────────────────────────────── */
+  --es-radius-lg: 20px;
+  --es-radius-md: 14px;
+  --es-radius-sm: 10px;
+  --es-shadow: 0 6px 22px rgba(28, 25, 20, 0.05);
+
+  /* ── Interaction ─────────────────────────────────────────────────── */
+  --es-ctl-h: 32px;            /* control height; scales up on touch */
+  --es-touch-target: 44px;
+  --es-section-header: 28px;   /* collapsed-section header (PitchFold grammar) */
+  --es-focus-ring: 2px solid var(--es-accent);
+  --es-focus-offset: 2px;
+
+  /* ── Motion ──────────────────────────────────────────────────────── */
+  --es-motion-fast: 120ms ease-out;
+  --es-motion-base: 200ms ease-out;
+
+  /* ── Expressive-dimension semantics (Vane vocabulary, suite-wide;
+        pairs with manifold's controller dimensions). Always pair the
+        color with a label or dot — never color alone. ───────────────── */
+  --es-dim-breath: #4b86c7;   --es-dim-breath-tint: #dde8f4;
+  --es-dim-expr: #2d9d8a;     --es-dim-expr-tint: #d6ebe6;
+  --es-dim-pressure: #d28330; --es-dim-pressure-tint: #f4e3cf;
+  --es-dim-slide: #a35bbf;    --es-dim-slide-tint: #ecdcf2;
+  --es-dim-bend: #c39529;     --es-dim-bend-tint: #f1e6c3;
+  --es-dim-vel: #7a4cff;
+
+  /* ── Pitch-class palette (12 hues — pair with labels) ──────────────
+        Per-theme: every value holds ≥3:1 (WCAG 1.4.11 graphics) against
+        both bg and bg-raised of its theme. :root carries the light set;
+        the dark blocks override with the brighter originals. ─────────── */
+  --es-pc-0: #4477aa;  --es-pc-1: #1697c2;  --es-pc-2: #228833;
+  --es-pc-3: #9c8d2a;  --es-pc-4: #ec586b;  --es-pc-5: #aa3377;
+  --es-pc-6: #8c8c8c;  --es-pc-7: #225555;  --es-pc-8: #0092db;
+  --es-pc-9: #997700;  --es-pc-10: #e86134; --es-pc-11: #663366;
+}
+
+/* ── Paper (light) — the default design target ─────────────────────── */
+:root,
+:root[data-theme="light"] {
+  --es-bg: #f5f2eb;          /* paper */
+  --es-bg-raised: #fcfbf7;   /* panel */
+  --es-bg-sunken: #efebe2;   /* field / well */
+  --es-fg: #2d2b27;          /* ink */
+  --es-fg-2: #4b463e;
+  --es-fg-muted: #736e62;    /* ≥4.5:1 on bg and bg-raised */
+  --es-border: #ddd6ca;      /* decorative — separation, not identification */
+  --es-border-soft: #eae3d4;
+  --es-border-strong: #9d8967; /* ≥3:1 — boundaries that identify a control */
+  --es-accent: #3b79be;      /* breath blue, deepened: white text ≥4.5:1,
+                                ≥3:1 vs paper as a focus ring (the graphic
+                                dim-breath hue stays #4b86c7) */
+  --es-accent-fg: #ffffff;
+  --es-danger: #b3403a;        /* destructive actions; ≥3:1 on both surfaces */
+  color-scheme: light;
+}
+
+/* ── Warm dark ─────────────────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --es-bg: #1a1814;
+    --es-bg-raised: #221f1a;
+    --es-bg-sunken: #14130f;
+    --es-fg: #e8e1d2;
+    --es-fg-2: #cfc7b5;
+    --es-fg-muted: #908672;    /* ≥4.5:1 on bg and bg-raised */
+    --es-border: #38332b;
+    --es-border-soft: #2b2620;
+    --es-border-strong: #736958; /* ≥3:1 — boundaries that identify a control */
+    --es-accent: #6da3df;
+    --es-accent-fg: #14130f;
+    --es-danger: #cf6a5e;        /* destructive actions; ≥3:1 on both surfaces */
+    /* pc palette: the brighter originals hold ≥3:1 on the dark surfaces */
+    --es-pc-1: #66ccee;  --es-pc-3: #ccbb44;  --es-pc-4: #ee6677;
+    --es-pc-5: #b6377f;  --es-pc-6: #bbbbbb;  --es-pc-7: #2e7474;
+    --es-pc-8: #99ddff;  --es-pc-10: #ee8866; --es-pc-11: #994d99;
+    --es-shadow: 0 6px 22px rgba(0, 0, 0, 0.28);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --es-bg: #1a1814;
+  --es-bg-raised: #221f1a;
+  --es-bg-sunken: #14130f;
+  --es-fg: #e8e1d2;
+  --es-fg-2: #cfc7b5;
+  --es-fg-muted: #908672;    /* ≥4.5:1 on bg and bg-raised */
+  --es-border: #38332b;
+  --es-border-soft: #2b2620;
+  --es-border-strong: #736958; /* ≥3:1 — boundaries that identify a control */
+  --es-accent: #6da3df;
+  --es-accent-fg: #14130f;
+  --es-danger: #cf6a5e;        /* destructive actions; ≥3:1 on both surfaces */
+  /* pc palette: the brighter originals hold ≥3:1 on the dark surfaces */
+  --es-pc-1: #66ccee;  --es-pc-3: #ccbb44;  --es-pc-4: #ee6677;
+  --es-pc-5: #b6377f;  --es-pc-6: #bbbbbb;  --es-pc-7: #2e7474;
+  --es-pc-8: #99ddff;  --es-pc-10: #ee8866; --es-pc-11: #994d99;
+  --es-shadow: 0 6px 22px rgba(0, 0, 0, 0.28);
+  color-scheme: dark;
+}
+
+/* ── Touch scaling (the Vane --ctl-h pattern) ──────────────────────── */
+@media (pointer: coarse) {
+  :root {
+    --es-ctl-h: 44px;
+    --es-gap: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --es-motion-fast: 0ms;
+    --es-motion-base: 0ms;
+  }
+}
