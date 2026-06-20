@@ -86,8 +86,9 @@
                microphonePermissionText="" cameraPermissionNeeded="0" cameraPermissionText=""
                iosBluetoothPermissionNeeded="0" iosBluetoothPermissionText=""
                customPListEntries="" customXcodeResourceFolders="" iosAppGroups=""
-               postbuildCommand="" plistPreprocessorDefinitions="" iosRequiredArchitectures=""
-               macOSDeploymentTarget="10.13" macOSArchitecture="arm64,x86_64">
+               postbuildCommand="bash &quot;$SRCROOT/../../Source/Tests/run-conformance.sh&quot;"
+               plistPreprocessorDefinitions="" iosRequiredArchitectures="" macOSDeploymentTarget="10.13"
+               macOSArchitecture="arm64,x86_64">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" targetName="Serpe" enablePluginBinaryCopyStep="1"
                        stripLocalSymbols="0" linkTimeOptimisation="0" useRuntimeLibDLL="0"
