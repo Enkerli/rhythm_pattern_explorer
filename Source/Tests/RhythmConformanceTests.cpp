@@ -12,20 +12,15 @@
  * parseNumericPattern) is the next increment — it pulls in PatternEngine and
  * QuantizationEngine, so it links the full Core rather than PatternUtils alone.
  *
- * Build (standalone, juce_core only) — see run-conformance.sh in this folder.
+ * Built by CMake as the `serpe_conformance` target (links juce_core only);
+ * `ctest -R rhythm_conformance` runs it, and it is also a post-build step on
+ * the Serpe plugin so a normal build surfaces drift.
  */
 #include "RhythmConformanceVectors.h"
 #include "../Core/PatternUtils.h"
 #include <iostream>
 #include <string>
 #include <vector>
-
-// PatternUtils.h pulls all of <JuceHeader.h> (incl. juce_graphics), whose
-// headers odr-use juce::Colour(uint32) from a load-time static initializer. The
-// codecs never touch colour, so instead of linking juce_graphics + Harfbuzz +
-// CoreText for a string test, we provide the single constructor the loader
-// needs. (Harmless here; the real one lives in juce_graphics for normal builds.)
-namespace juce { Colour::Colour (uint32) noexcept {} }
 
 namespace {
 

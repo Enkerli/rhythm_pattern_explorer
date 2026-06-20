@@ -16,6 +16,11 @@
 **/*.a
 **/*.build
 **/.conformance-cache/
+
+# CMake build trees (PitchFold-style out-of-source dirs)
+/build-macos/
+/build-ios/
+/build/
 **/DerivedData/
 **/ModuleCache/
 **/Pods/

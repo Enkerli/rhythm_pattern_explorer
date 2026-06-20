@@ -26,10 +26,16 @@ build system and the UI shell change).
 
 ## Milestones
 
-- [ ] **M1 — foundation submodule + plan** (this doc + `enkerli-juce` submodule).
-- [ ] **M2 — flatten + CMakeLists** mirroring PitchFold via
-      `enkerli_add_midi_effect_plugin(Serpe PLUGIN_CODE RPEd BUNDLE_ID com.enkerli.serpe …)`.
-      Source list = existing `Core`/`Managers`/`Platform` (sans the native editor).
+- [x] **M1 — foundation submodule + plan** (this doc + `enkerli-juce` submodule).
+- [x] **M2 — flatten + CMakeLists** via `enkerli_add_midi_effect_plugin(Serpe
+      PLUGIN_CODE RPEd BUNDLE_ID com.enkerli.serpe …)`. Builds the *current*
+      plugin (native UI intact) — pure build-system swap, no behaviour change.
+      Verified locally: `cmake -B build-macos` configures, `Serpe_Standalone`
+      **compiles + links** (macOS), `serpe_conformance` passes via `ctest`.
+      Needed `SERPE_DESKTOP=1` (the `.jucer` set it). Retired `.jucer`/`Builds`/
+      `JuceLibraryCode`/`Serpe-iOS`. **M5 folded in**: conformance re-homed to a
+      `juce_add_console_app` CTest target + plugin POST_BUILD (the old
+      `run-conformance.sh` + `Colour` stub are gone). AU/VST3 + iOS = maintainer build.
 - [ ] **M3 — React WebUI scaffold** under `Source/WebUI` (package.json, esbuild,
       `index.html`, `juce-bridge.js`, `react-globals.js`, `design/` tokens+primitives,
       `main.jsx`). Bundles + renders in a browser. Minimal shell wired to the bridge;
