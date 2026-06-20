@@ -1,0 +1,2206 @@
+{
+  "description": "Cross-language vectors for rhythm algorithms ported from Serpe (rhythm_pattern_explorer). Patterns encoded as strings, '1' = onset. Verified by differential testing against the original WebApp JS (all E(k,n) for n<=24 with offsets, Barlow tables, transforms). Codec convention (strict, suite-wide): first step = leftmost bit = MSB; pattern string read as an ordinary binary numeral. See CONVENTIONS.md. Octal added 2026-06-20; codecBatch is a seeded, reproducible set read identically by the webapp and plugin conformance suites.",
+  "euclidean": [
+    {
+      "name": "tresillo",
+      "beats": 3,
+      "steps": 8,
+      "offset": 0,
+      "pattern": "10010010"
+    },
+    {
+      "name": "cinquillo",
+      "beats": 5,
+      "steps": 8,
+      "offset": 0,
+      "pattern": "10110110"
+    },
+    {
+      "name": "tresillo rotated right 2",
+      "beats": 3,
+      "steps": 8,
+      "offset": 2,
+      "pattern": "10100100"
+    },
+    {
+      "name": "four on the floor",
+      "beats": 4,
+      "steps": 4,
+      "offset": 0,
+      "pattern": "1111"
+    },
+    {
+      "name": "E(5,16) bossa-adjacent",
+      "beats": 5,
+      "steps": 16,
+      "offset": 0,
+      "pattern": "1001001001001000"
+    },
+    {
+      "name": "E(2,5) khafif-e-ramal",
+      "beats": 2,
+      "steps": 5,
+      "offset": 0,
+      "pattern": "10100"
+    },
+    {
+      "name": "zero beats",
+      "beats": 0,
+      "steps": 8,
+      "offset": 0,
+      "pattern": "00000000"
+    },
+    {
+      "name": "beats clamped to steps",
+      "beats": 9,
+      "steps": 8,
+      "offset": 0,
+      "pattern": "11111111"
+    }
+  ],
+  "complement": [
+    {
+      "name": "complement of tresillo is cinquillo",
+      "beats": 3,
+      "steps": 8,
+      "offset": 0,
+      "pattern": "10110110"
+    }
+  ],
+  "barlowTables": [
+    {
+      "length": 8,
+      "table": [
+        1,
+        0.125,
+        0.375,
+        0.125,
+        0.875,
+        0.125,
+        0.375,
+        0.75
+      ]
+    },
+    {
+      "length": 12,
+      "table": [
+        1,
+        0.08333333333333333,
+        0.16666666666666666,
+        0.25,
+        0.3333333333333333,
+        0.08333333333333333,
+        0.75,
+        0.08333333333333333,
+        0.3333333333333333,
+        0.25,
+        0.16666666666666666,
+        0.75
+      ]
+    },
+    {
+      "length": 16,
+      "table": [
+        1,
+        0.0625,
+        0.1875,
+        0.0625,
+        0.4375,
+        0.0625,
+        0.1875,
+        0.0625,
+        0.9375,
+        0.0625,
+        0.1875,
+        0.0625,
+        0.4375,
+        0.0625,
+        0.1875,
+        0.75
+      ]
+    }
+  ],
+  "syncopation": [
+    {
+      "name": "tresillo onsets",
+      "onsets": [
+        0,
+        3,
+        6
+      ],
+      "steps": 8,
+      "value": 0.5
+    },
+    {
+      "name": "downbeat + mid",
+      "onsets": [
+        0,
+        4
+      ],
+      "steps": 8,
+      "value": 0.0625
+    }
+  ],
+  "transforms": [
+    {
+      "name": "dilute cinquillo to 3",
+      "pattern": "10110110",
+      "target": 3,
+      "options": {},
+      "result": "10100010",
+      "transformation": "dilution"
+    },
+    {
+      "name": "concentrate tresillo to 5",
+      "pattern": "10010010",
+      "target": 5,
+      "options": {},
+      "result": "10011011",
+      "transformation": "concentration"
+    },
+    {
+      "name": "wolrab-dilute cinquillo to 3",
+      "pattern": "10110110",
+      "target": 3,
+      "options": {
+        "wolrabMode": true
+      },
+      "result": "00010110",
+      "transformation": "wolrab-dilution"
+    },
+    {
+      "name": "no-op at target",
+      "pattern": "10010010",
+      "target": 3,
+      "options": {},
+      "result": "10010010",
+      "transformation": "none"
+    }
+  ],
+  "codecs": [
+    {
+      "name": "1011 = 0xB = 11",
+      "pattern": "1011",
+      "steps": 4,
+      "decimal": 11,
+      "hex": "B",
+      "octal": "13",
+      "onsets": [
+        0,
+        2,
+        3
+      ]
+    },
+    {
+      "name": "10111010 = 0xBA = 186",
+      "pattern": "10111010",
+      "steps": 8,
+      "decimal": 186,
+      "hex": "BA",
+      "octal": "272",
+      "onsets": [
+        0,
+        2,
+        3,
+        4,
+        6
+      ]
+    },
+    {
+      "name": "tresillo = 0x92 = 146",
+      "pattern": "10010010",
+      "steps": 8,
+      "decimal": 146,
+      "hex": "92",
+      "octal": "222",
+      "onsets": [
+        0,
+        3,
+        6
+      ]
+    },
+    {
+      "name": "leading rests need step count",
+      "pattern": "0010",
+      "steps": 4,
+      "decimal": 2,
+      "hex": "2",
+      "octal": "2",
+      "onsets": [
+        2
+      ]
+    },
+    {
+      "name": "non-nibble length is a plain numeral",
+      "pattern": "101110",
+      "steps": 6,
+      "decimal": 46,
+      "hex": "2E",
+      "octal": "56",
+      "onsets": [
+        0,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "name": "all rests",
+      "pattern": "0000",
+      "steps": 4,
+      "decimal": 0,
+      "hex": "0",
+      "octal": "0",
+      "onsets": []
+    }
+  ],
+  "codecBatch": [
+    {
+      "pattern": "1",
+      "steps": 1,
+      "decimal": 1,
+      "hex": "1",
+      "octal": "1",
+      "onsets": [
+        0
+      ],
+      "name": "batch 1.0"
+    },
+    {
+      "pattern": "0",
+      "steps": 1,
+      "decimal": 0,
+      "hex": "0",
+      "octal": "0",
+      "onsets": [],
+      "name": "batch 1.1"
+    },
+    {
+      "pattern": "1",
+      "steps": 1,
+      "decimal": 1,
+      "hex": "1",
+      "octal": "1",
+      "onsets": [
+        0
+      ],
+      "name": "batch 1.2"
+    },
+    {
+      "pattern": "1",
+      "steps": 1,
+      "decimal": 1,
+      "hex": "1",
+      "octal": "1",
+      "onsets": [
+        0
+      ],
+      "name": "batch 1.3"
+    },
+    {
+      "pattern": "00",
+      "steps": 2,
+      "decimal": 0,
+      "hex": "0",
+      "octal": "0",
+      "onsets": [],
+      "name": "batch 2.0"
+    },
+    {
+      "pattern": "10",
+      "steps": 2,
+      "decimal": 2,
+      "hex": "2",
+      "octal": "2",
+      "onsets": [
+        0
+      ],
+      "name": "batch 2.1"
+    },
+    {
+      "pattern": "10",
+      "steps": 2,
+      "decimal": 2,
+      "hex": "2",
+      "octal": "2",
+      "onsets": [
+        0
+      ],
+      "name": "batch 2.2"
+    },
+    {
+      "pattern": "10",
+      "steps": 2,
+      "decimal": 2,
+      "hex": "2",
+      "octal": "2",
+      "onsets": [
+        0
+      ],
+      "name": "batch 2.3"
+    },
+    {
+      "pattern": "010",
+      "steps": 3,
+      "decimal": 2,
+      "hex": "2",
+      "octal": "2",
+      "onsets": [
+        1
+      ],
+      "name": "batch 3.0"
+    },
+    {
+      "pattern": "010",
+      "steps": 3,
+      "decimal": 2,
+      "hex": "2",
+      "octal": "2",
+      "onsets": [
+        1
+      ],
+      "name": "batch 3.1"
+    },
+    {
+      "pattern": "000",
+      "steps": 3,
+      "decimal": 0,
+      "hex": "0",
+      "octal": "0",
+      "onsets": [],
+      "name": "batch 3.2"
+    },
+    {
+      "pattern": "000",
+      "steps": 3,
+      "decimal": 0,
+      "hex": "0",
+      "octal": "0",
+      "onsets": [],
+      "name": "batch 3.3"
+    },
+    {
+      "pattern": "0110",
+      "steps": 4,
+      "decimal": 6,
+      "hex": "6",
+      "octal": "6",
+      "onsets": [
+        1,
+        2
+      ],
+      "name": "batch 4.0"
+    },
+    {
+      "pattern": "0000",
+      "steps": 4,
+      "decimal": 0,
+      "hex": "0",
+      "octal": "0",
+      "onsets": [],
+      "name": "batch 4.1"
+    },
+    {
+      "pattern": "0100",
+      "steps": 4,
+      "decimal": 4,
+      "hex": "4",
+      "octal": "4",
+      "onsets": [
+        1
+      ],
+      "name": "batch 4.2"
+    },
+    {
+      "pattern": "1010",
+      "steps": 4,
+      "decimal": 10,
+      "hex": "A",
+      "octal": "12",
+      "onsets": [
+        0,
+        2
+      ],
+      "name": "batch 4.3"
+    },
+    {
+      "pattern": "01100",
+      "steps": 5,
+      "decimal": 12,
+      "hex": "C",
+      "octal": "14",
+      "onsets": [
+        1,
+        2
+      ],
+      "name": "batch 5.0"
+    },
+    {
+      "pattern": "00100",
+      "steps": 5,
+      "decimal": 4,
+      "hex": "4",
+      "octal": "4",
+      "onsets": [
+        2
+      ],
+      "name": "batch 5.1"
+    },
+    {
+      "pattern": "00100",
+      "steps": 5,
+      "decimal": 4,
+      "hex": "4",
+      "octal": "4",
+      "onsets": [
+        2
+      ],
+      "name": "batch 5.2"
+    },
+    {
+      "pattern": "10100",
+      "steps": 5,
+      "decimal": 20,
+      "hex": "14",
+      "octal": "24",
+      "onsets": [
+        0,
+        2
+      ],
+      "name": "batch 5.3"
+    },
+    {
+      "pattern": "001000",
+      "steps": 6,
+      "decimal": 8,
+      "hex": "8",
+      "octal": "10",
+      "onsets": [
+        2
+      ],
+      "name": "batch 6.0"
+    },
+    {
+      "pattern": "010111",
+      "steps": 6,
+      "decimal": 23,
+      "hex": "17",
+      "octal": "27",
+      "onsets": [
+        1,
+        3,
+        4,
+        5
+      ],
+      "name": "batch 6.1"
+    },
+    {
+      "pattern": "011011",
+      "steps": 6,
+      "decimal": 27,
+      "hex": "1B",
+      "octal": "33",
+      "onsets": [
+        1,
+        2,
+        4,
+        5
+      ],
+      "name": "batch 6.2"
+    },
+    {
+      "pattern": "011110",
+      "steps": 6,
+      "decimal": 30,
+      "hex": "1E",
+      "octal": "36",
+      "onsets": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "name": "batch 6.3"
+    },
+    {
+      "pattern": "1100011",
+      "steps": 7,
+      "decimal": 99,
+      "hex": "63",
+      "octal": "143",
+      "onsets": [
+        0,
+        1,
+        5,
+        6
+      ],
+      "name": "batch 7.0"
+    },
+    {
+      "pattern": "1001010",
+      "steps": 7,
+      "decimal": 74,
+      "hex": "4A",
+      "octal": "112",
+      "onsets": [
+        0,
+        3,
+        5
+      ],
+      "name": "batch 7.1"
+    },
+    {
+      "pattern": "0011001",
+      "steps": 7,
+      "decimal": 25,
+      "hex": "19",
+      "octal": "31",
+      "onsets": [
+        2,
+        3,
+        6
+      ],
+      "name": "batch 7.2"
+    },
+    {
+      "pattern": "0011001",
+      "steps": 7,
+      "decimal": 25,
+      "hex": "19",
+      "octal": "31",
+      "onsets": [
+        2,
+        3,
+        6
+      ],
+      "name": "batch 7.3"
+    },
+    {
+      "pattern": "11000100",
+      "steps": 8,
+      "decimal": 196,
+      "hex": "C4",
+      "octal": "304",
+      "onsets": [
+        0,
+        1,
+        5
+      ],
+      "name": "batch 8.0"
+    },
+    {
+      "pattern": "01000000",
+      "steps": 8,
+      "decimal": 64,
+      "hex": "40",
+      "octal": "100",
+      "onsets": [
+        1
+      ],
+      "name": "batch 8.1"
+    },
+    {
+      "pattern": "10000110",
+      "steps": 8,
+      "decimal": 134,
+      "hex": "86",
+      "octal": "206",
+      "onsets": [
+        0,
+        5,
+        6
+      ],
+      "name": "batch 8.2"
+    },
+    {
+      "pattern": "11110001",
+      "steps": 8,
+      "decimal": 241,
+      "hex": "F1",
+      "octal": "361",
+      "onsets": [
+        0,
+        1,
+        2,
+        3,
+        7
+      ],
+      "name": "batch 8.3"
+    },
+    {
+      "pattern": "000010111",
+      "steps": 9,
+      "decimal": 23,
+      "hex": "17",
+      "octal": "27",
+      "onsets": [
+        4,
+        6,
+        7,
+        8
+      ],
+      "name": "batch 9.0"
+    },
+    {
+      "pattern": "000001110",
+      "steps": 9,
+      "decimal": 14,
+      "hex": "E",
+      "octal": "16",
+      "onsets": [
+        5,
+        6,
+        7
+      ],
+      "name": "batch 9.1"
+    },
+    {
+      "pattern": "001100011",
+      "steps": 9,
+      "decimal": 99,
+      "hex": "63",
+      "octal": "143",
+      "onsets": [
+        2,
+        3,
+        7,
+        8
+      ],
+      "name": "batch 9.2"
+    },
+    {
+      "pattern": "000001000",
+      "steps": 9,
+      "decimal": 8,
+      "hex": "8",
+      "octal": "10",
+      "onsets": [
+        5
+      ],
+      "name": "batch 9.3"
+    },
+    {
+      "pattern": "001001000",
+      "steps": 9,
+      "decimal": 72,
+      "hex": "48",
+      "octal": "110",
+      "onsets": [
+        2,
+        5
+      ],
+      "name": "batch 9.4"
+    },
+    {
+      "pattern": "101000010",
+      "steps": 9,
+      "decimal": 322,
+      "hex": "142",
+      "octal": "502",
+      "onsets": [
+        0,
+        2,
+        7
+      ],
+      "name": "batch 9.5"
+    },
+    {
+      "pattern": "1110001101",
+      "steps": 10,
+      "decimal": 909,
+      "hex": "38D",
+      "octal": "1615",
+      "onsets": [
+        0,
+        1,
+        2,
+        6,
+        7,
+        9
+      ],
+      "name": "batch 10.0"
+    },
+    {
+      "pattern": "0100110001",
+      "steps": 10,
+      "decimal": 305,
+      "hex": "131",
+      "octal": "461",
+      "onsets": [
+        1,
+        4,
+        5,
+        9
+      ],
+      "name": "batch 10.1"
+    },
+    {
+      "pattern": "1000000100",
+      "steps": 10,
+      "decimal": 516,
+      "hex": "204",
+      "octal": "1004",
+      "onsets": [
+        0,
+        7
+      ],
+      "name": "batch 10.2"
+    },
+    {
+      "pattern": "0010010010",
+      "steps": 10,
+      "decimal": 146,
+      "hex": "92",
+      "octal": "222",
+      "onsets": [
+        2,
+        5,
+        8
+      ],
+      "name": "batch 10.3"
+    },
+    {
+      "pattern": "1100001000",
+      "steps": 10,
+      "decimal": 776,
+      "hex": "308",
+      "octal": "1410",
+      "onsets": [
+        0,
+        1,
+        6
+      ],
+      "name": "batch 10.4"
+    },
+    {
+      "pattern": "1000000110",
+      "steps": 10,
+      "decimal": 518,
+      "hex": "206",
+      "octal": "1006",
+      "onsets": [
+        0,
+        7,
+        8
+      ],
+      "name": "batch 10.5"
+    },
+    {
+      "pattern": "00010010011",
+      "steps": 11,
+      "decimal": 147,
+      "hex": "93",
+      "octal": "223",
+      "onsets": [
+        3,
+        6,
+        9,
+        10
+      ],
+      "name": "batch 11.0"
+    },
+    {
+      "pattern": "11010001111",
+      "steps": 11,
+      "decimal": 1679,
+      "hex": "68F",
+      "octal": "3217",
+      "onsets": [
+        0,
+        1,
+        3,
+        7,
+        8,
+        9,
+        10
+      ],
+      "name": "batch 11.1"
+    },
+    {
+      "pattern": "01011010100",
+      "steps": 11,
+      "decimal": 724,
+      "hex": "2D4",
+      "octal": "1324",
+      "onsets": [
+        1,
+        3,
+        4,
+        6,
+        8
+      ],
+      "name": "batch 11.2"
+    },
+    {
+      "pattern": "10000000010",
+      "steps": 11,
+      "decimal": 1026,
+      "hex": "402",
+      "octal": "2002",
+      "onsets": [
+        0,
+        9
+      ],
+      "name": "batch 11.3"
+    },
+    {
+      "pattern": "00011110000",
+      "steps": 11,
+      "decimal": 240,
+      "hex": "F0",
+      "octal": "360",
+      "onsets": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "name": "batch 11.4"
+    },
+    {
+      "pattern": "01111100101",
+      "steps": 11,
+      "decimal": 997,
+      "hex": "3E5",
+      "octal": "1745",
+      "onsets": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        10
+      ],
+      "name": "batch 11.5"
+    },
+    {
+      "pattern": "011111000110",
+      "steps": 12,
+      "decimal": 1990,
+      "hex": "7C6",
+      "octal": "3706",
+      "onsets": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        9,
+        10
+      ],
+      "name": "batch 12.0"
+    },
+    {
+      "pattern": "011100000010",
+      "steps": 12,
+      "decimal": 1794,
+      "hex": "702",
+      "octal": "3402",
+      "onsets": [
+        1,
+        2,
+        3,
+        10
+      ],
+      "name": "batch 12.1"
+    },
+    {
+      "pattern": "000001111100",
+      "steps": 12,
+      "decimal": 124,
+      "hex": "7C",
+      "octal": "174",
+      "onsets": [
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "name": "batch 12.2"
+    },
+    {
+      "pattern": "010010010010",
+      "steps": 12,
+      "decimal": 1170,
+      "hex": "492",
+      "octal": "2222",
+      "onsets": [
+        1,
+        4,
+        7,
+        10
+      ],
+      "name": "batch 12.3"
+    },
+    {
+      "pattern": "101010011110",
+      "steps": 12,
+      "decimal": 2718,
+      "hex": "A9E",
+      "octal": "5236",
+      "onsets": [
+        0,
+        2,
+        4,
+        7,
+        8,
+        9,
+        10
+      ],
+      "name": "batch 12.4"
+    },
+    {
+      "pattern": "000101000110",
+      "steps": 12,
+      "decimal": 326,
+      "hex": "146",
+      "octal": "506",
+      "onsets": [
+        3,
+        5,
+        9,
+        10
+      ],
+      "name": "batch 12.5"
+    },
+    {
+      "pattern": "0000010000010",
+      "steps": 13,
+      "decimal": 130,
+      "hex": "82",
+      "octal": "202",
+      "onsets": [
+        5,
+        11
+      ],
+      "name": "batch 13.0"
+    },
+    {
+      "pattern": "1010001001101",
+      "steps": 13,
+      "decimal": 5197,
+      "hex": "144D",
+      "octal": "12115",
+      "onsets": [
+        0,
+        2,
+        6,
+        9,
+        10,
+        12
+      ],
+      "name": "batch 13.1"
+    },
+    {
+      "pattern": "0101011100001",
+      "steps": 13,
+      "decimal": 2785,
+      "hex": "AE1",
+      "octal": "5341",
+      "onsets": [
+        1,
+        3,
+        5,
+        6,
+        7,
+        12
+      ],
+      "name": "batch 13.2"
+    },
+    {
+      "pattern": "0011000110110",
+      "steps": 13,
+      "decimal": 1590,
+      "hex": "636",
+      "octal": "3066",
+      "onsets": [
+        2,
+        3,
+        7,
+        8,
+        10,
+        11
+      ],
+      "name": "batch 13.3"
+    },
+    {
+      "pattern": "1100000011001",
+      "steps": 13,
+      "decimal": 6169,
+      "hex": "1819",
+      "octal": "14031",
+      "onsets": [
+        0,
+        1,
+        8,
+        9,
+        12
+      ],
+      "name": "batch 13.4"
+    },
+    {
+      "pattern": "0010000101101",
+      "steps": 13,
+      "decimal": 1069,
+      "hex": "42D",
+      "octal": "2055",
+      "onsets": [
+        2,
+        7,
+        9,
+        10,
+        12
+      ],
+      "name": "batch 13.5"
+    },
+    {
+      "pattern": "10000011101000",
+      "steps": 14,
+      "decimal": 8424,
+      "hex": "20E8",
+      "octal": "20350",
+      "onsets": [
+        0,
+        6,
+        7,
+        8,
+        10
+      ],
+      "name": "batch 14.0"
+    },
+    {
+      "pattern": "00110110000000",
+      "steps": 14,
+      "decimal": 3456,
+      "hex": "D80",
+      "octal": "6600",
+      "onsets": [
+        2,
+        3,
+        5,
+        6
+      ],
+      "name": "batch 14.1"
+    },
+    {
+      "pattern": "01000000101010",
+      "steps": 14,
+      "decimal": 4138,
+      "hex": "102A",
+      "octal": "10052",
+      "onsets": [
+        1,
+        8,
+        10,
+        12
+      ],
+      "name": "batch 14.2"
+    },
+    {
+      "pattern": "01101100011101",
+      "steps": 14,
+      "decimal": 6941,
+      "hex": "1B1D",
+      "octal": "15435",
+      "onsets": [
+        1,
+        2,
+        4,
+        5,
+        9,
+        10,
+        11,
+        13
+      ],
+      "name": "batch 14.3"
+    },
+    {
+      "pattern": "00110000011000",
+      "steps": 14,
+      "decimal": 3096,
+      "hex": "C18",
+      "octal": "6030",
+      "onsets": [
+        2,
+        3,
+        9,
+        10
+      ],
+      "name": "batch 14.4"
+    },
+    {
+      "pattern": "00011010101000",
+      "steps": 14,
+      "decimal": 1704,
+      "hex": "6A8",
+      "octal": "3250",
+      "onsets": [
+        3,
+        4,
+        6,
+        8,
+        10
+      ],
+      "name": "batch 14.5"
+    },
+    {
+      "pattern": "110100001011110",
+      "steps": 15,
+      "decimal": 26718,
+      "hex": "685E",
+      "octal": "64136",
+      "onsets": [
+        0,
+        1,
+        3,
+        8,
+        10,
+        11,
+        12,
+        13
+      ],
+      "name": "batch 15.0"
+    },
+    {
+      "pattern": "101101000000101",
+      "steps": 15,
+      "decimal": 23045,
+      "hex": "5A05",
+      "octal": "55005",
+      "onsets": [
+        0,
+        2,
+        3,
+        5,
+        12,
+        14
+      ],
+      "name": "batch 15.1"
+    },
+    {
+      "pattern": "010111110011001",
+      "steps": 15,
+      "decimal": 12185,
+      "hex": "2F99",
+      "octal": "27631",
+      "onsets": [
+        1,
+        3,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        14
+      ],
+      "name": "batch 15.2"
+    },
+    {
+      "pattern": "001000001000001",
+      "steps": 15,
+      "decimal": 4161,
+      "hex": "1041",
+      "octal": "10101",
+      "onsets": [
+        2,
+        8,
+        14
+      ],
+      "name": "batch 15.3"
+    },
+    {
+      "pattern": "000100000101000",
+      "steps": 15,
+      "decimal": 2088,
+      "hex": "828",
+      "octal": "4050",
+      "onsets": [
+        3,
+        9,
+        11
+      ],
+      "name": "batch 15.4"
+    },
+    {
+      "pattern": "011111000011000",
+      "steps": 15,
+      "decimal": 15896,
+      "hex": "3E18",
+      "octal": "37030",
+      "onsets": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        10,
+        11
+      ],
+      "name": "batch 15.5"
+    },
+    {
+      "pattern": "0010001110011000",
+      "steps": 16,
+      "decimal": 9112,
+      "hex": "2398",
+      "octal": "21630",
+      "onsets": [
+        2,
+        6,
+        7,
+        8,
+        11,
+        12
+      ],
+      "name": "batch 16.0"
+    },
+    {
+      "pattern": "1100110111001010",
+      "steps": 16,
+      "decimal": 52682,
+      "hex": "CDCA",
+      "octal": "146712",
+      "onsets": [
+        0,
+        1,
+        4,
+        5,
+        7,
+        8,
+        9,
+        12,
+        14
+      ],
+      "name": "batch 16.1"
+    },
+    {
+      "pattern": "1111100100001111",
+      "steps": 16,
+      "decimal": 63759,
+      "hex": "F90F",
+      "octal": "174417",
+      "onsets": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        7,
+        12,
+        13,
+        14,
+        15
+      ],
+      "name": "batch 16.2"
+    },
+    {
+      "pattern": "0100010110010001",
+      "steps": 16,
+      "decimal": 17809,
+      "hex": "4591",
+      "octal": "42621",
+      "onsets": [
+        1,
+        5,
+        7,
+        8,
+        11,
+        15
+      ],
+      "name": "batch 16.3"
+    },
+    {
+      "pattern": "0000111101001010",
+      "steps": 16,
+      "decimal": 3914,
+      "hex": "F4A",
+      "octal": "7512",
+      "onsets": [
+        4,
+        5,
+        6,
+        7,
+        9,
+        12,
+        14
+      ],
+      "name": "batch 16.4"
+    },
+    {
+      "pattern": "0001100000010000",
+      "steps": 16,
+      "decimal": 6160,
+      "hex": "1810",
+      "octal": "14020",
+      "onsets": [
+        3,
+        4,
+        11
+      ],
+      "name": "batch 16.5"
+    },
+    {
+      "pattern": "11001110000110101",
+      "steps": 17,
+      "decimal": 105525,
+      "hex": "19C35",
+      "octal": "316065",
+      "onsets": [
+        0,
+        1,
+        4,
+        5,
+        6,
+        11,
+        12,
+        14,
+        16
+      ],
+      "name": "batch 17.0"
+    },
+    {
+      "pattern": "11100101111111000",
+      "steps": 17,
+      "decimal": 117752,
+      "hex": "1CBF8",
+      "octal": "345770",
+      "onsets": [
+        0,
+        1,
+        2,
+        5,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13
+      ],
+      "name": "batch 17.1"
+    },
+    {
+      "pattern": "01000010010110010",
+      "steps": 17,
+      "decimal": 33970,
+      "hex": "84B2",
+      "octal": "102262",
+      "onsets": [
+        1,
+        6,
+        9,
+        11,
+        12,
+        15
+      ],
+      "name": "batch 17.2"
+    },
+    {
+      "pattern": "00100001010011111",
+      "steps": 17,
+      "decimal": 17055,
+      "hex": "429F",
+      "octal": "41237",
+      "onsets": [
+        2,
+        7,
+        9,
+        12,
+        13,
+        14,
+        15,
+        16
+      ],
+      "name": "batch 17.3"
+    },
+    {
+      "pattern": "00000000010110011",
+      "steps": 17,
+      "decimal": 179,
+      "hex": "B3",
+      "octal": "263",
+      "onsets": [
+        9,
+        11,
+        12,
+        15,
+        16
+      ],
+      "name": "batch 17.4"
+    },
+    {
+      "pattern": "00000111011101011",
+      "steps": 17,
+      "decimal": 3819,
+      "hex": "EEB",
+      "octal": "7353",
+      "onsets": [
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        13,
+        15,
+        16
+      ],
+      "name": "batch 17.5"
+    },
+    {
+      "pattern": "100000100000010010",
+      "steps": 18,
+      "decimal": 133138,
+      "hex": "20812",
+      "octal": "404022",
+      "onsets": [
+        0,
+        6,
+        13,
+        16
+      ],
+      "name": "batch 18.0"
+    },
+    {
+      "pattern": "101000100100001001",
+      "steps": 18,
+      "decimal": 166153,
+      "hex": "28909",
+      "octal": "504411",
+      "onsets": [
+        0,
+        2,
+        6,
+        9,
+        14,
+        17
+      ],
+      "name": "batch 18.1"
+    },
+    {
+      "pattern": "010001000100010010",
+      "steps": 18,
+      "decimal": 69906,
+      "hex": "11112",
+      "octal": "210422",
+      "onsets": [
+        1,
+        5,
+        9,
+        13,
+        16
+      ],
+      "name": "batch 18.2"
+    },
+    {
+      "pattern": "111100111100001111",
+      "steps": 18,
+      "decimal": 249615,
+      "hex": "3CF0F",
+      "octal": "747417",
+      "onsets": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        7,
+        8,
+        9,
+        14,
+        15,
+        16,
+        17
+      ],
+      "name": "batch 18.3"
+    },
+    {
+      "pattern": "100000100101000000",
+      "steps": 18,
+      "decimal": 133440,
+      "hex": "20940",
+      "octal": "404500",
+      "onsets": [
+        0,
+        6,
+        9,
+        11
+      ],
+      "name": "batch 18.4"
+    },
+    {
+      "pattern": "011110110101100010",
+      "steps": 18,
+      "decimal": 126306,
+      "hex": "1ED62",
+      "octal": "366542",
+      "onsets": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        7,
+        9,
+        11,
+        12,
+        16
+      ],
+      "name": "batch 18.5"
+    },
+    {
+      "pattern": "0000100001010000010",
+      "steps": 19,
+      "decimal": 17026,
+      "hex": "4282",
+      "octal": "41202",
+      "onsets": [
+        4,
+        9,
+        11,
+        17
+      ],
+      "name": "batch 19.0"
+    },
+    {
+      "pattern": "1001100100011000010",
+      "steps": 19,
+      "decimal": 313538,
+      "hex": "4C8C2",
+      "octal": "1144302",
+      "onsets": [
+        0,
+        3,
+        4,
+        7,
+        11,
+        12,
+        17
+      ],
+      "name": "batch 19.1"
+    },
+    {
+      "pattern": "0001000010011110011",
+      "steps": 19,
+      "decimal": 34035,
+      "hex": "84F3",
+      "octal": "102363",
+      "onsets": [
+        3,
+        8,
+        11,
+        12,
+        13,
+        14,
+        17,
+        18
+      ],
+      "name": "batch 19.2"
+    },
+    {
+      "pattern": "0000000101101101000",
+      "steps": 19,
+      "decimal": 2920,
+      "hex": "B68",
+      "octal": "5550",
+      "onsets": [
+        7,
+        9,
+        10,
+        12,
+        13,
+        15
+      ],
+      "name": "batch 19.3"
+    },
+    {
+      "pattern": "0010011001100010101",
+      "steps": 19,
+      "decimal": 78613,
+      "hex": "13315",
+      "octal": "231425",
+      "onsets": [
+        2,
+        5,
+        6,
+        9,
+        10,
+        14,
+        16,
+        18
+      ],
+      "name": "batch 19.4"
+    },
+    {
+      "pattern": "0110010111010000001",
+      "steps": 19,
+      "decimal": 208513,
+      "hex": "32E81",
+      "octal": "627201",
+      "onsets": [
+        1,
+        2,
+        5,
+        7,
+        8,
+        9,
+        11,
+        18
+      ],
+      "name": "batch 19.5"
+    },
+    {
+      "pattern": "10000000000010001000",
+      "steps": 20,
+      "decimal": 524424,
+      "hex": "80088",
+      "octal": "2000210",
+      "onsets": [
+        0,
+        12,
+        16
+      ],
+      "name": "batch 20.0"
+    },
+    {
+      "pattern": "00010000100010000101",
+      "steps": 20,
+      "decimal": 67717,
+      "hex": "10885",
+      "octal": "204205",
+      "onsets": [
+        3,
+        8,
+        12,
+        17,
+        19
+      ],
+      "name": "batch 20.1"
+    },
+    {
+      "pattern": "01000001000001010000",
+      "steps": 20,
+      "decimal": 266320,
+      "hex": "41050",
+      "octal": "1010120",
+      "onsets": [
+        1,
+        7,
+        13,
+        15
+      ],
+      "name": "batch 20.2"
+    },
+    {
+      "pattern": "00000100110011001010",
+      "steps": 20,
+      "decimal": 19658,
+      "hex": "4CCA",
+      "octal": "46312",
+      "onsets": [
+        5,
+        8,
+        9,
+        12,
+        13,
+        16,
+        18
+      ],
+      "name": "batch 20.3"
+    },
+    {
+      "pattern": "01000111010001000111",
+      "steps": 20,
+      "decimal": 291911,
+      "hex": "47447",
+      "octal": "1072107",
+      "onsets": [
+        1,
+        5,
+        6,
+        7,
+        9,
+        13,
+        17,
+        18,
+        19
+      ],
+      "name": "batch 20.4"
+    },
+    {
+      "pattern": "10000110011100011011",
+      "steps": 20,
+      "decimal": 550683,
+      "hex": "8671B",
+      "octal": "2063433",
+      "onsets": [
+        0,
+        5,
+        6,
+        9,
+        10,
+        11,
+        15,
+        16,
+        18,
+        19
+      ],
+      "name": "batch 20.5"
+    },
+    {
+      "pattern": "000010001100001011000",
+      "steps": 21,
+      "decimal": 71768,
+      "hex": "11858",
+      "octal": "214130",
+      "onsets": [
+        4,
+        8,
+        9,
+        14,
+        16,
+        17
+      ],
+      "name": "batch 21.0"
+    },
+    {
+      "pattern": "000010101110100101000",
+      "steps": 21,
+      "decimal": 89384,
+      "hex": "15D28",
+      "octal": "256450",
+      "onsets": [
+        4,
+        6,
+        8,
+        9,
+        10,
+        12,
+        15,
+        17
+      ],
+      "name": "batch 21.1"
+    },
+    {
+      "pattern": "000000100100000010010",
+      "steps": 21,
+      "decimal": 18450,
+      "hex": "4812",
+      "octal": "44022",
+      "onsets": [
+        6,
+        9,
+        16,
+        19
+      ],
+      "name": "batch 21.2"
+    },
+    {
+      "pattern": "001101000100100000010",
+      "steps": 21,
+      "decimal": 428290,
+      "hex": "68902",
+      "octal": "1504402",
+      "onsets": [
+        2,
+        3,
+        5,
+        9,
+        12,
+        19
+      ],
+      "name": "batch 21.3"
+    },
+    {
+      "pattern": "000010000100010001000",
+      "steps": 21,
+      "decimal": 67720,
+      "hex": "10888",
+      "octal": "204210",
+      "onsets": [
+        4,
+        9,
+        13,
+        17
+      ],
+      "name": "batch 21.4"
+    },
+    {
+      "pattern": "111011100001000101000",
+      "steps": 21,
+      "decimal": 1950248,
+      "hex": "1DC228",
+      "octal": "7341050",
+      "onsets": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        11,
+        15,
+        17
+      ],
+      "name": "batch 21.5"
+    },
+    {
+      "pattern": "0000101000010101000000",
+      "steps": 22,
+      "decimal": 165184,
+      "hex": "28540",
+      "octal": "502500",
+      "onsets": [
+        4,
+        6,
+        11,
+        13,
+        15
+      ],
+      "name": "batch 22.0"
+    },
+    {
+      "pattern": "0010011111110110100001",
+      "steps": 22,
+      "decimal": 654753,
+      "hex": "9FDA1",
+      "octal": "2376641",
+      "onsets": [
+        2,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        13,
+        14,
+        16,
+        21
+      ],
+      "name": "batch 22.1"
+    },
+    {
+      "pattern": "1110100100000111100100",
+      "steps": 22,
+      "decimal": 3817956,
+      "hex": "3A41E4",
+      "octal": "16440744",
+      "onsets": [
+        0,
+        1,
+        2,
+        4,
+        7,
+        13,
+        14,
+        15,
+        16,
+        19
+      ],
+      "name": "batch 22.2"
+    },
+    {
+      "pattern": "1000110001011011000101",
+      "steps": 22,
+      "decimal": 2299589,
+      "hex": "2316C5",
+      "octal": "10613305",
+      "onsets": [
+        0,
+        4,
+        5,
+        9,
+        11,
+        12,
+        14,
+        15,
+        19,
+        21
+      ],
+      "name": "batch 22.3"
+    },
+    {
+      "pattern": "1000111101010001001010",
+      "steps": 22,
+      "decimal": 2348106,
+      "hex": "23D44A",
+      "octal": "10752112",
+      "onsets": [
+        0,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        15,
+        18,
+        20
+      ],
+      "name": "batch 22.4"
+    },
+    {
+      "pattern": "1100100000111000001010",
+      "steps": 22,
+      "decimal": 3280394,
+      "hex": "320E0A",
+      "octal": "14407012",
+      "onsets": [
+        0,
+        1,
+        4,
+        10,
+        11,
+        12,
+        18,
+        20
+      ],
+      "name": "batch 22.5"
+    },
+    {
+      "pattern": "10110100100110001000001",
+      "steps": 23,
+      "decimal": 5917761,
+      "hex": "5A4C41",
+      "octal": "26446101",
+      "onsets": [
+        0,
+        2,
+        3,
+        5,
+        8,
+        11,
+        12,
+        16,
+        22
+      ],
+      "name": "batch 23.0"
+    },
+    {
+      "pattern": "11110110010101000111100",
+      "steps": 23,
+      "decimal": 8071740,
+      "hex": "7B2A3C",
+      "octal": "36625074",
+      "onsets": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        9,
+        11,
+        13,
+        17,
+        18,
+        19,
+        20
+      ],
+      "name": "batch 23.1"
+    },
+    {
+      "pattern": "01010100010110110000001",
+      "steps": 23,
+      "decimal": 2764161,
+      "hex": "2A2D81",
+      "octal": "12426601",
+      "onsets": [
+        1,
+        3,
+        5,
+        9,
+        11,
+        12,
+        14,
+        15,
+        22
+      ],
+      "name": "batch 23.2"
+    },
+    {
+      "pattern": "00101010100000111000100",
+      "steps": 23,
+      "decimal": 1393092,
+      "hex": "1541C4",
+      "octal": "5240704",
+      "onsets": [
+        2,
+        4,
+        6,
+        8,
+        14,
+        15,
+        16,
+        20
+      ],
+      "name": "batch 23.3"
+    },
+    {
+      "pattern": "00100010001011110000100",
+      "steps": 23,
+      "decimal": 1120132,
+      "hex": "111784",
+      "octal": "4213604",
+      "onsets": [
+        2,
+        6,
+        10,
+        12,
+        13,
+        14,
+        15,
+        20
+      ],
+      "name": "batch 23.4"
+    },
+    {
+      "pattern": "00001001110101100101111",
+      "steps": 23,
+      "decimal": 322351,
+      "hex": "4EB2F",
+      "octal": "1165457",
+      "onsets": [
+        4,
+        7,
+        8,
+        9,
+        11,
+        13,
+        14,
+        17,
+        19,
+        20,
+        21,
+        22
+      ],
+      "name": "batch 23.5"
+    },
+    {
+      "pattern": "101001000100000010111010",
+      "steps": 24,
+      "decimal": 10764474,
+      "hex": "A440BA",
+      "octal": "51040272",
+      "onsets": [
+        0,
+        2,
+        5,
+        9,
+        16,
+        18,
+        19,
+        20,
+        22
+      ],
+      "name": "batch 24.0"
+    },
+    {
+      "pattern": "011110011010010010010100",
+      "steps": 24,
+      "decimal": 7971988,
+      "hex": "79A494",
+      "octal": "36322224",
+      "onsets": [
+        1,
+        2,
+        3,
+        4,
+        7,
+        8,
+        10,
+        13,
+        16,
+        19,
+        21
+      ],
+      "name": "batch 24.1"
+    },
+    {
+      "pattern": "000101000100111010010110",
+      "steps": 24,
+      "decimal": 1330838,
+      "hex": "144E96",
+      "octal": "5047226",
+      "onsets": [
+        3,
+        5,
+        9,
+        12,
+        13,
+        14,
+        16,
+        19,
+        21,
+        22
+      ],
+      "name": "batch 24.2"
+    },
+    {
+      "pattern": "100011111000100101000001",
+      "steps": 24,
+      "decimal": 9406785,
+      "hex": "8F8941",
+      "octal": "43704501",
+      "onsets": [
+        0,
+        4,
+        5,
+        6,
+        7,
+        8,
+        12,
+        15,
+        17,
+        23
+      ],
+      "name": "batch 24.3"
+    },
+    {
+      "pattern": "111011010110101000101111",
+      "steps": 24,
+      "decimal": 15559215,
+      "hex": "ED6A2F",
+      "octal": "73265057",
+      "onsets": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        10,
+        12,
+        14,
+        18,
+        20,
+        21,
+        22,
+        23
+      ],
+      "name": "batch 24.4"
+    },
+    {
+      "pattern": "100000001010000100100001",
+      "steps": 24,
+      "decimal": 8429857,
+      "hex": "80A121",
+      "octal": "40120441",
+      "onsets": [
+        0,
+        8,
+        10,
+        15,
+        18,
+        23
+      ],
+      "name": "batch 24.5"
+    }
+  ]
+}
