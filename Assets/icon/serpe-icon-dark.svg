@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" role="img" aria-label="Serpe (dark)">
+  <rect x="16" y="16" width="992" height="992" rx="208" fill="#1a1814"></rect>
+  <rect x="16" y="16" width="992" height="992" rx="208" fill="none" stroke="#38332b" stroke-width="12"></rect>
+  <circle cx="512" cy="512" r="300" fill="none" stroke="#38332b" stroke-width="14"></circle>
+  <polygon points="512,212 812,512 724,724 300,724 212,512" fill="#3aa06b" fill-opacity="0.18" stroke="#3aa06b" stroke-width="26" stroke-linejoin="round"></polygon>
+  <circle cx="724" cy="300" r="24" fill="#221f1a" stroke="#e8e1d2" stroke-width="12"></circle>
+  <circle cx="512" cy="812" r="24" fill="#221f1a" stroke="#e8e1d2" stroke-width="12"></circle>
+  <circle cx="300" cy="300" r="24" fill="#221f1a" stroke="#e8e1d2" stroke-width="12"></circle>
+  <circle cx="512" cy="212" r="42" fill="#3aa06b" stroke="#14130f" stroke-width="14"></circle>
+  <circle cx="812" cy="512" r="42" fill="#3aa06b" stroke="#14130f" stroke-width="14"></circle>
+  <circle cx="724" cy="724" r="42" fill="#3aa06b" stroke="#14130f" stroke-width="14"></circle>
+  <circle cx="300" cy="724" r="42" fill="#3aa06b" stroke="#14130f" stroke-width="14"></circle>
+  <circle cx="212" cy="512" r="42" fill="#3aa06b" stroke="#14130f" stroke-width="14"></circle>
+  <circle cx="512" cy="512" r="20" fill="#e8e1d2"></circle>
+</svg>

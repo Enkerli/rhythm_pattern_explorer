@@ -25,7 +25,10 @@ enkerli_add_midi_effect_plugin(Serpe
     BUNDLE_ID   "com.enkerli.serpe"
     VERSION     "${PROJECT_VERSION}"
     DESCRIPTION "Mathematical rhythm pattern generator and analyzer"
-    ICON_BIG    "${CMAKE_SOURCE_DIR}/Assets/serpe-icon-1024.png"
+    # Full-bleed master (the OS applies the corner mask); see Assets/icon and
+    # DESIGN_HANDOFF §7. NOTE: the iPadOS-26 AUv3 icon also needs a per-appex
+    # asset catalog with Any/Dark/Tinted appearances — see Documentation.
+    ICON_BIG    "${CMAKE_SOURCE_DIR}/Assets/icon/serpe-1024-bleed.png"
 )
 
 # The existing sources include <JuceHeader.h> (Projucer style); generate it so

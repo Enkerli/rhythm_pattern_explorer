@@ -36,22 +36,26 @@ build system and the UI shell change).
       `JuceLibraryCode`/`Serpe-iOS`. **M5 folded in**: conformance re-homed to a
       `juce_add_console_app` CTest target + plugin POST_BUILD (the old
       `run-conformance.sh` + `Colour` stub are gone). AU/VST3 + iOS = maintainer build.
-- [~] **Design run (gates M3/M4 UI):** `DESIGN_HANDOFF.md` prepared for a Claude
-      Design pass — redesign all three Serpe versions to the suite's paper/Sketchbook
-      system, bring together the full feature union, and produce an iPadOS-26-compliant
-      app icon (the current one doesn't render for the AUv3). Awaiting design output.
-- [ ] **M3 — React WebUI scaffold** under `Source/WebUI` (package.json, esbuild,
-      `index.html`, `juce-bridge.js`, `react-globals.js`, `design/` tokens+primitives,
-      `main.jsx`). Bundles + renders in a browser. Minimal shell wired to the bridge;
-      real panels filled in during the design-led build-out.
-- [ ] **M4 — WebView editor + processor swap.** `Source/WebUI/SerpeEditor.{h,cpp}`
-      (WebBrowserComponent serving embedded BinaryData, native integration on);
-      `PluginProcessor::createEditor()` returns it; add the JS↔C++ bridge
-      (parameter relay, pattern in/out). Retire native `PluginEditor`.
-- [ ] **M5 — re-home conformance test** from the `.jucer` post-build to a CTest /
-      CMake custom target so `ctest` (and CI) runs it.
+- [x] **Design run:** Claude Design delivered `Serpe - Suite Redesign.html` +
+      `Serpe - App Icon.html` (handoff bundle, gitignored). Full unified UI on the
+      suite paper & ink tokens, three responsive runtimes, feature union, icon set.
+- [x] **M3 — React WebUI** under `Source/WebUI` (esbuild, mirrors PitchFold).
+      Implements the redesign: top bar/transport, UPI input + live parse, circle/step
+      visualisers, full control rail with runtime feature-gating. Reuses the design's
+      framework-agnostic engine (`engine/*.js`) + suite CSS. Verified in-browser:
+      builds, pixel-accurate light+dark, correct engine math, no console errors.
+- [x] **M4 — WebView editor + processor swap.** `Source/WebUI/SerpeEditor.{h,cpp}`
+      (WebBrowserComponent serving embedded BinaryData). `createEditor()` returns it;
+      bridge: JS→C++ `setUPI`/`setParamActual`, C++→JS `stateSnapshot`/`paramChange`/
+      `transport`. Native `PluginEditor` dropped from the build. CMake bundles the
+      WebUI (esbuild) + embeds it. Verified: builds, **auval PASS** with the editor.
+- [x] **M5 — conformance via CTest** (folded into M2).
+- [~] **Icon:** artwork done — full set in `Assets/icon`, `ICON_BIG` =
+      `serpe-1024-bleed.png` (macOS verified). iPadOS-26 AUv3 packaging fix
+      documented in `Documentation/ICON_iPadOS26.md` (needs maintainer Xcode/iPad).
 - [ ] **M6 — feature pairing** (Phase 2): per the parity rules — OSC/audio
-      webapp-only, host-sync plugin-only, everything else paired.
+      webapp-only, host-sync plugin-only, everything else paired. New UI controls
+      not yet backed by APVTS params (swing, MIDI channel) are UI-local until added.
 
 ## Verification ladder
 

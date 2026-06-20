@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" role="img" aria-label="Serpe (tinted)">
+  
+  <circle cx="512" cy="512" r="300" fill="none" stroke="#ffffff" stroke-opacity="0.32" stroke-width="14"></circle>
+  <polygon points="512,212 812,512 724,724 300,724 212,512" fill="#ffffff" fill-opacity="0.12" stroke="#ffffff" stroke-width="26" stroke-linejoin="round"></polygon>
+  <circle cx="724" cy="300" r="24" fill="none" stroke="#ffffff" stroke-opacity="0.7" stroke-width="12"></circle>
+  <circle cx="512" cy="812" r="24" fill="none" stroke="#ffffff" stroke-opacity="0.7" stroke-width="12"></circle>
+  <circle cx="300" cy="300" r="24" fill="none" stroke="#ffffff" stroke-opacity="0.7" stroke-width="12"></circle>
+  <circle cx="512" cy="212" r="42" fill="#ffffff"></circle>
+  <circle cx="812" cy="512" r="42" fill="#ffffff"></circle>
+  <circle cx="724" cy="724" r="42" fill="#ffffff"></circle>
+  <circle cx="300" cy="724" r="42" fill="#ffffff"></circle>
+  <circle cx="212" cy="512" r="42" fill="#ffffff"></circle>
+  <circle cx="512" cy="512" r="20" fill="#ffffff" fill-opacity="0.85"></circle>
+</svg>
