@@ -1,0 +1,3 @@
+[submodule "enkerli-juce"]
+	path = enkerli-juce
+	url = https://github.com/Enkerli/enkerli-juce.git
