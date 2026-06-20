@@ -70,6 +70,36 @@ juce::WebBrowserComponent::Options SerpeEditor::buildOptions (SerpeEditor* owner
             owner->proc.setUPIInput (args[0]["text"].toString());
         })
 
+        // Standalone play/stop (no host transport) — drives the internal sequencer.
+        .withEventListener ("setPlaying", [owner] (const Array<var>& args)
+        {
+            if (args.isEmpty()) return;
+            owner->proc.setInternalPlaying (static_cast<bool> (args[0]["playing"]));
+        })
+
+        // Manual tempo (standalone).
+        .withEventListener ("setBPM", [owner] (const Array<var>& args)
+        {
+            if (args.isEmpty()) return;
+            owner->proc.setCurrentBPM (static_cast<float> (static_cast<double> (args[0]["bpm"])));
+        })
+
+        // Edit the pattern by tapping a step (toggle onset / toggle accent).
+        .withEventListener ("toggleStep", [owner] (const Array<var>& args)
+        {
+            if (args.isEmpty()) return;
+            owner->proc.togglePatternStep (static_cast<int> (args[0]["step"]));
+            juce::Component::SafePointer<SerpeEditor> safe (owner);
+            juce::MessageManager::callAsync ([safe] { if (safe) safe->sendStateSnapshot(); });
+        })
+        .withEventListener ("toggleAccent", [owner] (const Array<var>& args)
+        {
+            if (args.isEmpty()) return;
+            owner->proc.toggleAccentAtStep (static_cast<int> (args[0]["step"]));
+            juce::Component::SafePointer<SerpeEditor> safe (owner);
+            juce::MessageManager::callAsync ([safe] { if (safe) safe->sendStateSnapshot(); });
+        })
+
         // Parameter change in actual domain — C++ normalises and notifies host.
         .withEventListener ("setParamActual", [owner] (const Array<var>& args)
         {
@@ -100,7 +130,7 @@ SerpeEditor::SerpeEditor (SerpeAudioProcessor& p)
 
     juce::Component::SafePointer<SerpeEditor> safe (this);
     juce::MessageManager::callAsync ([safe] { if (safe) safe->navigateIfNeeded(); });
-    startTimer (200);   // 5 Hz — host transport readout
+    startTimer (33);   // ~30 Hz — host transport readout + playhead
 }
 
 SerpeEditor::~SerpeEditor()
@@ -137,15 +167,14 @@ void SerpeEditor::timerCallback()
 
 void SerpeEditor::sendTransport()
 {
-    double bpm = 120.0; bool playing = false;
-    if (auto* ph = proc.getPlayHead())
-        if (auto pos = ph->getPosition())
-        {
-            if (auto b = pos->getBpm()) bpm = *b;
-            playing = pos->getIsPlaying();
-        }
-    webView.emitEventIfBrowserIsVisible ("transport",
-        makeObj ({ { "bpm", (int) juce::roundToInt (bpm) }, { "playing", playing } }));
+    const bool hostSync = proc.getAPVTS().getRawParameterValue ("useHostTransport") != nullptr
+                       && proc.getAPVTS().getRawParameterValue ("useHostTransport")->load() > 0.5f;
+    webView.emitEventIfBrowserIsVisible ("transport", makeObj ({
+        { "bpm",      (int) juce::roundToInt (proc.getCurrentBPM()) },
+        { "playing",  proc.isCurrentlyPlaying() },
+        { "step",     proc.getCurrentStep() },     // drives the UI playhead in the plugin
+        { "hostSync", hostSync },
+    }));
 }
 
 // ── Parameter listener: relay host/automation changes to the UI ───────────────
@@ -174,12 +203,18 @@ void SerpeEditor::sendStateSnapshot()
     };
 
     const auto snap = makeObj ({
-        { "bpm",                (int)  raw ("bpm")                 },
+        // BPM is a processor member (currentBPM), NOT an APVTS param — querying
+        // a "bpm" param returned 0 (the cause of the runaway default tempo).
+        { "bpm",                (int) juce::roundToInt (proc.getCurrentBPM())  },
         { "accentVelocity",            raw ("accentVelocity")      },
         { "unaccentedVelocity",        raw ("unaccentedVelocity")  },
         { "accentPitchOffset",  (int)  raw ("accentPitchOffset")   },
         { "midiNote",           (int)  raw ("midiNote")            },
         { "useHostTransport",   raw ("useHostTransport") > 0.5f     },
+        { "subdivision",        (int)  raw ("subdivision")          },
+        { "patternLengthUnit",  (int)  raw ("patternLengthUnit")    },
+        { "patternLengthValue", (int)  raw ("patternLengthValue")   },
+        { "internalPlaying",    proc.getInternalPlaying()           },
         { "upi",                proc.getUPIInput()                  },
     });
 

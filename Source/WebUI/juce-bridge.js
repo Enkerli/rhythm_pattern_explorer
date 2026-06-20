@@ -73,3 +73,11 @@ export function sendParamActual(field, value) {
 export function sendUPI(text) {
   juceEmit('setUPI', { text: text || '' });
 }
+
+/** Standalone transport: start/stop the plugin's internal sequencer. */
+export function sendPlaying(playing) { juceEmit('setPlaying', { playing: !!playing }); }
+/** Standalone manual tempo. */
+export function sendBPM(bpm) { juceEmit('setBPM', { bpm }); }
+/** Edit a step by tapping it (toggle onset / toggle its accent). */
+export function sendToggleStep(step)   { juceEmit('toggleStep',   { step }); }
+export function sendToggleAccent(step) { juceEmit('toggleAccent', { step }); }

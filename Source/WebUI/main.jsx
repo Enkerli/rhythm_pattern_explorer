@@ -19,8 +19,23 @@ import { parseUPI, euclid, polygon, rotate, invert, complement,
          barlowTransform, indispensabilityWeights, onsetCount } from './engine/upi.js';
 import { analyse } from './engine/analysis.js';
 import { createCircleView, createStepView } from './engine/render.js';
-import { initJuceBridge, sendParamActual, sendUPI, juceAvailable } from './juce-bridge.js';
-import serpeIcon from './assets/serpe-icon.svg';  // esbuild --loader:.svg=dataurl → inlined
+import { initJuceBridge, sendParamActual, sendUPI, sendPlaying, sendBPM, juceAvailable } from './juce-bridge.js';
+
+// Inline SVG mark — a data-URL <img> with unescaped '#' hex colours renders in
+// Chrome but breaks in macOS WKWebView, so inject the markup directly.
+const ICON_SVG = `<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" aria-label="Serpe">
+<rect x="16" y="16" width="992" height="992" rx="208" fill="#f5f2eb"/>
+<rect x="16" y="16" width="992" height="992" rx="208" fill="none" stroke="#ddd6ca" stroke-width="12"/>
+<circle cx="512" cy="512" r="300" fill="none" stroke="#ddd6ca" stroke-width="14"/>
+<polygon points="512,212 724,512 618,724 406,724 300,512" fill="#2d9d8a" fill-opacity="0.14" stroke="#2d9d8a" stroke-width="26" stroke-linejoin="round"/>
+<circle cx="512" cy="212" r="42" fill="#2d9d8a" stroke="#2d2b27" stroke-width="14"/>
+<circle cx="724" cy="300" r="24" fill="#fcfbf7" stroke="#2d2b27" stroke-width="12"/>
+<circle cx="724" cy="512" r="42" fill="#2d9d8a" stroke="#2d2b27" stroke-width="14"/>
+<circle cx="618" cy="724" r="42" fill="#2d9d8a" stroke="#2d2b27" stroke-width="14"/>
+<circle cx="406" cy="724" r="42" fill="#2d9d8a" stroke="#2d2b27" stroke-width="14"/>
+<circle cx="300" cy="512" r="42" fill="#2d9d8a" stroke="#2d2b27" stroke-width="14"/>
+<circle cx="300" cy="300" r="24" fill="#fcfbf7" stroke="#2d2b27" stroke-width="12"/>
+<circle cx="512" cy="512" r="20" fill="#2d2b27"/></svg>`;
 
 const { useState, useRef, useEffect, useMemo, createElement: h } = React;
 
@@ -37,6 +52,11 @@ const RT = {
   'ipad-p':{ web: false, host: true,  dense: true  },
   'ipad-l':{ web: false, host: true,  dense: true  },
 };
+
+// Subdivision param (how long each step is, relative to the host beat) — order
+// matches the C++ AudioParameterChoice "subdivision".
+const SUBDIV = ['64th Triplet', '64th', '32nd Triplet', '32nd', '16th Triplet', '16th',
+  '8th Triplet', '8th', 'Quarter Triplet', 'Quarter', 'Half Triplet', 'Half', 'Whole'];
 
 // An imperative SVG view (render.js) wrapped as a React component.
 function EngineView({ create, opts, data }) {
@@ -59,6 +79,7 @@ function SerpeApp() {
   const [tempo, setTempo]     = useState(+LS.get('tempo', 120));
   const [group, setGroup]     = useState(4);
   const [swing, setSwing]     = useState(0);
+  const [subdiv, setSubdiv]   = useState(5);   // subdivision param index (5 = 16th)
   const [view, setView]       = useState('both');
   const [showLabels, setShowLabels] = useState(false);
 
@@ -184,7 +205,7 @@ function SerpeApp() {
   const audioCtx = useRef(null), timer = useRef(null);
   function click(accent) {
     const L = live.current;
-    if (!L.waOn || !audioCtx.current) return;
+    if (!cfg.web || !L.waOn || !audioCtx.current) return;  // Web Audio is webapp-only
     const t = audioCtx.current.currentTime;
     const o = audioCtx.current.createOscillator(), g = audioCtx.current.createGain();
     o.frequency.value = accent ? 1320 : 880; g.gain.value = 0.0001;
@@ -211,13 +232,20 @@ function SerpeApp() {
     });
   }
   function play() {
-    if (playing) { pause(); return; }
+    if (cfg.host) {                       // plugin: drive the C++ internal sequencer
+      const next = !playing; setPlaying(next); sendPlaying(next);
+      return;
+    }
+    if (playing) { pause(); return; }     // webapp: Web Audio transport
     if (!audioCtx.current) { try { audioCtx.current = new (window.AudioContext || window.webkitAudioContext)(); } catch {} }
     if (audioCtx.current && audioCtx.current.state === 'suspended') audioCtx.current.resume();
     setPlaying(true); timer.current = setTimeout(tick, stepDur(0));
   }
   function pause() { setPlaying(false); clearTimeout(timer.current); }
-  function stop() { pause(); setPlayhead(-1); }
+  function stop() {
+    if (cfg.host) { setPlaying(false); sendPlaying(false); return; }  // plugin
+    pause(); setPlayhead(-1);
+  }
   useEffect(() => () => clearTimeout(timer.current), []);
 
   // ── JUCE bridge ──
@@ -226,15 +254,22 @@ function SerpeApp() {
       if (ev.type === 'stateSnapshot') {
         const s = ev.snap || {};
         if (s.runtime) setRuntime(s.runtime);
-        if (s.bpm != null) setTempo(Math.round(s.bpm));
+        if (s.bpm != null && s.bpm >= 20) setTempo(Math.round(s.bpm));  // never 0
         if (s.accentVelocity != null) setAccVel(Math.round(s.accentVelocity));
         if (s.unaccentedVelocity != null) setUnaccVel(Math.round(s.unaccentedVelocity));
         if (s.accentPitchOffset != null) setAccPitch(s.accentPitchOffset);
         if (s.midiNote != null) setMidiNote(s.midiNote);
         if (s.useHostTransport != null) setHostSync(!!s.useHostTransport);
+        if (s.subdivision != null) setSubdiv(s.subdivision);
+        if (s.internalPlaying != null) setPlaying(!!s.internalPlaying);
         if (typeof s.upi === 'string' && s.upi) setUpiText(s.upi);
       } else if (ev.type === 'transport') {
-        setHostInfo({ bpm: ev.bpm, playing: ev.playing });
+        // In the plugin the C++ sequencer owns the playhead and effective tempo.
+        setHostInfo({ bpm: ev.bpm, playing: ev.playing, hostSync: ev.hostSync });
+        if (typeof ev.step === 'number') setPlayhead(ev.step);
+        if (ev.bpm >= 20) setTempo(ev.bpm);
+        setHostSync(!!ev.hostSync);
+        setPlaying(!!ev.playing);
       }
     });
   }, []);
@@ -263,7 +298,7 @@ function SerpeApp() {
   return h('div', { className: 'serpe' + (dense ? ' es-dense' : ''), id: 'serpe' },
     // top bar
     h('div', { className: 'serpe-top' },
-      h('div', { className: 'title' }, h('img', { src: serpeIcon, alt: '' }), 'Serpe'),
+      h('div', { className: 'title' }, h('span', { className: 'title-mark', dangerouslySetInnerHTML: { __html: ICON_SVG } }), 'Serpe'),
       h('div', { className: 'transport' },
         h('button', { className: 'tbtn play' + (playing ? ' on' : ''), onClick: play, title: 'Play / pause', 'aria-label': 'Play' },
           playing
@@ -273,7 +308,7 @@ function SerpeApp() {
           h('svg', { viewBox: '0 0 24 24', fill: 'currentColor' }, h('rect', { x: 6, y: 6, width: 12, height: 12, rx: 2 })))),
       h('div', { className: 'tempo', style: { opacity: synced ? 0.45 : 1 } },
         h('input', { className: 'es-control', type: 'number', min: 40, max: 240, value: tempo, disabled: synced,
-          onChange: e => { const t = Math.max(40, Math.min(240, +e.target.value || 120)); setTempo(t); LS.set('tempo', t); }, 'aria-label': 'Tempo' }),
+          onChange: e => { const t = Math.max(40, Math.min(240, +e.target.value || 120)); setTempo(t); LS.set('tempo', t); if (juceAvailable()) sendBPM(t); }, 'aria-label': 'Tempo' }),
         h('span', { className: 'unit' }, 'BPM')),
       cfg.host && h('div', { className: 'hostchip' + (synced ? ' synced' : '') },
         h('span', { className: 'led' }), h('span', null, synced ? `Host: ${hostInfo?.bpm ?? 124} BPM` : 'Host sync off')),
@@ -388,7 +423,13 @@ function SerpeApp() {
 
         // Timing & output
         h(Section, { title: 'Timing & output' },
-          h(Field, { label: 'Beat grouping' },
+          h(Field, { label: 'Step length' },
+            h('select', { className: 'es-control', value: subdiv,
+              onChange: e => { setSubdiv(+e.target.value); if (juceAvailable()) sendParamActual('subdivision', +e.target.value); } },
+              SUBDIV.map((t, i) => h('option', { key: i, value: i }, 'each step = ' + t)))),
+          h('p', { className: 'note', style: { fontSize: 11, color: 'var(--es-fg-muted)', margin: '-4px 0 10px' } },
+            'How long each step lasts against the host beat (host sync) or the tempo above.'),
+          h(Field, { label: 'Beat grouping (visual)' },
             h('select', { className: 'es-control', value: group, onChange: e => setGroup(+e.target.value) },
               [['2', '2'], ['3', '3'], ['4', '4'], ['0', 'none']].map(([v, t]) => h('option', { key: v, value: +v }, t)))),
           h(Slider, { label: 'Swing', value: swing, min: 0, max: 60, set: setSwing, fmt: v => v + '%' }),

@@ -89,23 +89,27 @@ export function createCircleView(host, opts = {}) {
       kids.push(wedge);
     }
 
-    // step nodes
+    // step nodes — accented onsets in the suite amber, plain onsets in the accent
+    const accentAmber = "var(--es-dim-pressure)";
+    // thin labels on large cycles so they don't overlap / shrink illegibly
+    const labelEvery = n <= 16 ? 1 : n <= 32 ? 2 : Math.ceil(n / 16);
     for (let i = 0; i < n; i++) {
       const [x, y] = pol(cx, cy, R, ang(i, n));
       const on = !!steps[i];
       const acc = !!accents[i];
       const here = i === playhead;
       const r = on ? (acc ? 12 : 9.5) : 5.5;
+      const onColor = acc ? accentAmber : accent;
       if (acc && on) {
-        kids.push(el("circle", { cx: x, cy: y, r: r + 3.5, fill: "none", stroke: accent, "stroke-width": 1.5 }));
+        kids.push(el("circle", { cx: x, cy: y, r: r + 3.5, fill: "none", stroke: onColor, "stroke-width": 1.5 }));
       }
       kids.push(el("circle", {
         cx: x, cy: y, r,
-        fill: on ? accent : "var(--es-bg-raised)",
+        fill: on ? onColor : "var(--es-bg-raised)",
         stroke: here ? "var(--es-fg)" : on ? "var(--es-fg)" : "var(--es-border-strong)",
         "stroke-width": here ? 3 : on ? 1.5 : 1.25,
       }));
-      if (state.showLabels) {
+      if (state.showLabels && (on || i % labelEvery === 0)) {
         const [lx, ly] = pol(cx, cy, R + 22, ang(i, n));
         const t = el("text", {
           x: lx, y: ly, "text-anchor": "middle", "dominant-baseline": "central",
@@ -129,9 +133,12 @@ export function createStepView(host, opts = {}) {
   host.replaceChildren(wrap);
 
   function render() {
-    const { steps, accents, playhead, group } = state;
+    const { steps, accents, playhead, group, onToggle } = state;
     const n = steps.length;
-    wrap.style.setProperty("--n", n);
+    // wrap large cycles into rows of a sensible width instead of squeezing one row
+    const cols = n <= 16 ? n : (group && n % group === 0 && n / group <= 16 ? n / group : 16);
+    wrap.style.setProperty("--cols", cols);
+    const showNums = n <= 16 ? 1 : n <= 32 ? 2 : Math.ceil(n / 16);
     const cells = [];
     for (let i = 0; i < n; i++) {
       const c = document.createElement("div");
@@ -140,10 +147,13 @@ export function createStepView(host, opts = {}) {
       if (accents[i]) c.classList.add("acc");
       if (i === playhead) c.classList.add("here");
       if (group && i % group === 0) c.classList.add("beat");
-      const lab = document.createElement("span");
-      lab.className = "serpe-step-n";
-      lab.textContent = i;
-      c.appendChild(lab);
+      if (onToggle) c.addEventListener("click", () => onToggle(i, steps[i]));
+      if (steps[i] || i % showNums === 0) {
+        const lab = document.createElement("span");
+        lab.className = "serpe-step-n";
+        lab.textContent = i;
+        c.appendChild(lab);
+      }
       cells.push(c);
     }
     wrap.replaceChildren(...cells);
