@@ -36,6 +36,10 @@ build system and the UI shell change).
       `JuceLibraryCode`/`Serpe-iOS`. **M5 folded in**: conformance re-homed to a
       `juce_add_console_app` CTest target + plugin POST_BUILD (the old
       `run-conformance.sh` + `Colour` stub are gone). AU/VST3 + iOS = maintainer build.
+- [~] **Design run (gates M3/M4 UI):** `DESIGN_HANDOFF.md` prepared for a Claude
+      Design pass — redesign all three Serpe versions to the suite's paper/Sketchbook
+      system, bring together the full feature union, and produce an iPadOS-26-compliant
+      app icon (the current one doesn't render for the AUv3). Awaiting design output.
 - [ ] **M3 — React WebUI scaffold** under `Source/WebUI` (package.json, esbuild,
       `index.html`, `juce-bridge.js`, `react-globals.js`, `design/` tokens+primitives,
       `main.jsx`). Bundles + renders in a browser. Minimal shell wired to the bridge;
