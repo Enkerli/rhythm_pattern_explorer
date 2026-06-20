@@ -8,6 +8,17 @@ set(CMAKE_CXX_STANDARD_REQUIRED YES)
 include("${CMAKE_CURRENT_SOURCE_DIR}/enkerli-juce/cmake/EnkerliPlugin.cmake")
 enkerli_resolve_juce()
 
+# Force the iOS signing team project-wide. The archetype passes DEVELOPMENT_TEAM
+# to juce_add_plugin, but CMake's Xcode generator still fills every target with
+# the machine's *default* Apple account team (here B2623T4238) — so the project
+# came up needing a manual switch to the intended team. Setting the Xcode
+# attribute before any target is created applies it to all of them (SharedCode,
+# Standalone, AUv3, install). Must precede enkerli_add_*_plugin.
+if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    set(CMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "${ENKERLI_IOS_TEAM_ID}")
+    set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic")
+endif()
+
 # ── Plugin (midi_effect / aumi archetype) ───────────────────────────────────
 # Identity is load-bearing: PLUGIN_CODE RPEd, manufacturer Enke, bundle
 # com.enkerli.serpe — installed hosts key saved sessions on these. The
@@ -17,7 +28,7 @@ enkerli_add_midi_effect_plugin(Serpe
     BUNDLE_ID   "com.enkerli.serpe"
     VERSION     "${PROJECT_VERSION}"
     DESCRIPTION "Mathematical rhythm pattern generator and analyzer"
-    ICON_BIG    "${CMAKE_SOURCE_DIR}/Assets/plugin-icon-128.png"
+    ICON_BIG    "${CMAKE_SOURCE_DIR}/Assets/serpe-icon-1024.png"
 )
 
 # The existing sources include <JuceHeader.h> (Projucer style); generate it so
