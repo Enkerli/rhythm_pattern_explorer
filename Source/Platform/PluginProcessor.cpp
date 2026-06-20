@@ -28,7 +28,7 @@
 */
 
 #include "PluginProcessor.h"
-#include "PluginEditor.h"
+#include "../WebUI/SerpeEditor.h"
 #include "PlatformSpecific.h"
 #include <fstream>
 #include <algorithm>
@@ -605,7 +605,7 @@ bool SerpeAudioProcessor::hasEditor() const
 
 juce::AudioProcessorEditor* SerpeAudioProcessor::createEditor()
 {
-    return new SerpeAudioProcessorEditor (*this);
+    return new SerpeEditor (*this);
 }
 
 //==============================================================================

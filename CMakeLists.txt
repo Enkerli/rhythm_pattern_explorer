@@ -34,7 +34,8 @@ juce_generate_juce_header(Serpe)
 
 add_compile_options($<$<CXX_COMPILER_ID:GNU,Clang>:-finput-charset=UTF-8>)
 
-# ── Sources (the native PluginEditor stays for now; M4 swaps it for WebView) ──
+# ── Sources (UI is now the React WebView editor; the native PluginEditor is
+#    retired — kept on disk as attic but no longer compiled) ──
 target_sources(Serpe PRIVATE
     Source/Core/PatternEngine.cpp
     Source/Core/PatternUtils.cpp
@@ -45,7 +46,7 @@ target_sources(Serpe PRIVATE
     Source/Managers/ProgressiveManager.cpp
     Source/Managers/SceneManager.cpp
     Source/Platform/PluginProcessor.cpp
-    Source/Platform/PluginEditor.cpp
+    Source/WebUI/SerpeEditor.cpp
     # Header-only — listed so they show in the Xcode navigator
     Source/Core/PatternEngine.h
     Source/Core/PatternUtils.h
@@ -56,13 +57,48 @@ target_sources(Serpe PRIVATE
     Source/Managers/ProgressiveManager.h
     Source/Managers/SceneManager.h
     Source/Platform/PluginProcessor.h
-    Source/Platform/PluginEditor.h
+    Source/WebUI/SerpeEditor.h
     Source/Platform/PlatformSpecific.h
     Source/Platform/DebugConfig.h
 )
 
 target_include_directories(Serpe PRIVATE
-    Source Source/Core Source/Managers Source/Platform)
+    Source Source/Core Source/Managers Source/Platform Source/WebUI)
+
+# ── WebUI: bundle the React app (esbuild) and embed it as binary data ─────────
+set(WEBUI_DIR  "${CMAKE_CURRENT_SOURCE_DIR}/Source/WebUI")
+set(WEBUI_DIST "${WEBUI_DIR}/dist")
+
+find_program(NPXCMD npx)
+if(NPXCMD)
+    file(GLOB_RECURSE WEBUI_SRC
+        "${WEBUI_DIR}/main.jsx" "${WEBUI_DIR}/*.js"
+        "${WEBUI_DIR}/engine/*.js" "${WEBUI_DIR}/styles/*.css" "${WEBUI_DIR}/index.html")
+    add_custom_command(
+        OUTPUT  "${WEBUI_DIST}/bundle.js" "${WEBUI_DIST}/bundle.css" "${WEBUI_DIST}/index.html"
+        COMMAND "${NPXCMD}" esbuild "${WEBUI_DIR}/main.jsx"
+                    --bundle "--inject:${WEBUI_DIR}/react-globals.js"
+                    "--define:process.env.NODE_ENV=\"production\"" --minify
+                    "--outfile=${WEBUI_DIST}/bundle.js"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${WEBUI_DIR}/index.html" "${WEBUI_DIST}/index.html"
+        DEPENDS ${WEBUI_SRC}
+        WORKING_DIRECTORY "${WEBUI_DIR}"
+        COMMENT "Bundling Serpe WebUI with esbuild"
+        VERBATIM)
+    add_custom_target(SerpeWebUIBundle DEPENDS "${WEBUI_DIST}/bundle.js")
+endif()
+
+juce_add_binary_data(SerpeWebUI
+    HEADER_NAME BinaryDataWebUI.h
+    NAMESPACE   BinaryData
+    SOURCES
+        "${WEBUI_DIST}/index.html"
+        "${WEBUI_DIST}/bundle.js"
+        "${WEBUI_DIST}/bundle.css")
+if(NPXCMD)
+    add_dependencies(SerpeWebUI SerpeWebUIBundle)
+endif()
+target_link_libraries(Serpe PRIVATE SerpeWebUI)
 
 # PlatformSpecific.h requires exactly one of these (the .jucer set SERPE_DESKTOP).
 if(CMAKE_SYSTEM_NAME STREQUAL "iOS")

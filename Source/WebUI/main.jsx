@@ -11,7 +11,7 @@ import { parseUPI, euclid, polygon, rotate, invert, complement,
          barlowTransform, indispensabilityWeights, onsetCount } from './engine/upi.js';
 import { analyse } from './engine/analysis.js';
 import { createCircleView, createStepView } from './engine/render.js';
-import { initJuceBridge, sendParamActual, sendPattern, juceAvailable } from './juce-bridge.js';
+import { initJuceBridge, sendParamActual, sendUPI, juceAvailable } from './juce-bridge.js';
 
 const { useState, useRef, useEffect, useMemo, createElement: h } = React;
 
@@ -95,13 +95,13 @@ function SerpeApp() {
     setSteps(p.steps); setAccents(p.accents); setLabel(p.label);
     baseRef.current = null; setCycle(0);
     if (syncField && p.label) setUpiText(p.label);
-    if (juceAvailable()) sendPattern(p.steps, p.accents, p.label);
   }
 
   function parseField(text = upiText, acc = accText) {
     const full = acc.trim() ? `{${acc.trim()}}${text}` : text;
     const p = parseUPI(full, { n: steps.length || 16 });
-    if (p.ok) { setParseErr(null); applyPattern(p, { syncField: false }); LS.set('upi', text); }
+    if (p.ok) { setParseErr(null); applyPattern(p, { syncField: false }); LS.set('upi', text);
+      if (juceAvailable()) sendUPI(full); }
     else setParseErr(p.error || 'unrecognised');
   }
 
@@ -125,7 +125,7 @@ function SerpeApp() {
     setSteps(next); setAccents(acc);
     const an = analyse(next); setLabel(an.binary); setUpiText(an.binary); setAccText('');
     baseRef.current = null; setCycle(0); setParseErr(null);
-    if (juceAvailable()) sendPattern(next, acc, an.binary);
+    if (juceAvailable()) sendUPI(an.binary);
   }
   const TX = {
     dilute:  s => barlowTransform(s, Math.max(1, onsetCount(s) - 1)),
@@ -223,9 +223,7 @@ function SerpeApp() {
         if (s.accentPitchOffset != null) setAccPitch(s.accentPitchOffset);
         if (s.midiNote != null) setMidiNote(s.midiNote);
         if (s.useHostTransport != null) setHostSync(!!s.useHostTransport);
-        if (typeof s.pattern === 'string') {
-          const bits = [...s.pattern].map(Number); setSteps(bits); setUpiText(s.pattern);
-        }
+        if (typeof s.upi === 'string' && s.upi) setUpiText(s.upi);
       } else if (ev.type === 'transport') {
         setHostInfo({ bpm: ev.bpm, playing: ev.playing });
       }

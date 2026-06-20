@@ -66,11 +66,10 @@ export function sendParamActual(field, value) {
   juceEmit('setParamActual', { id, value });
 }
 
-/** Send the current pattern (onset + accent bits) to the engine for playback/MIDI. */
-export function sendPattern(steps, accents, label) {
-  juceEmit('setPattern', {
-    steps:   steps.join(''),
-    accents: (accents || []).map(a => (a ? 1 : 0)).join(''),
-    label:   label || '',
-  });
+/** Send the current pattern as UPI text — C++ parses it with the authoritative
+ *  UPIParser (the engine of record for playback/MIDI). Accept the full string
+ *  including any {accent} prefix. Raw transforms pass their binary string, which
+ *  UPIParser also parses. */
+export function sendUPI(text) {
+  juceEmit('setUPI', { text: text || '' });
 }

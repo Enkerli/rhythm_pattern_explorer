@@ -159,6 +159,9 @@ public:
     }
     bool isPlaying() const { return isCurrentlyPlaying(); } // Alias for compatibility
     
+    // Parameter access for the WebView editor (read params + relay automation).
+    juce::AudioProcessorValueTreeState& getAPVTS() { return parameters; }
+
     // UPI pattern input methods
     void setUPIInput(const juce::String& upiPattern);
     juce::String getUPIInput() const { return currentUPIInput; }
