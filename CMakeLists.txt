@@ -78,20 +78,26 @@ target_link_libraries(Serpe
 # Locks the plugin's numeric notation to the suite vectors. Encode/display side
 # (PatternUtils); links juce_core only. `ctest` runs it; CMake also wires it as
 # a post-build step on the plugin so a normal build surfaces drift.
-enable_testing()
-juce_add_console_app(serpe_conformance PRODUCT_NAME "serpe_conformance")
-target_sources(serpe_conformance PRIVATE
-    Source/Tests/RhythmConformanceTests.cpp
-    Source/Core/PatternUtils.cpp)
-juce_generate_juce_header(serpe_conformance)
-target_include_directories(serpe_conformance PRIVATE Source/Core Source/Tests)
-target_link_libraries(serpe_conformance
-    PRIVATE
-        juce::juce_core
-        juce::juce_recommended_config_flags
-        juce::juce_recommended_warning_flags)
-add_test(NAME rhythm_conformance COMMAND serpe_conformance)
+#
+# Host-only: it is a console app that runs on the build machine. On an iOS build
+# the binary targets the device, so neither the POST_BUILD run nor ctest can
+# execute it on the macOS host — guard the whole block to non-iOS builds.
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    enable_testing()
+    juce_add_console_app(serpe_conformance PRODUCT_NAME "serpe_conformance")
+    target_sources(serpe_conformance PRIVATE
+        Source/Tests/RhythmConformanceTests.cpp
+        Source/Core/PatternUtils.cpp)
+    juce_generate_juce_header(serpe_conformance)
+    target_include_directories(serpe_conformance PRIVATE Source/Core Source/Tests)
+    target_link_libraries(serpe_conformance
+        PRIVATE
+            juce::juce_core
+            juce::juce_recommended_config_flags
+            juce::juce_recommended_warning_flags)
+    add_test(NAME rhythm_conformance COMMAND serpe_conformance)
 
-add_custom_command(TARGET Serpe POST_BUILD
-    COMMAND serpe_conformance
-    COMMENT "Rhythm codec conformance (suite-wide MSB-first vectors)")
+    add_custom_command(TARGET Serpe POST_BUILD
+        COMMAND serpe_conformance
+        COMMENT "Rhythm codec conformance (suite-wide MSB-first vectors)")
+endif()
