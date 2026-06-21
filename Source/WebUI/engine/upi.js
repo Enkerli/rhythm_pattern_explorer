@@ -124,7 +124,9 @@ export function parseUPI(input, ctx = { n: 16 }) {
       for (let i = 0; i < n; i++)
         if (steps[i]) { acc[i] = accents[onset % accents.length] ? 1 : 0; onset++; }
     }
-    return { steps: steps.map(Number), accents: acc, label, ok: true };
+    // accentPattern is the raw {…} layer; the UI re-applies it with a live offset
+    // so the displayed accents precess across cycles in step with playback.
+    return { steps: steps.map(Number), accents: acc, accentPattern: accents, label, ok: true };
   };
 
   try {

@@ -170,10 +170,11 @@ void SerpeEditor::sendTransport()
     const bool hostSync = proc.getAPVTS().getRawParameterValue ("useHostTransport") != nullptr
                        && proc.getAPVTS().getRawParameterValue ("useHostTransport")->load() > 0.5f;
     webView.emitEventIfBrowserIsVisible ("transport", makeObj ({
-        { "bpm",      (int) juce::roundToInt (proc.getCurrentBPM()) },
-        { "playing",  proc.isCurrentlyPlaying() },
-        { "step",     proc.getCurrentStep() },     // drives the UI playhead in the plugin
-        { "hostSync", hostSync },
+        { "bpm",          (int) juce::roundToInt (proc.getCurrentBPM()) },
+        { "playing",      proc.isCurrentlyPlaying() },
+        { "step",         proc.getCurrentStep() },        // drives the UI playhead
+        { "accentOffset", proc.getUIAccentOffset() },     // precesses the displayed accents
+        { "hostSync",     hostSync },
     }));
 }
 

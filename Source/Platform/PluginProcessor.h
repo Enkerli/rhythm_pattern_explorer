@@ -162,6 +162,11 @@ public:
     // Parameter access for the WebView editor (read params + relay automation).
     juce::AudioProcessorValueTreeState& getAPVTS() { return parameters; }
 
+    // Accent phase for the current cycle (onsets-played % accent length) — lets
+    // the UI precess the displayed accents in step with the audio, exactly as
+    // the old native editor did. Updates at cycle boundaries.
+    int getUIAccentOffset() const { return uiAccentOffset; }
+
     // UPI pattern input methods
     void setUPIInput(const juce::String& upiPattern);
     juce::String getUPIInput() const { return currentUPIInput; }

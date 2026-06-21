@@ -58,6 +58,18 @@ const RT = {
 const SUBDIV = ['64th Triplet', '64th', '32nd Triplet', '32nd', '16th Triplet', '16th',
   '8th Triplet', '8th', 'Quarter Triplet', 'Quarter', 'Half Triplet', 'Half', 'Whole'];
 
+// Apply a raw accent pattern to a step array's onsets, offset by `off` onsets
+// (the precession). Onset k is accented when pattern[(k + off) % len] is set.
+function applyAccents(steps, pattern, off = 0) {
+  const acc = new Array(steps.length).fill(0);
+  if (pattern && pattern.length) {
+    let onset = 0;
+    for (let i = 0; i < steps.length; i++)
+      if (steps[i]) { acc[i] = pattern[(onset + off) % pattern.length] ? 1 : 0; onset++; }
+  }
+  return acc;
+}
+
 // An imperative SVG view (render.js) wrapped as a React component.
 function EngineView({ create, opts, data }) {
   const host = useRef(null), view = useRef(null);
@@ -68,7 +80,11 @@ function EngineView({ create, opts, data }) {
 
 function SerpeApp() {
   const [steps, setSteps]     = useState(() => euclid(5, 8));
-  const [accents, setAccents] = useState(() => new Array(8).fill(0));
+  // Accents are derived: the raw {…} pattern re-applied to the onsets with a
+  // live offset, so they precess across playback cycles (offset from the C++
+  // engine in the plugin, tracked locally in the webapp).
+  const [accentPattern, setAccentPattern] = useState(null);
+  const [accentOffset, setAccentOffset] = useState(0);
   const [label, setLabel]     = useState('E(5,8)');
   const [upiText, setUpiText] = useState(LS.get('upi', 'E(5,8)'));
   const [accText, setAccText] = useState('');
@@ -111,10 +127,11 @@ function SerpeApp() {
   const [hostInfo, setHostInfo] = useState(null);  // { bpm, playing } from C++
 
   const a = useMemo(() => analyse(steps), [steps]);
+  const accents = useMemo(() => applyAccents(steps, accentPattern, accentOffset), [steps, accentPattern, accentOffset]);
 
   // live mirror for the audio loop (avoids stale closures)
   const live = useRef({});
-  live.current = { steps, accents, tempo, group, swing, waOn, waVol };
+  live.current = { steps, accents, accentPattern, tempo, group, swing, waOn, waVol };
 
   // ── apply theme / runtime / density to the document ──
   useEffect(() => { document.documentElement.setAttribute('data-theme', theme); LS.set('theme', theme); }, [theme]);
@@ -122,7 +139,7 @@ function SerpeApp() {
 
   // ── core: set a pattern from parsed UPI or generator ──
   function applyPattern(p, { syncField = true } = {}) {
-    setSteps(p.steps); setAccents(p.accents); setLabel(p.label);
+    setSteps(p.steps); setAccentPattern(p.accentPattern); setAccentOffset(0); setLabel(p.label);
     baseRef.current = null; setCycle(0);
     if (syncField && p.label) setUpiText(p.label);
   }
@@ -151,8 +168,7 @@ function SerpeApp() {
   // ── transforms ──
   function applyTransform(fn) {
     const next = fn(steps.slice());
-    const acc = accents.map((x, i) => (next[i] ? x : 0));
-    setSteps(next); setAccents(acc);
+    setSteps(next); setAccentPattern(null); setAccentOffset(0);
     const an = analyse(next); setLabel(an.binary); setUpiText(an.binary); setAccText('');
     baseRef.current = null; setCycle(0); setParseErr(null);
     if (juceAvailable()) sendUPI(an.binary);
@@ -170,16 +186,16 @@ function SerpeApp() {
 
   // ── progressive ──
   function progAdvance() {
-    if (!baseRef.current) baseRef.current = { steps: steps.slice(), accents: accents.slice() };
+    if (!baseRef.current) baseRef.current = { steps: steps.slice(), accentPattern };
     const c = cycle + 1; setCycle(c);
     let next = rotate(baseRef.current.steps, progOff * c);
     if (progLeng) next = euclid(onsetCount(baseRef.current.steps), baseRef.current.steps.length + c);
-    setSteps(next); setAccents(new Array(next.length).fill(0));
+    setSteps(next); setAccentPattern(null); setAccentOffset(0);
     setUpiText(analyse(next).binary);
   }
   function progReset() {
     setCycle(0);
-    if (baseRef.current) { setSteps(baseRef.current.steps); setAccents(baseRef.current.accents); }
+    if (baseRef.current) { setSteps(baseRef.current.steps); setAccentPattern(baseRef.current.accentPattern); setAccentOffset(0); }
     baseRef.current = null;
     setUpiText(analyse(baseRef.current ? baseRef.current.steps : steps).binary);
   }
@@ -190,10 +206,10 @@ function SerpeApp() {
       const next = prev.slice();
       if (next[i]) {
         const sc = next[i];
-        setSteps(sc.steps.slice()); setAccents(sc.accents.slice()); setLabel(sc.label); setUpiText(sc.label);
+        setSteps(sc.steps.slice()); setAccentPattern(sc.accentPattern); setAccentOffset(0); setLabel(sc.label); setUpiText(sc.label);
         setActiveScene(i);
       } else {
-        next[i] = { steps: steps.slice(), accents: accents.slice(), label: label || analyse(steps).binary };
+        next[i] = { steps: steps.slice(), accentPattern, label: label || analyse(steps).binary };
         setActiveScene(i);
       }
       return next;
@@ -226,6 +242,12 @@ function SerpeApp() {
     setPlayhead(ph => {
       const L = live.current; const n = L.steps.length || 1;
       const next = (ph + 1) % n;
+      // at the cycle boundary, advance the accent phase by this cycle's onset
+      // count so the displayed accents precess like the engine's onset counter
+      if (next === 0 && L.accentPattern && L.accentPattern.length) {
+        const k = L.steps.reduce((acc, s) => acc + (s ? 1 : 0), 0);
+        setAccentOffset(o => (o + k) % L.accentPattern.length);
+      }
       if (L.steps[next]) click(!!L.accents[next]);
       timer.current = setTimeout(tick, stepDur(next));
       return next;
@@ -267,6 +289,7 @@ function SerpeApp() {
         // In the plugin the C++ sequencer owns the playhead and effective tempo.
         setHostInfo({ bpm: ev.bpm, playing: ev.playing, hostSync: ev.hostSync });
         if (typeof ev.step === 'number') setPlayhead(ev.step);
+        if (typeof ev.accentOffset === 'number') setAccentOffset(ev.accentOffset);
         if (ev.bpm >= 20) setTempo(ev.bpm);
         setHostSync(!!ev.hostSync);
         setPlaying(!!ev.playing);
