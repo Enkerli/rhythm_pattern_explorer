@@ -110,6 +110,7 @@ function SerpeApp() {
 
   const [genType, setGenType] = useState('E');
   const [genK, setGenK] = useState(5), [genN, setGenN] = useState(8), [genRot, setGenRot] = useState(0);
+  const [dilMode, setDilMode] = useState('barlow');   // dilute/concentrate weighting
 
   const [accVel, setAccVel] = useState(112);
   const [unaccVel, setUnaccVel] = useState(72);
@@ -207,33 +208,42 @@ function SerpeApp() {
     // sends the UPI — so accents survive transforms (inline or from the field).
     setUpiText(accentPrefix() + analyse(fn(steps.slice())).binary);
   }
-  // Barlow place k onsets from the downbeat (W = anti-indispensability).
-  const barlowGen = (n, k, wolrab) => { const b = new Array(n).fill(0); if (n) b[0] = 1; return barlowTransform(b, k, wolrab); };
   const TX = {
-    dilute:  s => barlowTransform(s, Math.max(1, onsetCount(s) - 1)),          // remove least indispensable
-    conc:    s => barlowTransform(s, Math.min(s.length, onsetCount(s) + 1)),   // add most indispensable
-    wolrab:  s => barlowGen(s.length, onsetCount(s), true),                    // W(k,n): anti-Barlow placement
-    dilcue:  s => complement(euclid(s.length - onsetCount(s), s.length)),       // D(k,n): complement(E(n−k,n))
-    rotl:    s => rotate(s, -1),
-    rotr:    s => rotate(s, 1),
+    rotl: s => rotate(s, -1),
+    rotr: s => rotate(s, 1),
     invert,
-    comp:    complement,
+    comp: complement,
   };
+  // Dilute (−1 onset) / concentrate (+1) using the selected weighting — Euclid,
+  // Dilcue, Barlow and Wolrab are all *modes* that change onset count (as in the
+  // original engine), not fixed-count regenerators.
+  function applyDilCon(delta) {
+    const n = steps.length, k = onsetCount(steps);
+    const target = Math.max(1, Math.min(n, k + delta));
+    if (target === k) return;
+    let next;
+    if (dilMode === 'barlow')      next = barlowTransform(steps.slice(), target, false);
+    else if (dilMode === 'wolrab') next = barlowTransform(steps.slice(), target, true);
+    else if (dilMode === 'euclid') next = euclid(target, n);                 // even spacing
+    else                           next = complement(euclid(n - target, n)); // dilcue: anti-even
+    setUpiText(accentPrefix() + analyse(next).binary);
+  }
 
   // ── progressive ──
+  // Each step evolves the base rhythm and re-attaches the accent layer (via
+  // accentPrefix, inline or field), so accents survive progressive offset AND
+  // lengthening — parseField re-applies them, onset-indexed, to the new pattern.
   function progAdvance() {
-    if (!baseRef.current) baseRef.current = { steps: steps.slice(), accentPattern };
+    if (!baseRef.current) baseRef.current = { steps: steps.slice() };
     const c = cycle + 1; setCycle(c);
     let next = rotate(baseRef.current.steps, progOff * c);
     if (progLeng) next = euclid(onsetCount(baseRef.current.steps), baseRef.current.steps.length + c);
-    setSteps(next); setAccentPattern(null); setAccentOffset(0);
-    setUpiText(analyse(next).binary);
+    setUpiText(accentPrefix() + analyse(next).binary);
   }
   function progReset() {
     setCycle(0);
-    if (baseRef.current) { setSteps(baseRef.current.steps); setAccentPattern(baseRef.current.accentPattern); setAccentOffset(0); }
+    if (baseRef.current) setUpiText(accentPrefix() + analyse(baseRef.current.steps).binary);
     baseRef.current = null;
-    setUpiText(analyse(baseRef.current ? baseRef.current.steps : steps).binary);
   }
 
   // ── scenes ──
@@ -433,12 +443,20 @@ function SerpeApp() {
 
         // Transform
         h(Section, { title: 'Transform', open: true },
+          h(Field, { label: 'Dilute / concentrate mode' },
+            h('select', { className: 'es-control', value: dilMode, onChange: e => setDilMode(e.target.value) },
+              [['barlow', 'Barlow — metric indispensability'], ['wolrab', 'Wolrab — anti-Barlow'],
+               ['euclid', 'Euclidean — even spacing'], ['dilcue', 'Dilcue — anti-Euclidean']].map(([v, t]) =>
+                h('option', { key: v, value: v }, t)))),
           h('div', { className: 'btn-grid', style: { marginBottom: 6 } },
-            [['dilute', 'Dilute −'], ['conc', 'Concentrate +'], ['wolrab', 'Wolrab'], ['dilcue', 'Dilcue'],
-             ['rotl', 'Rotate ←'], ['rotr', 'Rotate →'], ['invert', 'Invert'], ['comp', 'Complement']].map(([k, t]) =>
-              h('button', { key: k, className: 'es-btn es-small', onClick: () => applyTransform(TX[k]) }, t))),
+            h('button', { className: 'es-btn es-small', onClick: () => applyDilCon(-1) }, 'Dilute −'),
+            h('button', { className: 'es-btn es-small', onClick: () => applyDilCon(1) }, 'Concentrate +'),
+            h('button', { className: 'es-btn es-small', onClick: () => applyTransform(TX.rotl) }, 'Rotate ←'),
+            h('button', { className: 'es-btn es-small', onClick: () => applyTransform(TX.rotr) }, 'Rotate →'),
+            h('button', { className: 'es-btn es-small', onClick: () => applyTransform(TX.invert) }, 'Invert'),
+            h('button', { className: 'es-btn es-small', onClick: () => applyTransform(TX.comp) }, 'Complement')),
           h('p', { className: 'note', style: { fontSize: 11, color: 'var(--es-fg-muted)', margin: '2px 0 0' } },
-            'Barlow add/remove by metric indispensability; Wolrab inverts that weighting; Dilcue is the anti-Euclidean complement.')),
+            'Dilute/concentrate adds or removes one onset by the selected weighting: Barlow uses metric indispensability, Wolrab reverses it, Euclidean/Dilcue use (anti-)even spacing.')),
 
         // Progressive
         h(Section, { title: 'Progressive' },
