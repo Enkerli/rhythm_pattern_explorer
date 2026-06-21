@@ -97,12 +97,15 @@ actually plays (accent phase). Two corrections close most of this:
 
 ---
 
-## Recovery order (proposed — confirm before implementing)
+## Recovery order (OSC dropped; webapp engine to be ported)
 
-1. **Plugin engine-authoritative display** — render the engine's real pattern +
-   accents + phase; pass UPI straight through. → fixes accents-don't-sync, the
-   cycle-2 off-by-one, and unblocks Morse / `>` / progressive / combinations /
-   shorthand at the input in one move.
+1. ✅ **Plugin engine-authoritative display** (`37384cb` — verify in-host).
+   Plugin sends raw UPI to C++ (no JS gate) and renders the engine's real pattern
+   + per-step accents (`engineState`, from `shouldStepBeAccented` = the MIDI
+   path). Should fix accents-don't-sync + cycle-2 off-by-one and make Morse / `>`
+   / progressive / combinations / shorthand work at the input *in the plugin*.
+   Webapp still uses the JS subset until move 3. Builds + auval clean; webapp no
+   regression. **Test in Bitwig VST3 / AUM AUv3.**
 2. **Scenes via the engine** (accents kept; MIDI-note advance) and **Tick**.
 3. **Port the webapp engine** into `engine/` for the standalone: Morse, `>`,
    combinations, shorthand, syncopation, funkifier, quantization.
