@@ -83,11 +83,11 @@ function SerpeApp() {
   // Accents are derived: the raw {…} pattern re-applied to the onsets with a
   // live offset, so they precess across playback cycles (offset from the C++
   // engine in the plugin, tracked locally in the webapp).
+  // The accent layer is a single {bits} pattern (cyclic over onsets). Hand-edits
+  // write an explicit length-K pattern; either way it lives in the UPI as {bits},
+  // so it survives transforms and round-trips. No separate override state.
   const [accentPattern, setAccentPattern] = useState(null);
   const [accentOffset, setAccentOffset] = useState(0);
-  // Explicit per-step accents when the user hand-edits them (overrides the cyclic
-  // {…} pattern, like the engine's "manually modified accent" mode).
-  const [accentOverride, setAccentOverride] = useState(null);
   const [editAccent, setEditAccent] = useState(false);
   const [label, setLabel]     = useState('E(5,8)');
   const [upiText, setUpiText] = useState(LS.get('upi', 'E(5,8)'));
@@ -132,31 +132,38 @@ function SerpeApp() {
   const [hostInfo, setHostInfo] = useState(null);  // { bpm, playing } from C++
 
   const a = useMemo(() => analyse(steps), [steps]);
-  const accents = useMemo(() => accentOverride || applyAccents(steps, accentPattern, accentOffset),
-    [steps, accentPattern, accentOffset, accentOverride]);
+  const accents = useMemo(() => applyAccents(steps, accentPattern, accentOffset),
+    [steps, accentPattern, accentOffset]);
+  // Compact, round-trippable pattern notation: hex + explicit step count.
+  const patternUPI = (s) => `${analyse(s).hex}:${s.length}`;
 
   // live mirror for the audio loop (avoids stale closures)
   const live = useRef({});
   live.current = { steps, accents, accentPattern, accText, editAccent, tempo, group, swing, waOn, waVol };
 
-  // Tap a step (lane or circle node). In accent-edit mode it toggles that
-  // onset's accent (an explicit per-step override, like the engine's manual
-  // mode); otherwise it toggles the onset itself, routed through the UPI path so
-  // it works in browser and plugin and keeps the accent layer. Reads refs to
-  // stay correct from the mount-time closure render.js holds.
+  // The {bits} prefix to carry the accent layer (field overrides inline).
+  const accLayerPrefix = (L) => L.accText.trim() ? ''
+    : (L.accentPattern && L.accentPattern.length ? `{${L.accentPattern.join('')}}` : '');
+
+  // Tap a step (lane or circle node). Accent-edit mode toggles that onset's
+  // accent and writes the whole accent layer back as an explicit length-K {bits}
+  // pattern (so it persists + round-trips); otherwise it toggles the onset.
+  // Both go through the UPI path so they work in browser and plugin. Reads refs
+  // to stay correct from the mount-time closure render.js holds.
   const toggleStepAt = (i) => {
     const L = live.current;
     if (L.editAccent) {
       if (!L.steps[i]) return;                     // accents land only on onsets
-      const cur = L.accents.slice(); cur[i] = cur[i] ? 0 : 1;
-      setAccentOverride(cur);
+      const acc = L.accents.slice(); acc[i] = acc[i] ? 0 : 1;
+      const perOnset = [];
+      for (let s = 0; s < L.steps.length; s++) if (L.steps[s]) perOnset.push(acc[s] ? 1 : 0);
+      const prefix = perOnset.some((b) => b) ? `{${perOnset.join('')}}` : '';
+      setUpiText(prefix + patternUPI(L.steps));
       if (juceAvailable()) sendToggleAccent(i);
       return;
     }
     const next = L.steps.slice(); next[i] = L.steps[i] ? 0 : 1;
-    const bin = next.map((x) => (x ? 1 : 0)).join('');
-    const prefix = L.accText.trim() ? '' : (L.accentPattern && L.accentPattern.length ? `{${L.accentPattern.join('')}}` : '');
-    setUpiText(prefix + bin);
+    setUpiText(accLayerPrefix(L) + patternUPI(next));
   };
 
   // ── apply theme / runtime / density to the document ──
@@ -165,7 +172,7 @@ function SerpeApp() {
 
   // ── core: set a pattern from parsed UPI or generator ──
   function applyPattern(p, { syncField = true } = {}) {
-    setSteps(p.steps); setAccentPattern(p.accentPattern); setAccentOffset(0); setAccentOverride(null); setLabel(p.label);
+    setSteps(p.steps); setAccentPattern(p.accentPattern); setAccentOffset(0); setLabel(p.label);
     baseRef.current = null; setCycle(0);
     if (syncField && p.label) setUpiText(p.label);
   }
@@ -206,7 +213,7 @@ function SerpeApp() {
   function applyTransform(fn) {
     // Re-attach the accent layer to the new pattern; parseField applies it and
     // sends the UPI — so accents survive transforms (inline or from the field).
-    setUpiText(accentPrefix() + analyse(fn(steps.slice())).binary);
+    setUpiText(accentPrefix() + patternUPI(fn(steps.slice())));
   }
   const TX = {
     rotl: s => rotate(s, -1),
@@ -226,7 +233,7 @@ function SerpeApp() {
     else if (dilMode === 'wolrab') next = barlowTransform(steps.slice(), target, true);
     else if (dilMode === 'euclid') next = euclid(target, n);                 // even spacing
     else                           next = complement(euclid(n - target, n)); // dilcue: anti-even
-    setUpiText(accentPrefix() + analyse(next).binary);
+    setUpiText(accentPrefix() + patternUPI(next));
   }
 
   // ── progressive ──
@@ -238,11 +245,11 @@ function SerpeApp() {
     const c = cycle + 1; setCycle(c);
     let next = rotate(baseRef.current.steps, progOff * c);
     if (progLeng) next = euclid(onsetCount(baseRef.current.steps), baseRef.current.steps.length + c);
-    setUpiText(accentPrefix() + analyse(next).binary);
+    setUpiText(accentPrefix() + patternUPI(next));
   }
   function progReset() {
     setCycle(0);
-    if (baseRef.current) setUpiText(accentPrefix() + analyse(baseRef.current.steps).binary);
+    if (baseRef.current) setUpiText(accentPrefix() + patternUPI(baseRef.current.steps));
     baseRef.current = null;
   }
 

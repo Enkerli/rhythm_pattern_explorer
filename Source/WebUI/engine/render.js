@@ -24,7 +24,27 @@ export function createCircleView(host, opts = {}) {
   svg.style.width = "100%";
   svg.style.height = "auto";
   svg.style.display = "block";
+  // Two layers: the visuals are redrawn each update; the click hit-targets are
+  // a persistent layer rebuilt only when the step count changes, so tapping a
+  // node keeps working during playback (no destroy-on-every-frame).
+  const visuals = el("g");
+  const hits = el("g");
+  svg.append(visuals, hits);
   host.replaceChildren(svg);
+  let hitN = -1;
+
+  function buildHits(n) {
+    const cx = 160, cy = 160, R = 118;
+    const els = [];
+    for (let i = 0; i < n; i++) {
+      const [x, y] = pol(cx, cy, R, ang(i, n));
+      const hit = el("circle", { cx: x, cy: y, r: 16, fill: "transparent", style: "cursor:pointer" });
+      hit.addEventListener("click", ((idx) => () => { if (state.onToggle) state.onToggle(idx, state.steps[idx]); })(i));
+      els.push(hit);
+    }
+    hits.replaceChildren(...els);
+    hitN = n;
+  }
 
   const laneColor = (lane) => ({
     ink: "var(--es-accent)", rose: "var(--es-dim-pressure)",
@@ -32,6 +52,7 @@ export function createCircleView(host, opts = {}) {
   }[lane] || "var(--es-accent)");
 
   function render() {
+    if (state.onToggle && (state.steps.length || 1) !== hitN) buildHits(state.steps.length || 1);
     const { steps, accents, playhead } = state;
     const n = steps.length || 1;
     const cx = 160, cy = 160, R = 118;
@@ -103,20 +124,12 @@ export function createCircleView(host, opts = {}) {
       if (acc && on) {
         kids.push(el("circle", { cx: x, cy: y, r: r + 3.5, fill: "none", stroke: onColor, "stroke-width": 1.5 }));
       }
-      const node = el("circle", {
+      kids.push(el("circle", {
         cx: x, cy: y, r,
         fill: on ? onColor : "var(--es-bg-raised)",
         stroke: here ? "var(--es-fg)" : on ? "var(--es-fg)" : "var(--es-border-strong)",
         "stroke-width": here ? 3 : on ? 1.5 : 1.25,
-      });
-      if (state.onToggle) {
-        // generous invisible hit target over each node for tapping
-        const hit = el("circle", { cx: x, cy: y, r: Math.max(r + 6, 14), fill: "transparent", style: "cursor:pointer" });
-        hit.addEventListener("click", ((idx) => () => state.onToggle(idx, steps[idx]))(i));
-        kids.push(node, hit);
-      } else {
-        kids.push(node);
-      }
+      }));
       if (state.showLabels && (on || i % labelEvery === 0)) {
         const [lx, ly] = pol(cx, cy, R + 22, ang(i, n));
         const t = el("text", {
@@ -128,7 +141,7 @@ export function createCircleView(host, opts = {}) {
         kids.push(t);
       }
     }
-    svg.replaceChildren(...kids);
+    visuals.replaceChildren(...kids);
   }
   render();
   return { update(next) { Object.assign(state, next); render(); }, el: svg };
