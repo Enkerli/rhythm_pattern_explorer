@@ -145,7 +145,10 @@ function SerpeApp() {
   }
 
   function parseField(text = upiText, acc = accText) {
-    const full = acc.trim() ? `{${acc.trim()}}${text}` : text;
+    // The accent layer lives in the Accents field (acc); prepend it unless the
+    // pattern text already carries its own {…} prefix (don't double up).
+    const hasInline = /^\s*\{/.test(text);
+    const full = (!hasInline && acc.trim()) ? `{${acc.trim()}}${text}` : text;
     const p = parseUPI(full, { n: steps.length || 16 });
     if (p.ok) { setParseErr(null); applyPattern(p, { syncField: false }); LS.set('upi', text);
       if (juceAvailable()) sendUPI(full); }
@@ -162,16 +165,14 @@ function SerpeApp() {
     else if (genType === 'P') lbl = `P(${genK},${genRot},${genN})`;
     else if (genType === 'R') lbl = `R(${genK},${genN})`;
     else lbl = `${genType}(${genK},${genN})`;
-    setAccText(''); setUpiText(lbl);
+    setUpiText(lbl);   // keep the accent layer (accText) across pattern changes
   }
 
   // ── transforms ──
   function applyTransform(fn) {
-    const next = fn(steps.slice());
-    setSteps(next); setAccentPattern(null); setAccentOffset(0);
-    const an = analyse(next); setLabel(an.binary); setUpiText(an.binary); setAccText('');
-    baseRef.current = null; setCycle(0); setParseErr(null);
-    if (juceAvailable()) sendUPI(an.binary);
+    // Set the new pattern text; parseField re-applies the current accent layer
+    // and sends the UPI — so accents survive transforms.
+    setUpiText(analyse(fn(steps.slice())).binary);
   }
   const TX = {
     dilute:  s => barlowTransform(s, Math.max(1, onsetCount(s) - 1)),
