@@ -19,7 +19,7 @@ import { parseUPI, euclid, polygon, rotate, invert, complement,
          barlowTransform, indispensabilityWeights, onsetCount } from './engine/upi.js';
 import { analyse } from './engine/analysis.js';
 import { createCircleView, createStepView } from './engine/render.js';
-import { initJuceBridge, sendParamActual, sendUPI, sendPlaying, sendBPM, juceAvailable } from './juce-bridge.js';
+import { initJuceBridge, sendParamActual, sendUPI, sendPlaying, sendBPM, sendToggleAccent, juceAvailable } from './juce-bridge.js';
 
 // Inline SVG mark — a data-URL <img> with unescaped '#' hex colours renders in
 // Chrome but breaks in macOS WKWebView, so inject the markup directly.
@@ -85,6 +85,10 @@ function SerpeApp() {
   // engine in the plugin, tracked locally in the webapp).
   const [accentPattern, setAccentPattern] = useState(null);
   const [accentOffset, setAccentOffset] = useState(0);
+  // Explicit per-step accents when the user hand-edits them (overrides the cyclic
+  // {…} pattern, like the engine's "manually modified accent" mode).
+  const [accentOverride, setAccentOverride] = useState(null);
+  const [editAccent, setEditAccent] = useState(false);
   const [label, setLabel]     = useState('E(5,8)');
   const [upiText, setUpiText] = useState(LS.get('upi', 'E(5,8)'));
   const [accText, setAccText] = useState('');
@@ -127,18 +131,27 @@ function SerpeApp() {
   const [hostInfo, setHostInfo] = useState(null);  // { bpm, playing } from C++
 
   const a = useMemo(() => analyse(steps), [steps]);
-  const accents = useMemo(() => applyAccents(steps, accentPattern, accentOffset), [steps, accentPattern, accentOffset]);
+  const accents = useMemo(() => accentOverride || applyAccents(steps, accentPattern, accentOffset),
+    [steps, accentPattern, accentOffset, accentOverride]);
 
   // live mirror for the audio loop (avoids stale closures)
   const live = useRef({});
-  live.current = { steps, accents, accentPattern, accText, tempo, group, swing, waOn, waVol };
+  live.current = { steps, accents, accentPattern, accText, editAccent, tempo, group, swing, waOn, waVol };
 
-  // Toggle an onset by tapping a step. Routed through the UPI path (new binary
-  // with the accent layer re-attached) so it works identically in browser and
-  // plugin and keeps accents. Reads refs to stay correct from the mount-time
-  // closure render.js holds.
+  // Tap a step (lane or circle node). In accent-edit mode it toggles that
+  // onset's accent (an explicit per-step override, like the engine's manual
+  // mode); otherwise it toggles the onset itself, routed through the UPI path so
+  // it works in browser and plugin and keeps the accent layer. Reads refs to
+  // stay correct from the mount-time closure render.js holds.
   const toggleStepAt = (i) => {
     const L = live.current;
+    if (L.editAccent) {
+      if (!L.steps[i]) return;                     // accents land only on onsets
+      const cur = L.accents.slice(); cur[i] = cur[i] ? 0 : 1;
+      setAccentOverride(cur);
+      if (juceAvailable()) sendToggleAccent(i);
+      return;
+    }
     const next = L.steps.slice(); next[i] = L.steps[i] ? 0 : 1;
     const bin = next.map((x) => (x ? 1 : 0)).join('');
     const prefix = L.accText.trim() ? '' : (L.accentPattern && L.accentPattern.length ? `{${L.accentPattern.join('')}}` : '');
@@ -151,7 +164,7 @@ function SerpeApp() {
 
   // ── core: set a pattern from parsed UPI or generator ──
   function applyPattern(p, { syncField = true } = {}) {
-    setSteps(p.steps); setAccentPattern(p.accentPattern); setAccentOffset(0); setLabel(p.label);
+    setSteps(p.steps); setAccentPattern(p.accentPattern); setAccentOffset(0); setAccentOverride(null); setLabel(p.label);
     baseRef.current = null; setCycle(0);
     if (syncField && p.label) setUpiText(p.label);
   }
@@ -385,6 +398,10 @@ function SerpeApp() {
         h('div', { className: 'viz' + (view === 'circle' ? ' solo-circle' : '') },
           h('div', { className: 'viz-head' },
             h('span', { className: 'es-eyebrow' }, 'Pattern'),
+            h('button', { className: 'iconbtn', title: 'Accent edit: tap onsets to toggle their accent',
+              'aria-pressed': editAccent, onClick: () => setEditAccent(v => !v),
+              style: { height: 30, fontSize: 12, ...(editAccent ? { borderColor: 'var(--es-dim-pressure)', color: 'var(--es-dim-pressure)', background: 'var(--es-dim-pressure-tint)' } : {}) } },
+              h('span', { 'aria-hidden': true }, '✦'), h('span', null, ' accent')),
             h('label', { className: 'iconbtn', style: { height: 30, fontSize: 12, gap: 6 } },
               h('input', { type: 'checkbox', checked: showLabels, onChange: e => setShowLabels(e.target.checked) }), ' step numbers'),
             h('div', { className: 'seg', role: 'group', 'aria-label': 'View' },

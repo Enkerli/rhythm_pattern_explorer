@@ -84,20 +84,13 @@ juce::WebBrowserComponent::Options SerpeEditor::buildOptions (SerpeEditor* owner
             owner->proc.setCurrentBPM (static_cast<float> (static_cast<double> (args[0]["bpm"])));
         })
 
-        // Edit the pattern by tapping a step (toggle onset / toggle accent).
-        .withEventListener ("toggleStep", [owner] (const Array<var>& args)
-        {
-            if (args.isEmpty()) return;
-            owner->proc.togglePatternStep (static_cast<int> (args[0]["step"]));
-            juce::Component::SafePointer<SerpeEditor> safe (owner);
-            juce::MessageManager::callAsync ([safe] { if (safe) safe->sendStateSnapshot(); });
-        })
+        // Toggle a step's accent in the engine (manual-accent mode). No snapshot
+        // echo — the UI keeps its own explicit accent override; echoing the upi
+        // would clear it. (Onset edits go through setUPI, not a toggle event.)
         .withEventListener ("toggleAccent", [owner] (const Array<var>& args)
         {
             if (args.isEmpty()) return;
             owner->proc.toggleAccentAtStep (static_cast<int> (args[0]["step"]));
-            juce::Component::SafePointer<SerpeEditor> safe (owner);
-            juce::MessageManager::callAsync ([safe] { if (safe) safe->sendStateSnapshot(); });
         })
 
         // Parameter change in actual domain — C++ normalises and notifies host.
