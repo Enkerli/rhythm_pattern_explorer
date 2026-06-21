@@ -182,11 +182,13 @@ function SerpeApp() {
     // sends the UPI — so accents survive transforms (inline or from the field).
     setUpiText(accentPrefix() + analyse(fn(steps.slice())).binary);
   }
+  // Barlow place k onsets from the downbeat (W = anti-indispensability).
+  const barlowGen = (n, k, wolrab) => { const b = new Array(n).fill(0); if (n) b[0] = 1; return barlowTransform(b, k, wolrab); };
   const TX = {
-    dilute:  s => barlowTransform(s, Math.max(1, onsetCount(s) - 1)),
-    conc:    s => barlowTransform(s, Math.min(s.length, onsetCount(s) + 1)),
-    wolrab:  s => barlowTransform(s, Math.max(1, onsetCount(s) - 1), true),
-    dilcue:  s => complement(euclid(onsetCount(s), s.length)),
+    dilute:  s => barlowTransform(s, Math.max(1, onsetCount(s) - 1)),          // remove least indispensable
+    conc:    s => barlowTransform(s, Math.min(s.length, onsetCount(s) + 1)),   // add most indispensable
+    wolrab:  s => barlowGen(s.length, onsetCount(s), true),                    // W(k,n): anti-Barlow placement
+    dilcue:  s => complement(euclid(s.length - onsetCount(s), s.length)),       // D(k,n): complement(E(n−k,n))
     rotl:    s => rotate(s, -1),
     rotr:    s => rotate(s, 1),
     invert,

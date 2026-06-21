@@ -2,6 +2,7 @@
   "name": "serpe-webui",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "build": "npx esbuild main.jsx --bundle --inject:react-globals.js --loader:.css=text --loader:.svg=dataurl --define:process.env.NODE_ENV=\\\"production\\\" --minify --outfile=dist/bundle.js && cp index.html dist/index.html",
     "dev":   "npx esbuild main.jsx --bundle --inject:react-globals.js --loader:.css=text --loader:.svg=dataurl --define:process.env.NODE_ENV=\\\"development\\\" --sourcemap --outfile=dist/bundle.js && cp index.html dist/index.html",
