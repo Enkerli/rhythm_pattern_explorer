@@ -158,6 +158,14 @@ function SerpeApp() {
   // parse whenever the text/accents change (debounced-ish via React batching)
   useEffect(() => { parseField(); /* eslint-disable-next-line */ }, [upiText, accText]);
 
+  // The accent layer to carry onto a new pattern. If it lives in the Accents
+  // field, parseField prepends it (return ''); if it was typed inline in the UPI
+  // field, re-attach it as a {…} prefix so it survives the change either way.
+  function accentPrefix() {
+    if (accText.trim()) return '';
+    return (accentPattern && accentPattern.length) ? `{${accentPattern.join('')}}` : '';
+  }
+
   // ── generators ──
   function generate() {
     let lbl;
@@ -165,14 +173,14 @@ function SerpeApp() {
     else if (genType === 'P') lbl = `P(${genK},${genRot},${genN})`;
     else if (genType === 'R') lbl = `R(${genK},${genN})`;
     else lbl = `${genType}(${genK},${genN})`;
-    setUpiText(lbl);   // keep the accent layer (accText) across pattern changes
+    setUpiText(accentPrefix() + lbl);   // keep the accent layer across pattern changes
   }
 
   // ── transforms ──
   function applyTransform(fn) {
-    // Set the new pattern text; parseField re-applies the current accent layer
-    // and sends the UPI — so accents survive transforms.
-    setUpiText(analyse(fn(steps.slice())).binary);
+    // Re-attach the accent layer to the new pattern; parseField applies it and
+    // sends the UPI — so accents survive transforms (inline or from the field).
+    setUpiText(accentPrefix() + analyse(fn(steps.slice())).binary);
   }
   const TX = {
     dilute:  s => barlowTransform(s, Math.max(1, onsetCount(s) - 1)),
