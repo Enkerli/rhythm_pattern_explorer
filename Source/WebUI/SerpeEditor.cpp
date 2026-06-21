@@ -162,11 +162,24 @@ void SerpeEditor::sendTransport()
 {
     const bool hostSync = proc.getAPVTS().getRawParameterValue ("useHostTransport") != nullptr
                        && proc.getAPVTS().getRawParameterValue ("useHostTransport")->load() > 0.5f;
+    const int  bpm          = (int) juce::roundToInt (proc.getCurrentBPM());
+    const bool playing      = proc.isCurrentlyPlaying();
+    const int  step         = playing ? proc.getCurrentStep() : -1;
+    const int  accentOffset = proc.getUIAccentOffset();
+
+    // Only emit when something actually changed — pushing 30x/s would re-render
+    // the WebUI continuously and make step cells un-clickable.
+    if (transportSent && step == lastStep && playing == lastPlaying && bpm == lastBpm
+        && accentOffset == lastAccentOffset && hostSync == lastHostSync)
+        return;
+    lastStep = step; lastPlaying = playing; lastBpm = bpm;
+    lastAccentOffset = accentOffset; lastHostSync = hostSync; transportSent = true;
+
     webView.emitEventIfBrowserIsVisible ("transport", makeObj ({
-        { "bpm",          (int) juce::roundToInt (proc.getCurrentBPM()) },
-        { "playing",      proc.isCurrentlyPlaying() },
-        { "step",         proc.getCurrentStep() },        // drives the UI playhead
-        { "accentOffset", proc.getUIAccentOffset() },     // precesses the displayed accents
+        { "bpm",          bpm },
+        { "playing",      playing },
+        { "step",         step },           // drives the UI playhead (-1 when stopped)
+        { "accentOffset", accentOffset },   // precesses the displayed accents
         { "hostSync",     hostSync },
     }));
 }

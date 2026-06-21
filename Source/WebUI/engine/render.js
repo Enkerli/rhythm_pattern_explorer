@@ -140,23 +140,19 @@ export function createStepView(host, opts = {}) {
   wrap.className = "serpe-steplane";
   host.replaceChildren(wrap);
 
-  function render() {
-    const { steps, accents, playhead, group, onToggle } = state;
-    const n = steps.length;
-    // wrap large cycles into rows of a sensible width instead of squeezing one row
-    const cols = n <= 16 ? n : (group && n % group === 0 && n / group <= 16 ? n / group : 16);
-    wrap.style.setProperty("--cols", cols);
-    const showNums = n <= 16 ? 1 : n <= 32 ? 2 : Math.ceil(n / 16);
-    const cells = [];
+  // Cells persist across updates; only structural changes (step count / column
+  // layout) rebuild them. Crucially this means the click listeners survive the
+  // ~per-step playhead updates, so steps stay clickable during playback.
+  let cells = [];
+  let builtN = -1, builtCols = -1, builtNums = -1;
+
+  function build(n, cols, showNums) {
+    cells = [];
     for (let i = 0; i < n; i++) {
       const c = document.createElement("div");
       c.className = "serpe-step";
-      if (steps[i]) c.classList.add("on");
-      if (accents[i]) c.classList.add("acc");
-      if (i === playhead) c.classList.add("here");
-      if (group && i % group === 0) c.classList.add("beat");
-      if (onToggle) c.addEventListener("click", () => onToggle(i, steps[i]));
-      if (steps[i] || i % showNums === 0) {
+      c.addEventListener("click", () => { if (state.onToggle) state.onToggle(i, state.steps[i]); });
+      if (i % showNums === 0) {
         const lab = document.createElement("span");
         lab.className = "serpe-step-n";
         lab.textContent = i;
@@ -164,7 +160,24 @@ export function createStepView(host, opts = {}) {
       }
       cells.push(c);
     }
+    wrap.style.setProperty("--cols", cols);
     wrap.replaceChildren(...cells);
+    builtN = n; builtCols = cols; builtNums = showNums;
+  }
+
+  function render() {
+    const { steps, accents, playhead, group } = state;
+    const n = steps.length;
+    const cols = n <= 16 ? n : (group && n % group === 0 && n / group <= 16 ? n / group : 16);
+    const showNums = n <= 16 ? 1 : n <= 32 ? 2 : Math.ceil(n / 16);
+    if (n !== builtN || cols !== builtCols || showNums !== builtNums) build(n, cols, showNums);
+    for (let i = 0; i < n; i++) {
+      const c = cells[i];
+      c.classList.toggle("on", !!steps[i]);
+      c.classList.toggle("acc", !!accents[i]);
+      c.classList.toggle("here", i === playhead);
+      c.classList.toggle("beat", !!(group && i % group === 0));
+    }
   }
   render();
   return { update(next) { Object.assign(state, next); render(); }, el: wrap };

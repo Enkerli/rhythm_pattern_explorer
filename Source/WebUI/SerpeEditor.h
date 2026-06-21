@@ -41,5 +41,14 @@ private:
     bool              pageNavigated { false };
     juce::String      lastUPISent;
 
+    // Last transport values sent — only emit on change so the WebUI isn't
+    // re-rendered 30x/s (which would destroy click targets while editing).
+    int  lastStep        { -2 };
+    int  lastBpm         { -1 };
+    int  lastAccentOffset{ -1 };
+    bool lastPlaying     { false };
+    bool lastHostSync    { false };
+    bool transportSent   { false };
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SerpeEditor)
 };
