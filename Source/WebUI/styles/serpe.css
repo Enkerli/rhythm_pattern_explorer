@@ -148,6 +148,8 @@ body {
   background: var(--es-bg-sunken); border: 1px solid var(--es-border);
   display: flex; align-items: flex-start; justify-content: flex-end;
 }
+.serpe-step { cursor: pointer; }
+.serpe-step:hover { border-color: var(--es-fg-muted); }
 .serpe-step.beat { border-color: var(--es-border-strong); }
 .serpe-step.on { background: var(--es-accent); border-color: var(--es-fg); }
 /* accented onsets read in the suite amber — clearly distinct from plain onsets */

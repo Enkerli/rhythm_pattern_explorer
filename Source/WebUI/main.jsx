@@ -131,7 +131,19 @@ function SerpeApp() {
 
   // live mirror for the audio loop (avoids stale closures)
   const live = useRef({});
-  live.current = { steps, accents, accentPattern, tempo, group, swing, waOn, waVol };
+  live.current = { steps, accents, accentPattern, accText, tempo, group, swing, waOn, waVol };
+
+  // Toggle an onset by tapping a step. Routed through the UPI path (new binary
+  // with the accent layer re-attached) so it works identically in browser and
+  // plugin and keeps accents. Reads refs to stay correct from the mount-time
+  // closure render.js holds.
+  const toggleStepAt = (i) => {
+    const L = live.current;
+    const next = L.steps.slice(); next[i] = L.steps[i] ? 0 : 1;
+    const bin = next.map((x) => (x ? 1 : 0)).join('');
+    const prefix = L.accText.trim() ? '' : (L.accentPattern && L.accentPattern.length ? `{${L.accentPattern.join('')}}` : '');
+    setUpiText(prefix + bin);
+  };
 
   // ── apply theme / runtime / density to the document ──
   useEffect(() => { document.documentElement.setAttribute('data-theme', theme); LS.set('theme', theme); }, [theme]);
@@ -380,9 +392,9 @@ function SerpeApp() {
                 h('button', { key: v, 'aria-pressed': view === v, onClick: () => setView(v) }, v[0].toUpperCase() + v.slice(1))))),
           h('div', { className: 'viz-body' },
             view !== 'step' && h('div', { className: 'viz-circle' },
-              h(EngineView, { create: createCircleView, opts: { showCog: true }, data: { steps, accents, playhead, showLabels } })),
+              h(EngineView, { create: createCircleView, opts: { showCog: true, onToggle: toggleStepAt }, data: { steps, accents, playhead, showLabels } })),
             h('div', { className: 'viz-side' },
-              view !== 'circle' && h(EngineView, { create: createStepView, opts: { group }, data: { steps, accents, playhead, group } }),
+              view !== 'circle' && h(EngineView, { create: createStepView, opts: { group, onToggle: toggleStepAt }, data: { steps, accents, playhead, group } }),
               h('div', { className: 'readstrip' },
                 h('span', null, h('span', { className: 'k' }, 'pattern '), h('b', { className: 'es-num' }, label || a.binary)),
                 h('span', null, h('span', { className: 'k' }, 'onsets '), h('b', null, a.k), '/', h('b', null, a.n)),

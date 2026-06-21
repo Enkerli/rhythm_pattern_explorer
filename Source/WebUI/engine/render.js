@@ -103,12 +103,20 @@ export function createCircleView(host, opts = {}) {
       if (acc && on) {
         kids.push(el("circle", { cx: x, cy: y, r: r + 3.5, fill: "none", stroke: onColor, "stroke-width": 1.5 }));
       }
-      kids.push(el("circle", {
+      const node = el("circle", {
         cx: x, cy: y, r,
         fill: on ? onColor : "var(--es-bg-raised)",
         stroke: here ? "var(--es-fg)" : on ? "var(--es-fg)" : "var(--es-border-strong)",
         "stroke-width": here ? 3 : on ? 1.5 : 1.25,
-      }));
+      });
+      if (state.onToggle) {
+        // generous invisible hit target over each node for tapping
+        const hit = el("circle", { cx: x, cy: y, r: Math.max(r + 6, 14), fill: "transparent", style: "cursor:pointer" });
+        hit.addEventListener("click", ((idx) => () => state.onToggle(idx, steps[idx]))(i));
+        kids.push(node, hit);
+      } else {
+        kids.push(node);
+      }
       if (state.showLabels && (on || i % labelEvery === 0)) {
         const [lx, ly] = pol(cx, cy, R + 22, ang(i, n));
         const t = el("text", {
