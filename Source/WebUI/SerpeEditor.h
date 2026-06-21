@@ -29,6 +29,7 @@ private:
     void navigateIfNeeded();
     void sendStateSnapshot();
     void sendTransport();
+    void sendEngineState();   // the engine's actual pattern + accents (display = audio)
 
     static std::optional<juce::WebBrowserComponent::Resource> provideResource (const juce::String& path);
     static juce::WebBrowserComponent::Options buildOptions (SerpeEditor* owner);
@@ -49,6 +50,8 @@ private:
     bool lastPlaying     { false };
     bool lastHostSync    { false };
     bool transportSent   { false };
+
+    juce::String lastPattern, lastAccents;   // for change-detecting engineState pushes
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SerpeEditor)
 };

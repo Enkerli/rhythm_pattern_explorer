@@ -56,6 +56,7 @@ export function initJuceBridge(onEvent) {
   juceOn('stateSnapshot', snap => onEvent({ type: 'stateSnapshot', snap }));
   juceOn('paramChange',   ({ id, value }) => onEvent({ type: 'paramChange', id, value }));
   juceOn('transport',     t => onEvent({ type: 'transport', ...t }));
+  juceOn('engineState',   s => onEvent({ type: 'engineState', ...s }));  // C++ is authoritative
   juceEmit('uiReady', {});
 }
 

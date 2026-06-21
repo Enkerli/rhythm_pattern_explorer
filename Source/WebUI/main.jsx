@@ -89,6 +89,9 @@ function SerpeApp() {
   const [accentPattern, setAccentPattern] = useState(null);
   const [accentOffset, setAccentOffset] = useState(0);
   const [editAccent, setEditAccent] = useState(false);
+  // In the plugin the C++ engine is authoritative: it reports the real per-step
+  // accents (matching what's heard). When set, these override the JS derivation.
+  const [engineAccents, setEngineAccents] = useState(null);
   const [label, setLabel]     = useState('E(5,8)');
   const [upiText, setUpiText] = useState(LS.get('upi', 'E(5,8)'));
   const [accText, setAccText] = useState('');
@@ -136,8 +139,8 @@ function SerpeApp() {
   const [hostInfo, setHostInfo] = useState(null);  // { bpm, playing } from C++
 
   const a = useMemo(() => analyse(steps), [steps]);
-  const accents = useMemo(() => applyAccents(steps, accentPattern, accentOffset),
-    [steps, accentPattern, accentOffset]);
+  const accents = useMemo(() => engineAccents || applyAccents(steps, accentPattern, accentOffset),
+    [steps, accentPattern, accentOffset, engineAccents]);
   // Compact, round-trippable pattern notation: hex + explicit step count.
   const patternUPI = (s) => `${analyse(s).hex}:${s.length}`;
 
@@ -186,9 +189,18 @@ function SerpeApp() {
     // pattern text already carries its own {…} prefix (don't double up).
     const hasInline = /^\s*\{/.test(text);
     const full = (!hasInline && acc.trim()) ? `{${acc.trim()}}${text}` : text;
+    LS.set('upi', text);
+    if (cfg.host && juceAvailable()) {
+      // Plugin: the C++ engine is authoritative — send raw (don't gate on the JS
+      // subset parser) so Morse / > / progressive / combinations all reach it;
+      // the display comes back via engineState. Use the JS parse only as a soft
+      // hint (it may not understand engine-only notation).
+      sendUPI(full);
+      setParseErr(null);
+      return;
+    }
     const p = parseUPI(full, { n: steps.length || 16 });
-    if (p.ok) { setParseErr(null); applyPattern(p, { syncField: false }); LS.set('upi', text);
-      if (juceAvailable()) sendUPI(full); }
+    if (p.ok) { setParseErr(null); applyPattern(p, { syncField: false }); }
     else setParseErr(p.error || 'unrecognised');
   }
 
@@ -355,6 +367,10 @@ function SerpeApp() {
         if (s.subdivision != null) setSubdiv(s.subdivision);
         if (s.internalPlaying != null) setPlaying(!!s.internalPlaying);
         if (typeof s.upi === 'string' && s.upi) setUpiText(s.upi);
+      } else if (ev.type === 'engineState') {
+        // C++ reports the real pattern + per-step accents (== what plays).
+        if (typeof ev.pattern === 'string' && ev.pattern.length) setSteps([...ev.pattern].map(Number));
+        if (typeof ev.accents === 'string') setEngineAccents([...ev.accents].map(Number));
       } else if (ev.type === 'transport') {
         // In the plugin the C++ sequencer owns the playhead and effective tempo.
         setHostInfo({ bpm: ev.bpm, playing: ev.playing, hostSync: ev.hostSync });

@@ -63,11 +63,14 @@ juce::WebBrowserComponent::Options SerpeEditor::buildOptions (SerpeEditor* owner
             juce::MessageManager::callAsync ([safe] { if (safe) safe->sendStateSnapshot(); });
         })
 
-        // UPI text from the UI — parsed by the authoritative C++ engine.
+        // UPI text from the UI — parsed by the authoritative C++ engine, which
+        // then reports back the actual pattern + accents it produced.
         .withEventListener ("setUPI", [owner] (const Array<var>& args)
         {
             if (args.isEmpty()) return;
             owner->proc.setUPIInput (args[0]["text"].toString());
+            juce::Component::SafePointer<SerpeEditor> safe (owner);
+            juce::MessageManager::callAsync ([safe] { if (safe) safe->sendEngineState(); });
         })
 
         // Standalone play/stop (no host transport) — drives the internal sequencer.
@@ -91,6 +94,8 @@ juce::WebBrowserComponent::Options SerpeEditor::buildOptions (SerpeEditor* owner
         {
             if (args.isEmpty()) return;
             owner->proc.toggleAccentAtStep (static_cast<int> (args[0]["step"]));
+            juce::Component::SafePointer<SerpeEditor> safe (owner);
+            juce::MessageManager::callAsync ([safe] { if (safe) safe->sendEngineState(); });
         })
 
         // Parameter change in actual domain — C++ normalises and notifies host.
@@ -156,6 +161,27 @@ void SerpeEditor::timerCallback()
 {
     if (!pageReady) return;
     sendTransport();
+    sendEngineState();   // re-pushes only when the pattern/accents actually change
+}
+
+// The engine's actual rendered state: which steps are onsets, and which are
+// accented THIS cycle (shouldStepBeAccented is the same call MIDI uses, so the
+// display matches what's heard — including accent precession). Pushed only on
+// change so it doesn't spam / re-render the WebUI.
+void SerpeEditor::sendEngineState()
+{
+    const juce::String pattern = proc.getCurrentPatternDisplay();
+    juce::String accents;
+    for (int i = 0; i < pattern.length(); ++i)
+        accents += proc.shouldStepBeAccented (i) ? '1' : '0';
+
+    if (pattern == lastPattern && accents == lastAccents) return;
+    lastPattern = pattern; lastAccents = accents;
+
+    webView.emitEventIfBrowserIsVisible ("engineState", makeObj ({
+        { "pattern", pattern },
+        { "accents", accents },
+    }));
 }
 
 void SerpeEditor::sendTransport()
