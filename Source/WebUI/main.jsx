@@ -425,10 +425,14 @@ function SerpeApp() {
         h(Section, { title: 'Timing & output' },
           h(Field, { label: 'Step length' },
             h('select', { className: 'es-control', value: subdiv,
-              onChange: e => { setSubdiv(+e.target.value); if (juceAvailable()) sendParamActual('subdivision', +e.target.value); } },
+              onChange: e => { setSubdiv(+e.target.value);
+                if (juceAvailable()) {
+                  sendParamActual('subdivision', +e.target.value);
+                  sendParamActual('patternLengthUnit', 0);  // Steps mode — each step = the subdivision
+                } } },
               SUBDIV.map((t, i) => h('option', { key: i, value: i }, 'each step = ' + t)))),
           h('p', { className: 'note', style: { fontSize: 11, color: 'var(--es-fg-muted)', margin: '-4px 0 10px' } },
-            'How long each step lasts against the host beat (host sync) or the tempo above.'),
+            'How long each step lasts against the host beat. Selecting this puts the pattern in "step = subdivision" timing.'),
           h(Field, { label: 'Beat grouping (visual)' },
             h('select', { className: 'es-control', value: group, onChange: e => setGroup(+e.target.value) },
               [['2', '2'], ['3', '3'], ['4', '4'], ['0', 'none']].map(([v, t]) => h('option', { key: v, value: +v }, t)))),

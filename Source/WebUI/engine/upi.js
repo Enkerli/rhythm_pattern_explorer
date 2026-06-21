@@ -116,9 +116,14 @@ export function parseUPI(input, ctx = { n: 16 }) {
   const out = (steps, label) => {
     const n = steps.length;
     let acc = new Array(n).fill(0);
-    if (accents) for (let i = 0; i < n; i++) acc[i] = accents[i % accents.length] ? 1 : 0;
-    // accents only land on onsets
-    for (let i = 0; i < n; i++) if (!steps[i]) acc[i] = 0;
+    // Accents cycle over ONSETS, not steps: the k-th onset gets accents[k % len].
+    // (Across playback cycles the onset counter keeps going, so accents precess —
+    // that persistence is handled by the C++ engine; this shows the first cycle.)
+    if (accents && accents.length) {
+      let onset = 0;
+      for (let i = 0; i < n; i++)
+        if (steps[i]) { acc[i] = accents[onset % accents.length] ? 1 : 0; onset++; }
+    }
     return { steps: steps.map(Number), accents: acc, label, ok: true };
   };
 
