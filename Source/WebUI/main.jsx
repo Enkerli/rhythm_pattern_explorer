@@ -127,6 +127,10 @@ function SerpeApp() {
   const [activeScene, setActiveScene] = useState(-1);
 
   const [dbQuery, setDbQuery] = useState('');
+  const [libTab, setLibTab] = useState('presets');   // presets | library | history
+  const parseJSON = (k, d) => { try { return JSON.parse(LS.get(k, d)); } catch { return JSON.parse(d); } };
+  const [lib, setLib]   = useState(() => parseJSON('library', '[]'));
+  const [hist, setHist] = useState(() => parseJSON('history', '[]'));
   const [waOn, setWaOn] = useState(true), [waVol, setWaVol] = useState(0.7);
   const [hostSync, setHostSync] = useState(false);
   const [hostInfo, setHostInfo] = useState(null);  // { bpm, playing } from C++
@@ -190,6 +194,19 @@ function SerpeApp() {
 
   // parse whenever the text/accents change (debounced-ish via React batching)
   useEffect(() => { parseField(); /* eslint-disable-next-line */ }, [upiText, accText]);
+
+  // record settled (valid) patterns in history — debounced so mid-typing
+  // keystrokes don't pile up; dedups and caps at 16.
+  const histTimer = useRef(null);
+  useEffect(() => {
+    const u = upiText.trim();
+    if (parseErr || !u) return;
+    clearTimeout(histTimer.current);
+    histTimer.current = setTimeout(() => {
+      setHist(prev => { const next = [u, ...prev.filter(x => x !== u)].slice(0, 16); LS.set('history', JSON.stringify(next)); return next; });
+    }, 700);
+    return () => clearTimeout(histTimer.current);
+  }, [upiText, parseErr]);
 
   // The accent layer to carry onto a new pattern. If it lives in the Accents
   // field, parseField prepends it (return ''); if it was typed inline in the UPI
@@ -363,10 +380,23 @@ function SerpeApp() {
     if (m) { setAccText(m[1]); setUpiText(m[2]); } else { setAccText(''); setUpiText(v); }
   }
 
-  const dbLib = [
-    ['E(5,8)', 'tresillo +1', 5, 8], ['E(3,8)', 'tresillo', 3, 8], ['E(7,16)', 'samba-ish', 7, 16],
-    ['E(4,9)', 'balanced', 4, 9], ['P(3,0)', 'triangle', 3, 12], ['E(5,12)', 'even five', 5, 12],
-  ].filter(([l]) => l.toLowerCase().includes(dbQuery.toLowerCase()));
+  // ── pattern library: presets / saved / history ──
+  const PRESETS = [
+    ['E(3,8)', 'tresillo'], ['E(5,8)', 'cinquillo'], ['E(2,5)', 'khafif-e-ramal'],
+    ['E(4,9)', 'aksak'], ['E(5,12)', 'venda'], ['E(7,12)', 'west-african'],
+    ['E(7,16)', 'samba-ish'], ['E(5,16)', 'bossa-adjacent'], ['E(9,16)', 'central-african'],
+    ['E(4,7)', 'bulgarian'], ['P(3,0)', 'triangle'], ['P(5,0)', 'pentagon'],
+    ['{10010}E(5,8)', 'accented cinquillo'], ['0x92:8', 'tresillo (hex)'],
+    ['[0,3,6,9]:12', 'even four'], ['E(2,3)', 'duple-against-triple'],
+  ];
+  const patInfo = (u) => { try { const p = parseUPI(u, { n: 16 }); if (!p.ok) return null; const a = analyse(p.steps); return `${a.k}/${a.n}`; } catch { return null; } };
+  const loadPattern = (u) => { setAccText(''); setUpiText(u); };
+  function saveToLibrary() {
+    const u = upiText.trim(); if (!u || !patInfo(u)) return;
+    setLib(prev => { const next = [{ upi: u }, ...prev.filter(x => x.upi !== u)].slice(0, 64); LS.set('library', JSON.stringify(next)); return next; });
+  }
+  const delFromLibrary = (u) => setLib(prev => { const next = prev.filter(x => x.upi !== u); LS.set('library', JSON.stringify(next)); return next; });
+  const clearHistory = () => { setHist([]); LS.set('history', '[]'); };
 
   const synced = cfg.host && hostSync;
 
@@ -532,16 +562,38 @@ function SerpeApp() {
             h('select', { className: 'es-control', value: midiChan, onChange: e => setMidiChan(+e.target.value) },
               [1, 2, 3, 10].map(v => h('option', { key: v, value: v }, v))))),
 
-        // Pattern database (web)
-        cfg.web && h(Section, { title: 'Pattern database', badge: 'web' },
-          h(Field, null, h('input', { className: 'es-control', type: 'text', placeholder: 'Search patterns…', value: dbQuery, onChange: e => setDbQuery(e.target.value) })),
-          h('div', null, dbLib.map(([l, d, k, n]) =>
-            h('div', { key: l, className: 'meter-row', style: { gridTemplateColumns: '1fr auto auto', cursor: 'pointer', gap: 8 }, onClick: () => { setAccText(''); setUpiText(l); } },
-              h('span', { className: 'es-num', style: { color: 'var(--es-fg)' } }, l),
-              h('span', { className: 'lab', style: { textAlign: 'right' } }, d),
-              h('span', { className: 'es-badge es-num' }, `${k}/${n}`)))),
-          h('p', { className: 'note', style: { fontSize: 11, color: 'var(--es-fg-muted)', margin: '9px 0 0' } },
-            h('b', { className: 'es-num' }, '2,773'), ' patterns · filter by onsets, steps, balance.')),
+        // Patterns: presets / library / history (web)
+        cfg.web && (() => {
+          const q = dbQuery.trim().toLowerCase();
+          const matches = (u, name) => !q || u.toLowerCase().includes(q) || (name && name.toLowerCase().includes(q));
+          // one list row: tap to load; optional name + onset/step badge + delete
+          const row = (key, u, name, onDel) => h('div', { key, className: 'pat-row', onClick: () => loadPattern(u) },
+            h('span', { className: 'es-num pat-upi' }, u),
+            name && h('span', { className: 'lab pat-name' }, name),
+            h('span', { className: 'es-badge es-num' }, patInfo(u) || '—'),
+            onDel && h('button', { className: 'pat-del', title: 'Remove', onClick: e => { e.stopPropagation(); onDel(u); } }, '✕'));
+          let list, empty;
+          if (libTab === 'presets') {
+            list = PRESETS.filter(([u, n]) => matches(u, n)).map(([u, n], i) => row('p' + i, u, n, null));
+            empty = 'No matching presets.';
+          } else if (libTab === 'library') {
+            list = lib.filter(x => matches(x.upi)).map((x, i) => row('l' + i, x.upi, null, delFromLibrary));
+            empty = lib.length ? 'No matches.' : 'Save patterns here with “Save current”.';
+          } else {
+            list = hist.filter(u => matches(u)).map((u, i) => row('h' + i, u, null, null));
+            empty = 'Patterns you use show up here.';
+          }
+          return h(Section, { title: 'Patterns', badge: 'web' },
+            h('div', { className: 'seg', role: 'group', 'aria-label': 'Patterns', style: { marginBottom: 10 } },
+              [['presets', 'Presets'], ['library', 'Library'], ['history', 'History']].map(([v, t]) =>
+                h('button', { key: v, 'aria-pressed': libTab === v, onClick: () => setLibTab(v) }, t))),
+            libTab === 'library' && h('button', { className: 'es-btn es-small', style: { width: '100%', marginBottom: 8 }, onClick: saveToLibrary }, '+ Save current'),
+            libTab !== 'history' && h(Field, null,
+              h('input', { className: 'es-control', type: 'text', placeholder: 'Filter…', value: dbQuery, onChange: e => setDbQuery(e.target.value) })),
+            libTab === 'history' && hist.length > 0 && h('button', { className: 'es-btn es-small', style: { marginBottom: 8 }, onClick: clearHistory }, 'Clear history'),
+            h('div', { className: 'pat-list' }, list.length ? list
+              : h('p', { className: 'note', style: { fontSize: 11, color: 'var(--es-fg-muted)', margin: '4px 0' } }, empty)));
+        })(),
 
         // Web Audio (web)
         cfg.web && h(Section, { title: 'Web Audio', badge: 'web' },
