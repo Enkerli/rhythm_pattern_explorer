@@ -109,10 +109,10 @@ void PatternEngine::generateBinaryPattern(int binaryValue, int steps)
     currentPattern.clear();
     currentPattern.resize(steps, false);
     
-    // Convert using LEFT-TO-RIGHT convention (MSB first, matching webapp standard)
+    // Leftmost = LSB (suite-wide): the first step is bit 0, so step i = bit i.
     for (int i = 0; i < steps; ++i)
     {
-        currentPattern[i] = (binaryValue & (1 << (steps - 1 - i))) != 0;
+        currentPattern[i] = (binaryValue & (1 << i)) != 0;
     }
     
 }

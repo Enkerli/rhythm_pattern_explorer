@@ -5,7 +5,7 @@
  * Loads the webapp's PatternConverter (app/pattern-processing.js) and checks it
  * reproduces every codec vector in rhythm-vectors.json, in both directions, for
  * binary / decimal / hex / octal / onset-array. The vectors are the suite-wide
- * cross-language contract (strict MSB-first: first step = leftmost bit = MSB),
+ * cross-language contract (leftmost = LSB: first step = bit 0, step k = 2^k),
  * sourced from @enkerli/theory; the plugin's C++ UPIParser is checked against
  * the same JSON. If this fails, the webapp has drifted from the convention.
  *

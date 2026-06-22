@@ -8,9 +8,9 @@ node WebApp/tests/rhythm-conformance.mjs
 
 Checks the webapp's `PatternConverter` against `rhythm-vectors.json` — the
 suite-wide cross-language contract for numeric pattern notation
-(binary / decimal / hex / octal / onset-array), **strict MSB-first**: the first
-step is the leftmost bit, i.e. the most significant bit of an ordinary numeral
-(`10010010` = tresillo = `0x92` = `146`). See `CONVENTIONS.md` in the
+(binary / decimal / hex / octal / onset-array), **leftmost = LSB**: the first
+step is bit 0, so step k has value 2^k — patterns read strictly left to right
+(`10010010` = tresillo = `0x49` = `73`). See `CONVENTIONS.md` in the
 `music-suite` repo.
 
 The Serpe plugin's C++ (`UPIParser` / `PatternUtils`) is checked against the

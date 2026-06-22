@@ -4,8 +4,8 @@
  * Checks PatternUtils' display codecs (binary / hex / octal / decimal) against
  * kRhythmCodecVectors — the same cross-language vectors the webapp's
  * PatternConverter is tested against (WebApp/tests/rhythm-vectors.json, sourced
- * from @enkerli/theory). Convention: strict MSB-first, first step = leftmost bit
- * = most significant bit of an ordinary numeral. See CONVENTIONS.md.
+ * from @enkerli/theory). Convention: leftmost = LSB, first step = bit 0, so a
+ * single onset on step k has value 2^k. See CONVENTIONS.md.
  *
  * This covers the ENCODE / display direction, which is where the historical
  * bit-order discrepancies surfaced. Decode coverage (UPIParser::parseDecimal /
@@ -53,7 +53,7 @@ void expectEq(const std::string& what, const std::string& got, const std::string
 
 int main() {
     std::cout << "=== Rhythm Codec Conformance (encode/display) ===\n";
-    std::cout << kRhythmCodecVectorCount << " vectors (strict MSB-first)\n";
+    std::cout << kRhythmCodecVectorCount << " vectors (leftmost = LSB)\n";
 
     for (int i = 0; i < kRhythmCodecVectorCount; ++i) {
         const auto& v = kRhythmCodecVectors[i];

@@ -179,12 +179,12 @@
   ],
   "codecs": [
     {
-      "name": "1011 = 0xB = 11",
+      "name": "1011 = 0xD = 13",
       "pattern": "1011",
       "steps": 4,
-      "decimal": 11,
-      "hex": "B",
-      "octal": "13",
+      "decimal": 13,
+      "hex": "D",
+      "octal": "15",
       "onsets": [
         0,
         2,
@@ -192,12 +192,12 @@
       ]
     },
     {
-      "name": "10111010 = 0xBA = 186",
+      "name": "10111010 = 0x5D = 93",
       "pattern": "10111010",
       "steps": 8,
-      "decimal": 186,
-      "hex": "BA",
-      "octal": "272",
+      "decimal": 93,
+      "hex": "5D",
+      "octal": "135",
       "onsets": [
         0,
         2,
@@ -207,12 +207,12 @@
       ]
     },
     {
-      "name": "tresillo = 0x92 = 146",
+      "name": "tresillo = 0x49 = 73",
       "pattern": "10010010",
       "steps": 8,
-      "decimal": 146,
-      "hex": "92",
-      "octal": "222",
+      "decimal": 73,
+      "hex": "49",
+      "octal": "111",
       "onsets": [
         0,
         3,
@@ -223,9 +223,9 @@
       "name": "leading rests need step count",
       "pattern": "0010",
       "steps": 4,
-      "decimal": 2,
-      "hex": "2",
-      "octal": "2",
+      "decimal": 4,
+      "hex": "4",
+      "octal": "4",
       "onsets": [
         2
       ]
@@ -234,9 +234,9 @@
       "name": "non-nibble length is a plain numeral",
       "pattern": "101110",
       "steps": 6,
-      "decimal": 46,
-      "hex": "2E",
-      "octal": "56",
+      "decimal": 29,
+      "hex": "1D",
+      "octal": "35",
       "onsets": [
         0,
         2,
@@ -309,9 +309,9 @@
     {
       "pattern": "10",
       "steps": 2,
-      "decimal": 2,
-      "hex": "2",
-      "octal": "2",
+      "decimal": 1,
+      "hex": "1",
+      "octal": "1",
       "onsets": [
         0
       ],
@@ -320,9 +320,9 @@
     {
       "pattern": "10",
       "steps": 2,
-      "decimal": 2,
-      "hex": "2",
-      "octal": "2",
+      "decimal": 1,
+      "hex": "1",
+      "octal": "1",
       "onsets": [
         0
       ],
@@ -331,9 +331,9 @@
     {
       "pattern": "10",
       "steps": 2,
-      "decimal": 2,
-      "hex": "2",
-      "octal": "2",
+      "decimal": 1,
+      "hex": "1",
+      "octal": "1",
       "onsets": [
         0
       ],
@@ -403,9 +403,9 @@
     {
       "pattern": "0100",
       "steps": 4,
-      "decimal": 4,
-      "hex": "4",
-      "octal": "4",
+      "decimal": 2,
+      "hex": "2",
+      "octal": "2",
       "onsets": [
         1
       ],
@@ -414,9 +414,9 @@
     {
       "pattern": "1010",
       "steps": 4,
-      "decimal": 10,
-      "hex": "A",
-      "octal": "12",
+      "decimal": 5,
+      "hex": "5",
+      "octal": "5",
       "onsets": [
         0,
         2
@@ -426,9 +426,9 @@
     {
       "pattern": "01100",
       "steps": 5,
-      "decimal": 12,
-      "hex": "C",
-      "octal": "14",
+      "decimal": 6,
+      "hex": "6",
+      "octal": "6",
       "onsets": [
         1,
         2
@@ -460,9 +460,9 @@
     {
       "pattern": "10100",
       "steps": 5,
-      "decimal": 20,
-      "hex": "14",
-      "octal": "24",
+      "decimal": 5,
+      "hex": "5",
+      "octal": "5",
       "onsets": [
         0,
         2
@@ -472,9 +472,9 @@
     {
       "pattern": "001000",
       "steps": 6,
-      "decimal": 8,
-      "hex": "8",
-      "octal": "10",
+      "decimal": 4,
+      "hex": "4",
+      "octal": "4",
       "onsets": [
         2
       ],
@@ -483,9 +483,9 @@
     {
       "pattern": "010111",
       "steps": 6,
-      "decimal": 23,
-      "hex": "17",
-      "octal": "27",
+      "decimal": 58,
+      "hex": "3A",
+      "octal": "72",
       "onsets": [
         1,
         3,
@@ -497,9 +497,9 @@
     {
       "pattern": "011011",
       "steps": 6,
-      "decimal": 27,
-      "hex": "1B",
-      "octal": "33",
+      "decimal": 54,
+      "hex": "36",
+      "octal": "66",
       "onsets": [
         1,
         2,
@@ -539,9 +539,9 @@
     {
       "pattern": "1001010",
       "steps": 7,
-      "decimal": 74,
-      "hex": "4A",
-      "octal": "112",
+      "decimal": 41,
+      "hex": "29",
+      "octal": "51",
       "onsets": [
         0,
         3,
@@ -552,9 +552,9 @@
     {
       "pattern": "0011001",
       "steps": 7,
-      "decimal": 25,
-      "hex": "19",
-      "octal": "31",
+      "decimal": 76,
+      "hex": "4C",
+      "octal": "114",
       "onsets": [
         2,
         3,
@@ -565,9 +565,9 @@
     {
       "pattern": "0011001",
       "steps": 7,
-      "decimal": 25,
-      "hex": "19",
-      "octal": "31",
+      "decimal": 76,
+      "hex": "4C",
+      "octal": "114",
       "onsets": [
         2,
         3,
@@ -578,9 +578,9 @@
     {
       "pattern": "11000100",
       "steps": 8,
-      "decimal": 196,
-      "hex": "C4",
-      "octal": "304",
+      "decimal": 35,
+      "hex": "23",
+      "octal": "43",
       "onsets": [
         0,
         1,
@@ -591,9 +591,9 @@
     {
       "pattern": "01000000",
       "steps": 8,
-      "decimal": 64,
-      "hex": "40",
-      "octal": "100",
+      "decimal": 2,
+      "hex": "2",
+      "octal": "2",
       "onsets": [
         1
       ],
@@ -602,9 +602,9 @@
     {
       "pattern": "10000110",
       "steps": 8,
-      "decimal": 134,
-      "hex": "86",
-      "octal": "206",
+      "decimal": 97,
+      "hex": "61",
+      "octal": "141",
       "onsets": [
         0,
         5,
@@ -615,9 +615,9 @@
     {
       "pattern": "11110001",
       "steps": 8,
-      "decimal": 241,
-      "hex": "F1",
-      "octal": "361",
+      "decimal": 143,
+      "hex": "8F",
+      "octal": "217",
       "onsets": [
         0,
         1,
@@ -630,9 +630,9 @@
     {
       "pattern": "000010111",
       "steps": 9,
-      "decimal": 23,
-      "hex": "17",
-      "octal": "27",
+      "decimal": 464,
+      "hex": "1D0",
+      "octal": "720",
       "onsets": [
         4,
         6,
@@ -644,9 +644,9 @@
     {
       "pattern": "000001110",
       "steps": 9,
-      "decimal": 14,
-      "hex": "E",
-      "octal": "16",
+      "decimal": 224,
+      "hex": "E0",
+      "octal": "340",
       "onsets": [
         5,
         6,
@@ -657,9 +657,9 @@
     {
       "pattern": "001100011",
       "steps": 9,
-      "decimal": 99,
-      "hex": "63",
-      "octal": "143",
+      "decimal": 396,
+      "hex": "18C",
+      "octal": "614",
       "onsets": [
         2,
         3,
@@ -671,9 +671,9 @@
     {
       "pattern": "000001000",
       "steps": 9,
-      "decimal": 8,
-      "hex": "8",
-      "octal": "10",
+      "decimal": 32,
+      "hex": "20",
+      "octal": "40",
       "onsets": [
         5
       ],
@@ -682,9 +682,9 @@
     {
       "pattern": "001001000",
       "steps": 9,
-      "decimal": 72,
-      "hex": "48",
-      "octal": "110",
+      "decimal": 36,
+      "hex": "24",
+      "octal": "44",
       "onsets": [
         2,
         5
@@ -694,9 +694,9 @@
     {
       "pattern": "101000010",
       "steps": 9,
-      "decimal": 322,
-      "hex": "142",
-      "octal": "502",
+      "decimal": 133,
+      "hex": "85",
+      "octal": "205",
       "onsets": [
         0,
         2,
@@ -707,9 +707,9 @@
     {
       "pattern": "1110001101",
       "steps": 10,
-      "decimal": 909,
-      "hex": "38D",
-      "octal": "1615",
+      "decimal": 711,
+      "hex": "2C7",
+      "octal": "1307",
       "onsets": [
         0,
         1,
@@ -723,9 +723,9 @@
     {
       "pattern": "0100110001",
       "steps": 10,
-      "decimal": 305,
-      "hex": "131",
-      "octal": "461",
+      "decimal": 562,
+      "hex": "232",
+      "octal": "1062",
       "onsets": [
         1,
         4,
@@ -737,9 +737,9 @@
     {
       "pattern": "1000000100",
       "steps": 10,
-      "decimal": 516,
-      "hex": "204",
-      "octal": "1004",
+      "decimal": 129,
+      "hex": "81",
+      "octal": "201",
       "onsets": [
         0,
         7
@@ -749,9 +749,9 @@
     {
       "pattern": "0010010010",
       "steps": 10,
-      "decimal": 146,
-      "hex": "92",
-      "octal": "222",
+      "decimal": 292,
+      "hex": "124",
+      "octal": "444",
       "onsets": [
         2,
         5,
@@ -762,9 +762,9 @@
     {
       "pattern": "1100001000",
       "steps": 10,
-      "decimal": 776,
-      "hex": "308",
-      "octal": "1410",
+      "decimal": 67,
+      "hex": "43",
+      "octal": "103",
       "onsets": [
         0,
         1,
@@ -775,9 +775,9 @@
     {
       "pattern": "1000000110",
       "steps": 10,
-      "decimal": 518,
-      "hex": "206",
-      "octal": "1006",
+      "decimal": 385,
+      "hex": "181",
+      "octal": "601",
       "onsets": [
         0,
         7,
@@ -788,9 +788,9 @@
     {
       "pattern": "00010010011",
       "steps": 11,
-      "decimal": 147,
-      "hex": "93",
-      "octal": "223",
+      "decimal": 1608,
+      "hex": "648",
+      "octal": "3110",
       "onsets": [
         3,
         6,
@@ -802,9 +802,9 @@
     {
       "pattern": "11010001111",
       "steps": 11,
-      "decimal": 1679,
-      "hex": "68F",
-      "octal": "3217",
+      "decimal": 1931,
+      "hex": "78B",
+      "octal": "3613",
       "onsets": [
         0,
         1,
@@ -819,9 +819,9 @@
     {
       "pattern": "01011010100",
       "steps": 11,
-      "decimal": 724,
-      "hex": "2D4",
-      "octal": "1324",
+      "decimal": 346,
+      "hex": "15A",
+      "octal": "532",
       "onsets": [
         1,
         3,
@@ -834,9 +834,9 @@
     {
       "pattern": "10000000010",
       "steps": 11,
-      "decimal": 1026,
-      "hex": "402",
-      "octal": "2002",
+      "decimal": 513,
+      "hex": "201",
+      "octal": "1001",
       "onsets": [
         0,
         9
@@ -846,9 +846,9 @@
     {
       "pattern": "00011110000",
       "steps": 11,
-      "decimal": 240,
-      "hex": "F0",
-      "octal": "360",
+      "decimal": 120,
+      "hex": "78",
+      "octal": "170",
       "onsets": [
         3,
         4,
@@ -860,9 +860,9 @@
     {
       "pattern": "01111100101",
       "steps": 11,
-      "decimal": 997,
-      "hex": "3E5",
-      "octal": "1745",
+      "decimal": 1342,
+      "hex": "53E",
+      "octal": "2476",
       "onsets": [
         1,
         2,
@@ -877,9 +877,9 @@
     {
       "pattern": "011111000110",
       "steps": 12,
-      "decimal": 1990,
-      "hex": "7C6",
-      "octal": "3706",
+      "decimal": 1598,
+      "hex": "63E",
+      "octal": "3076",
       "onsets": [
         1,
         2,
@@ -894,9 +894,9 @@
     {
       "pattern": "011100000010",
       "steps": 12,
-      "decimal": 1794,
-      "hex": "702",
-      "octal": "3402",
+      "decimal": 1038,
+      "hex": "40E",
+      "octal": "2016",
       "onsets": [
         1,
         2,
@@ -908,9 +908,9 @@
     {
       "pattern": "000001111100",
       "steps": 12,
-      "decimal": 124,
-      "hex": "7C",
-      "octal": "174",
+      "decimal": 992,
+      "hex": "3E0",
+      "octal": "1740",
       "onsets": [
         5,
         6,
@@ -937,9 +937,9 @@
     {
       "pattern": "101010011110",
       "steps": 12,
-      "decimal": 2718,
-      "hex": "A9E",
-      "octal": "5236",
+      "decimal": 1941,
+      "hex": "795",
+      "octal": "3625",
       "onsets": [
         0,
         2,
@@ -954,9 +954,9 @@
     {
       "pattern": "000101000110",
       "steps": 12,
-      "decimal": 326,
-      "hex": "146",
-      "octal": "506",
+      "decimal": 1576,
+      "hex": "628",
+      "octal": "3050",
       "onsets": [
         3,
         5,
@@ -968,9 +968,9 @@
     {
       "pattern": "0000010000010",
       "steps": 13,
-      "decimal": 130,
-      "hex": "82",
-      "octal": "202",
+      "decimal": 2080,
+      "hex": "820",
+      "octal": "4040",
       "onsets": [
         5,
         11
@@ -980,9 +980,9 @@
     {
       "pattern": "1010001001101",
       "steps": 13,
-      "decimal": 5197,
-      "hex": "144D",
-      "octal": "12115",
+      "decimal": 5701,
+      "hex": "1645",
+      "octal": "13105",
       "onsets": [
         0,
         2,
@@ -996,9 +996,9 @@
     {
       "pattern": "0101011100001",
       "steps": 13,
-      "decimal": 2785,
-      "hex": "AE1",
-      "octal": "5341",
+      "decimal": 4330,
+      "hex": "10EA",
+      "octal": "10352",
       "onsets": [
         1,
         3,
@@ -1012,9 +1012,9 @@
     {
       "pattern": "0011000110110",
       "steps": 13,
-      "decimal": 1590,
-      "hex": "636",
-      "octal": "3066",
+      "decimal": 3468,
+      "hex": "D8C",
+      "octal": "6614",
       "onsets": [
         2,
         3,
@@ -1028,9 +1028,9 @@
     {
       "pattern": "1100000011001",
       "steps": 13,
-      "decimal": 6169,
-      "hex": "1819",
-      "octal": "14031",
+      "decimal": 4867,
+      "hex": "1303",
+      "octal": "11403",
       "onsets": [
         0,
         1,
@@ -1043,9 +1043,9 @@
     {
       "pattern": "0010000101101",
       "steps": 13,
-      "decimal": 1069,
-      "hex": "42D",
-      "octal": "2055",
+      "decimal": 5764,
+      "hex": "1684",
+      "octal": "13204",
       "onsets": [
         2,
         7,
@@ -1058,9 +1058,9 @@
     {
       "pattern": "10000011101000",
       "steps": 14,
-      "decimal": 8424,
-      "hex": "20E8",
-      "octal": "20350",
+      "decimal": 1473,
+      "hex": "5C1",
+      "octal": "2701",
       "onsets": [
         0,
         6,
@@ -1073,9 +1073,9 @@
     {
       "pattern": "00110110000000",
       "steps": 14,
-      "decimal": 3456,
-      "hex": "D80",
-      "octal": "6600",
+      "decimal": 108,
+      "hex": "6C",
+      "octal": "154",
       "onsets": [
         2,
         3,
@@ -1087,9 +1087,9 @@
     {
       "pattern": "01000000101010",
       "steps": 14,
-      "decimal": 4138,
-      "hex": "102A",
-      "octal": "10052",
+      "decimal": 5378,
+      "hex": "1502",
+      "octal": "12402",
       "onsets": [
         1,
         8,
@@ -1101,9 +1101,9 @@
     {
       "pattern": "01101100011101",
       "steps": 14,
-      "decimal": 6941,
-      "hex": "1B1D",
-      "octal": "15435",
+      "decimal": 11830,
+      "hex": "2E36",
+      "octal": "27066",
       "onsets": [
         1,
         2,
@@ -1119,9 +1119,9 @@
     {
       "pattern": "00110000011000",
       "steps": 14,
-      "decimal": 3096,
-      "hex": "C18",
-      "octal": "6030",
+      "decimal": 1548,
+      "hex": "60C",
+      "octal": "3014",
       "onsets": [
         2,
         3,
@@ -1133,9 +1133,9 @@
     {
       "pattern": "00011010101000",
       "steps": 14,
-      "decimal": 1704,
-      "hex": "6A8",
-      "octal": "3250",
+      "decimal": 1368,
+      "hex": "558",
+      "octal": "2530",
       "onsets": [
         3,
         4,
@@ -1148,9 +1148,9 @@
     {
       "pattern": "110100001011110",
       "steps": 15,
-      "decimal": 26718,
-      "hex": "685E",
-      "octal": "64136",
+      "decimal": 15627,
+      "hex": "3D0B",
+      "octal": "36413",
       "onsets": [
         0,
         1,
@@ -1166,9 +1166,9 @@
     {
       "pattern": "101101000000101",
       "steps": 15,
-      "decimal": 23045,
-      "hex": "5A05",
-      "octal": "55005",
+      "decimal": 20525,
+      "hex": "502D",
+      "octal": "50055",
       "onsets": [
         0,
         2,
@@ -1182,9 +1182,9 @@
     {
       "pattern": "010111110011001",
       "steps": 15,
-      "decimal": 12185,
-      "hex": "2F99",
-      "octal": "27631",
+      "decimal": 19706,
+      "hex": "4CFA",
+      "octal": "46372",
       "onsets": [
         1,
         3,
@@ -1201,9 +1201,9 @@
     {
       "pattern": "001000001000001",
       "steps": 15,
-      "decimal": 4161,
-      "hex": "1041",
-      "octal": "10101",
+      "decimal": 16644,
+      "hex": "4104",
+      "octal": "40404",
       "onsets": [
         2,
         8,
@@ -1214,9 +1214,9 @@
     {
       "pattern": "000100000101000",
       "steps": 15,
-      "decimal": 2088,
-      "hex": "828",
-      "octal": "4050",
+      "decimal": 2568,
+      "hex": "A08",
+      "octal": "5010",
       "onsets": [
         3,
         9,
@@ -1227,9 +1227,9 @@
     {
       "pattern": "011111000011000",
       "steps": 15,
-      "decimal": 15896,
-      "hex": "3E18",
-      "octal": "37030",
+      "decimal": 3134,
+      "hex": "C3E",
+      "octal": "6076",
       "onsets": [
         1,
         2,
@@ -1244,9 +1244,9 @@
     {
       "pattern": "0010001110011000",
       "steps": 16,
-      "decimal": 9112,
-      "hex": "2398",
-      "octal": "21630",
+      "decimal": 6596,
+      "hex": "19C4",
+      "octal": "14704",
       "onsets": [
         2,
         6,
@@ -1260,9 +1260,9 @@
     {
       "pattern": "1100110111001010",
       "steps": 16,
-      "decimal": 52682,
-      "hex": "CDCA",
-      "octal": "146712",
+      "decimal": 21427,
+      "hex": "53B3",
+      "octal": "51663",
       "onsets": [
         0,
         1,
@@ -1279,9 +1279,9 @@
     {
       "pattern": "1111100100001111",
       "steps": 16,
-      "decimal": 63759,
-      "hex": "F90F",
-      "octal": "174417",
+      "decimal": 61599,
+      "hex": "F09F",
+      "octal": "170237",
       "onsets": [
         0,
         1,
@@ -1299,9 +1299,9 @@
     {
       "pattern": "0100010110010001",
       "steps": 16,
-      "decimal": 17809,
-      "hex": "4591",
-      "octal": "42621",
+      "decimal": 35234,
+      "hex": "89A2",
+      "octal": "104642",
       "onsets": [
         1,
         5,
@@ -1315,9 +1315,9 @@
     {
       "pattern": "0000111101001010",
       "steps": 16,
-      "decimal": 3914,
-      "hex": "F4A",
-      "octal": "7512",
+      "decimal": 21232,
+      "hex": "52F0",
+      "octal": "51360",
       "onsets": [
         4,
         5,
@@ -1332,9 +1332,9 @@
     {
       "pattern": "0001100000010000",
       "steps": 16,
-      "decimal": 6160,
-      "hex": "1810",
-      "octal": "14020",
+      "decimal": 2072,
+      "hex": "818",
+      "octal": "4030",
       "onsets": [
         3,
         4,
@@ -1345,9 +1345,9 @@
     {
       "pattern": "11001110000110101",
       "steps": 17,
-      "decimal": 105525,
-      "hex": "19C35",
-      "octal": "316065",
+      "decimal": 88179,
+      "hex": "15873",
+      "octal": "254163",
       "onsets": [
         0,
         1,
@@ -1364,9 +1364,9 @@
     {
       "pattern": "11100101111111000",
       "steps": 17,
-      "decimal": 117752,
-      "hex": "1CBF8",
-      "octal": "345770",
+      "decimal": 16295,
+      "hex": "3FA7",
+      "octal": "37647",
       "onsets": [
         0,
         1,
@@ -1385,9 +1385,9 @@
     {
       "pattern": "01000010010110010",
       "steps": 17,
-      "decimal": 33970,
-      "hex": "84B2",
-      "octal": "102262",
+      "decimal": 39490,
+      "hex": "9A42",
+      "octal": "115102",
       "onsets": [
         1,
         6,
@@ -1401,9 +1401,9 @@
     {
       "pattern": "00100001010011111",
       "steps": 17,
-      "decimal": 17055,
-      "hex": "429F",
-      "octal": "41237",
+      "decimal": 127620,
+      "hex": "1F284",
+      "octal": "371204",
       "onsets": [
         2,
         7,
@@ -1419,9 +1419,9 @@
     {
       "pattern": "00000000010110011",
       "steps": 17,
-      "decimal": 179,
-      "hex": "B3",
-      "octal": "263",
+      "decimal": 104960,
+      "hex": "19A00",
+      "octal": "315000",
       "onsets": [
         9,
         11,
@@ -1434,9 +1434,9 @@
     {
       "pattern": "00000111011101011",
       "steps": 17,
-      "decimal": 3819,
-      "hex": "EEB",
-      "octal": "7353",
+      "decimal": 110304,
+      "hex": "1AEE0",
+      "octal": "327340",
       "onsets": [
         5,
         6,
@@ -1453,9 +1453,9 @@
     {
       "pattern": "100000100000010010",
       "steps": 18,
-      "decimal": 133138,
-      "hex": "20812",
-      "octal": "404022",
+      "decimal": 73793,
+      "hex": "12041",
+      "octal": "220101",
       "onsets": [
         0,
         6,
@@ -1467,9 +1467,9 @@
     {
       "pattern": "101000100100001001",
       "steps": 18,
-      "decimal": 166153,
-      "hex": "28909",
-      "octal": "504411",
+      "decimal": 148037,
+      "hex": "24245",
+      "octal": "441105",
       "onsets": [
         0,
         2,
@@ -1483,9 +1483,9 @@
     {
       "pattern": "010001000100010010",
       "steps": 18,
-      "decimal": 69906,
-      "hex": "11112",
-      "octal": "210422",
+      "decimal": 74274,
+      "hex": "12222",
+      "octal": "221042",
       "onsets": [
         1,
         5,
@@ -1498,9 +1498,9 @@
     {
       "pattern": "111100111100001111",
       "steps": 18,
-      "decimal": 249615,
-      "hex": "3CF0F",
-      "octal": "747417",
+      "decimal": 246735,
+      "hex": "3C3CF",
+      "octal": "741717",
       "onsets": [
         0,
         1,
@@ -1520,9 +1520,9 @@
     {
       "pattern": "100000100101000000",
       "steps": 18,
-      "decimal": 133440,
-      "hex": "20940",
-      "octal": "404500",
+      "decimal": 2625,
+      "hex": "A41",
+      "octal": "5101",
       "onsets": [
         0,
         6,
@@ -1534,9 +1534,9 @@
     {
       "pattern": "011110110101100010",
       "steps": 18,
-      "decimal": 126306,
-      "hex": "1ED62",
-      "octal": "366542",
+      "decimal": 72414,
+      "hex": "11ADE",
+      "octal": "215336",
       "onsets": [
         1,
         2,
@@ -1554,9 +1554,9 @@
     {
       "pattern": "0000100001010000010",
       "steps": 19,
-      "decimal": 17026,
-      "hex": "4282",
-      "octal": "41202",
+      "decimal": 133648,
+      "hex": "20A10",
+      "octal": "405020",
       "onsets": [
         4,
         9,
@@ -1568,9 +1568,9 @@
     {
       "pattern": "1001100100011000010",
       "steps": 19,
-      "decimal": 313538,
-      "hex": "4C8C2",
-      "octal": "1144302",
+      "decimal": 137369,
+      "hex": "21899",
+      "octal": "414231",
       "onsets": [
         0,
         3,
@@ -1585,9 +1585,9 @@
     {
       "pattern": "0001000010011110011",
       "steps": 19,
-      "decimal": 34035,
-      "hex": "84F3",
-      "octal": "102363",
+      "decimal": 424200,
+      "hex": "67908",
+      "octal": "1474410",
       "onsets": [
         3,
         8,
@@ -1603,9 +1603,9 @@
     {
       "pattern": "0000000101101101000",
       "steps": 19,
-      "decimal": 2920,
-      "hex": "B68",
-      "octal": "5550",
+      "decimal": 46720,
+      "hex": "B680",
+      "octal": "133200",
       "onsets": [
         7,
         9,
@@ -1619,9 +1619,9 @@
     {
       "pattern": "0010011001100010101",
       "steps": 19,
-      "decimal": 78613,
-      "hex": "13315",
-      "octal": "231425",
+      "decimal": 345700,
+      "hex": "54664",
+      "octal": "1243144",
       "onsets": [
         2,
         5,
@@ -1637,9 +1637,9 @@
     {
       "pattern": "0110010111010000001",
       "steps": 19,
-      "decimal": 208513,
-      "hex": "32E81",
-      "octal": "627201",
+      "decimal": 265126,
+      "hex": "40BA6",
+      "octal": "1005646",
       "onsets": [
         1,
         2,
@@ -1655,9 +1655,9 @@
     {
       "pattern": "10000000000010001000",
       "steps": 20,
-      "decimal": 524424,
-      "hex": "80088",
-      "octal": "2000210",
+      "decimal": 69633,
+      "hex": "11001",
+      "octal": "210001",
       "onsets": [
         0,
         12,
@@ -1668,9 +1668,9 @@
     {
       "pattern": "00010000100010000101",
       "steps": 20,
-      "decimal": 67717,
-      "hex": "10885",
-      "octal": "204205",
+      "decimal": 659720,
+      "hex": "A1108",
+      "octal": "2410410",
       "onsets": [
         3,
         8,
@@ -1683,9 +1683,9 @@
     {
       "pattern": "01000001000001010000",
       "steps": 20,
-      "decimal": 266320,
-      "hex": "41050",
-      "octal": "1010120",
+      "decimal": 41090,
+      "hex": "A082",
+      "octal": "120202",
       "onsets": [
         1,
         7,
@@ -1697,9 +1697,9 @@
     {
       "pattern": "00000100110011001010",
       "steps": 20,
-      "decimal": 19658,
-      "hex": "4CCA",
-      "octal": "46312",
+      "decimal": 340768,
+      "hex": "53320",
+      "octal": "1231440",
       "onsets": [
         5,
         8,
@@ -1714,9 +1714,9 @@
     {
       "pattern": "01000111010001000111",
       "steps": 20,
-      "decimal": 291911,
-      "hex": "47447",
-      "octal": "1072107",
+      "decimal": 926434,
+      "hex": "E22E2",
+      "octal": "3421342",
       "onsets": [
         1,
         5,
@@ -1733,9 +1733,9 @@
     {
       "pattern": "10000110011100011011",
       "steps": 20,
-      "decimal": 550683,
-      "hex": "8671B",
-      "octal": "2063433",
+      "decimal": 888417,
+      "hex": "D8E61",
+      "octal": "3307141",
       "onsets": [
         0,
         5,
@@ -1753,9 +1753,9 @@
     {
       "pattern": "000010001100001011000",
       "steps": 21,
-      "decimal": 71768,
-      "hex": "11858",
-      "octal": "214130",
+      "decimal": 213776,
+      "hex": "34310",
+      "octal": "641420",
       "onsets": [
         4,
         8,
@@ -1769,9 +1769,9 @@
     {
       "pattern": "000010101110100101000",
       "steps": 21,
-      "decimal": 89384,
-      "hex": "15D28",
-      "octal": "256450",
+      "decimal": 169808,
+      "hex": "29750",
+      "octal": "513520",
       "onsets": [
         4,
         6,
@@ -1787,9 +1787,9 @@
     {
       "pattern": "000000100100000010010",
       "steps": 21,
-      "decimal": 18450,
-      "hex": "4812",
-      "octal": "44022",
+      "decimal": 590400,
+      "hex": "90240",
+      "octal": "2201100",
       "onsets": [
         6,
         9,
@@ -1801,9 +1801,9 @@
     {
       "pattern": "001101000100100000010",
       "steps": 21,
-      "decimal": 428290,
-      "hex": "68902",
-      "octal": "1504402",
+      "decimal": 528940,
+      "hex": "8122C",
+      "octal": "2011054",
       "onsets": [
         2,
         3,
@@ -1817,9 +1817,9 @@
     {
       "pattern": "000010000100010001000",
       "steps": 21,
-      "decimal": 67720,
-      "hex": "10888",
-      "octal": "204210",
+      "decimal": 139792,
+      "hex": "22210",
+      "octal": "421020",
       "onsets": [
         4,
         9,
@@ -1831,9 +1831,9 @@
     {
       "pattern": "111011100001000101000",
       "steps": 21,
-      "decimal": 1950248,
-      "hex": "1DC228",
-      "octal": "7341050",
+      "decimal": 166007,
+      "hex": "28877",
+      "octal": "504167",
       "onsets": [
         0,
         1,
@@ -1850,9 +1850,9 @@
     {
       "pattern": "0000101000010101000000",
       "steps": 22,
-      "decimal": 165184,
-      "hex": "28540",
-      "octal": "502500",
+      "decimal": 43088,
+      "hex": "A850",
+      "octal": "124120",
       "onsets": [
         4,
         6,
@@ -1865,9 +1865,9 @@
     {
       "pattern": "0010011111110110100001",
       "steps": 22,
-      "decimal": 654753,
-      "hex": "9FDA1",
-      "octal": "2376641",
+      "decimal": 2191332,
+      "hex": "216FE4",
+      "octal": "10267744",
       "onsets": [
         2,
         5,
@@ -1887,9 +1887,9 @@
     {
       "pattern": "1110100100000111100100",
       "steps": 22,
-      "decimal": 3817956,
-      "hex": "3A41E4",
-      "octal": "16440744",
+      "decimal": 647319,
+      "hex": "9E097",
+      "octal": "2360227",
       "onsets": [
         0,
         1,
@@ -1907,9 +1907,9 @@
     {
       "pattern": "1000110001011011000101",
       "steps": 22,
-      "decimal": 2299589,
-      "hex": "2316C5",
-      "octal": "10613305",
+      "decimal": 2677297,
+      "hex": "28DA31",
+      "octal": "12155061",
       "onsets": [
         0,
         4,
@@ -1927,9 +1927,9 @@
     {
       "pattern": "1000111101010001001010",
       "steps": 22,
-      "decimal": 2348106,
-      "hex": "23D44A",
-      "octal": "10752112",
+      "decimal": 1346289,
+      "hex": "148AF1",
+      "octal": "5105361",
       "onsets": [
         0,
         4,
@@ -1947,9 +1947,9 @@
     {
       "pattern": "1100100000111000001010",
       "steps": 22,
-      "decimal": 3280394,
-      "hex": "320E0A",
-      "octal": "14407012",
+      "decimal": 1317907,
+      "hex": "141C13",
+      "octal": "5016023",
       "onsets": [
         0,
         1,
@@ -1965,9 +1965,9 @@
     {
       "pattern": "10110100100110001000001",
       "steps": 23,
-      "decimal": 5917761,
-      "hex": "5A4C41",
-      "octal": "26446101",
+      "decimal": 4266285,
+      "hex": "41192D",
+      "octal": "20214455",
       "onsets": [
         0,
         2,
@@ -1984,9 +1984,9 @@
     {
       "pattern": "11110110010101000111100",
       "steps": 23,
-      "decimal": 8071740,
-      "hex": "7B2A3C",
-      "octal": "36625074",
+      "decimal": 1976943,
+      "hex": "1E2A6F",
+      "octal": "7425157",
       "onsets": [
         0,
         1,
@@ -2007,9 +2007,9 @@
     {
       "pattern": "01010100010110110000001",
       "steps": 23,
-      "decimal": 2764161,
-      "hex": "2A2D81",
-      "octal": "12426601",
+      "decimal": 4250154,
+      "hex": "40DA2A",
+      "octal": "20155052",
       "onsets": [
         1,
         3,
@@ -2026,9 +2026,9 @@
     {
       "pattern": "00101010100000111000100",
       "steps": 23,
-      "decimal": 1393092,
-      "hex": "1541C4",
-      "octal": "5240704",
+      "decimal": 1163604,
+      "hex": "11C154",
+      "octal": "4340524",
       "onsets": [
         2,
         4,
@@ -2044,9 +2044,9 @@
     {
       "pattern": "00100010001011110000100",
       "steps": 23,
-      "decimal": 1120132,
-      "hex": "111784",
-      "octal": "4213604",
+      "decimal": 1111108,
+      "hex": "10F444",
+      "octal": "4172104",
       "onsets": [
         2,
         6,
@@ -2062,9 +2062,9 @@
     {
       "pattern": "00001001110101100101111",
       "steps": 23,
-      "decimal": 322351,
-      "hex": "4EB2F",
-      "octal": "1165457",
+      "decimal": 8022928,
+      "hex": "7A6B90",
+      "octal": "36465620",
       "onsets": [
         4,
         7,
@@ -2084,9 +2084,9 @@
     {
       "pattern": "101001000100000010111010",
       "steps": 24,
-      "decimal": 10764474,
-      "hex": "A440BA",
-      "octal": "51040272",
+      "decimal": 6095397,
+      "hex": "5D0225",
+      "octal": "27201045",
       "onsets": [
         0,
         2,
@@ -2103,9 +2103,9 @@
     {
       "pattern": "011110011010010010010100",
       "steps": 24,
-      "decimal": 7971988,
-      "hex": "79A494",
-      "octal": "36322224",
+      "decimal": 2696606,
+      "hex": "29259E",
+      "octal": "12222636",
       "onsets": [
         1,
         2,
@@ -2124,9 +2124,9 @@
     {
       "pattern": "000101000100111010010110",
       "steps": 24,
-      "decimal": 1330838,
-      "hex": "144E96",
-      "octal": "5047226",
+      "decimal": 6910504,
+      "hex": "697228",
+      "octal": "32271050",
       "onsets": [
         3,
         5,
@@ -2144,9 +2144,9 @@
     {
       "pattern": "100011111000100101000001",
       "steps": 24,
-      "decimal": 9406785,
-      "hex": "8F8941",
-      "octal": "43704501",
+      "decimal": 8557041,
+      "hex": "8291F1",
+      "octal": "40510761",
       "onsets": [
         0,
         4,
@@ -2164,9 +2164,9 @@
     {
       "pattern": "111011010110101000101111",
       "steps": 24,
-      "decimal": 15559215,
-      "hex": "ED6A2F",
-      "octal": "73265057",
+      "decimal": 16012983,
+      "hex": "F456B7",
+      "octal": "75053267",
       "onsets": [
         0,
         1,
@@ -2189,9 +2189,9 @@
     {
       "pattern": "100000001010000100100001",
       "steps": 24,
-      "decimal": 8429857,
-      "hex": "80A121",
-      "octal": "40120441",
+      "decimal": 8684801,
+      "hex": "848501",
+      "octal": "41102401",
       "onsets": [
         0,
         8,

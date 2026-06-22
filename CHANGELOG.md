@@ -1,25 +1,24 @@
 # Rhythm Pattern Explorer - Changelog
 
-## Unreleased — ⚠️ BREAKING: strict MSB-first numeric notation
+## Unreleased — numeric notation is leftmost = LSB (strictly left-to-right)
 
-Binary/octal/decimal/hex pattern notation now follows the suite-wide
-convention (see music-suite CONVENTIONS.md): **the first step is the
-leftmost bit, i.e. the most significant bit of an ordinary numeral.**
+Binary/octal/decimal/hex pattern notation reads **strictly left to right**:
+**the first step is bit 0**, so a single onset on step k has value 2^k
+(see music-suite CONVENTIONS.md).
 
-- `1011` = 0xB = 11 (hit · rest · hit · hit); tresillo `10010010` = **0x92**
-  = 146 (previously 0x49 under the old leftmost-=-LSB rule).
-- Hex/octal digits are no longer reversed on input; hex/octal/decimal
-  display renders the plain numeral (leading zero digits dropped; the `:N`
-  step count preserves leading rests).
-- Applies identically to the webapp (`PatternConverter`) and the plugin
-  (`UPIParser::parseDecimal`/`parseNumericPattern`,
-  `PatternUtils::getHexString`/`getOctalString`/`getDecimalString`).
-- **Saved presets or documents that stored patterns in hex/octal/decimal
-  notation under the old convention will parse differently.** Binary
-  notation (`b…`), Euclidean (`E(k,n)`), polygon, and onset-array forms
-  are unaffected.
-- Verified: webapp converter agrees with `@enkerli/theory` codecs on
-  1,000 randomized patterns (decimal, hex, round-trip).
+- `0x1:4` = `1000`, `0x8:4` = `0001`, `0x11:8` = `10001000`; tresillo
+  `10010010` = **0x49** = 73.
+- This reverts an unreleased experiment that had briefly adopted strict
+  MSB-first (tresillo `0x92`); no released build shipped MSB-first, so the
+  released behaviour (leftmost = LSB) is unchanged.
+- Applies identically to the webapp (`PatternConverter`), the new WebUI
+  engine, and the plugin (`UPIParser::parseDecimal`/`parseNumericPattern`,
+  `PatternUtils::getHexString`/`getOctalString`/`getDecimalString`). Binary
+  notation (`b…`), Euclidean, polygon, and onset-array forms are unaffected.
+- Pitch-class-set encoding elsewhere in the suite stays MSB-first; only the
+  rhythm convention is leftmost-LSB.
+- Verified: webapp + plugin conformance suites agree with `@enkerli/theory`
+  on all 134 codec vectors (decimal, hex, octal, round-trip).
 
 ## v0.02a - Major Timing Fixes Release
 

@@ -85,9 +85,11 @@ export function analyse(steps) {
     evenness: evenness(steps),
     balanced: perfectBalance(steps),
     cog,
-    /** binary + hex + decimal renderings, MSB-first */
+    /** binary + hex + decimal renderings, leftmost = LSB (step k = bit k).
+     *  The LSB-first value equals the ordinary numeral of the reversed string,
+     *  so reverse then read base-2 (BigInt keeps long patterns exact). */
     binary: steps.join(""),
-    hex: "0x" + parseInt(steps.join("") || "0", 2).toString(16).toUpperCase(),
-    decimal: parseInt(steps.join("") || "0", 2),
+    hex: "0x" + BigInt("0b" + ((steps.slice().reverse().join("")) || "0")).toString(16).toUpperCase(),
+    decimal: Number(BigInt("0b" + ((steps.slice().reverse().join("")) || "0"))),
   };
 }

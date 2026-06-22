@@ -324,109 +324,98 @@ namespace PatternUtils
     }
     
     /**
-     * STRICT MSB-FIRST HEX NOTATION (suite-wide convention)
-     * 
-     * Converts a binary pattern to hexadecimal by reading the pattern as an
-     * ordinary binary numeral: the first step is the leftmost (most
-     * significant) bit. This matches standard computer-science notation
-     * but provides intuitive pattern input for musicians.
-     * 
+     * STRICT LEFT-TO-RIGHT HEX NOTATION (leftmost = LSB; suite-wide convention)
+     *
+     * Patterns read strictly left-to-right: the first step is bit 0 (the LEAST
+     * significant bit), so a single onset on step k has value 2^k. Intuitive
+     * for musicians (read the grid left to right) and consistent across the
+     * suite (matches @enkerli/theory).
+     *
      * BIT ORDERING CONVENTION:
-     * - Leftmost bit (first step) = Most Significant Bit (MSB)
-     * - Rightmost bit (last step) = Least Significant Bit (LSB)
-     * - The hex form is just that binary numeral in base 16
+     * - Leftmost bit (first step) = Least Significant Bit (bit 0)
+     * - Rightmost bit (last step) = Most Significant Bit
      *
      * CRITICAL EXAMPLES:
-     * - Pattern 1000 → 0x8 (leftmost bit is MSB, so 2^3 = 8)
-     * - Pattern 0100 → 0x4 (second bit, so 2^2 = 4)
-     * - Pattern 0010 → 0x2 (third bit, so 2^1 = 2)
-     * - Pattern 0001 → 0x1 (rightmost bit is LSB, so 2^0 = 1)
-     * - Pattern 10010010 → 0x92 (tresillo: ordinary binary numeral = 146 = 0x92)
+     * - Pattern 1000 → 0x1 (first step is bit 0, so 2^0 = 1)
+     * - Pattern 0100 → 0x2 (second step, so 2^1 = 2)
+     * - Pattern 0010 → 0x4 (third step, so 2^2 = 4)
+     * - Pattern 0001 → 0x8 (fourth step, so 2^3 = 8)
+     * - Pattern 10010010 → 0x49 (tresillo: onsets on steps 0,3,6 = 1+8+64 = 73)
      *
-     * USER WORKFLOW:
-     * 1. User types: 0x92:8
-     * 2. Input parser reads digits in ordinary order (standard numerals)
-     * 3. Pattern engine generates: 10010010
-     * 4. This function displays: 0x92 (using normal digit order)
-     * 
-     * This ensures round-trip consistency: input notation matches display notation.
-     * 
+     * Round-trips with input: 0x49:8 parses to 10010010 and displays as 0x49.
+     *
+     * Implementation: the leftmost-LSB value of a pattern equals the ordinary
+     * MSB-first value of its reverse, so we reverse once and reuse standard
+     * right-grouped numeral rendering (exact for patterns longer than 64 steps).
+     *
      * @param pattern Binary pattern to convert
-     * @return Hex string in 0xABCD format (MSB-first numeral)
+     * @return Hex string in 0xABCD format
      */
     juce::String getHexString(const std::vector<bool>& pattern)
     {
         if (pattern.empty())
             return "0x0";
-        
-        // Strict MSB-first (suite-wide convention): the pattern is an
-        // ordinary binary numeral (step 0 = leftmost = most significant bit),
-        // so its hex form is that numeral in base 16: 1011 = 0xB,
-        // tresillo 10010010 = 0x92. Nibbles are grouped from the RIGHT
-        // (standard numeric grouping); leading zero digits are dropped.
+
+        // Leftmost = LSB: render reverse(pattern) as an ordinary base-16 numeral.
+        const std::vector<bool> rev(pattern.rbegin(), pattern.rend());
         juce::String hex;
-        const int stepCount = static_cast<int>(pattern.size());
-        
+        const int stepCount = static_cast<int>(rev.size());
+
         for (int groupEnd = stepCount; groupEnd > 0; groupEnd -= 4)
         {
             int nibbleValue = 0;
             const int groupStart = std::max(0, groupEnd - 4);
             for (int i = groupStart; i < groupEnd; ++i)
-            {
-                nibbleValue = (nibbleValue << 1) | (pattern[static_cast<size_t>(i)] ? 1 : 0);
-            }
+                nibbleValue = (nibbleValue << 1) | (rev[static_cast<size_t>(i)] ? 1 : 0);
             hex = juce::String::toHexString(nibbleValue).toUpperCase() + hex;
         }
-        
+
         // Drop leading zero digits (keep at least one)
         while (hex.length() > 1 && hex[0] == '0')
             hex = hex.substring(1);
-        
+
         return "0x" + hex;
     }
-    
+
     juce::String getOctalString(const std::vector<bool>& pattern)
     {
         if (pattern.empty())
             return "o0";
-        
-        // Strict MSB-first: ordinary binary numeral rendered in base 8,
+
+        // Leftmost = LSB: render reverse(pattern) as an ordinary base-8 numeral,
         // 3-bit groups from the RIGHT, leading zero digits dropped.
+        const std::vector<bool> rev(pattern.rbegin(), pattern.rend());
         juce::String octal;
-        const int stepCount = static_cast<int>(pattern.size());
-        
+        const int stepCount = static_cast<int>(rev.size());
+
         for (int groupEnd = stepCount; groupEnd > 0; groupEnd -= 3)
         {
             int octalDigit = 0;
             const int groupStart = std::max(0, groupEnd - 3);
             for (int i = groupStart; i < groupEnd; ++i)
-            {
-                octalDigit = (octalDigit << 1) | (pattern[static_cast<size_t>(i)] ? 1 : 0);
-            }
+                octalDigit = (octalDigit << 1) | (rev[static_cast<size_t>(i)] ? 1 : 0);
             octal = juce::String(octalDigit) + octal;
         }
-        
+
         while (octal.length() > 1 && octal[0] == '0')
             octal = octal.substring(1);
-        
+
         return "o" + octal;
     }
-    
+
     juce::String getDecimalString(const std::vector<bool>& pattern)
     {
         if (pattern.empty())
             return "d0";
-        
-        // Strict MSB-first: the pattern is an ordinary binary numeral
-        // (step 0 = most significant bit).
+
+        // Leftmost = LSB: step k contributes 2^k (first step = bit 0).
         unsigned long long decimal = 0;
         const int stepCount = static_cast<int>(pattern.size());
-        
+
         for (int i = 0; i < stepCount; ++i)
-        {
-            decimal = (decimal << 1) | (pattern[static_cast<size_t>(i)] ? 1ULL : 0ULL);
-        }
-        
+            if (pattern[static_cast<size_t>(i)])
+                decimal |= (1ULL << i);
+
         return "d" + juce::String(static_cast<juce::int64>(decimal));
     }
     

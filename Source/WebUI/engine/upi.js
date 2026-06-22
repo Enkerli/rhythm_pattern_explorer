@@ -3,8 +3,8 @@
  * provides the generators + transforms. Framework-agnostic, no DOM.
  *
  * A pattern is { steps:Uint8Array(n) of 0/1, accents:Uint8Array(n) of 0/1 }.
- * All numeric notation is STRICT MSB-FIRST (first step = leftmost = most
- * significant bit), per music-suite CONVENTIONS.md.
+ * All numeric notation is LEFTMOST = LSB (first step = bit 0, so step k has
+ * value 2^k; 0x1:4 = 1000, tresillo 10010010 = 0x49), per CONVENTIONS.md.
  */
 
 /* ── number theory ─────────────────────────────────────────────────── */
@@ -66,11 +66,14 @@ export function complement(steps) {
   return steps.map((s) => (s ? 0 : 1));
 }
 
-/* ── numeric notation (MSB-first) ──────────────────────────────────── */
-function bitsFromBigEndian(value, width) {
+/* ── numeric notation (leftmost = LSB) ─────────────────────────────────
+ * Strict left-to-right: the first step is bit 0, so step k has value 2^k.
+ * 0x1:4 = 1000, 0x8:4 = 0001, tresillo 10010010 = 0x49. Matches the C++
+ * engine and @enkerli/theory. */
+function bitsFromValue(value, width) {
   const steps = new Array(width).fill(0);
   for (let i = 0; i < width; i++) {
-    steps[i] = (value >> (width - 1 - i)) & 1;
+    steps[i] = (value >> i) & 1;
   }
   return steps;
 }
@@ -83,7 +86,7 @@ function bitsFromBigEndian(value, width) {
  *   R(k,n)                   random
  *   B(k,n) / W(k,n)          Barlow / Wolrab (anti-Barlow) of length n
  *   D(k,n)                   Dilcue (anti-Euclidean)
- *   0x92 / b10010010 / 10010010 / o222 / d146   numeric (MSB-first)
+ *   0x49 / b10010010 / 10010010 / o111 / d73   numeric (leftmost = LSB)
  *   [0,3,6]:8                onset array with optional :N step count
  *   {10010}<expr>            accent layer wrapping any of the above
  * Returns { steps, accents, label, ok, error }.
@@ -141,17 +144,17 @@ export function parseUPI(input, ctx = { n: 16 }) {
     if ((m = src.match(/^0x([0-9a-f]+)(?::(\d+))?$/i))) {
       const v = parseInt(m[1], 16);
       const width = m[2] ? +m[2] : m[1].length * 4;
-      return out(bitsFromBigEndian(v, width), `0x${m[1].toUpperCase()}`);
+      return out(bitsFromValue(v, width), `0x${m[1].toUpperCase()}`);
     }
     if ((m = src.match(/^o([0-7]+)(?::(\d+))?$/i))) {
       const v = parseInt(m[1], 8);
       const width = m[2] ? +m[2] : m[1].length * 3;
-      return out(bitsFromBigEndian(v, width), `o${m[1]}`);
+      return out(bitsFromValue(v, width), `o${m[1]}`);
     }
     if ((m = src.match(/^d(\d+)(?::(\d+))?$/i))) {
       const v = parseInt(m[1], 10);
       const width = m[2] ? +m[2] : Math.max(1, v.toString(2).length);
-      return out(bitsFromBigEndian(v, width), `d${m[1]}`);
+      return out(bitsFromValue(v, width), `d${m[1]}`);
     }
     if ((m = src.match(/^\[([\d,\s]*)\](?::(\d+))?$/))) {
       const idx = m[1].split(",").map((s) => s.trim()).filter((s) => s !== "").map(Number);

@@ -108,7 +108,7 @@ namespace PatternUtils
     /** Converts pattern to binary string */
     juce::String getBinaryString(const std::vector<bool>& pattern);
     
-    /** Converts pattern to hexadecimal string (strict MSB-first numeral) */
+    /** Converts pattern to hexadecimal string (leftmost = LSB; step k = bit k) */
     juce::String getHexString(const std::vector<bool>& pattern);
     
     /** Converts pattern to octal string */

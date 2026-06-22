@@ -119,7 +119,7 @@ versions.** The split follows the suite's parity rules.
   - **Barlow indispensability** — generate/transform by metric weight.
   - **Random / stochastic** onset generation (bell-curve density control).
   - **Numeric notation:** binary, hex, octal, decimal, onset-array — all
-    **strict MSB-first** (first step = leftmost = most significant bit).
+    **leftmost = LSB** (first step = bit 0; step k = 2^k; read left to right).
 - **Transformations:** Barlow dilute/concentrate (add/remove onsets by
   indispensability), **Wolrab** (anti-Barlow), **Dilcue** (anti-Euclidean),
   rotate, invert, complement.
@@ -162,9 +162,9 @@ in brief:
 - `E(k,n)` Euclidean (k onsets in n steps), optional rotation: `E(3,8)`,
   `E(5,8,2)`.
 - Polygons, e.g. `P(5,0)`, and **combinations** with `+` / `-` / logical ops.
-- Numeric: binary `10010010` (or `b…`), hex `0x92`, octal `0o…`, decimal
-  `d146`, onset-array `[0,3,6]`; an optional `:N` step-count suffix preserves
-  leading rests. **All strict MSB-first** (tresillo `10010010` = `0x92` = 146).
+- Numeric: binary `10010010` (or `b…`), hex `0x49`, octal `0o111`, decimal
+  `d73`, onset-array `[0,3,6]`; an optional `:N` step-count suffix preserves
+  trailing rests. **All leftmost = LSB** (tresillo `10010010` = `0x49` = 73).
 - Barlow/Wolrab/Dilcue, random `R(k,n)`, Morse, …
 - **Accents** in `{…}` (e.g. `{10010}E(5,8)`), **progressive** with `>` /
   lengthening, **scenes** with `|`.

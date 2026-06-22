@@ -78,35 +78,30 @@ class PatternConverter {
     }
     
     /**
-     * Convert binary string to decimal (strict MSB-first numeral)
-     * 
+     * Convert binary string to decimal (leftmost = LSB)
+     *
      * @param {string} binaryString - Binary pattern string
      * @returns {number} Decimal representation of the pattern
-     * 
+     *
      * @example
-     * PatternConverter.toDecimal("1000")  // MSB-first numeral
-     * // Returns: 8 (leftmost bit = MSB = 2^3 = 8)
-     * 
-     * PatternConverter.toDecimal("0100")  // MSB-first numeral
-     * // Returns: 4 (second bit = 2^2 = 4)
-     * 
-     * PatternConverter.toDecimal("10001111")  // MSB-first numeral
-     * // Returns: 143 (0x8F in hex)
-     * 
-     * Strict MSB-first notation (suite-wide convention, matches plugin):
-     * - The pattern string is an ordinary binary numeral
-     * - First step = leftmost bit = most significant bit
-     * - This ensures 1000 = 0x8, 0100 = 0x4, 0010 = 0x2, 0001 = 0x1
-     * - 1011 = 0xB; tresillo 10010010 = 0x92
+     * PatternConverter.toDecimal("1000")  // first step = bit 0
+     * // Returns: 1 (step 0 = 2^0 = 1)
+     *
+     * PatternConverter.toDecimal("0001")
+     * // Returns: 8 (step 3 = 2^3 = 8)
+     *
+     * Leftmost = LSB notation (suite-wide convention, matches plugin + theory):
+     * - The first step is bit 0; step k has value 2^k (read left to right)
+     * - This ensures 1000 = 0x1, 0100 = 0x2, 0010 = 0x4, 0001 = 0x8
+     * - 1011 = 0xD; tresillo 10010010 = 0x49
      */
     static toDecimal(binaryString) {
         if (!binaryString) return 0;
-        
-        // Strict MSB-first: the binary string is an ordinary binary numeral
-        // (first step = leftmost bit = most significant bit).
+
+        // Leftmost = LSB: the first character is bit 0, so step k contributes 2^k.
         let decimal = 0;
         for (let i = 0; i < binaryString.length; i++) {
-            decimal = decimal * 2 + (binaryString[i] === '1' ? 1 : 0);
+            if (binaryString[i] === '1') decimal += 2 ** i;
         }
         return decimal;
     }
@@ -120,7 +115,7 @@ class PatternConverter {
     }
     
     /**
-     * Convert pattern directly to hex (strict MSB-first numeral)
+     * Convert pattern directly to hex (leftmost = LSB numeral)
      * Matches plugin implementation for consistent hex representation
      */
     static toHexFromPattern(steps, stepCount) {
@@ -133,11 +128,10 @@ class PatternConverter {
      */
     static toHexFromBinary(binaryString) {
         if (!binaryString) return '0x0';
-        
-        // Strict MSB-first: the pattern is an ordinary binary numeral,
-        // so its hex form is just that numeral in base 16.
-        // BigInt keeps long patterns (>32 steps) exact.
-        const value = BigInt('0b' + binaryString);
+
+        // Leftmost = LSB: the value equals the ordinary numeral of the reversed
+        // string. BigInt keeps long patterns (>32 steps) exact.
+        const value = BigInt('0b' + [...binaryString].reverse().join(''));
         return '0x' + value.toString(16).toUpperCase();
     }
     
@@ -145,8 +139,10 @@ class PatternConverter {
      * Convert decimal to binary with specified step count
      */
     static toBinaryFromDecimal(decimal, stepCount) {
-        // Strict MSB-first: left-pad the binary numeral to the step count.
-        return BigInt(decimal).toString(2).padStart(stepCount, '0');
+        // Leftmost = LSB: ordinary numeral (left-padded to stepCount), then
+        // reversed so the low bit lands on the first step.
+        const msb = BigInt(decimal).toString(2).padStart(stepCount, '0');
+        return [...msb].reverse().join('');
     }
     
     /**
@@ -158,7 +154,7 @@ class PatternConverter {
     }
     
     /**
-     * Convert pattern directly to octal (strict MSB-first numeral)
+     * Convert pattern directly to octal (leftmost = LSB numeral)
      * Matches plugin implementation for consistent octal representation
      */
     static toOctalFromPattern(steps, stepCount) {
@@ -171,20 +167,19 @@ class PatternConverter {
      */
     static toOctalFromBinary(binaryString) {
         if (!binaryString) return 'o0';
-        
-        // Strict MSB-first: ordinary binary numeral rendered in base 8.
-        const value = BigInt('0b' + binaryString);
+
+        // Leftmost = LSB: value of the reversed string, rendered in base 8.
+        const value = BigInt('0b' + [...binaryString].reverse().join(''));
         return 'o' + value.toString(8);
     }
     
     static fromDecimalWithSteps(decimal, stepCount) {
         if (decimal === 0) return { steps: new Array(stepCount).fill(false), stepCount };
         
-        // Strict MSB-first: step 0 is the most significant bit of the
-        // stepCount-wide binary numeral.
+        // Leftmost = LSB: bit i of the value lands on step i (first step = bit 0).
         const steps = new Array(stepCount).fill(false);
         let value = BigInt(decimal);
-        for (let i = stepCount - 1; i >= 0; i--) {
+        for (let i = 0; i < stepCount; i++) {
             if (value & 1n) {
                 steps[i] = true;
             }
@@ -211,7 +206,7 @@ class PatternConverter {
         if (numericDecimal === 0) return { steps: [false], stepCount: 1 };
         
         const stepCount = Math.max(minSteps, Math.floor(Math.log2(numericDecimal)) + 1);
-        // Strict MSB-first numeral (matches plugin implementation)
+        // Leftmost = LSB numeral (matches plugin + theory)
         return this.fromDecimalWithSteps(numericDecimal, stepCount);
     }
     
@@ -1870,7 +1865,7 @@ class UnifiedPatternParser {
         
         // Regular pattern formatting
         const binary = PatternConverter.toBinary(pattern.steps, pattern.stepCount);
-        // Strict MSB-first numeral (matches plugin implementation)
+        // Leftmost = LSB numeral (matches plugin + theory)
         const decimal = PatternConverter.toDecimal(binary);
         const hex = PatternConverter.toHexFromPattern(pattern.steps, pattern.stepCount);
         const octal = PatternConverter.toOctalFromPattern(pattern.steps, pattern.stepCount);

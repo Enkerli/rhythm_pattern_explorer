@@ -402,7 +402,7 @@ function SerpeApp() {
     ['E(4,9)', 'aksak'], ['E(5,12)', 'venda'], ['E(7,12)', 'west-african'],
     ['E(7,16)', 'samba-ish'], ['E(5,16)', 'bossa-adjacent'], ['E(9,16)', 'central-african'],
     ['E(4,7)', 'bulgarian'], ['P(3,0)', 'triangle'], ['P(5,0)', 'pentagon'],
-    ['{10010}E(5,8)', 'accented cinquillo'], ['0x92:8', 'tresillo (hex)'],
+    ['{10010}E(5,8)', 'accented cinquillo'], ['0x49:8', 'tresillo (hex)'],
     ['[0,3,6,9]:12', 'even four'], ['E(2,3)', 'duple-against-triple'],
   ];
   const patInfo = (u) => { try { const p = parseUPI(u, { n: 16 }); if (!p.ok) return null; const a = analyse(p.steps); return `${a.k}/${a.n}`; } catch { return null; } };

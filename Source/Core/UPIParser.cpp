@@ -878,12 +878,12 @@ std::vector<bool> UPIParser::parseRandom(int onsets, int steps)
 
 std::vector<bool> UPIParser::parseDecimal(int decimal, int stepCount)
 {
-    // Strict MSB-first (suite-wide convention): step 0 is the most
-    // significant bit of the stepCount-wide binary numeral, so 1000 = 0x8,
-    // 1011 = 0xB, tresillo 10010010 = 0x92.
+    // Leftmost = LSB (suite-wide convention): step k is bit k, so a value's
+    // low bit lands on the FIRST step. 1000 = 0x1, 0001 = 0x8,
+    // tresillo 10010010 = 0x49. decimal = Σ step[k]·2^k.
     std::vector<bool> pattern(stepCount, false);
     unsigned long long value = static_cast<unsigned long long>(decimal);
-    for (int i = stepCount - 1; i >= 0 && value > 0; --i)
+    for (int i = 0; i < stepCount && value > 0; ++i)
     {
         pattern[static_cast<size_t>(i)] = (value & 1ULL) != 0;
         value >>= 1;
@@ -1512,13 +1512,16 @@ UPIParser::ParseResult UPIParser::parseNumericPattern(const juce::String& input,
     switch (info.base)
     {
         case NumericBase::Binary:
+            // Leftmost = LSB: the first character is bit 0, so the typed binary
+            // string maps to itself once parseDecimal (also LSB) expands it.
             for (int i = 0; i < content.length(); ++i)
                 if (content[i] == '1')
-                    decimal |= (1 << (content.length() - 1 - i));
+                    decimal |= (1 << i);
             break;
             
         case NumericBase::Octal:
-            // Strict MSB-first: octal digits in ordinary order
+            // Ordinary digit order → decimal; parseDecimal (leftmost = LSB)
+            // then places the low bit on the first step.
             decimal = 0;
             
             for (int i = 0; i < content.length(); ++i)
@@ -1535,7 +1538,8 @@ UPIParser::ParseResult UPIParser::parseNumericPattern(const juce::String& input,
             break;
             
         case NumericBase::Hexadecimal:
-            // Strict MSB-first: hex digits in ordinary order (0x92 = 10010010)
+            // Ordinary digit order → decimal; parseDecimal (leftmost = LSB)
+            // expands it, so 0x49:8 = 10010010 (tresillo), 0x1:4 = 1000.
             decimal = 0;
             
             for (int i = 0; i < content.length(); ++i)
