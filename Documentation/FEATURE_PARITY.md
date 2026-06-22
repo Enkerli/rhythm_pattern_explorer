@@ -112,4 +112,20 @@ actually plays (accent phase). Two corrections close most of this:
 4. **Reconcile the library** with the original database (stats/balance filters).
 5. Copy fixes (e.g. `E(5,8)` is **cinquillo**, not "tresillo+").
 
+### Cross-cutting fixes
+- ✅ **Bit order reverted to leftmost = LSB** (`ee70bef`; theory `ea4929a` —
+  verify in-host). `0x1:4` = `1000`, tresillo = `0x49`. Undoes the unreleased
+  MSB-first switch across plugin + both webapps + `@enkerli/theory`; PCS stays
+  MSB-first. 134 codec vectors pass (theory, C++, webapp); auval clean.
+
+### Still open from the 2026-06-22 in-host report (Move 1 follow-ups)
+- Accents still display wrong even when static (count constant per cycle).
+- B(k,n) / W(k,n) / D(k,n) don't generate in the plugin (E(k,n) does).
+- Dilute/Concentrate (Barlow/Wolrab) wrong on primes — sequential fill, not
+  Evanstein indispensability; progressive `E(0,17)B>17` works (uses Evanstein).
+- Full-pattern duration sync (whole pattern = one bar) lost when step-length
+  forced `patternLengthUnit=Steps`; the Bars/Beats unit path needs restoring.
+- Step-view equal-line split is inconsistent (18 steps → 2 rows; 16/19 → 1+wrap).
+- Plugin host icon not displaying (other suite plugins show theirs).
+
 Mark items here as they land; this file — not the design doc — is the scope.
