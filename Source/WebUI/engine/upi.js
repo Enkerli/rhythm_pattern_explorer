@@ -90,6 +90,29 @@ function splitTopLevel(s) {
   return terms;
 }
 
+/* ── Morse (matches the C++ parseMorse) ─────────────────────────────────
+ * letters → morse (concatenated, no inter-letter space), then . = onset,
+ * - = onset + a trailing rest (long), space = rest. */
+const MORSE = {
+  a: ".-", b: "-...", c: "-.-.", d: "-..", e: ".", f: "..-.", g: "--.",
+  h: "....", i: "..", j: ".---", k: "-.-", l: ".-..", m: "--", n: "-.",
+  o: "---", p: ".--.", q: "--.-", r: ".-.", s: "...", t: "-", u: "..-",
+  v: "...-", w: ".--", x: "-..-", y: "-.--", z: "--..",
+};
+function morseToSteps(text) {
+  let p = String(text).toLowerCase().trim();
+  if (p === "sos") p = "...---...";
+  else if (p === "cq") p = "-.-.--.-";
+  else if (/[a-z]/.test(p)) p = [...p].map((ch) => (MORSE[ch] !== undefined ? MORSE[ch] : ch)).join("");
+  const steps = [];
+  for (const c of p) {
+    if (c === ".") steps.push(1);
+    else if (c === "-") { steps.push(1); steps.push(0); }
+    else if (c === " ") steps.push(0);
+  }
+  return steps;
+}
+
 // LCM-expand both, then union ('+', OR) or difference ('-', AND-NOT) — matches
 // the C++ PatternUtils::combinePatterns.
 function combineSteps(a, b, isAdd) {
@@ -125,6 +148,7 @@ function bitsFromValue(value, width) {
  *   0x94 / b10010010 / 10010010 / o111 / d73   numeric (leftmost = LSB)
  *   [0,3,6]:8                onset array with optional :N step count
  *   tresillo / cinquillo / tri / pent / hex / hept / oct   shorthand names
+ *   SOS / CQ / M:-.- / .-..    Morse (. = onset, - = onset+rest, space = rest)
  *   <expr>+<expr> / <expr>-<expr>   combination: union / difference (LCM;
  *                            all-polygon '+' projects onto lcm of polygon sizes)
  *   {10010}<expr>            accent layer wrapping any of the above
@@ -164,6 +188,20 @@ export function parseUPI(input, ctx = { n: 16 }) {
     // {accent} prefix is re-applied by out()).
     const sh = SHORTHAND[src.toLowerCase()];
     if (sh) src = sh;
+
+    // Morse — checked BEFORE combination because Morse uses '-'. Only pure
+    // dot/dash strings, an `M:` prefix, or a bare letter word qualify (real
+    // combinations carry parens/digits, so they fall through to the combiner).
+    {
+      let morseSrc = null;
+      if (/^M:/i.test(src)) morseSrc = src.slice(2);
+      else if (/^[.\-\s]+$/.test(src) && /[.\-]/.test(src)) morseSrc = src;
+      else if (/^[a-z]+$/i.test(src)) morseSrc = src;
+      if (morseSrc !== null) {
+        const steps = morseToSteps(morseSrc);
+        if (steps.length) return out(steps, `♪ ${src}`);
+      }
+    }
 
     // Pattern combination: top-level '+' / '-' between whole patterns. Skip if a
     // term is purely numeric (that's a progressive offset like E(3,8)+2, handled
