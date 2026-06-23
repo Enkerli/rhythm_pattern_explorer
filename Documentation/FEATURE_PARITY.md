@@ -125,8 +125,14 @@ actually plays (accent phase). Two corrections close most of this:
   meters. Barlow + Wolrab dilute/concentrate on 17 now reproduce the engine's
   `B>17`/`W>17` sequences exactly (verified). (theory keeps the academic
   stratified method — divergence is intentional, Serpe matches its own engine.)
-- B(k,n) / W(k,n) / D(k,n) don't generate in the plugin (E(k,n) does). ← next
-- Step-view equal-line split is inconsistent (18 steps → 2 rows; 16/19 → 1+wrap).
+- ✅ **B(k,n) / W(k,n) / D(k,n) generate** — the greedy Morse matcher
+  (`validateMorsePattern`, `containsAnyOf("a-z")`) swallowed `b/w/d(…)` before
+  the Barlow/Wolrab/Dilcue branches (E escaped because Euclidean is checked
+  before Morse). Excluded parens from Morse. Verified: `B(3,8)`=10001001,
+  `D(3,8)`=01001001, `B(5,17)` proper on the prime; Morse/`SOS`/`M:`/`.-`
+  unaffected. NOTE: same greedy Morse also eats **shorthand names**
+  (`tresillo` → "Morse: tresillo") — fix with the shorthand port (notation row).
+- Step-view equal-line split is inconsistent (18 steps → 2 rows; 16/19 → 1+wrap). ← next
 - Plugin host icon not displaying (other suite plugins show theirs).
 - Full-pattern duration sync (whole pattern = one bar) lost when step-length
   forced `patternLengthUnit=Steps`; the Bars/Beats unit path needs restoring.

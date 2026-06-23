@@ -1325,8 +1325,14 @@ static bool validateMorsePattern(const juce::String& input)
     {
         cleaned = input.substring(0, input.length() - 3);
     }
-    
-    bool result = cleaned.startsWith("m:") || cleaned.startsWith("l:") || cleaned.containsOnly(".-") || 
+
+    // Generator notation like B(3,8) / W(3,8) / D(3,8) uses parentheses, and
+    // B/W/D/E/… are also Morse letters — without this guard the (greedy) Morse
+    // matcher swallows them before isBarlowPattern() etc. Real Morse is
+    // dots/dashes/letters/digits/spaces; it never contains parentheses.
+    if (cleaned.containsAnyOf("()")) return false;
+
+    bool result = cleaned.startsWith("m:") || cleaned.startsWith("l:") || cleaned.containsOnly(".-") ||
                   cleaned.containsAnyOf("abcdefghijklmnopqrstuvwxyz");
     
     
