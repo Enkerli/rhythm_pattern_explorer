@@ -159,7 +159,10 @@ actually plays (accent phase). Two corrections close most of this:
   by one. Fixed: `sendEngineState` now mirrors `processStep`'s exact branch
   (per-step in suspension mode; onset-based at the live `getUIAccentOffset()` in
   normal mode), so the highlighted accents match what's heard every cycle.
-  Builds + auval clean. **Confirm in Bitwig/AUM with a `{bits}` pattern whose
-  onset count isn't a multiple of the accent length (e.g. `{10}E(5,8)`).**
+  Builds + auval clean. Follow-up `efb163d`: the first cut was still one onset
+  behind — `uiAccentOffset` was set to the LAST onset's count of the cycle, not
+  the next cycle's first; `+1` fixes the phase. **Confirm in Bitwig/AUM with a
+  `{bits}` pattern whose onset count isn't a multiple of the accent length
+  (e.g. `{10}E(5,8)`).**
 
 Mark items here as they land; this file — not the design doc — is the scope.
