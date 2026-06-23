@@ -388,8 +388,8 @@ function SerpeApp() {
   const intervalsStr = a.intervals.join(' ');
 
   const chips = [
-    ['E(5,8)', 'tresillo+'], ['E(3,8)', 'tresillo'], ['E(7,16)', '16-step'],
-    ['P(3,0)', 'triangle'], ['0x92', 'hex'], ['[0,3,6,9]:12', 'array'], ['{10010}E(5,8)', 'accented'],
+    ['E(5,8)', 'cinquillo'], ['E(3,8)', 'tresillo'], ['E(7,16)', '16-step'],
+    ['P(3,0)', 'triangle'], ['0x94', 'hex'], ['[0,3,6,9]:12', 'array'], ['{10010}E(5,8)', 'accented'],
   ];
   function applyChip(v) {
     const m = v.match(/^\{([^}]*)\}(.*)$/);
@@ -450,7 +450,7 @@ function SerpeApp() {
             h('input', { className: 'upi-field' + (parseErr ? ' bad' : ''), type: 'text', spellCheck: false, autoComplete: 'off',
               value: upiText, onChange: e => setUpiText(e.target.value), 'aria-label': 'Universal Pattern Input' })),
           h('div', { className: 'upi-status' }, parseErr
-            ? [h('span', { key: 'e', className: 'err' }, '✗ ' + parseErr), h('span', { key: 'd', className: 'dot' }), h('span', { key: 't' }, 'try E(5,8), 0x92, [0,3,6]:8, P(3,0)')]
+            ? [h('span', { key: 'e', className: 'err' }, '✗ ' + parseErr), h('span', { key: 'd', className: 'dot' }), h('span', { key: 't' }, 'try E(5,8), 0x94, [0,3,6]:8, P(3,0)')]
             : [h('span', { key: 'o', className: 'ok' }, '✓ parsed'), h('span', { key: 'd1', className: 'dot' }),
                h('span', { key: 'k' }, `${a.k} onsets in ${a.n} steps`), h('span', { key: 'd2', className: 'dot' }),
                h('span', { key: 'b', className: 'es-num' }, a.binary), h('span', { key: 'd3', className: 'dot' }),

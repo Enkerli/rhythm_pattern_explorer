@@ -181,7 +181,11 @@ export function createStepView(host, opts = {}) {
   function render() {
     const { steps, accents, playhead, group } = state;
     const n = steps.length;
-    const cols = n <= 16 ? n : (group && n % group === 0 && n / group <= 16 ? n / group : 16);
+    // Wrap into BALANCED rows — at most 16 per row, split as evenly as possible
+    // (18 → 9+9 not 16+2; 19 → 10+9; 16 → one row) so the lane reads
+    // consistently for any step count instead of "16 + leftover".
+    const rows = Math.max(1, Math.ceil(n / 16));
+    const cols = Math.ceil(n / rows);
     const showNums = n <= 16 ? 1 : n <= 32 ? 2 : Math.ceil(n / 16);
     if (n !== builtN || cols !== builtCols || showNums !== builtNums) build(n, cols, showNums);
     for (let i = 0; i < n; i++) {

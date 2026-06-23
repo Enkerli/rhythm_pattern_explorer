@@ -132,7 +132,12 @@ actually plays (accent phase). Two corrections close most of this:
   `D(3,8)`=01001001, `B(5,17)` proper on the prime; Morse/`SOS`/`M:`/`.-`
   unaffected. NOTE: same greedy Morse also eats **shorthand names**
   (`tresillo` → "Morse: tresillo") — fix with the shorthand port (notation row).
-- Step-view equal-line split is inconsistent (18 steps → 2 rows; 16/19 → 1+wrap). ← next
+- ✅ **Step-view balanced rows** — `render.js` wrapped at a hard 16-col cap
+  (18→16+2, 19→16+3) while ≤16 stayed one row. Now splits into the fewest rows
+  of ≤16, balanced: 16→one row, 18→9+9, 19→10+9, 32→16+16 (verified in browser).
+  Also fixed stale example chips: `E(5,8)` mislabel `tresillo+`→`cinquillo`,
+  and `0x92`→`0x94` (left over from the bit-order change).
+- Plugin host icon not displaying (other suite plugins show theirs). ← next
 - Plugin host icon not displaying (other suite plugins show theirs).
 - Full-pattern duration sync (whole pattern = one bar) lost when step-length
   forced `patternLengthUnit=Steps`; the Bars/Beats unit path needs restoring.
