@@ -57,33 +57,46 @@ export function euclideanComplement(beats, steps, offset = 0) {
   return euclideanRhythm(steps - beats, steps, offset);
 }
 
-// ── Barlow indispensability (Clarence Barlow, stratified meter) ──────────────
+// ── Barlow indispensability (matches the plugin's C++ engine) ────────────────
 function gcd(a, b) { while (b !== 0) { const t = b; b = a % b; a = t; } return a; }
-function primeFactors(n) {
-  const f = []; let d = 2;
-  while (n > 1) { while (n % d === 0) { f.push(d); n /= d; } d++; }
-  return f;
-}
-function stratifiedMeter(length) { return primeFactors(length).sort((a, b) => a - b); }
 
+// Serpe's Barlow indispensability — the SAME heuristic the C++ engine uses
+// (PatternUtils::calculateBarlowIndispensability), so the dilute/concentrate
+// buttons match the engine's `B>`/`W>` progressive transforms. Unlike the pure
+// stratified-meter method this breaks ties on PRIME meters (e.g. 17), where the
+// stratified method gives every interior pulse the same weight and dilute/
+// concentrate would just fill left-to-right. Values are an arbitrary positive
+// scale (downbeat 10, pickup 7, …); only the ORDER matters to the transform.
 export function positionIndispensability(position, length) {
-  if (position === 0) return 1;
-  if (position === length - 1) return 0.75; // anacrustic pickup
+  if (position === 0) return 10.0;                  // downbeat — always max
+  let ind = 0.0;
 
-  const strat = stratifiedMeter(length);
-  let total = 0;
-  for (let level = 0; level < strat.length; level++) {
-    const prime = strat[level];
-    const levelSize = length / Math.pow(prime, level + 1);
-    if (levelSize > 0 && position % levelSize === 0) total += 1 / Math.pow(prime, level + 1);
+  // Metric strength where the position aligns with a subdivision (composites).
+  const g = gcd(position, length);
+  if (g > 1) ind = (g / length) * 10.0;
+
+  // Alignment with common musical fractions (works for primes too).
+  const ratio = position / length;
+  const fracPos = [1 / 2, 1 / 4, 3 / 4, 1 / 3, 2 / 3, 1 / 8, 3 / 8, 5 / 8, 7 / 8, 1 / 6, 5 / 6];
+  const fracVal = [5, 3, 3, 2.5, 2.5, 1.5, 1.5, 1.5, 1.5, 1, 1];
+  let closest = 1.0, fracStrength = 0.0;
+  for (let i = 0; i < fracPos.length; i++) {
+    const d = Math.abs(ratio - fracPos[i]);
+    if (d < closest) { closest = d; fracStrength = fracVal[i]; }
   }
-  if (total === 0) {
-    const g = gcd(position, length);
-    const level = length / g;
-    total = 1;
-    for (const p of primeFactors(level)) total *= 1 / p;
+  if (closest <= 0.5 / length) ind = Math.max(ind, fracStrength);
+
+  // Remaining positions: center/edge hierarchy with a small tie-break so the
+  // order is well-defined (no sequential filling on primes).
+  if (ind < 0.5) {
+    const centerDistance = Math.abs(position - length / 2.0) / (length / 2.0);
+    const edgeDistance = Math.min(position, length - position) / (length / 2.0);
+    ind = (1.0 - centerDistance * 0.3) + (edgeDistance * 0.2);
+    ind += (position % 3) * 0.01 + (position % 5) * 0.005;
   }
-  return Math.min(total, 1);
+
+  if (position === length - 1) ind = Math.max(ind, 7.0); // anacrustic pickup
+  return Math.max(ind, 0.1 + position * 0.001);
 }
 
 export function barlowIndispensabilityTable(length) {

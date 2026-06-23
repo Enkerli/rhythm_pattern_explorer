@@ -119,13 +119,17 @@ actually plays (accent phase). Two corrections close most of this:
   MSB-first. 134 codec vectors pass (theory, C++, webapp); auval clean.
 
 ### Still open from the 2026-06-22 in-host report (Move 1 follow-ups)
-- Accents still display wrong even when static (count constant per cycle).
-- B(k,n) / W(k,n) / D(k,n) don't generate in the plugin (E(k,n) does).
-- Dilute/Concentrate (Barlow/Wolrab) wrong on primes — sequential fill, not
-  Evanstein indispensability; progressive `E(0,17)B>17` works (uses Evanstein).
-- Full-pattern duration sync (whole pattern = one bar) lost when step-length
-  forced `patternLengthUnit=Steps`; the Bars/Beats unit path needs restoring.
+- ✅ **Dilute/Concentrate Barlow/Wolrab on primes** — `engine/rhythm.js`
+  `positionIndispensability` now uses the SAME heuristic as the C++ engine
+  (`PatternUtils::calculateBarlowIndispensability`), breaking ties on prime
+  meters. Barlow + Wolrab dilute/concentrate on 17 now reproduce the engine's
+  `B>17`/`W>17` sequences exactly (verified). (theory keeps the academic
+  stratified method — divergence is intentional, Serpe matches its own engine.)
+- B(k,n) / W(k,n) / D(k,n) don't generate in the plugin (E(k,n) does). ← next
 - Step-view equal-line split is inconsistent (18 steps → 2 rows; 16/19 → 1+wrap).
 - Plugin host icon not displaying (other suite plugins show theirs).
+- Full-pattern duration sync (whole pattern = one bar) lost when step-length
+  forced `patternLengthUnit=Steps`; the Bars/Beats unit path needs restoring.
+- Accents still display wrong even when static (count constant per cycle). ← last; needs more attention.
 
 Mark items here as they land; this file — not the design doc — is the scope.
