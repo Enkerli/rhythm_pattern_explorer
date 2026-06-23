@@ -165,10 +165,14 @@ actually plays (accent phase). Two corrections close most of this:
   by one. Fixed: `sendEngineState` now mirrors `processStep`'s exact branch
   (per-step in suspension mode; onset-based at the live `getUIAccentOffset()` in
   normal mode), so the highlighted accents match what's heard every cycle.
-  Builds + auval clean. Follow-up `efb163d`: the first cut was still one onset
-  behind — `uiAccentOffset` was set to the LAST onset's count of the cycle, not
-  the next cycle's first; `+1` fixes the phase. **Confirm in Bitwig/AUM with a
-  `{bits}` pattern whose onset count isn't a multiple of the accent length
-  (e.g. `{10}E(5,8)`).**
+  Static precession (`{10}E(5,8)`) confirmed ✅ in-host after `efb163d`.
+  Follow-up for the **pattern-shift** case (`{100}B(0,17)>17`): the display used
+  the boundary-latched `uiAccentOffset`, which a progressive change throws off
+  (it resets `baseTickRhythm` mid-cycle). Now the display computes each onset's
+  accent as `shouldOnsetBeAccented(getCycleStartOnsetCount() + onsetIndex)` —
+  the exact global onset count the audio uses — so it can't latch at the wrong
+  time or drift on a shift. `getCycleStartOnsetCount()` = completeCycles ×
+  onsetsPerCycle from the live tick/base. Builds + auval clean; **verify the
+  shift case in-host.**
 
 Mark items here as they land; this file — not the design doc — is the scope.

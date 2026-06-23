@@ -173,12 +173,15 @@ void SerpeEditor::sendEngineState()
 
     // Mirror processStep() EXACTLY so the displayed accents match what's heard:
     //  - suspension mode (manual edits): per-step accents (shouldStepBeAccented);
-    //  - normal mode (UPI patterns): onset-based accents that PRECESS across
-    //    cycles (shouldOnsetBeAccented at the engine's live accent offset).
-    // The old code always used the per-step array, which is static — so cycle 1
-    // matched but cycles 2+ drifted by one (the reported accent off-by-one).
+    //  - normal mode (UPI patterns): the accent the audio plays for each onset is
+    //    shouldOnsetBeAccented(globalOnsetCount), and that onset's global count is
+    //    getCycleStartOnsetCount() + its index within this cycle. Using the live
+    //    cycle-start count (not the boundary-latched uiAccentOffset) keeps the
+    //    display in lockstep through precession AND through a progressive pattern
+    //    change, which resets baseTickRhythm — the previous offset latched at the
+    //    wrong time and drifted on a shift (e.g. {100}B(0,17)>17).
     const bool manual = proc.isPatternManuallyModified();
-    const int  offset = proc.getUIAccentOffset();
+    const uint32_t cycleStart = proc.getCycleStartOnsetCount();
     juce::String accents;
     int onsetIdx = 0;
     for (int i = 0; i < pattern.length(); ++i)
@@ -188,7 +191,7 @@ void SerpeEditor::sendEngineState()
         if (manual)
             acc = proc.shouldStepBeAccented (i);
         else if (isOnset)
-            acc = proc.shouldOnsetBeAccented (offset + onsetIdx);
+            acc = proc.shouldOnsetBeAccented (static_cast<int> (cycleStart) + onsetIdx);
         if (isOnset) ++onsetIdx;
         accents += acc ? '1' : '0';
     }

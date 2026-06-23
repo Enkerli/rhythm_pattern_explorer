@@ -173,6 +173,12 @@ public:
     // accents for normal UPI patterns.
     bool isPatternManuallyModified() const { return patternManuallyModified; }
 
+    // Onset count at the start of the cycle now playing — the display feeds this
+    // (+ the onset's within-cycle index) to shouldOnsetBeAccented() so the
+    // highlighted accents match what the audio plays, through precession and
+    // through progressive pattern changes. (Public for SerpeEditor.)
+    uint32_t getCycleStartOnsetCount() const;
+
     // UPI pattern input methods
     void setUPIInput(const juce::String& upiPattern);
     juce::String getUPIInput() const { return currentUPIInput; }

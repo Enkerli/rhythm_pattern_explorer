@@ -2706,8 +2706,33 @@ uint32_t SerpeAudioProcessor::getCurrentOnsetCount() const
             onsetCount++;
         }
     }
-    
+
     return onsetCount;
+}
+
+uint32_t SerpeAudioProcessor::getCycleStartOnsetCount() const
+{
+    // The global onset count at the START of the cycle currently playing —
+    // i.e. getCurrentOnsetCount() minus the onsets already passed this cycle.
+    // The display uses this + the onset's index-within-cycle to ask
+    // shouldOnsetBeAccented() the EXACT same question the audio asks per onset,
+    // so the highlighted accents stay in lockstep through precession AND through
+    // a progressive pattern change (which resets baseTickRhythm).
+    uint64_t tick = transportTick.load();
+    uint64_t base = baseTickRhythm.load();
+    uint32_t ticksSinceBase = static_cast<uint32_t>(tick - base);
+
+    auto pattern = patternEngine.getCurrentPattern();
+    const uint32_t patternSize = static_cast<uint32_t>(pattern.size());
+    if (patternSize == 0) return 0;
+
+    uint32_t onsetsPerCycle = 0;
+    for (bool step : pattern) if (step) onsetsPerCycle++;
+    if (onsetsPerCycle == 0) return 0;
+    if (patternSize == 1) return 0; // single-step: cycle start is always onset 0
+
+    const uint32_t completeCycles = ticksSinceBase / patternSize;
+    return completeCycles * onsetsPerCycle;
 }
 
 void SerpeAudioProcessor::validateCounterConsistency() const
