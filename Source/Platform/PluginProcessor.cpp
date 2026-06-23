@@ -1085,9 +1085,13 @@ void SerpeAudioProcessor::processStep(juce::MidiBuffer& midiBuffer, int samplePo
             // This ensures UI accent markers match MIDI accent timing perfectly
             uint32_t midiOnsetCount = lastMidiOnsetCount.load();
             
-            // Both systems use the same calculation: accent pattern offset
+            // midiOnsetCount is the count used for the LAST onset of THIS cycle
+            // (getCurrentOnsetCount counts onsets strictly before the tick). The
+            // NEXT cycle's first onset is one higher, so +1 gives the start-of-
+            // cycle offset the next cycle actually plays — without it the display
+            // (and JS accent derivation) lag the audio by one from cycle 2 on.
             int accentPatternSize = static_cast<int>(currentAccentPattern.size());
-            uiAccentOffset = static_cast<int>(midiOnsetCount % accentPatternSize);
+            uiAccentOffset = static_cast<int>((midiOnsetCount + 1) % accentPatternSize);
         }
         else if (hasAccentPattern && accentPatternManuallyModified)
         {
