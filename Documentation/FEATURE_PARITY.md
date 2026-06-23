@@ -40,8 +40,8 @@ actually plays (accent phase). Two corrections close most of this:
 | accents `{…}` (onset-cyclic) | ✓ | ✓ | ⚠ | display phase off-by-one vs audio (cycle 2+); see Accents |
 | **progressive offset** `pat+N` / `pat%N` | ✓ | ✓ | ✗ | UI "Progressive" is local JS, not the notation |
 | **progressive transform** `pat>N` (B/W/E/D) | ✓ `applyProgressiveTransformation` | ✓ | ✗ | `upi.js` doesn't parse `>` → gated out |
-| **pattern combination** `pat+pat` / `pat-pat` (LCM) | ✓ | ✓ `combineMultiplePatterns` | ✗ | not ported |
-| shorthand names (`tresillo`, `tri/pent/hex…`) | ✓ | ✓ | ✗ | not ported |
+| **pattern combination** `pat+pat` / `pat-pat` (LCM) | ✓ (fixed `-`) | ✓ | ✗ | engine: `-` subtraction was a no-op (only `+` was tokenized) — fixed; works in plugin |
+| shorthand names (`tresillo`, `tri/pent/hex…`) | ✓ (fixed) | ✓ | ✗ | engine: were eaten by the Morse matcher — moved before Morse; works in plugin |
 
 ## Generators / transforms
 

@@ -115,95 +115,86 @@ UPIParser::ParseResult UPIParser::parse(const juce::String& input)
         }
     }
     
-    // If we get here, it's not a progressive offset, so check for pattern combinations
+    // If we get here, it's not a progressive offset, so check for pattern
+    // combinations. Split on TOP-LEVEL '+' and '-' (operators BETWEEN whole
+    // patterns). '-' also appears inside patterns (P(3,-1), E(3,8,-2)), so only
+    // split at paren depth 0. '+' = union (OR), '-' = difference (AND-NOT).
     if (basePattern.contains("+") || basePattern.contains("-"))
     {
-        // Handle pattern combinations - support multiple additions
-        auto parts = tokenize(basePattern, "+");
-        if (parts.size() >= 2)
+        std::vector<std::pair<char, juce::String>> terms; // (operator, pattern)
         {
-            // Special handling for polygon combinations - calculate LCM first
-            bool allPolygons = true;
-            std::vector<int> polygonSizes;
-            
-            for (const auto& part : parts)
+            int depth = 0;
+            juce::String curTerm;
+            char op = '+'; // the first term is a union with the empty set
+            for (int i = 0; i < basePattern.length(); ++i)
             {
-                juce::String trimmed = part.trim();
-                if (isPolygonPattern(trimmed))
+                const juce_wchar c = basePattern[i];
+                if (c == '(') ++depth;
+                else if (c == ')') --depth;
+
+                if (depth == 0 && (c == '+' || c == '-') && curTerm.trim().isNotEmpty())
                 {
-                    // Extract the polygon size for LCM calculation
-                    std::regex polygonRegex(R"([Pp]\((\d+),(\d+)(?:,(\d+))?\))");
-                    std::smatch match;
-                    std::string inputStr = trimmed.toStdString();
-                    
-                    if (std::regex_search(inputStr, match, polygonRegex))
-                    {
-                        int sides = std::stoi(match[1].str());
-                        int multiplier = match[3].matched ? std::stoi(match[3].str()) : 1;
-                        int steps = sides * multiplier;
-                        polygonSizes.push_back(steps);
-                    }
-                    else
-                    {
-                        allPolygons = false;
-                        break;
-                    }
+                    terms.push_back({ op, curTerm.trim() });
+                    curTerm.clear();
+                    op = static_cast<char>(c);
                 }
                 else
-                {
-                    allPolygons = false;
-                    break;
-                }
+                    curTerm += c;
             }
-            
-            if (allPolygons && polygonSizes.size() >= 2)
+            if (curTerm.trim().isNotEmpty()) terms.push_back({ op, curTerm.trim() });
+        }
+
+        if (terms.size() >= 2)
+        {
+            // Preserve the exact polygon-LCM projection when every term is a
+            // polygon joined with '+' (keeps P(3,0)+P(5,0)'s LCM behaviour).
+            bool allPolygonsPlus = true;
+            std::vector<int> polygonSizes;
+            for (const auto& t : terms)
             {
-                // Calculate LCM of all polygon sizes
+                if (t.first != '+' || !isPolygonPattern(t.second)) { allPolygonsPlus = false; break; }
+                std::regex polygonRegex(R"([Pp]\((\d+),(-?\d+)(?:,(\d+))?\))");
+                std::smatch match;
+                std::string s = t.second.toStdString();
+                if (std::regex_search(s, match, polygonRegex))
+                    polygonSizes.push_back(std::stoi(match[1].str()) * (match[3].matched ? std::stoi(match[3].str()) : 1));
+                else { allPolygonsPlus = false; break; }
+            }
+
+            if (allPolygonsPlus && polygonSizes.size() >= 2)
+            {
                 int targetLCM = polygonSizes[0];
-                for (int i = 1; i < polygonSizes.size(); ++i)
-                {
-                    targetLCM = PatternUtils::lcm(targetLCM, polygonSizes[i]);
-                }
-                
-                
-                // Parse each polygon projected onto the LCM space
-                auto result = parsePolygonForCombination(parts[0].trim(), targetLCM);
+                for (size_t i = 1; i < polygonSizes.size(); ++i)
+                    targetLCM = PatternUtils::lcm(targetLCM, polygonSizes[static_cast<int>(i)]);
+
+                auto result = parsePolygonForCombination(terms[0].second, targetLCM);
                 if (!result.isValid()) return result;
-                
-                for (int i = 1; i < parts.size(); ++i)
+                for (size_t i = 1; i < terms.size(); ++i)
                 {
-                    auto nextResult = parsePolygonForCombination(parts[i].trim(), targetLCM);
+                    auto nextResult = parsePolygonForCombination(terms[static_cast<int>(i)].second, targetLCM);
                     if (!nextResult.isValid()) return nextResult;
-                    
-                    // Simple OR combination since they're already in the same space
                     for (int j = 0; j < targetLCM; ++j)
-                    {
-                        result.pattern[j] = result.pattern[j] || nextResult.pattern[j];
-                    }
+                        result.pattern[static_cast<size_t>(j)] = result.pattern[static_cast<size_t>(j)] || nextResult.pattern[static_cast<size_t>(j)];
                 }
-                
                 result.patternName = "Combined: " + cleaned;
                 result.stepCount = targetLCM;
                 return result;
             }
-            else
+
+            // General combination: union (+) / difference (-), LCM-expanded by
+            // combinePatterns. isAddition = (op == '+').
+            auto result = parsePattern(terms[0].second);
+            if (!result.isValid()) return result;
+            for (size_t i = 1; i < terms.size(); ++i)
             {
-                // Regular combination for non-polygon patterns
-                auto result = parsePattern(parts[0].trim());
-                if (!result.isValid()) return result;
-                
-                for (int i = 1; i < parts.size(); ++i)
-                {
-                    auto nextResult = parsePattern(parts[i].trim());
-                    if (!nextResult.isValid()) return nextResult;
-                    
-                    result.pattern = PatternUtils::combinePatterns(result.pattern, nextResult.pattern, true);
-                }
-                
-                result.patternName = "Combined: " + cleaned;
-                result.stepCount = static_cast<int>(result.pattern.size());
-                return result;
+                auto nextResult = parsePattern(terms[static_cast<int>(i)].second);
+                if (!nextResult.isValid()) return nextResult;
+                result.pattern = PatternUtils::combinePatterns(result.pattern, nextResult.pattern,
+                                                               terms[static_cast<int>(i)].first == '+');
             }
+            result.patternName = "Combined: " + cleaned;
+            result.stepCount = static_cast<int>(result.pattern.size());
+            return result;
         }
     }
     
@@ -256,10 +247,17 @@ UPIParser::ParseResult UPIParser::parse(const juce::String& input)
 UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
 {
     juce::String cleaned = cleanInput(input);
-    
-    
-    
-    
+
+    // Shorthand names FIRST — they are letters, so the (greedy) Morse matcher
+    // below would otherwise swallow "tresillo"/"cinquillo"/"tri"/… as Morse.
+    if (cleaned == "tri")       return parsePattern("P(3,0)");
+    if (cleaned == "pent")      return parsePattern("P(5,0)");
+    if (cleaned == "hex")       return parsePattern("P(6,0)");
+    if (cleaned == "hept")      return parsePattern("P(7,0)");
+    if (cleaned == "oct")       return parsePattern("P(8,0)");
+    if (cleaned == "tresillo")  return parsePattern("E(3,8)");
+    if (cleaned == "cinquillo") return parsePattern("E(5,8)");
+
     // Handle transformations first
     if (cleaned.startsWith("~") || cleaned.startsWith("inv "))
     {
@@ -724,17 +722,9 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
         }
     }
     
-    // Handle shorthand polygon names
-    if (cleaned == "tri") return parsePattern("P(3,0)");
-    if (cleaned == "pent") return parsePattern("P(5,0)");
-    if (cleaned == "hex") return parsePattern("P(6,0)");
-    if (cleaned == "hept") return parsePattern("P(7,0)");
-    if (cleaned == "oct") return parsePattern("P(8,0)");
-    
-    // Handle traditional rhythm names
-    if (cleaned == "tresillo") return parsePattern("E(3,8)");
-    if (cleaned == "cinquillo") return parsePattern("E(5,8)");
-    
+    // (Shorthand names — tri/pent/hex/hept/oct, tresillo, cinquillo — are handled
+    // at the top of parsePattern, before the Morse matcher.)
+
     // Try decimal parsing if it's just a number
     if (cleaned.containsOnly("0123456789"))
     {
