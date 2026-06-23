@@ -66,6 +66,42 @@ export function complement(steps) {
   return steps.map((s) => (s ? 0 : 1));
 }
 
+/* ── shorthand names + pattern combination (engine parity) ─────────────── */
+const SHORTHAND = {
+  tri: "P(3,0)", pent: "P(5,0)", hex: "P(6,0)", hept: "P(7,0)", oct: "P(8,0)",
+  tresillo: "E(3,8)", cinquillo: "E(5,8)",
+};
+
+function gcd2(a, b) { while (b) { [a, b] = [b, a % b]; } return a; }
+function lcm2(a, b) { return (a / gcd2(a, b)) * b; }
+
+// Split on TOP-LEVEL '+' / '-' (operators between whole patterns); '-' inside a
+// pattern (P(3,-1), E(3,8,-2)) is protected by paren depth. Returns [{op,pat}].
+function splitTopLevel(s) {
+  const terms = []; let depth = 0, cur = "", op = "+";
+  for (const c of s) {
+    if (c === "(") depth++;
+    else if (c === ")") depth--;
+    if (depth === 0 && (c === "+" || c === "-") && cur.trim()) {
+      terms.push({ op, pat: cur.trim() }); cur = ""; op = c;
+    } else cur += c;
+  }
+  if (cur.trim()) terms.push({ op, pat: cur.trim() });
+  return terms;
+}
+
+// LCM-expand both, then union ('+', OR) or difference ('-', AND-NOT) — matches
+// the C++ PatternUtils::combinePatterns.
+function combineSteps(a, b, isAdd) {
+  const L = lcm2(a.length || 1, b.length || 1);
+  const out = new Array(L);
+  for (let i = 0; i < L; i++) {
+    const av = a[i % a.length], bv = b[i % b.length];
+    out[i] = isAdd ? (av || bv ? 1 : 0) : (av && !bv ? 1 : 0);
+  }
+  return out;
+}
+
 /* ── numeric notation (leftmost = LSB) ─────────────────────────────────
  * Strict left-to-right: the first step is bit 0, so step k has value 2^k.
  * 0x1:4 = 1000, 0x8:4 = 0001, tresillo 10010010 = 0x94. Matches the C++
@@ -88,6 +124,9 @@ function bitsFromValue(value, width) {
  *   D(k,n)                   Dilcue (anti-Euclidean)
  *   0x94 / b10010010 / 10010010 / o111 / d73   numeric (leftmost = LSB)
  *   [0,3,6]:8                onset array with optional :N step count
+ *   tresillo / cinquillo / tri / pent / hex / hept / oct   shorthand names
+ *   <expr>+<expr> / <expr>-<expr>   combination: union / difference (LCM;
+ *                            all-polygon '+' projects onto lcm of polygon sizes)
  *   {10010}<expr>            accent layer wrapping any of the above
  * Returns { steps, accents, label, ok, error }.
  */
@@ -120,6 +159,45 @@ export function parseUPI(input, ctx = { n: 16 }) {
 
   try {
     let m;
+
+    // Shorthand names (resolve, then fall through to the P()/E() matchers so any
+    // {accent} prefix is re-applied by out()).
+    const sh = SHORTHAND[src.toLowerCase()];
+    if (sh) src = sh;
+
+    // Pattern combination: top-level '+' / '-' between whole patterns. Skip if a
+    // term is purely numeric (that's a progressive offset like E(3,8)+2, handled
+    // by the Progressive controls, not a combination).
+    if (/[+-]/.test(src)) {
+      const terms = splitTopLevel(src);
+      if (terms.length >= 2 && terms.every((t) => !/^\d+$/.test(t.pat))) {
+        const label = terms.map((t, i) => (i ? t.op : "") + t.pat).join("");
+        // Polygon-LCM projection when every term is a polygon joined with '+'
+        // (so P(3,0)+P(5,0) lands on lcm(3,5)=15, like the C++ engine).
+        const polyRe = /^P\(\s*(\d+)\s*,\s*(-?\d+)\s*(?:,\s*(\d+)\s*)?\)$/i;
+        if (terms.every((t) => t.op === "+" && polyRe.test(t.pat))) {
+          const sizes = terms.map((t) => { const mm = t.pat.match(polyRe); return +mm[1] * (mm[3] ? +mm[3] : 1); });
+          const L = sizes.reduce((a, b) => lcm2(a, b));
+          const steps = new Array(L).fill(0);
+          for (const t of terms) {
+            const mm = t.pat.match(polyRe);
+            const p = polygon(+mm[1], (((+mm[2]) % L) + L) % L, L);
+            for (let i = 0; i < L; i++) if (p[i]) steps[i] = 1;
+          }
+          return out(steps, label);
+        }
+        const first = parseUPI(terms[0].pat, ctx);
+        if (!first.ok) return first;
+        let steps = first.steps.slice();
+        for (let i = 1; i < terms.length; i++) {
+          const r = parseUPI(terms[i].pat, ctx);
+          if (!r.ok) return r;
+          steps = combineSteps(steps, r.steps, terms[i].op === "+");
+        }
+        return out(steps, label);
+      }
+    }
+
     if ((m = src.match(/^E\(\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*(-?\d+)\s*)?\)$/i))) {
       const k = +m[1], n = +m[2], rot = m[3] ? +m[3] : 0;
       return out(euclideanRhythm(k, n, rot), `E(${k},${n}${rot ? "," + rot : ""})`);
