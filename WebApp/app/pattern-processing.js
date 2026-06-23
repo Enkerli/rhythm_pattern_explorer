@@ -93,7 +93,7 @@ class PatternConverter {
      * Leftmost = LSB notation (suite-wide convention, matches plugin + theory):
      * - The first step is bit 0; step k has value 2^k (read left to right)
      * - This ensures 1000 = 0x1, 0100 = 0x2, 0010 = 0x4, 0001 = 0x8
-     * - 1011 = 0xD; tresillo 10010010 = 0x49
+     * - 1011 = 0xD; tresillo 10010010 = 0x94
      */
     static toDecimal(binaryString) {
         if (!binaryString) return 0;
@@ -129,10 +129,11 @@ class PatternConverter {
     static toHexFromBinary(binaryString) {
         if (!binaryString) return '0x0';
 
-        // Leftmost = LSB: the value equals the ordinary numeral of the reversed
-        // string. BigInt keeps long patterns (>32 steps) exact.
+        // Leftmost = LSB: value = ordinary numeral of the reversed step string.
+        // Hex digits are then little-endian (first step's nibble leftmost), so
+        // tresillo 10010010 = 0x94. BigInt keeps long patterns (>32 steps) exact.
         const value = BigInt('0b' + [...binaryString].reverse().join(''));
-        return '0x' + value.toString(16).toUpperCase();
+        return '0x' + [...value.toString(16).toUpperCase()].reverse().join('');
     }
     
     /**
@@ -168,9 +169,10 @@ class PatternConverter {
     static toOctalFromBinary(binaryString) {
         if (!binaryString) return 'o0';
 
-        // Leftmost = LSB: value of the reversed string, rendered in base 8.
+        // Leftmost = LSB; octal digits are little-endian (first step's triplet
+        // leftmost), so reverse the ordinary numeral's digits.
         const value = BigInt('0b' + [...binaryString].reverse().join(''));
-        return 'o' + value.toString(8);
+        return 'o' + [...value.toString(8)].reverse().join('');
     }
     
     static fromDecimalWithSteps(decimal, stepCount) {
@@ -218,19 +220,21 @@ class PatternConverter {
             const cleaned = hexPart.replace(/^0x/i, '').replace(/[^0-9A-F]/gi, '');
             if (!cleaned) return null;
             
-            const decimal = parseInt(cleaned, 16);
+            // Hex digits are little-endian (first step's nibble leftmost): reverse.
+            const decimal = parseInt([...cleaned].reverse().join(''), 16);
             if (isNaN(decimal)) return null;
-            
+
             return this.fromDecimalWithSteps(decimal, stepCount);
         }
         
         // Handle regular hex without step count
         const cleaned = hexString.replace(/^0x/i, '').replace(/[^0-9A-F]/gi, '');
         if (!cleaned) return null;
-        
-        const decimal = parseInt(cleaned, 16);
+
+        // Little-endian digits (first step's nibble leftmost): reverse.
+        const decimal = parseInt([...cleaned].reverse().join(''), 16);
         if (isNaN(decimal)) return null;
-        
+
         return this.fromDecimal(decimal);
     }
     
@@ -241,20 +245,22 @@ class PatternConverter {
             const stepCount = parseInt(stepsPart);
             const cleaned = octalPart.replace(/^0o/i, '').replace(/[^0-7]/g, '');
             if (!cleaned) return null;
-            
-            const decimal = parseInt(cleaned, 8);
+
+            // Little-endian digits (first step's triplet leftmost): reverse.
+            const decimal = parseInt([...cleaned].reverse().join(''), 8);
             if (isNaN(decimal)) return null;
-            
+
             return this.fromDecimalWithSteps(decimal, stepCount);
         }
         
         // Handle regular octal without step count
         const cleaned = octalString.replace(/^0o/i, '').replace(/[^0-7]/g, '');
         if (!cleaned) return null;
-        
-        const decimal = parseInt(cleaned, 8);
+
+        // Little-endian digits (first step's triplet leftmost): reverse.
+        const decimal = parseInt([...cleaned].reverse().join(''), 8);
         if (isNaN(decimal)) return null;
-        
+
         return this.fromDecimal(decimal);
     }
     

@@ -114,7 +114,7 @@ actually plays (accent phase). Two corrections close most of this:
 
 ### Cross-cutting fixes
 - ✅ **Bit order reverted to leftmost = LSB** (`ee70bef`; theory `ea4929a` —
-  verify in-host). `0x1:4` = `1000`, tresillo = `0x49`. Undoes the unreleased
+  verify in-host). `0x1:4` = `1000`, tresillo = `0x94`. Undoes the unreleased
   MSB-first switch across plugin + both webapps + `@enkerli/theory`; PCS stays
   MSB-first. 134 codec vectors pass (theory, C++, webapp); auval clean.
 

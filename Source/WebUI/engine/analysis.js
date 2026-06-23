@@ -85,11 +85,12 @@ export function analyse(steps) {
     evenness: evenness(steps),
     balanced: perfectBalance(steps),
     cog,
-    /** binary + hex + decimal renderings, leftmost = LSB (step k = bit k).
-     *  The LSB-first value equals the ordinary numeral of the reversed string,
-     *  so reverse then read base-2 (BigInt keeps long patterns exact). */
+    /** binary + hex + decimal renderings. Leftmost = LSB (step k = bit k): the
+     *  value equals the ordinary numeral of the reversed step string. Decimal is
+     *  that value; hex digits are then written little-endian (first step's nibble
+     *  leftmost), so tresillo 10010010 = 0x94, not the value's 0x49. */
     binary: steps.join(""),
-    hex: "0x" + BigInt("0b" + ((steps.slice().reverse().join("")) || "0")).toString(16).toUpperCase(),
+    hex: "0x" + [...BigInt("0b" + ((steps.slice().reverse().join("")) || "0")).toString(16).toUpperCase()].reverse().join(""),
     decimal: Number(BigInt("0b" + ((steps.slice().reverse().join("")) || "0"))),
   };
 }

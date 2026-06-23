@@ -162,9 +162,9 @@ in brief:
 - `E(k,n)` Euclidean (k onsets in n steps), optional rotation: `E(3,8)`,
   `E(5,8,2)`.
 - Polygons, e.g. `P(5,0)`, and **combinations** with `+` / `-` / logical ops.
-- Numeric: binary `10010010` (or `b…`), hex `0x49`, octal `0o111`, decimal
+- Numeric: binary `10010010` (or `b…`), hex `0x94`, octal `0o111`, decimal
   `d73`, onset-array `[0,3,6]`; an optional `:N` step-count suffix preserves
-  trailing rests. **All leftmost = LSB** (tresillo `10010010` = `0x49` = 73).
+  trailing rests. **All leftmost = LSB** (tresillo `10010010` = `0x94` = 73).
 - Barlow/Wolrab/Dilcue, random `R(k,n)`, Morse, …
 - **Accents** in `{…}` (e.g. `{10010}E(5,8)`), **progressive** with `>` /
   lengthening, **scenes** with `|`.

@@ -7,7 +7,7 @@ Binary/octal/decimal/hex pattern notation reads **strictly left to right**:
 (see music-suite CONVENTIONS.md).
 
 - `0x1:4` = `1000`, `0x8:4` = `0001`, `0x11:8` = `10001000`; tresillo
-  `10010010` = **0x49** = 73.
+  `10010010` = **0x94** = 73.
 - This reverts an unreleased experiment that had briefly adopted strict
   MSB-first (tresillo `0x92`); no released build shipped MSB-first, so the
   released behaviour (leftmost = LSB) is unchanged.

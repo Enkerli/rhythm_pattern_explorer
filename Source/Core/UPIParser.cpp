@@ -880,7 +880,7 @@ std::vector<bool> UPIParser::parseDecimal(int decimal, int stepCount)
 {
     // Leftmost = LSB (suite-wide convention): step k is bit k, so a value's
     // low bit lands on the FIRST step. 1000 = 0x1, 0001 = 0x8,
-    // tresillo 10010010 = 0x49. decimal = Σ step[k]·2^k.
+    // tresillo 10010010 has value 73 (hex 0x94). decimal = Σ step[k]·2^k.
     std::vector<bool> pattern(stepCount, false);
     unsigned long long value = static_cast<unsigned long long>(decimal);
     for (int i = 0; i < stepCount && value > 0; ++i)
@@ -1520,15 +1520,13 @@ UPIParser::ParseResult UPIParser::parseNumericPattern(const juce::String& input,
             break;
             
         case NumericBase::Octal:
-            // Ordinary digit order → decimal; parseDecimal (leftmost = LSB)
-            // then places the low bit on the first step.
+            // Little-endian digits (leftmost = first step's triplet, low-order):
+            // process RIGHT to LEFT so the rightmost digit is most significant.
             decimal = 0;
-            
-            for (int i = 0; i < content.length(); ++i)
+
+            for (int i = content.length() - 1; i >= 0; --i)
             {
                 int octalDigit = content[i] - '0';
-                
-                // Shift previous digits and add this one
                 decimal = (decimal << 3) | octalDigit;
             }
             break;
@@ -1538,11 +1536,12 @@ UPIParser::ParseResult UPIParser::parseNumericPattern(const juce::String& input,
             break;
             
         case NumericBase::Hexadecimal:
-            // Ordinary digit order → decimal; parseDecimal (leftmost = LSB)
-            // expands it, so 0x49:8 = 10010010 (tresillo), 0x1:4 = 1000.
+            // Little-endian digits (leftmost = first step's nibble, low-order):
+            // process RIGHT to LEFT so the rightmost digit is most significant.
+            // So 0x94:8 = 10010010 (tresillo), 0x1:4 = 1000, 0x11:8 = 10001000.
             decimal = 0;
-            
-            for (int i = 0; i < content.length(); ++i)
+
+            for (int i = content.length() - 1; i >= 0; --i)
             {
                 int hexDigit;
                 if (content[i] >= '0' && content[i] <= '9')
@@ -1553,8 +1552,7 @@ UPIParser::ParseResult UPIParser::parseNumericPattern(const juce::String& input,
                     hexDigit = content[i] - 'a' + 10;
                 else
                     continue;
-                
-                // Shift previous digits and add this one
+
                 decimal = (decimal << 4) | hexDigit;
             }
             break;
@@ -1983,7 +1981,11 @@ std::vector<bool> UPIParser::parseAccentPattern(const juce::String& accentStr)
         auto hexPart = trimmed.substring(2);
         if (hexPart.containsOnly("0123456789ABCDEFabcdef"))
         {
-            int decimal = hexPart.getHexValue32();
+            // Little-endian digits: reverse before the ordinary hex parse so the
+            // first step's nibble (leftmost digit) is the low-order one.
+            juce::String reversed;
+            for (int i = hexPart.length() - 1; i >= 0; --i) reversed += hexPart[i];
+            int decimal = reversed.getHexValue32();
             int bits = hexPart.length() * 4; // Each hex digit = 4 bits
             return parseDecimal(decimal, bits);
         }

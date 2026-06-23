@@ -4,7 +4,7 @@
  *
  * A pattern is { steps:Uint8Array(n) of 0/1, accents:Uint8Array(n) of 0/1 }.
  * All numeric notation is LEFTMOST = LSB (first step = bit 0, so step k has
- * value 2^k; 0x1:4 = 1000, tresillo 10010010 = 0x49), per CONVENTIONS.md.
+ * value 2^k; 0x1:4 = 1000, tresillo 10010010 = 0x94), per CONVENTIONS.md.
  */
 
 /* ── number theory ─────────────────────────────────────────────────── */
@@ -68,7 +68,7 @@ export function complement(steps) {
 
 /* ── numeric notation (leftmost = LSB) ─────────────────────────────────
  * Strict left-to-right: the first step is bit 0, so step k has value 2^k.
- * 0x1:4 = 1000, 0x8:4 = 0001, tresillo 10010010 = 0x49. Matches the C++
+ * 0x1:4 = 1000, 0x8:4 = 0001, tresillo 10010010 = 0x94. Matches the C++
  * engine and @enkerli/theory. */
 function bitsFromValue(value, width) {
   const steps = new Array(width).fill(0);
@@ -86,7 +86,7 @@ function bitsFromValue(value, width) {
  *   R(k,n)                   random
  *   B(k,n) / W(k,n)          Barlow / Wolrab (anti-Barlow) of length n
  *   D(k,n)                   Dilcue (anti-Euclidean)
- *   0x49 / b10010010 / 10010010 / o111 / d73   numeric (leftmost = LSB)
+ *   0x94 / b10010010 / 10010010 / o111 / d73   numeric (leftmost = LSB)
  *   [0,3,6]:8                onset array with optional :N step count
  *   {10010}<expr>            accent layer wrapping any of the above
  * Returns { steps, accents, label, ok, error }.
@@ -142,12 +142,14 @@ export function parseUPI(input, ctx = { n: 16 }) {
       return out(barlowCore(base, k, { wolrabMode: tag === "W" }), `${tag}(${k},${n})`);
     }
     if ((m = src.match(/^0x([0-9a-f]+)(?::(\d+))?$/i))) {
-      const v = parseInt(m[1], 16);
+      // Hex digits are little-endian (first step's nibble leftmost): reverse
+      // before parsing, so 0x94 = tresillo, 0x1 = step 0.
+      const v = parseInt([...m[1]].reverse().join(""), 16);
       const width = m[2] ? +m[2] : m[1].length * 4;
       return out(bitsFromValue(v, width), `0x${m[1].toUpperCase()}`);
     }
     if ((m = src.match(/^o([0-7]+)(?::(\d+))?$/i))) {
-      const v = parseInt(m[1], 8);
+      const v = parseInt([...m[1]].reverse().join(""), 8);  // little-endian digits
       const width = m[2] ? +m[2] : m[1].length * 3;
       return out(bitsFromValue(v, width), `o${m[1]}`);
     }

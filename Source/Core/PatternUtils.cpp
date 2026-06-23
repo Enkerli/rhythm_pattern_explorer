@@ -340,9 +340,9 @@ namespace PatternUtils
      * - Pattern 0100 → 0x2 (second step, so 2^1 = 2)
      * - Pattern 0010 → 0x4 (third step, so 2^2 = 4)
      * - Pattern 0001 → 0x8 (fourth step, so 2^3 = 8)
-     * - Pattern 10010010 → 0x49 (tresillo: onsets on steps 0,3,6 = 1+8+64 = 73)
+     * - Pattern 10010010 → 0x94 (tresillo: onsets on steps 0,3,6 = 1+8+64 = 73)
      *
-     * Round-trips with input: 0x49:8 parses to 10010010 and displays as 0x49.
+     * Round-trips with input: 0x94:8 parses to 10010010 and displays as 0x94.
      *
      * Implementation: the leftmost-LSB value of a pattern equals the ordinary
      * MSB-first value of its reverse, so we reverse once and reuse standard
@@ -356,7 +356,10 @@ namespace PatternUtils
         if (pattern.empty())
             return "0x0";
 
-        // Leftmost = LSB: render reverse(pattern) as an ordinary base-16 numeral.
+        // Leftmost = LSB, and hex is written strictly left to right too: the
+        // first step's nibble (steps 0-3) is the LEFTMOST digit. Build the
+        // ordinary (big-endian) value numeral, then reverse the digits so the
+        // low-order nibble comes first. tresillo 10010010 -> 0x94 (not 0x49).
         const std::vector<bool> rev(pattern.rbegin(), pattern.rend());
         juce::String hex;
         const int stepCount = static_cast<int>(rev.size());
@@ -370,11 +373,14 @@ namespace PatternUtils
             hex = juce::String::toHexString(nibbleValue).toUpperCase() + hex;
         }
 
-        // Drop leading zero digits (keep at least one)
+        // Drop high-order zero digits (keep at least one)
         while (hex.length() > 1 && hex[0] == '0')
             hex = hex.substring(1);
 
-        return "0x" + hex;
+        // Reverse to little-endian digit order (first step's nibble leftmost).
+        juce::String le;
+        for (int i = hex.length() - 1; i >= 0; --i) le += hex[i];
+        return "0x" + le;
     }
 
     juce::String getOctalString(const std::vector<bool>& pattern)
@@ -382,8 +388,8 @@ namespace PatternUtils
         if (pattern.empty())
             return "o0";
 
-        // Leftmost = LSB: render reverse(pattern) as an ordinary base-8 numeral,
-        // 3-bit groups from the RIGHT, leading zero digits dropped.
+        // Leftmost = LSB; octal digits are little-endian too (first step's
+        // triplet leftmost). Build the ordinary numeral, then reverse digits.
         const std::vector<bool> rev(pattern.rbegin(), pattern.rend());
         juce::String octal;
         const int stepCount = static_cast<int>(rev.size());
@@ -400,7 +406,9 @@ namespace PatternUtils
         while (octal.length() > 1 && octal[0] == '0')
             octal = octal.substring(1);
 
-        return "o" + octal;
+        juce::String le;
+        for (int i = octal.length() - 1; i >= 0; --i) le += octal[i];
+        return "o" + le;
     }
 
     juce::String getDecimalString(const std::vector<bool>& pattern)
