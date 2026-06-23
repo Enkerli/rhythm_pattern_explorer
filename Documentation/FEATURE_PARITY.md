@@ -137,7 +137,13 @@ actually plays (accent phase). Two corrections close most of this:
   of ≤16, balanced: 16→one row, 18→9+9, 19→10+9, 32→16+16 (verified in browser).
   Also fixed stale example chips: `E(5,8)` mislabel `tresillo+`→`cinquillo`,
   and `0x92`→`0x94` (left over from the bit-order change).
-- Plugin host icon not displaying (other suite plugins show theirs). ← next
+- ✅ **macOS host icon** — `ICON_BIG` pointed at the full-bleed master
+  (`serpe-1024-bleed.png`); JUCE doesn't round corners for the `.icns`, so it
+  rendered as a hard square in desktop hosts. Repointed to the already-existing
+  rounded master `serpe-1024.png` (matches PitchFold). Regenerated `.icns`
+  verified rounded; installed VST3/AU refreshed. **iPadOS-26 AUv3 icon is a
+  separate task** — needs a per-appex asset catalog (Any/Dark/Tinted); the
+  bleed/-dark/-tinted masters are kept in Assets/icon for it. ← (iOS) still open
 - Plugin host icon not displaying (other suite plugins show theirs).
 - Full-pattern duration sync (whole pattern = one bar) lost when step-length
   forced `patternLengthUnit=Steps`; the Bars/Beats unit path needs restoring.
