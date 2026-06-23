@@ -144,12 +144,13 @@ actually plays (accent phase). Two corrections close most of this:
   verified rounded; installed VST3/AU refreshed.
 - ✅ **iPadOS-26 AUv3 icon** (verify on device) — appex icons there must come
   from a compiled asset catalog with Any/Dark/Tinted appearances (loose
-  CFBundleIcons are ignored). Added `Assets/Serpe.xcassets/SerpeAppIcon` and
-  wired it onto the `Serpe_AUv3`/`Serpe_Standalone` targets in CMake
-  (`ASSETCATALOG_COMPILER_APPICON_NAME=SerpeAppIcon`, distinct from JUCE's
-  AppIcon so they don't clash). `actool`-verified on the host: the catalog
-  compiles with the three appearances and emits `CFBundleIconName`. Needs the
-  maintainer's signed iPad build + AUM check. See ICON_iPadOS26.md.
+  CFBundleIcons are ignored). First cut added a *second* catalog → actool
+  "None of the input catalogs contained … SerpeAppIcon" (build break). Corrected:
+  CMake now **overwrites JUCE's generated `AppIcon.appiconset`** with our
+  appearance version (`Assets/Serpe.xcassets/SerpeAppIcon.appiconset`) — one
+  catalog, default `AppIcon` name. `actool`-verified on the host: compiles with
+  the three appearances, no errors. Needs the maintainer's signed iPad build +
+  AUM check. See ICON_iPadOS26.md.
 - ✅ **Full-pattern duration sync** — the UI only had "Step length", which hard-
   set `patternLengthUnit=Steps`, so Beats/Bars (whole pattern = N beats/bars) was
   unreachable. Replaced with a "Pattern length" control: unit = Steps / Beats /

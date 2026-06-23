@@ -28,26 +28,33 @@ appiconset (from `ICON_BIG`) doesn't satisfy this for the appex.
 
 ## The fix — now durable in CMake (was a manual Xcode step)
 
-Implemented in `CMakeLists.txt` (the iOS branch), so it survives reconfigure:
+The artwork master lives at `Assets/Serpe.xcassets/SerpeAppIcon.appiconset` — a
+single-1024 App Icon set with the three appearances: **Any** = `icon_any.png`
+(`serpe-1024-bleed.png`), **Dark** = `icon_dark.png`, **Tinted** =
+`icon_tinted.png`.
 
-- `Assets/Serpe.xcassets/SerpeAppIcon.appiconset` — a single-1024 App Icon set
-  with the three appearances: **Any** = `icon_any.png` (`serpe-1024-bleed.png`),
-  **Dark** = `icon_dark.png`, **Tinted** = `icon_tinted.png`.
-- On the `Serpe_AUv3` appex (and `Serpe_Standalone`): the catalog is added to the
-  target and `XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME = SerpeAppIcon`.
-  The set is named **`SerpeAppIcon`** (distinct from JUCE's generated `AppIcon`)
-  so the two catalogs on one target don't clash; `actool` compiles ours as the
-  app icon and ignores JUCE's.
+JUCE already generates its own single-appearance `AppIcon.appiconset` (from
+`ICON_BIG`) into each format target's `JuceLibraryCode/.../Images.xcassets`, and
+`actool` runs on THAT catalog. Adding a *second* catalog fails — `actool` then
+can't find the second app-icon ("None of the input catalogs contained … named
+…") and merging two catalogs on one target is fragile.
 
-Verified as far as possible on the build host (no device/signing needed):
-`xcrun actool Assets/Serpe.xcassets --app-icon SerpeAppIcon …` compiles a
-`Assets.car` whose `SerpeAppIcon` carries `UIAppearanceAny` / `UIAppearanceDark`
-/ `ISAppearanceTintable`, and emits `CFBundleIconName = SerpeAppIcon`
-(iPhone + ~ipad). The iOS project also configures cleanly with the catalog
-attached and the setting applied.
+So `CMakeLists.txt` (iOS branch) instead **overwrites JUCE's generated
+`AppIcon.appiconset`** with our appearance version (same name, after juceaide
+has generated it). Result: exactly ONE catalog with ONE `AppIcon`, the default
+`ASSETCATALOG_COMPILER_APPICON_NAME=AppIcon` still applies, and the appex's
+`AppIcon` now carries the appearances. Re-applied on every configure, so it
+survives JUCE regenerating the catalog.
+
+Verified on the build host (no device/signing needed): after configure,
+`xcrun actool <Serpe_AUv3 Images.xcassets> --app-icon AppIcon …` compiles a
+`Assets.car` whose `AppIcon` carries `UIAppearanceAny` / `UIAppearanceDark` /
+`ISAppearanceTintable` — **with no errors** (the earlier two-catalog
+"None of the input catalogs …" failure is gone).
 
 **Still needs the maintainer's signed iPad build + AUM check** to confirm it
-displays on-device. If the icon is still blank, the documented fallback is to
-strip JUCE's legacy `CFBundleIcons` keys from the appex `Info.plist` (the
-asset-catalog `CFBundleIconName` should already win). The same wiring belongs in
-`enkerli-juce` eventually so every suite plugin inherits it.
+displays on-device, and that the Xcode build doesn't regenerate JUCE's catalog
+*during* the build (overwriting the configure-time copy). If the icon is still
+blank, strip JUCE's legacy `CFBundleIcons` keys from the appex `Info.plist`.
+The same wiring belongs in `enkerli-juce` eventually so every suite plugin
+inherits it.

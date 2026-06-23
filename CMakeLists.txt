@@ -116,21 +116,28 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     target_compile_definitions(Serpe PRIVATE SERPE_IPAD=1)
 
     # ── iPadOS-26 AUv3 icon (see Documentation/ICON_iPadOS26.md) ─────────────
-    # On iPadOS 26 an app-extension's icon must come from a COMPILED asset
-    # catalog with Any/Dark/Tinted appearances — the loose CFBundleIcons that
-    # JUCE writes from ICON_BIG are no longer honoured for the appex, so the
-    # AUv3 icon shows blank in AUM. Attach our appearance catalog to the AUv3
-    # appex (and the Standalone) and point actool at it via APPICON_NAME. The
-    # set is named "SerpeAppIcon" (distinct from JUCE's "AppIcon") to avoid an
-    # ambiguous-content clash between the two catalogs on the same target.
-    # NOTE: needs the maintainer's signed iPad build to verify on device
-    # (assetutil --info <appex>/Assets.car should list SerpeAppIcon).
-    set(_serpe_appicon_catalog "${CMAKE_SOURCE_DIR}/Assets/Serpe.xcassets")
+    # On iPadOS 26 the appex icon must come from a COMPILED asset catalog with
+    # Any/Dark/Tinted appearances. JUCE already generates a single-appearance
+    # AppIcon.appiconset (from ICON_BIG) into each format target's JuceLibraryCode
+    # Images.xcassets, and actool runs on THAT catalog — so we can't just add a
+    # second catalog (actool then can't find our appicon, and merging two
+    # catalogs is fragile). Instead, after juceaide has generated JUCE's catalog,
+    # overwrite its AppIcon.appiconset with our appearance version (same name, so
+    # the default ASSETCATALOG_COMPILER_APPICON_NAME=AppIcon still applies and
+    # there is exactly ONE catalog with ONE AppIcon). Re-applied every configure,
+    # so it survives JUCE regenerating the catalog. Source of truth:
+    # Assets/Serpe.xcassets/SerpeAppIcon.appiconset.
+    set(_serpe_appicon_src "${CMAKE_SOURCE_DIR}/Assets/Serpe.xcassets/SerpeAppIcon.appiconset")
     foreach(_fmt Serpe_AUv3 Serpe_Standalone)
-        if(TARGET ${_fmt})
-            target_sources(${_fmt} PRIVATE "${_serpe_appicon_catalog}")
-            set_target_properties(${_fmt} PROPERTIES
-                XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME "SerpeAppIcon")
+        set(_juce_appiconset
+            "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_artefacts/JuceLibraryCode/${_fmt}/Images.xcassets/AppIcon.appiconset")
+        if(EXISTS "${_juce_appiconset}")
+            file(REMOVE_RECURSE "${_juce_appiconset}")
+            file(COPY "${_serpe_appicon_src}/" DESTINATION "${_juce_appiconset}")
+            message(STATUS "Serpe: installed appearance AppIcon for ${_fmt}")
+        else()
+            message(WARNING "Serpe: ${_fmt} appiconset not found at ${_juce_appiconset}; "
+                            "AUv3 appearance icon not installed (reconfigure after the first generate).")
         endif()
     endforeach()
 else()
