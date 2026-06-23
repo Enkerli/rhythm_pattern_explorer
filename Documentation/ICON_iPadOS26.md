@@ -26,21 +26,28 @@ appex target — loose `CFBundleIcons` / `CFBundleIconFiles` in the appex
 `Info.plist` are no longer honoured. JUCE's generated single-appearance
 appiconset (from `ICON_BIG`) doesn't satisfy this for the appex.
 
-## The fix (Xcode, on the iOS build)
+## The fix — now durable in CMake (was a manual Xcode step)
 
-After `cmake -B build-ios -G Xcode -DCMAKE_SYSTEM_NAME=iOS`, in the generated
-project, on the **`Serpe_AUv3` appex target** (not just the standalone):
+Implemented in `CMakeLists.txt` (the iOS branch), so it survives reconfigure:
 
-1. Add an `Assets.xcassets` with an **App Icon** set that has the three
-   appearances: **Any** = `serpe-1024-bleed.png`, **Dark** =
-   `serpe-1024-dark.png`, **Tinted** = `serpe-1024-tinted.png` (single 1024 well
-   each; let Xcode derive the rest).
-2. Set the appex's `ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon` and remove any
-   legacy `CFBundleIcons` keys.
-3. Clean build folder so `actool` recompiles; verify with
-   `assetutil --info <appex>/Assets.car` that the icon is present.
+- `Assets/Serpe.xcassets/SerpeAppIcon.appiconset` — a single-1024 App Icon set
+  with the three appearances: **Any** = `icon_any.png` (`serpe-1024-bleed.png`),
+  **Dark** = `icon_dark.png`, **Tinted** = `icon_tinted.png`.
+- On the `Serpe_AUv3` appex (and `Serpe_Standalone`): the catalog is added to the
+  target and `XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME = SerpeAppIcon`.
+  The set is named **`SerpeAppIcon`** (distinct from JUCE's generated `AppIcon`)
+  so the two catalogs on one target don't clash; `actool` compiles ours as the
+  app icon and ignores JUCE's.
 
-This crosses into the build because the regenerated CMake project is overwritten
-on reconfigure — so to make it durable it should move into the CMake/`enkerli-juce`
-layer (inject a per-appex catalog) rather than be hand-set in Xcode each time.
-Tracked as a follow-up; the artwork above is the input either way.
+Verified as far as possible on the build host (no device/signing needed):
+`xcrun actool Assets/Serpe.xcassets --app-icon SerpeAppIcon …` compiles a
+`Assets.car` whose `SerpeAppIcon` carries `UIAppearanceAny` / `UIAppearanceDark`
+/ `ISAppearanceTintable`, and emits `CFBundleIconName = SerpeAppIcon`
+(iPhone + ~ipad). The iOS project also configures cleanly with the catalog
+attached and the setting applied.
+
+**Still needs the maintainer's signed iPad build + AUM check** to confirm it
+displays on-device. If the icon is still blank, the documented fallback is to
+strip JUCE's legacy `CFBundleIcons` keys from the appex `Info.plist` (the
+asset-catalog `CFBundleIconName` should already win). The same wiring belongs in
+`enkerli-juce` eventually so every suite plugin inherits it.

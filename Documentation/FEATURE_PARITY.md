@@ -141,10 +141,15 @@ actually plays (accent phase). Two corrections close most of this:
   (`serpe-1024-bleed.png`); JUCE doesn't round corners for the `.icns`, so it
   rendered as a hard square in desktop hosts. Repointed to the already-existing
   rounded master `serpe-1024.png` (matches PitchFold). Regenerated `.icns`
-  verified rounded; installed VST3/AU refreshed. **iPadOS-26 AUv3 icon is a
-  separate task** — needs a per-appex asset catalog (Any/Dark/Tinted); the
-  bleed/-dark/-tinted masters are kept in Assets/icon for it. ← (iOS) still open
-- Plugin host icon not displaying (other suite plugins show theirs).
+  verified rounded; installed VST3/AU refreshed.
+- ✅ **iPadOS-26 AUv3 icon** (verify on device) — appex icons there must come
+  from a compiled asset catalog with Any/Dark/Tinted appearances (loose
+  CFBundleIcons are ignored). Added `Assets/Serpe.xcassets/SerpeAppIcon` and
+  wired it onto the `Serpe_AUv3`/`Serpe_Standalone` targets in CMake
+  (`ASSETCATALOG_COMPILER_APPICON_NAME=SerpeAppIcon`, distinct from JUCE's
+  AppIcon so they don't clash). `actool`-verified on the host: the catalog
+  compiles with the three appearances and emits `CFBundleIconName`. Needs the
+  maintainer's signed iPad build + AUM check. See ICON_iPadOS26.md.
 - ✅ **Full-pattern duration sync** — the UI only had "Step length", which hard-
   set `patternLengthUnit=Steps`, so Beats/Bars (whole pattern = N beats/bars) was
   unreachable. Replaced with a "Pattern length" control: unit = Steps / Beats /

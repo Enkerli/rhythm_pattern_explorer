@@ -114,6 +114,25 @@ target_link_libraries(Serpe PRIVATE SerpeWebUI)
 # PlatformSpecific.h requires exactly one of these (the .jucer set SERPE_DESKTOP).
 if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     target_compile_definitions(Serpe PRIVATE SERPE_IPAD=1)
+
+    # ── iPadOS-26 AUv3 icon (see Documentation/ICON_iPadOS26.md) ─────────────
+    # On iPadOS 26 an app-extension's icon must come from a COMPILED asset
+    # catalog with Any/Dark/Tinted appearances — the loose CFBundleIcons that
+    # JUCE writes from ICON_BIG are no longer honoured for the appex, so the
+    # AUv3 icon shows blank in AUM. Attach our appearance catalog to the AUv3
+    # appex (and the Standalone) and point actool at it via APPICON_NAME. The
+    # set is named "SerpeAppIcon" (distinct from JUCE's "AppIcon") to avoid an
+    # ambiguous-content clash between the two catalogs on the same target.
+    # NOTE: needs the maintainer's signed iPad build to verify on device
+    # (assetutil --info <appex>/Assets.car should list SerpeAppIcon).
+    set(_serpe_appicon_catalog "${CMAKE_SOURCE_DIR}/Assets/Serpe.xcassets")
+    foreach(_fmt Serpe_AUv3 Serpe_Standalone)
+        if(TARGET ${_fmt})
+            target_sources(${_fmt} PRIVATE "${_serpe_appicon_catalog}")
+            set_target_properties(${_fmt} PROPERTIES
+                XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME "SerpeAppIcon")
+        endif()
+    endforeach()
 else()
     target_compile_definitions(Serpe PRIVATE SERPE_DESKTOP=1)
 endif()
