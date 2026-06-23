@@ -57,6 +57,47 @@ export function euclideanComplement(beats, steps, offset = 0) {
   return euclideanRhythm(steps - beats, steps, offset);
 }
 
+// ── Funky Euclidean generator (ported from the webapp PatternGenerators) ─────
+// A Euclidean base, then: randomly nudge some hits ±1 (funkiness), add backbeats
+// (2 & 4), and a light shuffle. Stochastic — each call differs. Returns 0/1.
+export function funkyEuclidean(steps, params = {}) {
+  const n = Math.max(1, steps | 0);
+  const {
+    hits = Math.floor(n * 0.4),
+    rotation = 0,
+    funkiness = 0.5,
+    backbeat = 0.3,
+    shuffle = 0.2,
+  } = params;
+
+  const pattern = euclideanRhythm(Math.max(0, Math.min(hits, n)), n, rotation).map(Boolean);
+
+  // Funkiness — move some hits one step left/right into a free slot.
+  for (let i = 0; i < n; i++) {
+    if (pattern[i] && Math.random() < funkiness) {
+      const np = (i + (Math.random() < 0.5 ? -1 : 1) + n) % n;
+      if (!pattern[np]) { pattern[i] = false; pattern[np] = true; }
+    }
+  }
+
+  // Backbeats (steps 2 and 4 in 4/4).
+  const q = Math.floor(n / 4);
+  for (const beat of [q, q * 3]) if (beat > 0 && beat < n && Math.random() < backbeat) pattern[beat] = true;
+
+  // Shuffle — push some off-beat eighths slightly later.
+  const e = Math.floor(n / 8);
+  if (e > 0) {
+    for (let i = e; i < n; i += e * 2) {
+      if (pattern[i] && Math.random() < shuffle) {
+        const np = i + Math.floor(e * 0.3);
+        if (np < n && !pattern[np]) { pattern[i] = false; pattern[np] = true; }
+      }
+    }
+  }
+
+  return pattern.map(Number);
+}
+
 // ── Barlow indispensability (matches the plugin's C++ engine) ────────────────
 function gcd(a, b) { while (b !== 0) { const t = b; b = a % b; a = t; } return a; }
 

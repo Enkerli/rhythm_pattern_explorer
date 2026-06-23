@@ -49,7 +49,7 @@ actually plays (accent phase). Two corrections close most of this:
 |---|---|---|---|---|
 | Euclid/Polygon/Random/Barlow/Wolrab/Dilcue gen | ✓ | ✓ | ✓ | |
 | Dilute / Concentrate (Barlow + modes) | ✓ | ✓ | ✓ | modes restored (Barlow/Wolrab/Euclid/Dilcue) |
-| **Funkifier** (FunkyEuclidean / funkiness) | — | ✓ `FunkinessSlider`, `FunkyPattern` | ✗ | port from webapp |
+| **Funkifier** (FunkyEuclidean / funkiness) | — | ✓ | ✓ (webapp+plugin) | ported → `rhythm.js` `funkyEuclidean`; "Funk" generator type + Funkiness slider |
 | **Syncopation** analysis (6 measures + overall) | — | ✓ `SyncopationAnalyzer` | ✓ (webapp+plugin) | ported verbatim → `engine/syncopation.js`, shown in Analysis |
 | Quantization `;N` / `;-N` | ✓ `QuantizationEngine` | ✓ `quantize` | ✓ (webapp) | ported (Lascabettes angular) → `upi.js` `quantizeSteps` |
 | Rotate / Invert / Complement | ✓ | ✓ | ✓ | |
@@ -114,8 +114,10 @@ actually plays (accent phase). Two corrections close most of this:
    - ✅ Quantization `;N`/`;-N` (`7421b3e`, Lascabettes angular, cross-checked
      vs C++) and **syncopation** analysis (verbatim port → `engine/syncopation.js`,
      shown in the Analysis panel).
-   - ⬜ Still to port: progressive notation `>` / `+N` / `%N` (stateful), and the
-     **funkifier** (FunkyEuclidean) generator.
+   - ✅ **Funkifier** (`rhythm.js` `funkyEuclidean`): "Funk" generator type +
+     Funkiness slider — Euclidean base, random hit-nudges, backbeats, shuffle.
+   - ⬜ Still to port: progressive notation `>` / `+N` / `%N` (stateful; the UI
+     already has Progressive buttons, so this is wiring the notation to them).
 4. **Reconcile the library** with the original database (stats/balance filters).
 5. Copy fixes (e.g. `E(5,8)` is **cinquillo**, not "tresillo+").
 

@@ -19,6 +19,7 @@ import { parseUPI, euclid, polygon, rotate, invert, complement,
          barlowTransform, indispensabilityWeights, onsetCount } from './engine/upi.js';
 import { analyse } from './engine/analysis.js';
 import { analyzeSyncopation } from './engine/syncopation.js';
+import { funkyEuclidean } from './engine/rhythm.js';
 import { createCircleView, createStepView } from './engine/render.js';
 import { initJuceBridge, sendParamActual, sendUPI, sendPlaying, sendBPM, sendToggleAccent, juceAvailable } from './juce-bridge.js';
 
@@ -125,6 +126,7 @@ function SerpeApp() {
 
   const [genType, setGenType] = useState('E');
   const [genK, setGenK] = useState(5), [genN, setGenN] = useState(8), [genRot, setGenRot] = useState(0);
+  const [funkiness, setFunkiness] = useState(50);   // % deviation for the Funk generator
   const [dilMode, setDilMode] = useState('barlow');   // dilute/concentrate weighting
 
   const [accVel, setAccVel] = useState(112);
@@ -243,6 +245,13 @@ function SerpeApp() {
 
   // ── generators ──
   function generate() {
+    // Funk is stochastic (no notation) — write the explicit steps. Others write
+    // their UPI label so the engine regenerates them.
+    if (genType === 'F') {
+      const s = funkyEuclidean(genN, { hits: genK, rotation: genRot, funkiness: funkiness / 100 });
+      setUpiText(accentPrefix() + patternUPI(s));
+      return;
+    }
     let lbl;
     if (genType === 'E') lbl = `E(${genK},${genN}${genRot ? ',' + genRot : ''})`;
     else if (genType === 'P') lbl = `P(${genK},${genRot},${genN})`;
@@ -502,11 +511,13 @@ function SerpeApp() {
           h(Field, { label: 'Type' },
             h('select', { className: 'es-control', value: genType, onChange: e => setGenType(e.target.value) },
               [['E', 'Euclidean — E(k,n)'], ['P', 'Polygon — P(k,off)'], ['R', 'Random — R(k,n)'],
-               ['B', 'Barlow — B(k,n)'], ['W', 'Wolrab — W(k,n)'], ['D', 'Dilcue — D(k,n)']].map(([v, t]) =>
+               ['B', 'Barlow — B(k,n)'], ['W', 'Wolrab — W(k,n)'], ['D', 'Dilcue — D(k,n)'],
+               ['F', 'Funk — funky Euclidean']].map(([v, t]) =>
                 h('option', { key: v, value: v }, t)))),
-          h(Slider, { label: 'Onsets', value: genK, min: 1, max: 16, set: setGenK }),
+          h(Slider, { label: genType === 'F' ? 'Hits' : 'Onsets', value: genK, min: 1, max: 16, set: setGenK }),
           h(Slider, { label: 'Steps', value: genN, min: 2, max: 32, set: setGenN }),
           genType !== 'R' && h(Slider, { label: genType === 'P' ? 'Offset' : 'Rotation', value: genRot, min: 0, max: Math.max(1, genN - 1), set: setGenRot }),
+          genType === 'F' && h(Slider, { label: 'Funkiness', value: funkiness, min: 0, max: 100, set: setFunkiness, fmt: v => v + '%' }),
           h('button', { className: 'es-btn es-primary', style: { width: '100%' }, onClick: generate }, 'Generate')),
 
         // Transform
