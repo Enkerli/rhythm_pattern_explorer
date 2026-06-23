@@ -113,6 +113,31 @@ function morseToSteps(text) {
   return steps;
 }
 
+/* ── Lascabettes angular quantization (matches C++ QuantizationEngine) ───
+ * Re-grid a pattern to `newStepCount` by mapping each onset's ANGLE; clockwise
+ * by default, counter-clockwise inverts the angle. Collisions merge. */
+export function quantizeSteps(steps, newStepCount, clockwise = true) {
+  const orig = steps.length;
+  if (orig === 0 || newStepCount < 1) return steps.slice();
+  if (orig === newStepCount) return steps.slice();
+  const TWO_PI = Math.PI * 2;
+  const norm = (a) => { a %= TWO_PI; return a < 0 ? a + TWO_PI : a; };
+  const positions = new Set();
+  for (let i = 0; i < orig; i++) {
+    if (!steps[i]) continue;
+    let angle = (i / orig) * TWO_PI;
+    if (!clockwise) angle = TWO_PI - angle;
+    angle = norm(angle);
+    let pos = Math.round((angle / TWO_PI) * newStepCount);
+    if (pos >= newStepCount) pos = 0;
+    pos = Math.max(0, Math.min(pos, newStepCount - 1));
+    positions.add(pos);
+  }
+  const out = new Array(newStepCount).fill(0);
+  for (const p of positions) out[p] = 1;
+  return out;
+}
+
 // LCM-expand both, then union ('+', OR) or difference ('-', AND-NOT) — matches
 // the C++ PatternUtils::combinePatterns.
 function combineSteps(a, b, isAdd) {
@@ -183,6 +208,19 @@ export function parseUPI(input, ctx = { n: 16 }) {
 
   try {
     let m;
+
+    // Quantization: <expr>;N (clockwise) / <expr>;-N (counter-clockwise). The
+    // base parses recursively (so E(3,8);12, tresillo;12, P(3,0)+P(5,0);16 work).
+    const semi = src.indexOf(";");
+    if (semi > 0) {
+      const mq = src.slice(semi + 1).trim().match(/^(-?)(\d+)$/);
+      if (mq) {
+        const base = parseUPI(src.slice(0, semi).trim(), ctx);
+        if (!base.ok) return base;
+        return out(quantizeSteps(base.steps, +mq[2], mq[1] !== "-"),
+                   `${base.label};${mq[1]}${mq[2]}`);
+      }
+    }
 
     // Shorthand names (resolve, then fall through to the P()/E() matchers so any
     // {accent} prefix is re-applied by out()).

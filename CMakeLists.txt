@@ -181,4 +181,5 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
     add_custom_command(TARGET Serpe POST_BUILD
         COMMAND serpe_conformance
         COMMENT "Rhythm codec conformance (suite-wide leftmost-LSB vectors)")
+
 endif()

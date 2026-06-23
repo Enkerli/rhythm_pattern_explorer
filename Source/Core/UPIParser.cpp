@@ -144,7 +144,14 @@ UPIParser::ParseResult UPIParser::parse(const juce::String& input)
             if (curTerm.trim().isNotEmpty()) terms.push_back({ op, curTerm.trim() });
         }
 
-        if (terms.size() >= 2)
+        // A purely-numeric term means this '-'/'+' is NOT a pattern combination:
+        // a quantization counter ("E(5,8);-6"), a progressive offset ("pat-2"),
+        // etc. Leave those for the per-pattern parser below.
+        bool anyNumericTerm = false;
+        for (const auto& t : terms)
+            if (t.second.containsOnly("0123456789")) { anyNumericTerm = true; break; }
+
+        if (terms.size() >= 2 && !anyNumericTerm)
         {
             // Preserve the exact polygon-LCM projection when every term is a
             // polygon joined with '+' (keeps P(3,0)+P(5,0)'s LCM behaviour).
