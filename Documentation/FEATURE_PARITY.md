@@ -50,8 +50,8 @@ actually plays (accent phase). Two corrections close most of this:
 | Euclid/Polygon/Random/Barlow/Wolrab/Dilcue gen | ✓ | ✓ | ✓ | |
 | Dilute / Concentrate (Barlow + modes) | ✓ | ✓ | ✓ | modes restored (Barlow/Wolrab/Euclid/Dilcue) |
 | **Funkifier** (FunkyEuclidean / funkiness) | — | ✓ `FunkinessSlider`, `FunkyPattern` | ✗ | port from webapp |
-| **Syncopation** (add/analyze/apply/generate/mutate) | — | ✓ `*Syncopation*` (`pattern-analysis.js`) | ✗ | port from webapp |
-| Quantization | ✓ `QuantizationEngine` | ✓ `quantize` | ✗ | not exposed |
+| **Syncopation** analysis (6 measures + overall) | — | ✓ `SyncopationAnalyzer` | ✓ (webapp+plugin) | ported verbatim → `engine/syncopation.js`, shown in Analysis |
+| Quantization `;N` / `;-N` | ✓ `QuantizationEngine` | ✓ `quantize` | ✓ (webapp) | ported (Lascabettes angular) → `upi.js` `quantizeSteps` |
 | Rotate / Invert / Complement | ✓ | ✓ | ✓ | |
 
 ## Progressive / scenes
@@ -70,7 +70,7 @@ actually plays (accent phase). Two corrections close most of this:
 | Perfect balance / CoG | — | ✓ | ✓ | |
 | Euclidean evenness | — | ✓ | ✓ | |
 | Barlow indispensability table | ✓ | ✓ | ✓ | canonical (works on primes) |
-| **Syncopation analysis** | — | ✓ `analyzeSyncopation` | ✗ | port |
+| **Syncopation analysis** | — | ✓ `analyzeSyncopation` | ✓ | `engine/syncopation.js` (6 measures), in Analysis panel |
 
 ## Library / data
 
@@ -111,8 +111,11 @@ actually plays (accent phase). Two corrections close most of this:
    - ✅ Notation parity in `upi.js`: shorthand names (`24b1ef5`), combinations
      `+`/`-` incl. polygon-LCM (`24b1ef5`), Morse (`1322ae8`). All verified in
      node against the C++ engine.
-   - ⬜ Still to port: progressive notation `>` / `+N` / `%N` (stateful),
-     **syncopation**, **funkifier**, **quantization** (the bigger feature ports).
+   - ✅ Quantization `;N`/`;-N` (`7421b3e`, Lascabettes angular, cross-checked
+     vs C++) and **syncopation** analysis (verbatim port → `engine/syncopation.js`,
+     shown in the Analysis panel).
+   - ⬜ Still to port: progressive notation `>` / `+N` / `%N` (stateful), and the
+     **funkifier** (FunkyEuclidean) generator.
 4. **Reconcile the library** with the original database (stats/balance filters).
 5. Copy fixes (e.g. `E(5,8)` is **cinquillo**, not "tresillo+").
 

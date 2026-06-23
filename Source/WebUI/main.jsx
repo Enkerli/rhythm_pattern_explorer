@@ -18,6 +18,7 @@ import serpeCss from './styles/serpe.css';
 import { parseUPI, euclid, polygon, rotate, invert, complement,
          barlowTransform, indispensabilityWeights, onsetCount } from './engine/upi.js';
 import { analyse } from './engine/analysis.js';
+import { analyzeSyncopation } from './engine/syncopation.js';
 import { createCircleView, createStepView } from './engine/render.js';
 import { initJuceBridge, sendParamActual, sendUPI, sendPlaying, sendBPM, sendToggleAccent, juceAvailable } from './juce-bridge.js';
 
@@ -150,6 +151,7 @@ function SerpeApp() {
   const [hostInfo, setHostInfo] = useState(null);  // { bpm, playing } from C++
 
   const a = useMemo(() => analyse(steps), [steps]);
+  const sync = useMemo(() => analyzeSyncopation(steps, steps.length), [steps]);
   const accents = useMemo(() => engineAccents || applyAccents(steps, accentPattern, accentOffset),
     [steps, accentPattern, accentOffset, engineAccents]);
   // Compact, round-trippable pattern notation: hex + explicit step count.
@@ -551,6 +553,11 @@ function SerpeApp() {
           h(Meter, { label: 'Evenness', frac: a.evenness, text: Math.round(a.evenness * 100) + '%' }),
           h(Meter, { label: 'Density', frac: a.density, text: Math.round(a.density * 100) + '%' }),
           h(Meter, { label: 'CoG radius', frac: a.cog.magnitude, text: a.cog.magnitude.toFixed(2) }),
+          h(Meter, { label: 'Syncopation', frac: sync.overallSyncopation,
+            text: Math.round(sync.overallSyncopation * 100) + '% · ' + sync.level }),
+          h('p', { className: 'note', style: { fontSize: 11, color: 'var(--es-fg-muted)', margin: '-4px 0 4px' },
+            title: `note-to-beat ${Math.round(sync.weightedNoteToBeats*100)}% · off-beat ${Math.round(sync.offBeatRatio*100)}% · expectancy ${Math.round(sync.expectancyViolation*100)}% · displacement ${Math.round(sync.rhythmicDisplacement*100)}% · cross-rhythmic ${Math.round(sync.crossRhythmic*100)}% · Barlow ${Math.round(sync.barlowIndispensability*100)}%` },
+            sync.description),
           h('p', { className: 'es-eyebrow', style: { margin: '14px 0 6px' } }, 'Barlow indispensability'),
           h('div', { className: 'indisp' }, steps.map((on, i) =>
             h('div', { key: i, className: 'b' + (on ? ' on' : ''), style: { height: (10 + weights[i] * 46) + 'px' }, title: `step ${i} · weight ${weights[i].toFixed(2)}` }))),
