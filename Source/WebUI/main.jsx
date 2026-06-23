@@ -58,6 +58,15 @@ const RT = {
 const SUBDIV = ['64th Triplet', '64th', '32nd Triplet', '32nd', '16th Triplet', '16th',
   '8th Triplet', '8th', 'Quarter Triplet', 'Quarter', 'Half Triplet', 'Half', 'Whole'];
 
+// Pattern-length unit (C++ AudioParameterChoice "patternLengthUnit") and the
+// value choices ("patternLengthValue"). Beats/Bars let the WHOLE pattern span a
+// fixed musical length (e.g. Bars = 1 → one bar); Steps makes each step a fixed
+// note value (subdivision); Auto fits the host bar.
+const PLEN_UNIT = ['Steps', 'Beats', 'Bars', 'Auto'];
+const PLEN_VAL = ['0.125', '0.25', '0.5', '0.75', '1', '2', '3', '4', '5', '6', '7', '8',
+  '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23',
+  '24', '25', '26', '27', '28', '29', '30', '31', '32'];
+
 // Apply a raw accent pattern to a step array's onsets, offset by `off` onsets
 // (the precession). Onset k is accented when pattern[(k + off) % len] is set.
 function applyAccents(steps, pattern, off = 0) {
@@ -103,6 +112,8 @@ function SerpeApp() {
   const [group, setGroup]     = useState(4);
   const [swing, setSwing]     = useState(0);
   const [subdiv, setSubdiv]   = useState(5);   // subdivision param index (5 = 16th)
+  const [lenUnit, setLenUnit] = useState(0);   // patternLengthUnit (0 Steps,1 Beats,2 Bars,3 Auto)
+  const [lenVal, setLenVal]   = useState(4);   // patternLengthValue index (4 = "1")
   const [view, setView]       = useState('both');
   const [showLabels, setShowLabels] = useState(false);
 
@@ -365,6 +376,8 @@ function SerpeApp() {
         if (s.midiNote != null) setMidiNote(s.midiNote);
         if (s.useHostTransport != null) setHostSync(!!s.useHostTransport);
         if (s.subdivision != null) setSubdiv(s.subdivision);
+        if (s.patternLengthUnit != null) setLenUnit(s.patternLengthUnit);
+        if (s.patternLengthValue != null) setLenVal(s.patternLengthValue);
         if (s.internalPlaying != null) setPlaying(!!s.internalPlaying);
         if (typeof s.upi === 'string' && s.upi) setUpiText(s.upi);
       } else if (ev.type === 'engineState') {
@@ -557,16 +570,29 @@ function SerpeApp() {
 
         // Timing & output
         h(Section, { title: 'Timing & output' },
-          h(Field, { label: 'Step length' },
-            h('select', { className: 'es-control', value: subdiv,
-              onChange: e => { setSubdiv(+e.target.value);
-                if (juceAvailable()) {
-                  sendParamActual('subdivision', +e.target.value);
-                  sendParamActual('patternLengthUnit', 0);  // Steps mode — each step = the subdivision
-                } } },
-              SUBDIV.map((t, i) => h('option', { key: i, value: i }, 'each step = ' + t)))),
+          h(Field, { label: 'Pattern length' },
+            h('select', { className: 'es-control', value: lenUnit,
+              onChange: e => { const u = +e.target.value; setLenUnit(u);
+                if (juceAvailable()) sendParamActual('patternLengthUnit', u); } },
+              PLEN_UNIT.map((t, i) => h('option', { key: i, value: i }, t)))),
+          // Steps → each step is a fixed subdivision; Beats/Bars → whole pattern
+          // spans N beats/bars; Auto → no extra control (fits the host bar).
+          lenUnit === 0
+            ? h(Field, { label: 'Step length' },
+                h('select', { className: 'es-control', value: subdiv,
+                  onChange: e => { setSubdiv(+e.target.value);
+                    if (juceAvailable()) sendParamActual('subdivision', +e.target.value); } },
+                  SUBDIV.map((t, i) => h('option', { key: i, value: i }, 'each step = ' + t))))
+            : (lenUnit === 1 || lenUnit === 2)
+              ? h(Field, { label: 'Length' },
+                  h('select', { className: 'es-control', value: lenVal,
+                    onChange: e => { setLenVal(+e.target.value);
+                      if (juceAvailable()) sendParamActual('patternLengthValue', +e.target.value); } },
+                    PLEN_VAL.map((t, i) => h('option', { key: i, value: i },
+                      'pattern = ' + t + ' ' + (lenUnit === 2 ? 'bar' : 'beat') + (t === '1' ? '' : 's')))))
+              : null,
           h('p', { className: 'note', style: { fontSize: 11, color: 'var(--es-fg-muted)', margin: '-4px 0 10px' } },
-            'How long each step lasts against the host beat. Selecting this puts the pattern in "step = subdivision" timing.'),
+            'Steps: each step is a fixed note value. Beats / Bars: the whole pattern spans that many beats or bars (Bars = 1 → one bar). Auto: the pattern fits the host’s bar.'),
           h(Field, { label: 'Beat grouping (visual)' },
             h('select', { className: 'es-control', value: group, onChange: e => setGroup(+e.target.value) },
               [['2', '2'], ['3', '3'], ['4', '4'], ['0', 'none']].map(([v, t]) => h('option', { key: v, value: +v }, t)))),

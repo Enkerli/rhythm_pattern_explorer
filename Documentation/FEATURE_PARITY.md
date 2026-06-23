@@ -145,8 +145,13 @@ actually plays (accent phase). Two corrections close most of this:
   separate task** — needs a per-appex asset catalog (Any/Dark/Tinted); the
   bleed/-dark/-tinted masters are kept in Assets/icon for it. ← (iOS) still open
 - Plugin host icon not displaying (other suite plugins show theirs).
-- Full-pattern duration sync (whole pattern = one bar) lost when step-length
-  forced `patternLengthUnit=Steps`; the Bars/Beats unit path needs restoring.
+- ✅ **Full-pattern duration sync** — the UI only had "Step length", which hard-
+  set `patternLengthUnit=Steps`, so Beats/Bars (whole pattern = N beats/bars) was
+  unreachable. Replaced with a "Pattern length" control: unit = Steps / Beats /
+  Bars / Auto, with a conditional value (Steps → subdivision; Beats/Bars →
+  length value; Auto → none). Bars = 1 → one bar. Wired to the existing C++
+  `patternLengthUnit` / `patternLengthValue` params; snapshot-initialised.
+  Verified in browser (all four modes show the right control).
 - Accents still display wrong even when static (count constant per cycle). ← last; needs more attention.
 
 Mark items here as they land; this file — not the design doc — is the scope.
