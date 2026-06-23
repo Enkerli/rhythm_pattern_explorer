@@ -167,6 +167,12 @@ public:
     // the old native editor did. Updates at cycle boundaries.
     int getUIAccentOffset() const { return uiAccentOffset; }
 
+    // True while a manually-edited (suspension-mode) pattern is active — the
+    // editor mirrors processStep's accent branch so the DISPLAY matches the
+    // AUDIO: per-step accents in suspension mode, onset-based (precessing)
+    // accents for normal UPI patterns.
+    bool isPatternManuallyModified() const { return patternManuallyModified; }
+
     // UPI pattern input methods
     void setUPIInput(const juce::String& upiPattern);
     juce::String getUPIInput() const { return currentUPIInput; }

@@ -152,6 +152,14 @@ actually plays (accent phase). Two corrections close most of this:
   length value; Auto → none). Bars = 1 → one bar. Wired to the existing C++
   `patternLengthUnit` / `patternLengthValue` params; snapshot-initialised.
   Verified in browser (all four modes show the right control).
-- Accents still display wrong even when static (count constant per cycle). ← last; needs more attention.
+- ✅ **Accent sync / cycle-2 off-by-one** (verify in-host by ear). Root cause:
+  Move 1's `sendEngineState` displayed `shouldStepBeAccented` (a STATIC per-step
+  array), but in normal mode the MIDI accents via `shouldOnsetBeAccented(onset
+  count)` which PRECESSES across cycles — so cycle 1 matched, cycles 2+ drifted
+  by one. Fixed: `sendEngineState` now mirrors `processStep`'s exact branch
+  (per-step in suspension mode; onset-based at the live `getUIAccentOffset()` in
+  normal mode), so the highlighted accents match what's heard every cycle.
+  Builds + auval clean. **Confirm in Bitwig/AUM with a `{bits}` pattern whose
+  onset count isn't a multiple of the accent length (e.g. `{10}E(5,8)`).**
 
 Mark items here as they land; this file — not the design doc — is the scope.

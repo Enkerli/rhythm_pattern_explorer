@@ -165,15 +165,33 @@ void SerpeEditor::timerCallback()
 }
 
 // The engine's actual rendered state: which steps are onsets, and which are
-// accented THIS cycle (shouldStepBeAccented is the same call MIDI uses, so the
-// display matches what's heard — including accent precession). Pushed only on
-// change so it doesn't spam / re-render the WebUI.
+// accented THIS cycle. Pushed only on change so it doesn't spam / re-render
+// the WebUI.
 void SerpeEditor::sendEngineState()
 {
     const juce::String pattern = proc.getCurrentPatternDisplay();
+
+    // Mirror processStep() EXACTLY so the displayed accents match what's heard:
+    //  - suspension mode (manual edits): per-step accents (shouldStepBeAccented);
+    //  - normal mode (UPI patterns): onset-based accents that PRECESS across
+    //    cycles (shouldOnsetBeAccented at the engine's live accent offset).
+    // The old code always used the per-step array, which is static — so cycle 1
+    // matched but cycles 2+ drifted by one (the reported accent off-by-one).
+    const bool manual = proc.isPatternManuallyModified();
+    const int  offset = proc.getUIAccentOffset();
     juce::String accents;
+    int onsetIdx = 0;
     for (int i = 0; i < pattern.length(); ++i)
-        accents += proc.shouldStepBeAccented (i) ? '1' : '0';
+    {
+        const bool isOnset = (pattern[i] == '1');
+        bool acc = false;
+        if (manual)
+            acc = proc.shouldStepBeAccented (i);
+        else if (isOnset)
+            acc = proc.shouldOnsetBeAccented (offset + onsetIdx);
+        if (isOnset) ++onsetIdx;
+        accents += acc ? '1' : '0';
+    }
 
     if (pattern == lastPattern && accents == lastAccents) return;
     lastPattern = pattern; lastAccents = accents;
