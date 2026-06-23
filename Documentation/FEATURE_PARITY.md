@@ -36,12 +36,12 @@ actually plays (accent phase). Two corrections close most of this:
 | octal `0o…/o…[:N]` | ✓ | ✓ | ✓ | |
 | decimal `d…[:N]` | ✓ | ✓ | ✓ | |
 | onset array `[0,3,6]:N` | ✓ | ✓ | ✓ | |
-| **Morse** (`.-`, `L:` durations, accents) | ✓ `parseMorse*` | ✓ | ✗ | `upi.js` has none → rejected, never sent to C++ |
+| **Morse** (`.-`, `M:`, SOS/CQ, letter words) | ✓ `parseMorse*` | ✓ | ✓ (webapp) | ported to `upi.js` (`L:` custom durations still TODO) |
 | accents `{…}` (onset-cyclic) | ✓ | ✓ | ⚠ | display phase off-by-one vs audio (cycle 2+); see Accents |
 | **progressive offset** `pat+N` / `pat%N` | ✓ | ✓ | ✗ | UI "Progressive" is local JS, not the notation |
 | **progressive transform** `pat>N` (B/W/E/D) | ✓ `applyProgressiveTransformation` | ✓ | ✗ | `upi.js` doesn't parse `>` → gated out |
-| **pattern combination** `pat+pat` / `pat-pat` (LCM) | ✓ (fixed `-`) | ✓ | ✗ | engine: `-` subtraction was a no-op (only `+` was tokenized) — fixed; works in plugin |
-| shorthand names (`tresillo`, `tri/pent/hex…`) | ✓ (fixed) | ✓ | ✗ | engine: were eaten by the Morse matcher — moved before Morse; works in plugin |
+| **pattern combination** `pat+pat` / `pat-pat` (LCM) | ✓ (fixed `-`) | ✓ | ✓ (webapp) | engine `-` fixed; ported to `upi.js` (union/diff, polygon-LCM) |
+| shorthand names (`tresillo`, `tri/pent/hex…`) | ✓ (fixed) | ✓ | ✓ (webapp) | engine fixed (Morse order); ported to `upi.js` |
 
 ## Generators / transforms
 
@@ -107,8 +107,12 @@ actually plays (accent phase). Two corrections close most of this:
    Webapp still uses the JS subset until move 3. Builds + auval clean; webapp no
    regression. **Test in Bitwig VST3 / AUM AUv3.**
 2. **Scenes via the engine** (accents kept; MIDI-note advance) and **Tick**.
-3. **Port the webapp engine** into `engine/` for the standalone: Morse, `>`,
-   combinations, shorthand, syncopation, funkifier, quantization.
+3. **Port the webapp engine** into `engine/` for the standalone.
+   - ✅ Notation parity in `upi.js`: shorthand names (`24b1ef5`), combinations
+     `+`/`-` incl. polygon-LCM (`24b1ef5`), Morse (`1322ae8`). All verified in
+     node against the C++ engine.
+   - ⬜ Still to port: progressive notation `>` / `+N` / `%N` (stateful),
+     **syncopation**, **funkifier**, **quantization** (the bigger feature ports).
 4. **Reconcile the library** with the original database (stats/balance filters).
 5. Copy fixes (e.g. `E(5,8)` is **cinquillo**, not "tresillo+").
 
