@@ -160,8 +160,12 @@ function SerpeApp() {
   const sync = useMemo(() => analyzeSyncopation(steps, steps.length), [steps]);
   const accents = useMemo(() => engineAccents || applyAccents(steps, accentPattern, accentOffset),
     [steps, accentPattern, accentOffset, engineAccents]);
-  // Compact, round-trippable pattern notation: hex + explicit step count.
-  const patternUPI = (s) => `${analyse(s).hex}:${s.length}`;
+  // Round-trippable pattern notation: hex + step count for ≤64 steps; binary
+  // beyond that (the C++ hex/decimal parse is 64-bit, so longer patterns — e.g.
+  // progressive lengthening — would lose their high onsets as trailing zeros).
+  const patternUPI = (s) => s.length > 64
+    ? 'b' + s.map(x => (x ? 1 : 0)).join('')
+    : `${analyse(s).hex}:${s.length}`;
 
   // live mirror for the audio loop (avoids stale closures)
   const live = useRef({});
@@ -197,9 +201,14 @@ function SerpeApp() {
   useEffect(() => { document.documentElement.setAttribute('data-runtime', runtime); }, [runtime]);
 
   // ── core: set a pattern from parsed UPI or generator ──
+  // Clear all progressive state. Called by every action that REPLACES the
+  // pattern (type, load, generate, one-shot transform/mutate/dilute, scene) so
+  // no stale base/length/cycle leaks into the next progression. progAdvance is
+  // the one action that does NOT call this — it deliberately continues.
+  function resetProgressive() { baseRef.current = null; lenRef.current = null; setCycle(0); }
+
   function applyPattern(p, { syncField = true } = {}) {
     setSteps(p.steps); setAccentPattern(p.accentPattern); setAccentOffset(0); setLabel(p.label);
-    baseRef.current = null; setCycle(0);
     if (syncField && p.label) setUpiText(p.label);
   }
 
@@ -249,6 +258,7 @@ function SerpeApp() {
 
   // ── generators ──
   function generate() {
+    resetProgressive();
     // Funk is stochastic (no notation) — write the explicit steps. Others write
     // their UPI label so the engine regenerates them.
     if (genType === 'F') {
@@ -266,6 +276,7 @@ function SerpeApp() {
 
   // ── transforms ──
   function applyTransform(fn) {
+    resetProgressive();   // a one-shot transform starts a fresh pattern
     // Re-attach the accent layer to the new pattern; parseField applies it and
     // sends the UPI — so accents survive transforms (inline or from the field).
     setUpiText(accentPrefix() + patternUPI(fn(steps.slice())));
@@ -273,12 +284,12 @@ function SerpeApp() {
   const TX = {
     rotl: s => rotate(s, -1),
     rotr: s => rotate(s, 1),
-    invert,
-    comp: complement,
+    comp: complement,                  // swap onsets and rests (the webapp's "invert")
     retro: s => s.slice().reverse(),   // retrograde — reverse the step order
   };
   // Mutate: move each onset by the selected style/amount (keeps onset count).
   function applyMutate() {
+    resetProgressive();
     const r = mutatePattern(steps.slice(), mutAmount / 100, { mutationStyle: mutStyle });
     setUpiText(accentPrefix() + patternUPI(r.mutated.map(Number)));
   }
@@ -289,6 +300,7 @@ function SerpeApp() {
     const n = steps.length, k = onsetCount(steps);
     const target = Math.max(1, Math.min(n, k + delta));
     if (target === k) return;
+    resetProgressive();
     let next;
     if (dilMode === 'barlow')      next = barlowTransform(steps.slice(), target, false);
     else if (dilMode === 'wolrab') next = barlowTransform(steps.slice(), target, true);
@@ -331,6 +343,7 @@ function SerpeApp() {
       const next = prev.slice();
       if (next[i]) {
         const sc = next[i];
+        resetProgressive();
         setSteps(sc.steps.slice()); setAccentPattern(sc.accentPattern); setAccentOffset(0); setLabel(sc.label); setUpiText(sc.label);
         setActiveScene(i);
       } else {
@@ -437,6 +450,7 @@ function SerpeApp() {
     ['P(3,0)', 'triangle'], ['0x94', 'hex'], ['[0,3,6,9]:12', 'array'], ['{10010}E(5,8)', 'accented'],
   ];
   function applyChip(v) {
+    resetProgressive();
     const m = v.match(/^\{([^}]*)\}(.*)$/);
     if (m) { setAccText(m[1]); setUpiText(m[2]); } else { setAccText(''); setUpiText(v); }
   }
@@ -451,7 +465,7 @@ function SerpeApp() {
     ['[0,3,6,9]:12', 'even four'], ['E(2,3)', 'duple-against-triple'],
   ];
   const patInfo = (u) => { try { const p = parseUPI(u, { n: 16 }); if (!p.ok) return null; const a = analyse(p.steps); return `${a.k}/${a.n}`; } catch { return null; } };
-  const loadPattern = (u) => { setAccText(''); setUpiText(u); };
+  const loadPattern = (u) => { resetProgressive(); setAccText(''); setUpiText(u); };
   function saveToLibrary() {
     const u = upiText.trim(); if (!u || !patInfo(u)) return;
     setLib(prev => { const next = [{ upi: u }, ...prev.filter(x => x.upi !== u)].slice(0, 64); LS.set('library', JSON.stringify(next)); return next; });
@@ -493,7 +507,7 @@ function SerpeApp() {
           h('div', { className: 'upi-row' },
             h('span', { className: 'prompt' }, '›'),
             h('input', { className: 'upi-field' + (parseErr ? ' bad' : ''), type: 'text', spellCheck: false, autoComplete: 'off',
-              value: upiText, onChange: e => setUpiText(e.target.value), 'aria-label': 'Universal Pattern Input' })),
+              value: upiText, onChange: e => { resetProgressive(); setUpiText(e.target.value); }, 'aria-label': 'Universal Pattern Input' })),
           h('div', { className: 'upi-status' }, parseErr
             ? [h('span', { key: 'e', className: 'err' }, '✗ ' + parseErr), h('span', { key: 'd', className: 'dot' }), h('span', { key: 't' }, 'try E(5,8), 0x94, [0,3,6]:8, P(3,0)')]
             : [h('span', { key: 'o', className: 'ok' }, '✓ parsed'), h('span', { key: 'd1', className: 'dot' }),
@@ -553,11 +567,10 @@ function SerpeApp() {
             h('button', { className: 'es-btn es-small', onClick: () => applyDilCon(1) }, 'Concentrate +'),
             h('button', { className: 'es-btn es-small', onClick: () => applyTransform(TX.rotl) }, 'Rotate ←'),
             h('button', { className: 'es-btn es-small', onClick: () => applyTransform(TX.rotr) }, 'Rotate →'),
-            h('button', { className: 'es-btn es-small', onClick: () => applyTransform(TX.invert) }, 'Invert'),
-            h('button', { className: 'es-btn es-small', onClick: () => applyTransform(TX.comp) }, 'Complement'),
-            h('button', { className: 'es-btn es-small', onClick: () => applyTransform(TX.retro) }, 'Retrograde')),
+            h('button', { className: 'es-btn es-small', onClick: () => applyTransform(TX.retro) }, 'Retrograde'),
+            h('button', { className: 'es-btn es-small', onClick: () => applyTransform(TX.comp) }, 'Complement')),
           h('p', { className: 'note', style: { fontSize: 11, color: 'var(--es-fg-muted)', margin: '2px 0 8px' } },
-            'Dilute/concentrate adds or removes one onset by the selected weighting. Invert reflects about step 0; Retrograde reverses the order; Complement swaps onsets and rests.'),
+            'Dilute/concentrate adds or removes one onset by the selected weighting. Retrograde reverses the step order; Complement swaps onsets and rests.'),
           // Mutator — nudge each onset by a style + amount (keeps the onset count).
           h(Field, { label: 'Mutate style' },
             h('select', { className: 'es-control', value: mutStyle, onChange: e => setMutStyle(e.target.value) },
