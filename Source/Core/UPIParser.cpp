@@ -735,9 +735,9 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
     // Try decimal parsing if it's just a number
     if (cleaned.containsOnly("0123456789"))
     {
-        int decimal = cleaned.getIntValue();
+        uint64_t decimal = static_cast<uint64_t>(cleaned.getLargeIntValue());
         // Calculate minimum steps needed to represent this decimal
-        int minSteps = decimal > 0 ? static_cast<int>(std::ceil(std::log2(decimal + 1))) : 1;
+        int minSteps = decimal > 0 ? static_cast<int>(std::ceil(std::log2(static_cast<double>(decimal) + 1))) : 1;
         int targetSteps = std::max(minSteps, 8); // At least 8 steps, or enough to represent the number
         auto pattern = parseDecimal(decimal, targetSteps);
         return createSuccess(pattern, "Decimal: " + cleaned);
@@ -873,13 +873,13 @@ std::vector<bool> UPIParser::parseRandom(int onsets, int steps)
     return pattern;
 }
 
-std::vector<bool> UPIParser::parseDecimal(int decimal, int stepCount)
+std::vector<bool> UPIParser::parseDecimal(uint64_t decimal, int stepCount)
 {
     // Leftmost = LSB (suite-wide convention): step k is bit k, so a value's
     // low bit lands on the FIRST step. 1000 = 0x1, 0001 = 0x8,
     // tresillo 10010010 has value 73 (hex 0x94). decimal = Σ step[k]·2^k.
     std::vector<bool> pattern(stepCount, false);
-    unsigned long long value = static_cast<unsigned long long>(decimal);
+    unsigned long long value = decimal;
     for (int i = 0; i < stepCount && value > 0; ++i)
     {
         pattern[static_cast<size_t>(i)] = (value & 1ULL) != 0;
@@ -1510,8 +1510,9 @@ UPIParser::ParseResult UPIParser::parseNumericPattern(const juce::String& input,
         content = content.upToFirstOccurrenceOf(":", false, false);
     }
     
-    // Convert to decimal based on base
-    int decimal = 0;
+    // Convert to decimal based on base (64-bit so patterns up to 64 steps round-
+    // trip; e.g. progressive lengthening grows past the 32-bit int limit).
+    uint64_t decimal = 0;
     switch (info.base)
     {
         case NumericBase::Binary:
@@ -1519,7 +1520,7 @@ UPIParser::ParseResult UPIParser::parseNumericPattern(const juce::String& input,
             // string maps to itself once parseDecimal (also LSB) expands it.
             for (int i = 0; i < content.length(); ++i)
                 if (content[i] == '1')
-                    decimal |= (1 << i);
+                    decimal |= (1ULL << i);
             break;
             
         case NumericBase::Octal:
@@ -1988,7 +1989,7 @@ std::vector<bool> UPIParser::parseAccentPattern(const juce::String& accentStr)
             // first step's nibble (leftmost digit) is the low-order one.
             juce::String reversed;
             for (int i = hexPart.length() - 1; i >= 0; --i) reversed += hexPart[i];
-            int decimal = reversed.getHexValue32();
+            uint64_t decimal = static_cast<uint64_t>(reversed.getHexValue64());
             int bits = hexPart.length() * 4; // Each hex digit = 4 bits
             return parseDecimal(decimal, bits);
         }

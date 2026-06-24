@@ -154,10 +154,14 @@ function combineSteps(a, b, isAdd) {
  * Strict left-to-right: the first step is bit 0, so step k has value 2^k.
  * 0x1:4 = 1000, 0x8:4 = 0001, tresillo 10010010 = 0x94. Matches the C++
  * engine and @enkerli/theory. */
+// BigInt-safe: JS `>>` is 32-bit, which silently mangles patterns longer than
+// ~31 steps (e.g. progressive lengthening grows past that). `value` is a BigInt.
 function bitsFromValue(value, width) {
   const steps = new Array(width).fill(0);
+  let v = typeof value === "bigint" ? value : BigInt(value);
   for (let i = 0; i < width; i++) {
-    steps[i] = (value >> i) & 1;
+    steps[i] = (v & 1n) === 1n ? 1 : 0;
+    v >>= 1n;
   }
   return steps;
 }
@@ -297,18 +301,18 @@ export function parseUPI(input, ctx = { n: 16 }) {
     }
     if ((m = src.match(/^0x([0-9a-f]+)(?::(\d+))?$/i))) {
       // Hex digits are little-endian (first step's nibble leftmost): reverse
-      // before parsing, so 0x94 = tresillo, 0x1 = step 0.
-      const v = parseInt([...m[1]].reverse().join(""), 16);
+      // before parsing, so 0x94 = tresillo, 0x1 = step 0. BigInt — long patterns.
+      const v = BigInt("0x" + [...m[1]].reverse().join(""));
       const width = m[2] ? +m[2] : m[1].length * 4;
       return out(bitsFromValue(v, width), `0x${m[1].toUpperCase()}`);
     }
     if ((m = src.match(/^o([0-7]+)(?::(\d+))?$/i))) {
-      const v = parseInt([...m[1]].reverse().join(""), 8);  // little-endian digits
+      const v = BigInt("0o" + [...m[1]].reverse().join(""));  // little-endian digits
       const width = m[2] ? +m[2] : m[1].length * 3;
       return out(bitsFromValue(v, width), `o${m[1]}`);
     }
     if ((m = src.match(/^d(\d+)(?::(\d+))?$/i))) {
-      const v = parseInt(m[1], 10);
+      const v = BigInt(m[1]);
       const width = m[2] ? +m[2] : Math.max(1, v.toString(2).length);
       return out(bitsFromValue(v, width), `d${m[1]}`);
     }

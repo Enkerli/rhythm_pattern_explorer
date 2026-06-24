@@ -79,7 +79,7 @@ public:
     static std::vector<bool> parseBinary(const juce::String& binaryStr, int stepCount = 0);
     static std::vector<bool> parseArray(const juce::String& arrayStr, int stepCount = 0);
     static std::vector<bool> parseRandom(int onsets, int steps);
-    static std::vector<bool> parseDecimal(int decimal, int stepCount);
+    static std::vector<bool> parseDecimal(uint64_t decimal, int stepCount);  // 64-bit: long patterns
     static std::vector<bool> parseMorse(const juce::String& morseStr);
     static std::vector<bool> parseMorseWithDurations(const juce::String& morseStr, int shortDuration, int longDuration);
     static std::pair<std::vector<bool>, std::vector<bool>> parseMorseWithAccents(const juce::String& morseStr, char accentMode, int shortDuration = 1, int longDuration = 2);
