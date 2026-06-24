@@ -1549,6 +1549,18 @@ void SerpeAudioProcessor::setUPIInput(const juce::String& upiPattern)
         // Apply current lengthened pattern
         patternEngine.setPattern(baseLengthPattern);
     }
+    else if (hasProgressiveTransformation)
+    {
+        // Progressive transform (pattern>N). The step state lives in the UPIParser
+        // map and advances on each parse — that is how Tick/MIDI step it. But a
+        // *fresh* entry from the field must start over: if the user typed a
+        // different pattern (or anything non-progressive) since this one, reset so
+        // it begins at step 1 instead of silently continuing where it left off.
+        if (pattern != lastProgressiveTransformUPI)
+            UPIParser::resetAllProgressiveStates();
+        lastProgressiveTransformUPI = pattern;
+        parseAndApplyUPI(pattern, true);
+    }
     else
     {
         // Non-progressive pattern - reset progressive states
@@ -1559,7 +1571,9 @@ void SerpeAudioProcessor::setUPIInput(const juce::String& upiPattern)
         baseLengthPattern.clear();
         scenePatterns.clear();
         currentSceneIndex = 0;
-        
+        lastProgressiveTransformUPI.clear(); // next `>` entry is fresh
+        UPIParser::resetAllProgressiveStates();
+
         // TRANSITION: Reset SceneManager in parallel with legacy system
         if (sceneManager) {
             sceneManager->resetScenes();
