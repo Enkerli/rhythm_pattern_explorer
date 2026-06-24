@@ -15,7 +15,7 @@ import serpeCss from './styles/serpe.css';
   document.head.appendChild(el);
 }
 
-import { parseUPI, euclid, polygon, rotate, invert, complement,
+import { parseUPI, euclid, polygon, rotate, complement,
          barlowTransform, indispensabilityWeights, onsetCount } from './engine/upi.js';
 import { analyse } from './engine/analysis.js';
 import { analyzeSyncopation } from './engine/syncopation.js';
