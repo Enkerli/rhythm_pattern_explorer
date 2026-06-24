@@ -19,7 +19,7 @@ import { parseUPI, euclid, polygon, rotate, invert, complement,
          barlowTransform, indispensabilityWeights, onsetCount } from './engine/upi.js';
 import { analyse } from './engine/analysis.js';
 import { analyzeSyncopation } from './engine/syncopation.js';
-import { funkyEuclidean } from './engine/rhythm.js';
+import { funkyEuclidean, bellCurveRandomSteps } from './engine/rhythm.js';
 import { createCircleView, createStepView } from './engine/render.js';
 import { initJuceBridge, sendParamActual, sendUPI, sendPlaying, sendBPM, sendToggleAccent, juceAvailable } from './juce-bridge.js';
 
@@ -139,6 +139,7 @@ function SerpeApp() {
   const [progLeng, setProgLeng] = useState(false);
   const [cycle, setCycle] = useState(0);
   const baseRef = useRef(null);
+  const lenRef = useRef(null);   // accumulating pattern for progressive lengthening
 
   const [scenes, setScenes] = useState(() => new Array(8).fill(null));
   const [activeScene, setActiveScene] = useState(-1);
@@ -294,12 +295,23 @@ function SerpeApp() {
   function progAdvance() {
     if (!baseRef.current) baseRef.current = { steps: steps.slice() };
     const c = cycle + 1; setCycle(c);
-    let next = rotate(baseRef.current.steps, progOff * c);
-    if (progLeng) next = euclid(onsetCount(baseRef.current.steps), baseRef.current.steps.length + c);
+    let next;
+    if (progLeng) {
+      // Lengthening = APPEND bell-curve random steps to the accumulating pattern
+      // (the base is preserved; the pattern grows), matching the C++ engine's
+      // advanceProgressiveLengthening — NOT a fresh Euclidean. The offset slider
+      // sets how many steps are added per cycle (≥1, so it works at offset 0).
+      const cur = lenRef.current || baseRef.current.steps.slice();
+      next = cur.concat(bellCurveRandomSteps(Math.max(1, Math.abs(progOff))));
+      lenRef.current = next.slice();
+    } else {
+      next = rotate(baseRef.current.steps, progOff * c);
+    }
     setUpiText(accentPrefix() + patternUPI(next));
   }
   function progReset() {
     setCycle(0);
+    lenRef.current = null;
     if (baseRef.current) setUpiText(accentPrefix() + patternUPI(baseRef.current.steps));
     baseRef.current = null;
   }
@@ -539,14 +551,18 @@ function SerpeApp() {
 
         // Progressive
         h(Section, { title: 'Progressive' },
-          h(Slider, { label: 'Offset / cycle', value: progOff, min: -4, max: 4, set: setProgOff, fmt: v => (v >= 0 ? '+' : '') + v }),
+          h(Slider, { label: progLeng ? 'Steps added / cycle' : 'Offset / cycle',
+            value: progOff, min: progLeng ? 1 : -4, max: 4, set: setProgOff,
+            fmt: v => progLeng ? '+' + Math.max(1, Math.abs(v)) : (v >= 0 ? '+' : '') + v }),
           h('label', { className: 'iconbtn', style: { height: 34, width: '100%', justifyContent: 'flex-start', marginBottom: 8 } },
             h('input', { type: 'checkbox', checked: progLeng, onChange: e => setProgLeng(e.target.checked) }), ' Progressive lengthening'),
           h('div', { className: 'field-row' },
             h('button', { className: 'es-btn es-small', style: { flex: 1 }, onClick: progAdvance }, 'Advance cycle'),
             h('button', { className: 'es-btn es-small', onClick: progReset }, 'Reset')),
           h('p', { className: 'note', style: { fontSize: 11, color: 'var(--es-fg-muted)', margin: '8px 0 0' } },
-            'Cycle ', h('b', { className: 'es-num' }, cycle), ' — the pattern evolves step-by-step as it loops.')),
+            'Cycle ', h('b', { className: 'es-num' }, cycle), ' — ',
+            progLeng ? 'each cycle appends random (bell-curve) steps; the base is kept.'
+                     : 'rotate the base by the offset each cycle.')),
 
         // Accents
         h(Section, { title: 'Accents' },

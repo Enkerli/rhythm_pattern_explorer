@@ -98,6 +98,34 @@ export function funkyEuclidean(steps, params = {}) {
   return pattern.map(Number);
 }
 
+// ── Progressive lengthening: bell-curve random steps (matches the C++ engine
+// generateBellCurveRandomSteps). Returns `numSteps` steps with a bell-curve
+// number of onsets randomly distributed. *1 is a 50/50 coin flip. ──
+function gaussian(mean, std) {
+  let u = 0, v = 0;
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+  return mean + std * Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+export function bellCurveRandomSteps(numSteps) {
+  const out = new Array(Math.max(0, numSteps | 0)).fill(0);
+  if (numSteps <= 0) return out;
+  let onsets;
+  if (numSteps === 1) {
+    onsets = Math.random() < 0.5 ? 0 : 1;
+  } else {
+    onsets = Math.round(gaussian(numSteps / 2, (numSteps - 1) / 6));
+    onsets = Math.max(0, Math.min(numSteps, onsets));
+  }
+  const pos = [...Array(numSteps).keys()];
+  for (let i = pos.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pos[i], pos[j]] = [pos[j], pos[i]];
+  }
+  for (let i = 0; i < onsets; i++) out[pos[i]] = 1;
+  return out;
+}
+
 // ── Barlow indispensability (matches the plugin's C++ engine) ────────────────
 function gcd(a, b) { while (b !== 0) { const t = b; b = a % b; a = t; } return a; }
 
