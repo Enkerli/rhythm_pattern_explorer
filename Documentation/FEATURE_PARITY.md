@@ -52,7 +52,8 @@ actually plays (accent phase). Two corrections close most of this:
 | **Funkifier** (FunkyEuclidean / funkiness) | — | ✓ | ✓ (webapp+plugin) | ported → `rhythm.js` `funkyEuclidean`; "Funk" generator type + Funkiness slider |
 | **Syncopation** analysis (6 measures + overall) | — | ✓ `SyncopationAnalyzer` | ✓ (webapp+plugin) | ported verbatim → `engine/syncopation.js`, shown in Analysis |
 | Quantization `;N` / `;-N` | ✓ `QuantizationEngine` | ✓ `quantize` | ✓ (webapp) | ported (Lascabettes angular) → `upi.js` `quantizeSteps` |
-| Rotate / Invert / Complement | ✓ | ✓ | ✓ | |
+| Rotate / Invert / Complement / **Retrograde** | ✓ | ✓ | ✓ | retrograde (reverse) added |
+| **Mutate** (balanced/groove/syncopate/straighten/swing/shuffle) | — | ✓ `RhythmMutator` | ✓ | ported → `engine/mutate.js`; style + amount + Mutate button |
 
 ## Progressive / scenes
 

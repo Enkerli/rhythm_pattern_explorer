@@ -20,6 +20,7 @@ import { parseUPI, euclid, polygon, rotate, invert, complement,
 import { analyse } from './engine/analysis.js';
 import { analyzeSyncopation } from './engine/syncopation.js';
 import { funkyEuclidean, bellCurveRandomSteps } from './engine/rhythm.js';
+import { mutatePattern } from './engine/mutate.js';
 import { createCircleView, createStepView } from './engine/render.js';
 import { initJuceBridge, sendParamActual, sendUPI, sendPlaying, sendBPM, sendToggleAccent, juceAvailable } from './juce-bridge.js';
 
@@ -128,6 +129,8 @@ function SerpeApp() {
   const [genK, setGenK] = useState(5), [genN, setGenN] = useState(8), [genRot, setGenRot] = useState(0);
   const [funkiness, setFunkiness] = useState(50);   // % deviation for the Funk generator
   const [dilMode, setDilMode] = useState('barlow');   // dilute/concentrate weighting
+  const [mutStyle, setMutStyle] = useState('balanced');   // mutation style
+  const [mutAmount, setMutAmount] = useState(50);         // mutation amount %
 
   const [accVel, setAccVel] = useState(112);
   const [unaccVel, setUnaccVel] = useState(72);
@@ -272,7 +275,13 @@ function SerpeApp() {
     rotr: s => rotate(s, 1),
     invert,
     comp: complement,
+    retro: s => s.slice().reverse(),   // retrograde — reverse the step order
   };
+  // Mutate: move each onset by the selected style/amount (keeps onset count).
+  function applyMutate() {
+    const r = mutatePattern(steps.slice(), mutAmount / 100, { mutationStyle: mutStyle });
+    setUpiText(accentPrefix() + patternUPI(r.mutated.map(Number)));
+  }
   // Dilute (−1 onset) / concentrate (+1) using the selected weighting — Euclid,
   // Dilcue, Barlow and Wolrab are all *modes* that change onset count (as in the
   // original engine), not fixed-count regenerators.
@@ -545,9 +554,18 @@ function SerpeApp() {
             h('button', { className: 'es-btn es-small', onClick: () => applyTransform(TX.rotl) }, 'Rotate ←'),
             h('button', { className: 'es-btn es-small', onClick: () => applyTransform(TX.rotr) }, 'Rotate →'),
             h('button', { className: 'es-btn es-small', onClick: () => applyTransform(TX.invert) }, 'Invert'),
-            h('button', { className: 'es-btn es-small', onClick: () => applyTransform(TX.comp) }, 'Complement')),
-          h('p', { className: 'note', style: { fontSize: 11, color: 'var(--es-fg-muted)', margin: '2px 0 0' } },
-            'Dilute/concentrate adds or removes one onset by the selected weighting: Barlow uses metric indispensability, Wolrab reverses it, Euclidean/Dilcue use (anti-)even spacing.')),
+            h('button', { className: 'es-btn es-small', onClick: () => applyTransform(TX.comp) }, 'Complement'),
+            h('button', { className: 'es-btn es-small', onClick: () => applyTransform(TX.retro) }, 'Retrograde')),
+          h('p', { className: 'note', style: { fontSize: 11, color: 'var(--es-fg-muted)', margin: '2px 0 8px' } },
+            'Dilute/concentrate adds or removes one onset by the selected weighting. Invert reflects about step 0; Retrograde reverses the order; Complement swaps onsets and rests.'),
+          // Mutator — nudge each onset by a style + amount (keeps the onset count).
+          h(Field, { label: 'Mutate style' },
+            h('select', { className: 'es-control', value: mutStyle, onChange: e => setMutStyle(e.target.value) },
+              [['balanced', 'Balanced — random nudge'], ['groove', 'Groove — toward groove grid'],
+               ['syncopate', 'Syncopate — toward off-beats'], ['straighten', 'Straighten — toward strong beats'],
+               ['swing', 'Swing'], ['shuffle', 'Shuffle']].map(([v, t]) => h('option', { key: v, value: v }, t)))),
+          h(Slider, { label: 'Mutate amount', value: mutAmount, min: 0, max: 100, set: setMutAmount, fmt: v => v + '%' }),
+          h('button', { className: 'es-btn es-small', style: { width: '100%' }, onClick: applyMutate }, 'Mutate')),
 
         // Progressive
         h(Section, { title: 'Progressive' },
