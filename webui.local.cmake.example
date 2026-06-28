@@ -1,0 +1,10 @@
+# Per-machine WebUI source override — copy to `webui.local.cmake` (gitignored).
+#
+# Serpe's WebUI source lives in the music-suite monorepo (apps/serpe), shared
+# with the standalone webapp. CMake defaults to a sibling checkout:
+#   ${CMAKE_SOURCE_DIR}/../music-suite/apps/serpe
+#
+# If your music-suite checkout is elsewhere, point SERPE_WEBUI_DIR at its
+# apps/serpe directory here. The monorepo must be `npm install`ed so esbuild and
+# react resolve from its hoisted node_modules.
+set(SERPE_WEBUI_DIR "/path/to/music-suite/apps/serpe" CACHE PATH "" FORCE)

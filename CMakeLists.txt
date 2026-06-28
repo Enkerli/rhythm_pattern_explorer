@@ -75,8 +75,25 @@ target_include_directories(Serpe PRIVATE
 # icon are inlined into it (--loader:.css=text / .svg=dataurl). index.html is a
 # static source consumed directly. One generated output + static inputs avoids
 # the Xcode build-graph cycle that multi-output custom commands trigger.
-set(WEBUI_DIR   "${CMAKE_CURRENT_SOURCE_DIR}/Source/WebUI")
+#
+# The WebUI *source* lives in the music-suite monorepo (apps/serpe) — single
+# source shared with the standalone webapp; only the C++ editor (SerpeEditor.*)
+# stays here in Source/WebUI. Default to the maintainer's sibling checkout; if
+# your layout differs, set SERPE_WEBUI_DIR in webui.local.cmake (gitignored).
+# esbuild + react resolve from the monorepo's hoisted node_modules, so the
+# monorepo must be checked out and `npm install`ed for the plugin build.
+set(SERPE_WEBUI_DIR "${CMAKE_SOURCE_DIR}/../music-suite/apps/serpe"
+    CACHE PATH "Path to the Serpe WebUI source (music-suite/apps/serpe)")
+include("${CMAKE_CURRENT_SOURCE_DIR}/webui.local.cmake" OPTIONAL)
+set(WEBUI_DIR   "${SERPE_WEBUI_DIR}")
 set(WEBUI_BUILD "${CMAKE_CURRENT_BINARY_DIR}/webui")
+
+if(NOT EXISTS "${WEBUI_DIR}/main.jsx")
+    message(FATAL_ERROR
+        "Serpe WebUI source not found at ${WEBUI_DIR}. The WebUI now lives in the "
+        "music-suite monorepo (apps/serpe). Check out music-suite next to this repo, "
+        "or set SERPE_WEBUI_DIR in webui.local.cmake (see webui.local.cmake.example).")
+endif()
 
 find_program(NPXCMD npx)
 if(NPXCMD)

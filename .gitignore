@@ -61,8 +61,11 @@ debug_*
 test_accent_*
 debug_bjorklund.js
 signing.local.cmake
+webui.local.cmake
 
-# WebUI build artifacts
+# WebUI source now lives in the music-suite monorepo (apps/serpe); only the C++
+# editor (SerpeEditor.*) remains under Source/WebUI here. The esbuild bundle is
+# generated into the build tree from the monorepo source.
 Source/WebUI/node_modules/
 Source/WebUI/dist/
 
