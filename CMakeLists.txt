@@ -104,8 +104,9 @@ if(NPXCMD)
         OUTPUT  "${WEBUI_BUILD}/bundle.js"
         COMMAND "${CMAKE_COMMAND}" -E make_directory "${WEBUI_BUILD}"
         COMMAND "${NPXCMD}" esbuild "${WEBUI_DIR}/main.jsx"
-                    --bundle "--inject:${WEBUI_DIR}/react-globals.js"
+                    --bundle --conditions=source "--inject:${WEBUI_DIR}/react-globals.js"
                     --loader:.css=text --loader:.svg=dataurl
+                    "--banner:js=/*! Bundles WEBMIDI.js (c) Jean-Philippe Cote, Apache-2.0, https://webmidijs.org - see @enkerli/webmidi/THIRD_PARTY_LICENSES.md */"
                     "--define:process.env.NODE_ENV=\"production\"" --minify
                     "--outfile=${WEBUI_BUILD}/bundle.js"
         DEPENDS ${WEBUI_SRC}
