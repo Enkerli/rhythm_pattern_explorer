@@ -16,10 +16,14 @@ app, with its status in the new React WebView UI.
 re-derivation. It (a) **rejects** notation the C++ engine accepts, so that input
 never reaches the engine in the plugin; (b) **diverges** from what the engine
 actually plays (accent phase). Two corrections close most of this:
-1. **Plugin = engine-authoritative.** Send UPI straight to C++ (don't gate on
-   `upi.js`); render `getCurrentPatternDisplay()` / real accents (`shouldStepBeAccented`) /
-   `getCurrentStep()` / `getUIAccentOffset()`. The UI renders engine state.
+1. **Plugin = engine-authoritative.** ✅ **DONE** (raw `setUPI` send + engineState
+   render landed with the monorepo consolidation 2026-06-28; the missing
+   *re-trigger* — Enter in the UPI field and, with engine notation, the Advance
+   button re-send the same string, which is the engine's advance semantics
+   shared with Tick and MIDI-in — landed 2026-07-01). The UI renders engine
+   state; `upi.js` remains a soft hint only.
 2. **Webapp = full port.** Port `WebApp/app`'s engine (not the design subset).
+   Still open where marked below (webapp column).
 
 ---
 
@@ -37,9 +41,9 @@ actually plays (accent phase). Two corrections close most of this:
 | decimal `d…[:N]` | ✓ | ✓ | ✓ | |
 | onset array `[0,3,6]:N` | ✓ | ✓ | ✓ | |
 | **Morse** (`.-`, `M:`, SOS/CQ, letter words) | ✓ `parseMorse*` | ✓ | ✓ (webapp) | ported to `upi.js` (`L:` custom durations still TODO) |
-| accents `{…}` (onset-cyclic) | ✓ | ✓ | ⚠ | display phase off-by-one vs audio (cycle 2+); see Accents |
-| **progressive offset** `pat+N` / `pat%N` | ✓ | ✓ | ✗ | UI "Progressive" is local JS, not the notation |
-| **progressive transform** `pat>N` (B/W/E/D) | ✓ `applyProgressiveTransformation` | ✓ | ✗ | `upi.js` doesn't parse `>` → gated out |
+| accents `{…}` (onset-cyclic) | ✓ | ✓ | ✓ | display now mirrors the audio's accent branch exactly (see Accents row + tail note) |
+| **progressive offset** `pat+N` / `pat%N` | ✓ | ✓ | ✓ plugin / ✗ webapp | plugin: raw send reaches engine; Enter/Advance/Tick/MIDI-in advance (2026-07-01). Webapp `upi.js` still rejects the notation (slider model only) |
+| **progressive transform** `pat>N` (B/W/E/D) | ✓ `applyProgressiveTransformation` | ✓ | ✓ plugin / ✗ webapp | same mechanism; `>` shift-case display verified via `getCycleStartOnsetCount` (see tail note). Webapp `upi.js` still doesn't parse `>` |
 | **pattern combination** `pat+pat` / `pat-pat` (LCM) | ✓ (fixed `-`) | ✓ | ✓ (webapp) | engine `-` fixed; ported to `upi.js` (union/diff, polygon-LCM) |
 | shorthand names (`tresillo`, `tri/pent/hex…`) | ✓ (fixed) | ✓ | ✓ (webapp) | engine fixed (Morse order); ported to `upi.js` |
 
@@ -59,10 +63,10 @@ actually plays (accent phase). Two corrections close most of this:
 
 | Feature | Engine | Webapp | New UI | Notes / fix |
 |---|---|---|---|---|
-| Progressive offset | ✓ `ProgressiveManager` | ✓ | ⚠ | local JS rotate, not engine; loses accents historically |
-| Progressive lengthening | ✓ | ✓ `progressiveLengthening` | ⚠ | local JS; accents now kept, but not engine-driven |
-| Progressive transform `>` | ✓ | ✓ | ✗ | gated by `upi.js` |
-| Scenes (`|` notation, advance) | ✓ `SceneManager`, `advanceScene` | ✓ `advanceScene` | ⚠ | UI scenes are local; **accents not kept**; no MIDI-note advance |
+| Progressive offset | ✓ `ProgressiveManager` | ✓ | ✓ plugin / ⚠ webapp | plugin: `%N`/`+N` notation engine-driven, Enter/Advance re-trigger (2026-07-01). Webapp + the slider-driven Progressive section stay local JS |
+| Progressive lengthening | ✓ | ✓ `progressiveLengthening` | ✓ plugin / ⚠ webapp | plugin: `*N` notation engine-driven (bell-curve growth is the engine's). Slider path local (accents kept) |
+| Progressive transform `>` | ✓ | ✓ | ✓ plugin / ✗ webapp | engine-driven via raw send + re-trigger |
+| Scenes (`|` notation, advance) | ✓ `SceneManager`, `advanceScene` | ✓ `advanceScene` | ✓ plugin / ⚠ webapp | plugin: typed `a\|b\|c` uses the engine's SceneManager (per-scene accents preserved); Enter/Tick/**MIDI-note advance** all work (engine-side). UI scene pads remain a separate local pattern bank (➕). Webapp typed `\|` still unparsed |
 
 ## Analysis
 
@@ -88,8 +92,8 @@ actually plays (accent phase). Two corrections close most of this:
 |---|---|---|---|---|
 | MIDI note / channel | ✓ `midiNote` | ✓ | ✓ / ⚠ | channel is UI-local (no APVTS param yet) |
 | Accents: velocity / pitch offset | ✓ | ✓ | ✓ | params wired |
-| Accents: onset-indexed + precession | ✓ `uiAccentOffset`, `globalOnsetCounter` | ✓ | ⚠ | **don't sync with audio**; cycle-2 off-by-one |
-| **Tick** voice / pattern update | ✓ `tickParam` | ✓ | ✗ | "tick doesn't update a pattern" |
+| Accents: onset-indexed + precession | ✓ `uiAccentOffset`, `globalOnsetCounter` | ✓ | ✓ | fixed — display mirrors `processStep`'s exact branch; static precession confirmed in-host (see tail note); pattern-shift case uses `getCycleStartOnsetCount` |
+| **Tick** voice / pattern update | ✓ `tickParam` | ✓ | ✓ plugin | tick edge advances scenes/progressive in `processBlock` (same path as Enter/MIDI-in); display follows via change-detected `sendEngineState` (editor timer). Verify once in-host by automating Tick |
 | Host transport sync + step duration | ✓ | n/a | ✓ | Step length → subdivision (Steps mode) |
 | Web Audio (standalone) | n/a | ✓ | ✓ | webapp only |
 | WebRTC-OSC (standalone) | n/a | ✓ | ✗ | flagged for removal (confirm) |
@@ -107,7 +111,10 @@ actually plays (accent phase). Two corrections close most of this:
    / progressive / combinations / shorthand work at the input *in the plugin*.
    Webapp still uses the JS subset until move 3. Builds + auval clean; webapp no
    regression. **Test in Bitwig VST3 / AUM AUv3.**
-2. **Scenes via the engine** (accents kept; MIDI-note advance) and **Tick**.
+2. ✅ **Scenes via the engine** (accents kept; MIDI-note advance) and **Tick**
+   (2026-07-01): typed notation was already engine-side after move 1; the UI
+   re-trigger (Enter / Advance-with-notation) was the missing piece. Scene
+   *pads* stay a local pattern bank (➕ feature, not the `|` notation).
 3. **Port the webapp engine** into `engine/` for the standalone.
    - ✅ Notation parity in `upi.js`: shorthand names (`24b1ef5`), combinations
      `+`/`-` incl. polygon-LCM (`24b1ef5`), Morse (`1322ae8`). All verified in
@@ -186,3 +193,18 @@ actually plays (accent phase). Two corrections close most of this:
   shift case in-host.**
 
 Mark items here as they land; this file — not the design doc — is the scope.
+
+- ✅ **Engine-authoritative re-trigger (2026-07-01).** The raw-send path (06-28)
+  meant typed scenes/progressive notation *reached* the engine, but the new UI
+  only sent on text change — nothing could advance the same string. Now:
+  **Enter** in the UPI field re-sends (engine semantics: scenes advance, `>N`
+  steps, `%N` offsets — the same code path as Tick and MIDI-note-in), and the
+  Progressive section's **Advance cycle** button re-sends instead of local-JS
+  rotating whenever the field carries engine notation (`|`, `>`, or a numeric
+  `%`/`+`/`*` tail); the slider-driven local model is unchanged (webapp parity).
+  UI change only (music-suite `apps/serpe/main.jsx`); no C++ touched. Ladder:
+  monorepo 847 tests, macOS build, **auval PASS**, **pluginval 8 s10 zero
+  failures (VST3)**, standalone WKWebView smoke clean, webapp browser smoke
+  clean (Enter = no-op re-parse, `0x94:8` = tresillo d73). **Pending device
+  session:** by-ear scene/progressive advance in AUM (checklist §5) and a
+  host-automated Tick pass.
