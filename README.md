@@ -389,3 +389,9 @@ Based on extensive research in:
 - **Music Production**: Use the [Plugin](Plugin/) for professional DAW integration
 - **Research/Development**: Use the [WebApp](WebApp/) for algorithm exploration
 - **Both**: Both implementations share the same core algorithms and notation system
+## Suite handoff
+
+This repo is part of the Enkerli music suite. For the whole-suite picture —
+repo map, conventions (leftmost-LSB bit order, structural spelling),
+build/validation ladders, and open queues — start at the suite handoff:
+<https://github.com/Enkerli/music-suite/blob/main/HANDOFF.md>.
