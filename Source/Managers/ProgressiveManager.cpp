@@ -597,7 +597,7 @@ void ProgressiveManager::saveProgressiveStatesToValueTree(juce::ValueTree& state
         
         // LRU tracking
         stateNode.setProperty("accessCount", state.accessCount, nullptr);
-        stateNode.setProperty("lastAccessed", static_cast<int64_t>(state.lastAccessed.toMilliseconds()), nullptr);
+        stateNode.setProperty("lastAccessed", static_cast<juce::int64>(state.lastAccessed.toMilliseconds()), nullptr);
         
         progressiveTree.appendChild(stateNode, nullptr);
     }
@@ -674,7 +674,7 @@ void ProgressiveManager::loadProgressiveStatesFromValueTree(const juce::ValueTre
         
         // LRU tracking
         state.accessCount = stateNode.getProperty("accessCount", 0);
-        int64_t lastAccessedMs = stateNode.getProperty("lastAccessed", static_cast<int64_t>(0));
+        int64_t lastAccessedMs = static_cast<juce::int64>(stateNode.getProperty("lastAccessed", static_cast<juce::int64>(0)));
         state.lastAccessed = juce::Time(lastAccessedMs);
         
         // Add to map

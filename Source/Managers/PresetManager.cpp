@@ -375,8 +375,8 @@ bool PresetManager::loadPresetFromFile(const juce::File& file, PresetData& prese
     preset.category = obj->getProperty("category").toString();
     preset.description = obj->getProperty("description").toString();
     preset.upiPattern = obj->getProperty("upiPattern").toString();
-    preset.dateCreated = juce::Time(static_cast<int64_t>(obj->getProperty("dateCreated")));
-    preset.dateModified = juce::Time(static_cast<int64_t>(obj->getProperty("dateModified")));
+    preset.dateCreated = juce::Time(static_cast<juce::int64>(obj->getProperty("dateCreated")));
+    preset.dateModified = juce::Time(static_cast<juce::int64>(obj->getProperty("dateModified")));
     
     // Load plugin state from embedded XML
     auto stateXmlString = obj->getProperty("pluginState").toString();
@@ -403,8 +403,8 @@ bool PresetManager::savePresetToFile(const PresetData& preset)
     obj->setProperty("category", preset.category);
     obj->setProperty("description", preset.description);
     obj->setProperty("upiPattern", preset.upiPattern);
-    obj->setProperty("dateCreated", static_cast<int64_t>(preset.dateCreated.toMilliseconds()));
-    obj->setProperty("dateModified", static_cast<int64_t>(preset.dateModified.toMilliseconds()));
+    obj->setProperty("dateCreated", static_cast<juce::int64>(preset.dateCreated.toMilliseconds()));
+    obj->setProperty("dateModified", static_cast<juce::int64>(preset.dateModified.toMilliseconds()));
     
     // Save plugin state as embedded XML
     if (auto xml = preset.pluginState.createXml())
