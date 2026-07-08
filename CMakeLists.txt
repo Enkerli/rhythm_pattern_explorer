@@ -187,6 +187,9 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
     target_sources(serpe_conformance PRIVATE
         Source/Tests/RhythmConformanceTests.cpp
         Source/Core/PatternUtils.cpp)
+    # The conformance app needs no networking; disable curl (juce_core defaults
+    # it on for Linux and would otherwise need libcurl linked — undefined refs).
+    target_compile_definitions(serpe_conformance PRIVATE JUCE_USE_CURL=0)
     juce_generate_juce_header(serpe_conformance)
     target_include_directories(serpe_conformance PRIVATE Source/Core Source/Tests)
     target_link_libraries(serpe_conformance
