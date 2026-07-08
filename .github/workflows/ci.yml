@@ -1,0 +1,9 @@
+name: build
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    uses: Enkerli/enkerli-juce/.github/workflows/build-plugin.yml@main
