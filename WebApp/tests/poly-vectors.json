@@ -1,0 +1,161 @@
+{
+  "description": "Cross-language vectors for Serpe's poly-lane notation (docs/SERPE_POLY.md), ported to C++ UPIParser lanes. Scope: lane splitting (top-level '/', atomic '@' offset tokens), labels (explicit 'name=' or default 'laneN'), per-lane offset (ms or note-value fraction, both units' out-of-range clamps), and the resulting lcm. Steps are bit-strings, leftmost = LSB (suite-wide convention: first character is step 0). Accent-pattern cycling is out of scope here — unchanged, already-conformant mono-grammar territory.",
+  "cases": [
+    {
+      "input": "E(4,16) / E(3,8) / {10}E(2,3)",
+      "ok": true,
+      "lcm": 48,
+      "lanes": [
+        {
+          "label": "lane1",
+          "steps": "1000100010001000",
+          "offset": null
+        },
+        {
+          "label": "lane2",
+          "steps": "10010010",
+          "offset": null
+        },
+        {
+          "label": "lane3",
+          "steps": "110",
+          "offset": null
+        }
+      ]
+    },
+    {
+      "input": "kick=E(4,16) / snare=E(2,4)@+12ms / hat={10}E(8,16)@-1/64",
+      "ok": true,
+      "lcm": 16,
+      "lanes": [
+        {
+          "label": "kick",
+          "steps": "1000100010001000",
+          "offset": null
+        },
+        {
+          "label": "snare",
+          "steps": "1010",
+          "offset": {
+            "kind": "ms",
+            "ms": 12
+          }
+        },
+        {
+          "label": "hat",
+          "steps": "1010101010101010",
+          "offset": {
+            "kind": "frac",
+            "num": -1,
+            "den": 64
+          }
+        }
+      ]
+    },
+    {
+      "input": "E(3,8)@-6",
+      "ok": true,
+      "lcm": 8,
+      "lanes": [
+        {
+          "label": "lane1",
+          "steps": "10010010",
+          "offset": {
+            "kind": "ms",
+            "ms": -6
+          }
+        }
+      ]
+    },
+    {
+      "input": "E(3,8)@-1/64",
+      "ok": true,
+      "lcm": 8,
+      "lanes": [
+        {
+          "label": "lane1",
+          "steps": "10010010",
+          "offset": {
+            "kind": "frac",
+            "num": -1,
+            "den": 64
+          }
+        }
+      ]
+    },
+    {
+      "input": "{100}E(3,8);12",
+      "ok": true,
+      "lcm": 12,
+      "lanes": [
+        {
+          "label": "lane1",
+          "steps": "100001000100",
+          "offset": null
+        }
+      ]
+    },
+    {
+      "input": "E(2,3) / E(4,16)",
+      "ok": true,
+      "lcm": 48,
+      "lanes": [
+        {
+          "label": "lane1",
+          "steps": "110",
+          "offset": null
+        },
+        {
+          "label": "lane2",
+          "steps": "1000100010001000",
+          "offset": null
+        }
+      ]
+    },
+    {
+      "input": "kick=E(4,16)@+1/32 / snare=E(2,4)",
+      "ok": true,
+      "lcm": 16,
+      "lanes": [
+        {
+          "label": "kick",
+          "steps": "1000100010001000",
+          "offset": {
+            "kind": "frac",
+            "num": 1,
+            "den": 32
+          }
+        },
+        {
+          "label": "snare",
+          "steps": "1010",
+          "offset": null
+        }
+      ]
+    },
+    {
+      "input": "E(3,8)@+51ms",
+      "ok": false
+    },
+    {
+      "input": "E(3,8)@+1/4",
+      "ok": false
+    },
+    {
+      "input": "kick=E(4,16) / snare=nonsense(((",
+      "ok": false
+    },
+    {
+      "input": "P(3,1)+P(5,0)",
+      "ok": true,
+      "lcm": 15,
+      "lanes": [
+        {
+          "label": "lane1",
+          "steps": "110100100101100",
+          "offset": null
+        }
+      ]
+    }
+  ]
+}

@@ -47,6 +47,7 @@ target_sources(Serpe PRIVATE
     Source/Core/QuantizationEngine.cpp
     Source/Core/UPIParser.cpp
     Source/Core/AccentSequence.cpp
+    Source/Core/PolyParser.cpp
     Source/Managers/PresetManager.cpp
     Source/Managers/ProgressiveManager.cpp
     Source/Managers/SceneManager.cpp
@@ -58,6 +59,7 @@ target_sources(Serpe PRIVATE
     Source/Core/QuantizationEngine.h
     Source/Core/UPIParser.h
     Source/Core/AccentSequence.h
+    Source/Core/PolyParser.h
     Source/Managers/PresetManager.h
     Source/Managers/ProgressiveManager.h
     Source/Managers/SceneManager.h
@@ -202,5 +204,32 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
     add_custom_command(TARGET Serpe POST_BUILD
         COMMAND serpe_conformance
         COMMENT "Rhythm codec conformance (suite-wide leftmost-LSB vectors)")
+
+    # ── Poly-lane conformance (music-suite docs/SERPE_POLY.md §8 milestone 1) ──
+    # Locks PolyParser (lane splitting, labels, offsets, lcm) to the same
+    # vectors the webapp's parsePolyUPI is tested against. PolyParser calls
+    # UPIParser::parse() per lane, so this app needs the full mono parser
+    # and its dependencies, not just PatternUtils.
+    juce_add_console_app(serpe_poly_conformance PRODUCT_NAME "serpe_poly_conformance")
+    target_sources(serpe_poly_conformance PRIVATE
+        Source/Tests/PolyConformanceTests.cpp
+        Source/Core/PolyParser.cpp
+        Source/Core/UPIParser.cpp
+        Source/Core/PatternEngine.cpp
+        Source/Core/PatternUtils.cpp
+        Source/Core/QuantizationEngine.cpp)
+    target_compile_definitions(serpe_poly_conformance PRIVATE JUCE_USE_CURL=0)
+    juce_generate_juce_header(serpe_poly_conformance)
+    target_include_directories(serpe_poly_conformance PRIVATE Source/Core Source/Tests)
+    target_link_libraries(serpe_poly_conformance
+        PRIVATE
+            juce::juce_core
+            juce::juce_recommended_config_flags
+            juce::juce_recommended_warning_flags)
+    add_test(NAME poly_conformance COMMAND serpe_poly_conformance)
+
+    add_custom_command(TARGET Serpe POST_BUILD
+        COMMAND serpe_poly_conformance
+        COMMENT "Poly-lane conformance (lane splitting/offsets/lcm vs the webapp)")
 
 endif()
