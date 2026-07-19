@@ -60,6 +60,7 @@ target_sources(Serpe PRIVATE
     Source/Core/UPIParser.h
     Source/Core/AccentSequence.h
     Source/Core/PolyParser.h
+    Source/Core/PolyClock.h
     Source/Managers/PresetManager.h
     Source/Managers/ProgressiveManager.h
     Source/Managers/SceneManager.h

@@ -29,6 +29,7 @@
 
 #include <JuceHeader.h>
 #include <vector>
+#include <functional>
 
 //==============================================================================
 struct PolyOffset
@@ -52,8 +53,17 @@ struct PolyLane
 {
     juce::String label;
     std::vector<bool> steps;
-    PolyOffset offset;
-    juce::String source;   // lane body after stripping label + offset
+    PolyOffset offset;         // the Keil micro-timing offset (@ms / @frac) — NOT the below
+    juce::String source;       // lane body after stripping label + offset
+
+    // Progressive-offset state (UPIParser's `@initial#step` rotation syntax,
+    // e.g. E(3,8)@0#1) — a DIFFERENT "offset" from PolyOffset above, carried
+    // straight from this lane's own UPIParser::ParseResult so the caller can
+    // configure (or re-configure, on each trigger) this lane's own
+    // PatternEngine independently of every other lane's progressive state.
+    bool hasProgressiveOffset = false;
+    int progressiveInitialOffset = 0;
+    int progressiveOffsetStep = 0;
 };
 
 struct PolyParseResult
@@ -68,7 +78,16 @@ struct PolyParseResult
 class PolyParser
 {
 public:
-    static PolyParseResult parse(const juce::String& input);
+    /**
+     * beforeLaneParse(laneIndex), if given, runs right before this lane's
+     * body goes through UPIParser::parse — the caller's chance to bind a
+     * per-lane PatternEngine via UPIParser::setProgressiveOffsetEngine so
+     * `@initial#step` progressive syntax reads/writes THAT lane's own state
+     * rather than whatever engine was last bound globally. Conformance
+     * tests omit it (none of the vectors use progressive syntax).
+     */
+    static PolyParseResult parse(const juce::String& input,
+                                  const std::function<void(int)>& beforeLaneParse = {});
 
     /**
      * Split poly notation into lane strings on TOP-LEVEL '/', respecting

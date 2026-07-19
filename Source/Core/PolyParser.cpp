@@ -165,7 +165,8 @@ PolyParser::OffsetParse PolyParser::parseOffset(const juce::String& laneSrc)
 }
 
 //==============================================================================
-PolyParseResult PolyParser::parse(const juce::String& input)
+PolyParseResult PolyParser::parse(const juce::String& input,
+                                   const std::function<void(int)>& beforeLaneParse)
 {
     PolyParseResult result;
     auto lanesSrc = splitLanes(input.trim());
@@ -210,6 +211,7 @@ PolyParseResult PolyParser::parse(const juce::String& input)
         }
         src = off.rest;
 
+        if (beforeLaneParse) beforeLaneParse(i);
         auto parsed = UPIParser::parse(src);
         if (! parsed.isValid())
         {
@@ -227,6 +229,9 @@ PolyParseResult PolyParser::parse(const juce::String& input)
         lane.steps = parsed.pattern;
         lane.offset = off.offset;
         lane.source = src;
+        lane.hasProgressiveOffset = parsed.hasProgressiveOffset;
+        lane.progressiveInitialOffset = parsed.initialOffset;
+        lane.progressiveOffsetStep = parsed.progressiveOffset;
         result.lanes.push_back(lane);
     }
 

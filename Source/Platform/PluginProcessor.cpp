@@ -82,7 +82,33 @@ juce::AudioProcessorValueTreeState::ParameterLayout SerpeAudioProcessor::createP
     layout.add(std::make_unique<juce::AudioParameterFloat>("accentVelocity", "Accent Velocity", 0.0f, 1.0f, 1.0f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("unaccentedVelocity", "Unaccented Velocity", 0.0f, 1.0f, 0.8f));
     layout.add(std::make_unique<juce::AudioParameterInt>("accentPitchOffset", "Accent Pitch Offset", -12, 12, 5));
-    
+
+    // Poly lanes (music-suite docs/SERPE_POLY.md §8 milestone 2): a fixed
+    // number of parameter slots, always declared, so host automation and
+    // saved sessions stay stable whether or not a given UPI string actually
+    // uses that many lanes — an inactive slot is simply unused. Routing
+    // (note/channel) and mute live here, in the plugin/rack, on principle
+    // (the notation says WHEN, the rack says WHAT); lane 0 doubles as the
+    // existing mono "midiNote" param so a plain (non-'/') UPI is completely
+    // unaffected by any of this.
+    for (int i = 0; i < kMaxPolyLanes; ++i)
+    {
+        auto suffix = juce::String(i);
+        layout.add(std::make_unique<juce::AudioParameterInt>(
+            "laneNote" + suffix, "Lane " + juce::String(i + 1) + " Note", 0, 127, 36));
+        layout.add(std::make_unique<juce::AudioParameterInt>(
+            "laneChannel" + suffix, "Lane " + juce::String(i + 1) + " Channel", 1, 16, 1));
+        layout.add(std::make_unique<juce::AudioParameterBool>(
+            "laneMute" + suffix, "Lane " + juce::String(i + 1) + " Mute", false));
+    }
+    // Base scheduling lag for per-lane micro-timing offsets (docs/SERPE_POLY.md
+    // §3b/§8.1): negative offsets (push early) need headroom to land before
+    // the un-offset onset, so every lane's onset is scheduled this many ms
+    // late by default and offsets subtract from that — matching the webapp's
+    // POLY_LAG_MS constant, but automatable here per the field-test call.
+    layout.add(std::make_unique<juce::AudioParameterFloat>(
+        "polyLagMs", "Poly Lane Lag", juce::NormalisableRange<float>(0.0f, 200.0f), 60.0f));
+
     return layout;
 }
 
@@ -118,6 +144,16 @@ SerpeAudioProcessor::SerpeAudioProcessor()
     accentVelocityParam = dynamic_cast<juce::AudioParameterFloat*>(parameters.getParameter("accentVelocity"));
     unaccentedVelocityParam = dynamic_cast<juce::AudioParameterFloat*>(parameters.getParameter("unaccentedVelocity"));
     accentPitchOffsetParam = dynamic_cast<juce::AudioParameterInt*>(parameters.getParameter("accentPitchOffset"));
+
+    // Poly lane parameters
+    for (int i = 0; i < kMaxPolyLanes; ++i)
+    {
+        auto suffix = juce::String(i);
+        laneNoteParams[i] = dynamic_cast<juce::AudioParameterInt*>(parameters.getParameter("laneNote" + suffix));
+        laneChannelParams[i] = dynamic_cast<juce::AudioParameterInt*>(parameters.getParameter("laneChannel" + suffix));
+        laneMuteParams[i] = dynamic_cast<juce::AudioParameterBool*>(parameters.getParameter("laneMute" + suffix));
+    }
+    polyLagMsParam = dynamic_cast<juce::AudioParameterFloat*>(parameters.getParameter("polyLagMs"));
     
     // Initialize pattern engine with default Euclidean pattern
     patternEngine.generateEuclideanPattern(3, 8);
@@ -471,7 +507,9 @@ void SerpeAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
     if (!finalIsPlaying) processedFirstStepThisBuffer = false; // Reset when not playing
 
     // TRANSPORT-SYNCED TIMING: Use DAW's ppqPosition for perfect alignment
-    if (finalIsPlaying && hasValidPosition)
+    // (poly lanes take a separate, structurally isolated path below — see
+    // processPolyLanes — so this mono block is otherwise untouched)
+    if (!isPolyPattern && finalIsPlaying && hasValidPosition)
     {
         // Calculate pattern timing based on DAW transport and pattern length parameters
         int lengthUnit = patternLengthUnitParam->getIndex(); // 0=Steps, 1=Beats, 2=Bars
@@ -567,14 +605,19 @@ void SerpeAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
             // currentStep.store(currentBufferStep);
         }
     }
-    
+    else if (isPolyPattern && finalIsPlaying && hasValidPosition)
+    {
+        processPolyLanes(midiMessages, currentBufferSize, ppqPosition);
+    }
+
     if (wasPlaying && !finalIsPlaying)
     {
         // Just stopped playing - reset position and clear all active notes
         currentSample = 0;
         // currentStep.store(0); // REMOVED: Using derived indices
         absoluteSamplePosition = 0;
-        
+        clearAllPolyActiveNotes(midiMessages);
+
         // CRITICAL: Initialize derived indices for DAW-synchronized timing
         // Since transport tick will be synchronized with DAW, set base to 0
         // This allows derived indices to work with absolute DAW-synchronized ticks
@@ -1147,13 +1190,13 @@ void SerpeAudioProcessor::triggerNote(juce::MidiBuffer& midiBuffer, int samplePo
     addActiveNote(noteNumber, noteDuration);
 }
 
-void SerpeAudioProcessor::addActiveNote(int noteNumber, int duration)
+void SerpeAudioProcessor::addActiveNote(int noteNumber, int duration, int channel)
 {
     // Calculate absolute end position for this note
     int endPosition = absoluteSamplePosition + duration;
-    
+
     // Add to active notes list
-    activeNotes.emplace_back(noteNumber, endPosition);
+    activeNotes.emplace_back(noteNumber, endPosition, channel);
 }
 
 void SerpeAudioProcessor::processActiveNotes(juce::MidiBuffer& midiBuffer, int bufferSize)
@@ -1174,7 +1217,7 @@ void SerpeAudioProcessor::processActiveNotes(juce::MidiBuffer& midiBuffer, int b
             if (bufferPosition >= 0 && bufferPosition < bufferSize)
             {
                 // CRITICAL FIX: Use proper velocity for note-off (some hosts/instruments need non-zero velocity)
-                juce::MidiMessage noteOff = juce::MidiMessage::noteOff(1, note.noteNumber, 0.5f);
+                juce::MidiMessage noteOff = juce::MidiMessage::noteOff(note.channel, note.noteNumber, 0.5f);
                 midiBuffer.addEvent(noteOff, bufferPosition);
                 note.isActive = false;
                 
@@ -1207,12 +1250,195 @@ void SerpeAudioProcessor::clearAllActiveNotes(juce::MidiBuffer& midiBuffer)
     {
         if (note.isActive)
         {
-            juce::MidiMessage noteOff = juce::MidiMessage::noteOff(1, note.noteNumber, 0.0f);
+            juce::MidiMessage noteOff = juce::MidiMessage::noteOff(note.channel, note.noteNumber, 0.0f);
             midiBuffer.addEvent(noteOff, 0);
             note.isActive = false;
         }
     }
     activeNotes.clear();
+}
+
+// ============================================================================
+// Poly lanes (music-suite docs/SERPE_POLY.md §8 milestone 2)
+// ============================================================================
+// Kept structurally separate from the mono pattern/timing code above: a
+// plain (non-'/') UPI string never calls any of this, so mono behaviour is
+// unaffected by construction, not just by testing. v1 scope, deliberately:
+// unaccented (flat velocity) — accent parity is separate roadmap work
+// (music-suite docs/PRIORITIES.md §2), not part of "make the lanes sound".
+
+void SerpeAudioProcessor::parseAndApplyPolyUPI(const juce::String& upiPattern)
+{
+    auto poly = PolyParser::parse(upiPattern, [this](int laneIndex)
+    {
+        // Bind THIS lane's own engine before UPIParser::parse runs, so any
+        // `@initial#step` progressive syntax in this lane reads/writes its
+        // own PatternEngine's offset state, not another lane's.
+        if (laneIndex >= 0 && laneIndex < kMaxPolyLanes)
+            UPIParser::setProgressiveOffsetEngine(&polyLanes[static_cast<size_t>(laneIndex)].engine);
+    });
+    UPIParser::setProgressiveOffsetEngine(&patternEngine); // restore the mono binding
+
+    if (!poly.ok)
+    {
+        // A bad poly string is treated like any other invalid UPI: fall
+        // back rather than leave stale lanes sounding a pattern the text
+        // no longer describes.
+        isPolyPattern = false;
+        parseAndApplyUPI("E(3,8)", true);
+        return;
+    }
+
+    isPolyPattern = true;
+    int laneCount = juce::jmin(static_cast<int>(poly.lanes.size()), kMaxPolyLanes);
+
+    for (int i = 0; i < kMaxPolyLanes; ++i)
+    {
+        auto& lane = polyLanes[static_cast<size_t>(i)];
+        if (i >= laneCount)
+        {
+            lane.active = false;
+            continue;
+        }
+        const auto& parsed = poly.lanes[static_cast<size_t>(i)];
+        bool wasActive = lane.active;
+        bool patternChangedForLane = !wasActive || lane.source != parsed.source;
+
+        lane.active = true;
+        lane.source = parsed.source;
+        lane.offset = parsed.offset;
+        lane.engine.setPattern(parsed.steps);
+
+        // Configure this lane's OWN progressive-offset state — mirrors the
+        // mono path's patternEngine.setProgressiveOffset call exactly, just
+        // once per lane instead of once globally.
+        if (parsed.hasProgressiveOffset)
+        {
+            bool needsSetup = !lane.engine.hasProgressiveOffsetEnabled()
+                             || lane.engine.getProgressiveOffsetValue() != parsed.progressiveOffsetStep;
+            if (needsSetup)
+                lane.engine.setProgressiveOffset(true, parsed.progressiveInitialOffset, parsed.progressiveOffsetStep);
+            lane.hasProgressiveOffset = true;
+            lane.progressiveOffsetStep = parsed.progressiveOffsetStep;
+        }
+        else
+        {
+            lane.engine.setProgressiveOffset(false);
+            lane.hasProgressiveOffset = false;
+            lane.progressiveOffsetStep = 0;
+        }
+
+        // New/changed lane pattern: start its step clock fresh so it doesn't
+        // briefly report a stale step-boundary crossing.
+        if (patternChangedForLane)
+            lane.lastProcessedStep = -1;
+    }
+
+    updateTiming();
+    patternChanged.store(true);
+}
+
+double SerpeAudioProcessor::computePolyCycleLengthInBeats(const std::vector<bool>& referencePattern) const
+{
+    // Mirrors processBlock's mono patternLengthInBeats switch exactly (see
+    // the "TRANSPORT-SYNCED TIMING" block) but as a standalone helper so
+    // that code is never touched by this work. The poly CYCLE — the shared
+    // span every lane's own step duration divides into — uses the SAME
+    // pattern-length/subdivision parameters as mono, applied to lane 0's
+    // pattern (the design's "lane 0 defines the cycle" rule, SERPE_POLY §3b).
+    int lengthUnit = patternLengthUnitParam ? patternLengthUnitParam->getIndex() : 1;
+    float lengthValue = getPatternLengthValue();
+    int subdivisionIndex = subdivisionParam ? subdivisionParam->getIndex() : 5;
+    int patternSteps = static_cast<int>(referencePattern.size());
+    if (patternSteps <= 0) patternSteps = 8;
+
+    switch (lengthUnit)
+    {
+        case 0: // Steps
+            return getSubdivisionInBeats(subdivisionIndex) * patternSteps;
+        case 1: // Beats
+            return lengthValue;
+        case 2: // Bars (assume 4/4)
+            return lengthValue * 4.0;
+        case 3: // Auto
+            return calculateAutoPatternLength(referencePattern);
+        default:
+            return lengthValue;
+    }
+}
+
+void SerpeAudioProcessor::triggerPolyNote(juce::MidiBuffer& midiBuffer, int samplePosition, int numSamples, int laneIndex, bool /*isAccented*/)
+{
+    auto& lane = polyLanes[static_cast<size_t>(laneIndex)];
+    bool muted = laneMuteParams[laneIndex] && laneMuteParams[laneIndex]->get();
+    if (muted) return;
+
+    int noteNumber = laneNoteParams[laneIndex] ? laneNoteParams[laneIndex]->get() : 36;
+    int channel = laneChannelParams[laneIndex] ? laneChannelParams[laneIndex]->get() : 1;
+    float velocity = unaccentedVelocityParam ? unaccentedVelocityParam->get() : 0.8f;
+
+    // Per-lane micro-timing offset + the shared base lag (docs/SERPE_POLY.md
+    // §3b/§8.1): every onset is scheduled `lag` ms late by default so a
+    // negative (push-early) offset has room to land before it — offsets
+    // subtract from that headroom, they never need to reach further back
+    // than the previous onset.
+    double lagMs = polyLagMsParam ? static_cast<double>(polyLagMsParam->get()) : 60.0;
+    bool isFrac = lane.offset.kind == PolyOffset::Frac;
+    double offsetMs = lane.offset.kind == PolyOffset::Ms ? static_cast<double>(lane.offset.ms) : 0.0;
+    int delaySamples = computePolyOffsetSamples(isFrac, lane.offset.num, lane.offset.den, offsetMs,
+                                                 lagMs, static_cast<double>(currentBPM), currentSampleRate);
+
+    int finalPosition = samplePosition + delaySamples;
+    // v1 simplification: clamp into this buffer rather than truly scheduling
+    // across a buffer boundary — a large lag/offset combination lands at the
+    // end of this buffer instead of drifting into the next one. Documented
+    // limitation, not a silent bug.
+    if (finalPosition >= numSamples) finalPosition = numSamples - 1;
+    if (finalPosition < 0) finalPosition = 0;
+
+    juce::MidiMessage noteOn = juce::MidiMessage::noteOn(channel, noteNumber, velocity);
+    midiBuffer.addEvent(noteOn, finalPosition);
+
+    int noteDuration = static_cast<int>(samplesPerStep * 0.8);
+    if (noteDuration < 2048) noteDuration = 2048;
+    addActiveNote(noteNumber, noteDuration, channel);
+}
+
+void SerpeAudioProcessor::processPolyLanes(juce::MidiBuffer& midiBuffer, int numSamples, double ppqPosition)
+{
+    for (int i = 0; i < kMaxPolyLanes; ++i)
+    {
+        auto& lane = polyLanes[static_cast<size_t>(i)];
+        if (!lane.active) continue;
+
+        auto pattern = lane.engine.getCurrentPattern();
+        int laneSteps = static_cast<int>(pattern.size());
+        if (laneSteps <= 0) continue;
+
+        double cycleLengthInBeats = computePolyCycleLengthInBeats(polyLanes[0].active ? polyLanes[0].engine.getCurrentPattern() : pattern);
+
+        auto stepResult = computePolyLaneStep(ppqPosition, cycleLengthInBeats, laneSteps, lane.lastProcessedStep);
+        if (stepResult.crossed)
+        {
+            int samplePosition = static_cast<int>(stepResult.fractionalPos * numSamples);
+            if (samplePosition >= numSamples) samplePosition = 0;
+
+            lane.lastProcessedStep = stepResult.step;
+
+            if (stepResult.step < laneSteps && pattern[static_cast<size_t>(stepResult.step)])
+                triggerPolyNote(midiBuffer, samplePosition, numSamples, i, false);
+        }
+    }
+}
+
+void SerpeAudioProcessor::clearAllPolyActiveNotes(juce::MidiBuffer& midiBuffer)
+{
+    // activeNotes is shared with the mono path (both funnel through
+    // processActiveNotes); poly only needs to reset its own step-clocks so
+    // stopped/restarted playback doesn't see a stale step boundary.
+    juce::ignoreUnused(midiBuffer);
+    for (auto& lane : polyLanes)
+        lane.lastProcessedStep = -1;
 }
 
 void SerpeAudioProcessor::syncBPMWithHost(const juce::AudioPlayHead::CurrentPositionInfo& posInfo)
@@ -1764,7 +1990,21 @@ void SerpeAudioProcessor::parseAndApplyUPI(const juce::String& upiPattern, bool 
 {
     if (upiPattern.isEmpty())
         return;
-    
+
+    // Poly lanes (docs/SERPE_POLY.md §8 milestone 2): a top-level '/' means
+    // this string is several parallel lanes, not one pattern. Every call
+    // site of parseAndApplyUPI (setUPIInput, tick edge, scene advance,
+    // progressive re-trigger) routes through here, so branching at the very
+    // top gets poly support at all of them for free, while a plain UPI
+    // string never reaches any code below this check — mono is unaffected
+    // by construction.
+    if (PolyParser::splitLanes(upiPattern).size() > 1)
+    {
+        parseAndApplyPolyUPI(upiPattern);
+        return;
+    }
+    isPolyPattern = false;
+
     // SAFETY CHECK: Complex pattern validation to prevent crashes
     try {
         // Check for extremely complex patterns that might cause issues

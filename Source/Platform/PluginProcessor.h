@@ -13,6 +13,8 @@
 #include <JuceHeader.h>
 #include "../Core/PatternEngine.h"
 #include "../Core/UPIParser.h"
+#include "../Core/PolyParser.h"
+#include "../Core/PolyClock.h"
 #include "../Managers/SceneManager.h"
 #include "../Managers/ProgressiveManager.h"
 #include "../Managers/PresetManager.h"
@@ -341,13 +343,50 @@ private:
         int noteNumber;
         int endSample;  // Absolute sample position when note should end
         bool isActive;
-        
-        ActiveNote() : noteNumber(0), endSample(0), isActive(false) {}
-        ActiveNote(int note, int end) : noteNumber(note), endSample(end), isActive(true) {}
+        int channel;    // 1-16; poly lanes may use channels other than 1
+
+        ActiveNote() : noteNumber(0), endSample(0), isActive(false), channel(1) {}
+        ActiveNote(int note, int end, int ch = 1) : noteNumber(note), endSample(end), isActive(true), channel(ch) {}
     };
-    
+
     std::vector<ActiveNote> activeNotes;
     int absoluteSamplePosition = 0;  // Track absolute sample position across buffers
+
+    // ── Poly lanes (music-suite docs/SERPE_POLY.md §8 milestone 2) ──────────
+    // Engaged only when currentUPIInput's top-level PolyParser::splitLanes
+    // count is > 1. Deliberately kept structurally separate from the mono
+    // members above (patternEngine, samplesPerStep, the transport-tick
+    // system): a plain (non-'/') UPI string never touches anything below,
+    // so mono behaviour is provably unaffected by any of this.
+public:
+    static constexpr int kMaxPolyLanes = 6;
+private:
+    struct PolyLaneRuntime
+    {
+        PatternEngine engine;
+        bool active = false;
+        juce::String source;             // this lane's own UPI body (re-parsed on progressive triggers)
+        PolyOffset offset;                // Keil micro-timing offset (@ms / @frac), none = dead on the grid
+        bool hasProgressiveOffset = false;
+        int progressiveOffsetStep = 0;    // amount to advance per trigger (0 = not progressive)
+        int lastProcessedStep = -1;       // this lane's own step-boundary tracking, cycle-lock clock
+    };
+    bool isPolyPattern = false;
+    std::array<PolyLaneRuntime, kMaxPolyLanes> polyLanes;
+
+    juce::AudioParameterInt*   laneNoteParams[kMaxPolyLanes]    = {};
+    juce::AudioParameterInt*   laneChannelParams[kMaxPolyLanes] = {};
+    juce::AudioParameterBool*  laneMuteParams[kMaxPolyLanes]    = {};
+    juce::AudioParameterFloat* polyLagMsParam = nullptr;
+
+    void parseAndApplyPolyUPI(const juce::String& upiPattern);
+    void processPolyLanes(juce::MidiBuffer& midiBuffer, int numSamples, double ppqPosition);
+    void triggerPolyNote(juce::MidiBuffer& midiBuffer, int samplePosition, int numSamples, int laneIndex, bool isAccented);
+    void clearAllPolyActiveNotes(juce::MidiBuffer& midiBuffer);
+    // Beats-per-cycle for the poly pattern as a whole (mirrors the mono
+    // path's patternLengthInBeats calculation exactly, but as a standalone
+    // helper so the mono processBlock code is never touched by this work).
+    double computePolyCycleLengthInBeats(const std::vector<bool>& referencePattern) const;
     
     // DAW transport sync
     bool useHostTransport = true;
@@ -490,7 +529,7 @@ private:
     void validateCounterConsistency() const; // Debug validation
     
     // Note tracking system methods
-    void addActiveNote(int noteNumber, int duration);
+    void addActiveNote(int noteNumber, int duration, int channel = 1);
     void processActiveNotes(juce::MidiBuffer& midiBuffer, int bufferSize);
     void clearAllActiveNotes(juce::MidiBuffer& midiBuffer);
     
