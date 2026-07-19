@@ -8,6 +8,7 @@
 //   JS → C++ : Options::withEventListener("eventId", …)
 
 #include <juce_audio_utils/juce_audio_utils.h>
+#include <array>
 #include "../Platform/PluginProcessor.h"
 
 class SerpeEditor : public juce::AudioProcessorEditor,
@@ -30,6 +31,7 @@ private:
     void sendStateSnapshot();
     void sendTransport();
     void sendEngineState();   // the engine's actual pattern + accents (display = audio)
+    void sendPolyState();     // per-lane live step, for the poly panel's playhead
 
     static std::optional<juce::WebBrowserComponent::Resource> provideResource (const juce::String& path);
     static juce::WebBrowserComponent::Options buildOptions (SerpeEditor* owner);
@@ -52,6 +54,10 @@ private:
     bool transportSent   { false };
 
     juce::String lastPattern, lastAccents;   // for change-detecting engineState pushes
+
+    bool lastPolyActive { false };
+    std::array<int, SerpeAudioProcessor::kMaxPolyLanes> lastPolySteps {
+        { -2, -2, -2, -2, -2, -2 } };   // for change-detecting polyState pushes
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SerpeEditor)
 };

@@ -162,6 +162,7 @@ void SerpeEditor::timerCallback()
     if (!pageReady) return;
     sendTransport();
     sendEngineState();   // re-pushes only when the pattern/accents actually change
+    sendPolyState();     // re-pushes only when a lane's step actually changes
 }
 
 // The engine's actual rendered state: which steps are onsets, and which are
@@ -270,7 +271,50 @@ void SerpeEditor::sendStateSnapshot()
         { "patternLengthValue", (int)  raw ("patternLengthValue")   },
         { "internalPlaying",    proc.getInternalPlaying()           },
         { "upi",                proc.getUPIInput()                  },
+        // Poly lanes (music-suite docs/SERPE_POLY.md §8 milestone 3): lane
+        // note/channel/mute + the base lag, so the WebView's lane controls
+        // reflect real automatable parameters on load, not just defaults.
+        { "polyLagMs",          raw ("polyLagMs")                   },
+        { "laneNote0",   (int) raw ("laneNote0")   }, { "laneChannel0", (int) raw ("laneChannel0") }, { "laneMute0", raw ("laneMute0") > 0.5f },
+        { "laneNote1",   (int) raw ("laneNote1")   }, { "laneChannel1", (int) raw ("laneChannel1") }, { "laneMute1", raw ("laneMute1") > 0.5f },
+        { "laneNote2",   (int) raw ("laneNote2")   }, { "laneChannel2", (int) raw ("laneChannel2") }, { "laneMute2", raw ("laneMute2") > 0.5f },
+        { "laneNote3",   (int) raw ("laneNote3")   }, { "laneChannel3", (int) raw ("laneChannel3") }, { "laneMute3", raw ("laneMute3") > 0.5f },
+        { "laneNote4",   (int) raw ("laneNote4")   }, { "laneChannel4", (int) raw ("laneChannel4") }, { "laneMute4", raw ("laneMute4") > 0.5f },
+        { "laneNote5",   (int) raw ("laneNote5")   }, { "laneChannel5", (int) raw ("laneChannel5") }, { "laneMute5", raw ("laneMute5") > 0.5f },
     });
 
     webView.emitEventIfBrowserIsVisible ("stateSnapshot", snap);
+}
+
+// Per-lane live step, for the poly lanes panel's playhead — the mono
+// equivalent of sendTransport's `step`, but one per active lane. Only runs
+// (and only costs anything) while a poly pattern is actually active.
+void SerpeEditor::sendPolyState()
+{
+    if (!proc.getIsPolyPattern())
+    {
+        if (lastPolyActive)
+        {
+            lastPolyActive = false;
+            webView.emitEventIfBrowserIsVisible ("polyState", makeObj ({ { "active", false } }));
+        }
+        return;
+    }
+
+    juce::Array<juce::var> steps;
+    bool changed = !lastPolyActive;
+    for (int i = 0; i < SerpeAudioProcessor::kMaxPolyLanes; ++i)
+    {
+        const int s = proc.getPolyLaneStep (i);
+        steps.add (s);
+        if (s != lastPolySteps[static_cast<size_t> (i)]) changed = true;
+        lastPolySteps[static_cast<size_t> (i)] = s;
+    }
+    lastPolyActive = true;
+    if (!changed) return;
+
+    webView.emitEventIfBrowserIsVisible ("polyState", makeObj ({
+        { "active", true },
+        { "steps",  juce::var (steps) },
+    }));
 }

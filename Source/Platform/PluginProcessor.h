@@ -300,6 +300,17 @@ public:
     int getOriginalOnsetCount() const { return originalOnsetCount; }
     int getQuantizedOnsetCount() const { return quantizedOnsetCount; }
 
+    // Poly lanes: read-only access for the WebView editor (SerpeEditor) so
+    // it can show which lane is active and animate a real per-lane playhead
+    // instead of a frozen panel. -1 = inactive or nothing played yet.
+    bool getIsPolyPattern() const { return isPolyPattern; }
+    int getPolyLaneStep(int laneIndex) const
+    {
+        if (laneIndex < 0 || laneIndex >= kMaxPolyLanes) return -1;
+        const auto& lane = polyLanes[static_cast<size_t>(laneIndex)];
+        return lane.active ? lane.lastProcessedStep : -1;
+    }
+
 private:
     //==============================================================================
     // Pattern Engine
