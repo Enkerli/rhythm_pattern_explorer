@@ -5,6 +5,21 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 
 # ── Suite foundation (enkerli-juce submodule): JUCE resolution + archetypes ──
+# enkerli-juce is a git submodule — a plain `git clone` leaves it empty and
+# the include below then fails with a cryptic "Unknown CMake command".
+# Initialize it automatically so fresh clones just work.
+if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/enkerli-juce/cmake/EnkerliPlugin.cmake")
+    find_package(Git QUIET)
+    if(GIT_FOUND AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
+        message(STATUS "enkerli-juce submodule is empty — running git submodule update --init")
+        execute_process(COMMAND "${GIT_EXECUTABLE}" submodule update --init enkerli-juce
+                        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+                        RESULT_VARIABLE _submod_rc)
+    endif()
+    if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/enkerli-juce/cmake/EnkerliPlugin.cmake")
+        message(FATAL_ERROR "enkerli-juce submodule missing. Run: git submodule update --init")
+    endif()
+endif()
 include("${CMAKE_CURRENT_SOURCE_DIR}/enkerli-juce/cmake/EnkerliPlugin.cmake")
 enkerli_resolve_juce()
 
