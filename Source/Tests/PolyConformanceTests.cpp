@@ -109,6 +109,58 @@ void testPolyClock() {
     }
 }
 
+/*
+ * Step-lock (POLYMETER) scheduling — computePolyLaneStepPolymeter, added
+ * 2026-07-20 alongside the plugin's polyLock param. Same hand-computed
+ * approach as testPolyClock() (no DAW here to check against), but using
+ * coprime step counts (7 vs 11, lcm 77) rather than small multiples —
+ * a multiples-of-8 example realigns almost immediately and wouldn't prove
+ * the drift-then-realign behavior that's the actual point of polymeter.
+ * Mirrors apps/serpe/engine/poly-clock.test.js in music-suite, the JS
+ * reference this was ported from.
+ */
+void testPolyClockPolymeter() {
+    const double baseStepBeats = 0.25; // one 16th note, shared by every lane
+
+    // Both lanes start together at ppq 0.
+    {
+        auto a = computePolyLaneStepPolymeter(0.0, baseStepBeats, 7, -1);
+        auto b = computePolyLaneStepPolymeter(0.0, baseStepBeats, 11, -1);
+        expectTrue("7-step lane @ ppq 0", "step 0", a.crossed && a.step == 0);
+        expectTrue("11-step lane @ ppq 0", "step 0", b.crossed && b.step == 0);
+    }
+    // Same step duration for every lane: after 7 steps, the 7-step lane has
+    // wrapped back to 0 while the 11-step lane has only reached step 7 —
+    // this IS polymeter (step lock), the opposite of cycle lock where both
+    // would still be "aligned" at a shared cycle boundary.
+    {
+        double ppq = baseStepBeats * 7;
+        auto a = computePolyLaneStepPolymeter(ppq, baseStepBeats, 7, -1);
+        auto b = computePolyLaneStepPolymeter(ppq, baseStepBeats, 11, -1);
+        expectTrue("7-step lane after 7 steps", "wraps to step 0", a.crossed && a.step == 0);
+        expectTrue("11-step lane after 7 steps", "reaches step 7, no wrap", b.crossed && b.step == 7);
+    }
+    // The two lanes only realign at the lcm of their lengths (77 steps).
+    {
+        double ppq = baseStepBeats * 77;
+        auto a = computePolyLaneStepPolymeter(ppq, baseStepBeats, 7, -1);
+        auto b = computePolyLaneStepPolymeter(ppq, baseStepBeats, 11, -1);
+        expectTrue("7-step lane after 77 steps (lcm)", "step 0", a.crossed && a.step == 0);
+        expectTrue("11-step lane after 77 steps (lcm)", "step 0", b.crossed && b.step == 0);
+    }
+    // Same step, no crossing (edge-detection still works for the new fn).
+    {
+        auto r = computePolyLaneStepPolymeter(0.0, baseStepBeats, 7, 0);
+        expectTrue("polymeter no re-trigger on same step", "crossed should be false", !r.crossed);
+    }
+    // Fractional position within the step (mid-step ppq).
+    {
+        auto r = computePolyLaneStepPolymeter(baseStepBeats * 0.5, baseStepBeats, 7, -1);
+        expectTrue("polymeter fractional position", "step 0", r.crossed && r.step == 0);
+        expectEq("polymeter fractional position", "fractionalPos", std::to_string(r.fractionalPos), std::to_string(0.5));
+    }
+}
+
 } // namespace
 
 int main() {
@@ -152,6 +204,9 @@ int main() {
 
     std::cout << "\n=== Poly-lane Scheduling (hand-computed, no host available) ===\n";
     testPolyClock();
+
+    std::cout << "\n=== Poly-lane Scheduling — step lock / polymeter ===\n";
+    testPolyClockPolymeter();
 
     if (failures > 0) {
         std::cout << "\nFAIL: " << failures << " mismatch(es).\n";

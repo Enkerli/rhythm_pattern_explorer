@@ -3,15 +3,25 @@
 
     PolyClock.h
     Pure scheduling math for poly-lane playback (music-suite docs/
-    SERPE_POLY.md §3b "cycle lock", §8.1 milestone-2 draft). No JUCE
-    dependency, no side effects — the whole point is that this is testable
-    without an AudioProcessor, a host, or a real device.
+    SERPE_POLY.md §3b — both lock modes, §8.1 milestone-2 draft +
+    milestone-4 polymeter). No JUCE dependency, no side effects — the
+    whole point is that this is testable without an AudioProcessor, a
+    host, or a real device.
 
-    Cycle-lock model: every lane spans the SAME shared cycle (in beats); a
-    lane's own step duration = cycleLengthInBeats / itsOwnStepCount. That's
-    what makes a 3-step lane against a 16-step lane a true cross-rhythm
-    (POLYRHYTHM) rather than two clocks drifting toward a shared lcm
-    (POLYMETER) — the field-tested webapp default, ported as-is.
+    Two lock modes, both real here (2026-07-20 — step lock was cycle-lock
+    only for a while; the webapp's own scheduler always had both, this
+    caught up to it):
+
+    computePolyLaneStep (cycle lock, the default): every lane spans the
+    SAME shared cycle (in beats); a lane's own step duration =
+    cycleLengthInBeats / itsOwnStepCount. That's what makes a 3-step lane
+    against a 16-step lane a true cross-rhythm (POLYRHYTHM) — the
+    field-tested webapp default, ported as-is.
+
+    computePolyLaneStepPolymeter (step lock): every lane's STEP is the
+    same duration instead — lanes of different lengths take different
+    total times to complete a cycle and drift out of phase, realigning
+    only at the lcm of their lengths (POLYMETER).
 
   ==============================================================================
 */
@@ -43,6 +53,49 @@ inline PolyStepResult computePolyLaneStep(double ppqPosition, double cycleLength
 
     double beatsPerLaneStep = cycleLengthInBeats / laneStepCount;
     double stepsFromStart = ppqPosition / beatsPerLaneStep;
+    double stepsInCurrentCycle = std::fmod(stepsFromStart, static_cast<double>(laneStepCount));
+    if (stepsInCurrentCycle < 0.0) stepsInCurrentCycle += laneStepCount; // fmod can be negative pre-roll
+
+    int currentStep = static_cast<int>(stepsInCurrentCycle);
+    if (currentStep != lastProcessedStep)
+    {
+        r.crossed = true;
+        r.step = currentStep;
+        r.fractionalPos = std::fmod(stepsInCurrentCycle, 1.0);
+    }
+    return r;
+}
+
+/**
+ * Step-lock (POLYMETER) variant of computePolyLaneStep — music-suite
+ * docs/SERPE_POLY.md §3b's "Step lock (toggle) = POLYMETER" mode, ported
+ * from the webapp's own scheduler (apps/serpe/engine/poly-clock.js:
+ * laneStepMs's `polyLock === "step"` branch, unit-tested there with
+ * coprime step counts so the drift-and-realign math is provably right,
+ * not just assumed).
+ *
+ * Where computePolyLaneStep (cycle lock) has every lane span the SAME
+ * cycle — step duration scales with the lane's own step count — this has
+ * every lane's STEP be the same duration (@p baseStepBeats, the mono
+ * grid's own subdivision rate, shared across all lanes). Lanes of
+ * different lengths therefore take different total times to complete a
+ * cycle and drift out of phase, realigning only at the lcm of their
+ * lengths — the actual mathematical definition of polymeter, not merely a
+ * differently-labeled cycle lock.
+ *
+ * Deliberately a separate function rather than a lock-mode branch inside
+ * computePolyLaneStep: the existing conformance tests pin that function's
+ * exact behavior, and there is no DAW in this environment to re-verify a
+ * refactor against — additive is lower-risk than reshaping code that
+ * already has hand-verified, unrepeatable-here coverage.
+ */
+inline PolyStepResult computePolyLaneStepPolymeter(double ppqPosition, double baseStepBeats,
+                                                     int laneStepCount, int lastProcessedStep) noexcept
+{
+    PolyStepResult r;
+    if (laneStepCount <= 0 || baseStepBeats <= 0.0) return r;
+
+    double stepsFromStart = ppqPosition / baseStepBeats;
     double stepsInCurrentCycle = std::fmod(stepsFromStart, static_cast<double>(laneStepCount));
     if (stepsInCurrentCycle < 0.0) stepsInCurrentCycle += laneStepCount; // fmod can be negative pre-roll
 

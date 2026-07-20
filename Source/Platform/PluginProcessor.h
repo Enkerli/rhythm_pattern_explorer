@@ -385,10 +385,14 @@ private:
     bool isPolyPattern = false;
     std::array<PolyLaneRuntime, kMaxPolyLanes> polyLanes;
 
-    juce::AudioParameterInt*   laneNoteParams[kMaxPolyLanes]    = {};
-    juce::AudioParameterInt*   laneChannelParams[kMaxPolyLanes] = {};
-    juce::AudioParameterBool*  laneMuteParams[kMaxPolyLanes]    = {};
-    juce::AudioParameterFloat* polyLagMsParam = nullptr;
+    juce::AudioParameterInt*    laneNoteParams[kMaxPolyLanes]    = {};
+    juce::AudioParameterInt*    laneChannelParams[kMaxPolyLanes] = {};
+    juce::AudioParameterBool*   laneMuteParams[kMaxPolyLanes]    = {};
+    juce::AudioParameterFloat*  polyLagMsParam = nullptr;
+    // Cycle lock (index 0, default) vs step lock (index 1) — music-suite
+    // docs/SERPE_POLY.md §3b. Automatable/host-recallable like every other
+    // poly param; previously the webapp's own toggle only, no C++ backing.
+    juce::AudioParameterChoice* polyLockParam = nullptr;
 
     void parseAndApplyPolyUPI(const juce::String& upiPattern);
     void processPolyLanes(juce::MidiBuffer& midiBuffer, int numSamples, double ppqPosition);

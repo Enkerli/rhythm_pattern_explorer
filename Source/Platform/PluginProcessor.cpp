@@ -108,6 +108,11 @@ juce::AudioProcessorValueTreeState::ParameterLayout SerpeAudioProcessor::createP
     // POLY_LAG_MS constant, but automatable here per the field-test call.
     layout.add(std::make_unique<juce::AudioParameterFloat>(
         "polyLagMs", "Poly Lane Lag", juce::NormalisableRange<float>(0.0f, 200.0f), 60.0f));
+    // Cycle lock (POLYRHYTHM, default) vs step lock (POLYMETER) — docs/
+    // SERPE_POLY.md §3b. Was webapp-local UI state only; now a real,
+    // automatable, host-recallable parameter like the rest of this group.
+    layout.add(std::make_unique<juce::AudioParameterChoice>(
+        "polyLock", "Poly Lock", juce::StringArray{"Cycle", "Step"}, 0));
 
     return layout;
 }
@@ -154,6 +159,7 @@ SerpeAudioProcessor::SerpeAudioProcessor()
         laneMuteParams[i] = dynamic_cast<juce::AudioParameterBool*>(parameters.getParameter("laneMute" + suffix));
     }
     polyLagMsParam = dynamic_cast<juce::AudioParameterFloat*>(parameters.getParameter("polyLagMs"));
+    polyLockParam = dynamic_cast<juce::AudioParameterChoice*>(parameters.getParameter("polyLock"));
     
     // Initialize pattern engine with default Euclidean pattern
     patternEngine.generateEuclideanPattern(3, 8);
@@ -1415,9 +1421,26 @@ void SerpeAudioProcessor::processPolyLanes(juce::MidiBuffer& midiBuffer, int num
         int laneSteps = static_cast<int>(pattern.size());
         if (laneSteps <= 0) continue;
 
-        double cycleLengthInBeats = computePolyCycleLengthInBeats(polyLanes[0].active ? polyLanes[0].engine.getCurrentPattern() : pattern);
+        // Step lock (POLYMETER): every lane's step is the mono grid's own
+        // subdivision rate, shared across all lanes — lanes drift and only
+        // realign at their lcm. Cycle lock (POLYRHYTHM, default): every
+        // lane spans the same cycle instead. docs/SERPE_POLY.md §3b; same
+        // two formulas as the webapp's own scheduler (apps/serpe/engine/
+        // poly-clock.js).
+        bool stepLock = polyLockParam != nullptr && polyLockParam->getIndex() == 1;
+        PolyStepResult stepResult;
+        if (stepLock)
+        {
+            int subdivisionIndex = subdivisionParam ? subdivisionParam->getIndex() : 5;
+            double baseStepBeats = getSubdivisionInBeats(subdivisionIndex);
+            stepResult = computePolyLaneStepPolymeter(ppqPosition, baseStepBeats, laneSteps, lane.lastProcessedStep);
+        }
+        else
+        {
+            double cycleLengthInBeats = computePolyCycleLengthInBeats(polyLanes[0].active ? polyLanes[0].engine.getCurrentPattern() : pattern);
+            stepResult = computePolyLaneStep(ppqPosition, cycleLengthInBeats, laneSteps, lane.lastProcessedStep);
+        }
 
-        auto stepResult = computePolyLaneStep(ppqPosition, cycleLengthInBeats, laneSteps, lane.lastProcessedStep);
         if (stepResult.crossed)
         {
             int samplePosition = static_cast<int>(stepResult.fractionalPos * numSamples);

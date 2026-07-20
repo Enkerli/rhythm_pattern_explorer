@@ -275,6 +275,7 @@ void SerpeEditor::sendStateSnapshot()
         // note/channel/mute + the base lag, so the WebView's lane controls
         // reflect real automatable parameters on load, not just defaults.
         { "polyLagMs",          raw ("polyLagMs")                   },
+        { "polyLock",    (int) raw ("polyLock")                     },
         { "laneNote0",   (int) raw ("laneNote0")   }, { "laneChannel0", (int) raw ("laneChannel0") }, { "laneMute0", raw ("laneMute0") > 0.5f },
         { "laneNote1",   (int) raw ("laneNote1")   }, { "laneChannel1", (int) raw ("laneChannel1") }, { "laneMute1", raw ("laneMute1") > 0.5f },
         { "laneNote2",   (int) raw ("laneNote2")   }, { "laneChannel2", (int) raw ("laneChannel2") }, { "laneMute2", raw ("laneMute2") > 0.5f },
