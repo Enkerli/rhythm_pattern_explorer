@@ -65,6 +65,20 @@ public:
         int originalOnsetCount = 0;
         int quantizedOnsetCount = 0;
         
+        // Feel suffixes (music-suite docs/SERPE_RECOVERY.md). Stripped before
+        // any other parsing — exactly as the JS does — so their contents can
+        // never reach the '+'/'-' combination splitter.
+        //   PD(20%) / PD(0.25, seed)   microtiming: WHERE attacks land
+        //   LS(3) / LS(1.4..1.8, 70%)  note LENGTH (articulation): how long
+        bool hasMicrotiming = false;
+        double microtimingDepth = 0.0;
+        int microtimingSeed = 1;
+
+        bool hasLongShort = false;
+        double longShortMin = 1.0;
+        double longShortMax = 1.0;
+        double longShortDepth = 0.0;
+
         bool isValid() const { return type != Error; }
     };
     
@@ -72,6 +86,10 @@ public:
     // Main parsing functions
     static ParseResult parse(const juce::String& input);
     static ParseResult parsePattern(const juce::String& input);
+
+    // Feel suffixes — strip and record; return the remaining pattern text.
+    static juce::String extractMicrotiming(const juce::String& input, ParseResult& result);
+    static juce::String extractLongShort(const juce::String& input, ParseResult& result);
     
     // Core pattern types
     static std::vector<bool> parseEuclidean(int onsets, int steps, int offset = 0);

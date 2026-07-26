@@ -235,6 +235,22 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
         COMMAND serpe_conformance
         COMMENT "Rhythm codec conformance (suite-wide leftmost-LSB vectors)")
 
+    # ── Microtiming conformance (music-suite docs/SERPE_RECOVERY.md) ─────────
+    # Locks Microtiming.h to the webapp's microtiming.js, vector for vector —
+    # push/pull is felt, and a plugin that leans differently from the browser
+    # is a bug nobody can describe. Header-only + no JUCE deps beyond core.
+    juce_add_console_app(serpe_microtiming_conformance PRODUCT_NAME "serpe_microtiming_conformance")
+    target_sources(serpe_microtiming_conformance PRIVATE
+        Source/Tests/MicrotimingConformanceTests.cpp)
+    target_compile_definitions(serpe_microtiming_conformance PRIVATE JUCE_USE_CURL=0)
+    juce_generate_juce_header(serpe_microtiming_conformance)
+    target_include_directories(serpe_microtiming_conformance PRIVATE Source/Core Source/Tests)
+    target_link_libraries(serpe_microtiming_conformance
+        PRIVATE
+            juce::juce_core
+            juce::juce_recommended_config_flags
+            juce::juce_recommended_warning_flags)
+
     # ── Poly-lane conformance (music-suite docs/SERPE_POLY.md §8 milestone 1) ──
     # Locks PolyParser (lane splitting, labels, offsets, lcm) to the same
     # vectors the webapp's parsePolyUPI is tested against. PolyParser calls

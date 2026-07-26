@@ -21,6 +21,7 @@
 #include "PlatformSpecific.h"
 #include <atomic>
 #include <array>
+#include "../Core/Microtiming.h"
 
 //==============================================================================
 // PHASE 2: Lock-Free Pattern Update Queue
@@ -324,6 +325,20 @@ private:
     // Timing and sequencing
     double currentSampleRate = 44100.0;
     int samplesPerStep = 0;
+
+    // ── Feel: microtiming (PD) + note length (LS) ────────────────────────────
+    // Both come off the UPI string (see UPIParser::extract*). Microtiming
+    // displaces WHERE a step fires; longShort sets how long the note lasts.
+    // Recomputed on pattern/parameter change, never in the audio callback.
+    std::vector<double> microtimingShift;   // per step, fractions of a step
+    double microtimingDepth = 0.0;
+    int microtimingSeed = 1;
+    int microtimingCycle = 0;               // bumped per cycle so passes differ
+    bool hasLongShort = false;
+    double longShortMin = 1.0, longShortMax = 1.0, longShortDepth = 0.0;
+    void rebuildMicrotiming();
+    /** Step whose displaced position `pos` (continuous, in steps) has reached. */
+    int displacedStep (double pos, int stepCount) const;
     int currentSample = 0;
     std::atomic<int> currentStep{0};  // Legacy - will be replaced by derived indices
     bool wasPlaying = false;

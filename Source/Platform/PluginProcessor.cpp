@@ -582,7 +582,9 @@ void SerpeAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
         // CRITICAL FIX: Use DAW-synchronized step calculation for perfect timing
         // The transport tick approach was causing DAW alignment issues
         int patternStepCount = patternEngine.getStepCount();
-        int currentBufferStep = static_cast<int>(stepsInCurrentCycle); // REVERTED: Use DAW-synced step
+        // Microtiming (PD) shifts WHEN a step becomes current — see
+        // displacedStep(). With depth 0 this is exactly the old behaviour.
+        int currentBufferStep = displacedStep(stepsInCurrentCycle, patternStepCount);
         juce::ignoreUnused(patternStepCount);
         
         // SYNC DERIVED INDICES: Update transport tick to match DAW-synchronized step
@@ -1085,6 +1087,55 @@ void SerpeAudioProcessor::updateTiming()
     }
 }
 
+/**
+    Recompute the microtiming walk for the current pattern and cycle.
+
+    Called off the audio thread (pattern/parameter change, cycle boundary) —
+    microtiming() allocates, so it must never run inside processBlock.
+*/
+void SerpeAudioProcessor::rebuildMicrotiming()
+{
+    // NOTE: called both off-thread (on a new UPI string) and on the audio
+    // thread (at each cycle boundary). Allocation-free in the latter case
+    // because the shift vector is already sized for the current pattern —
+    // see the call site in processStep().
+    const auto& pattern = patternEngine.getCurrentPattern();
+    if (microtimingDepth <= 0.0 || pattern.empty())
+    {
+        microtimingShift.assign(pattern.size(), 0.0);
+        return;
+    }
+    serpe::microtiming::microtiming(pattern, microtimingDepth, microtimingSeed,
+                                    microtimingCycle, microtimingShift);
+}
+
+/**
+    Which step has actually arrived, given that each step i fires at position
+    (i + shift[i]) rather than at i.
+
+    Offsetting the boundary TEST is what lets a note sit early or late without
+    a scheduling queue or added latency: the step simply becomes current a
+    little sooner or later than its nominal position. Displacement is bounded
+    to well under one step, so only the neighbours can be in play.
+*/
+int SerpeAudioProcessor::displacedStep (double pos, int stepCount) const
+{
+    if (stepCount <= 0) return 0;
+    if (microtimingShift.size() != static_cast<size_t> (stepCount) || microtimingDepth <= 0.0)
+        return static_cast<int> (pos) % stepCount;
+
+    const int nominal = static_cast<int> (pos) % stepCount;
+    const int next    = (nominal + 1) % stepCount;
+
+    // Has the NEXT step already arrived early (negative shift)?
+    if (pos >= (static_cast<double> (static_cast<int> (pos)) + 1.0) + microtimingShift[(size_t) next])
+        return next;
+    // Has THIS step arrived yet (positive shift means it hasn't)?
+    if (pos < static_cast<double> (static_cast<int> (pos)) + microtimingShift[(size_t) nominal])
+        return (nominal - 1 + stepCount) % stepCount;
+    return nominal;
+}
+
 void SerpeAudioProcessor::processStep(juce::MidiBuffer& midiBuffer, int samplePosition, int stepToProcess)
 {
     auto pattern = patternEngine.getCurrentPattern();
@@ -1114,6 +1165,18 @@ void SerpeAudioProcessor::processStep(juce::MidiBuffer& midiBuffer, int samplePo
     int nextStep = (stepToProcess + 1) % static_cast<int>(pattern.size());
     if (nextStep == 0)
     {
+        // A new cycle: re-roll the walk so the groove breathes rather than
+        // repeating one fixed offset (that would just be swing).
+        // REAL-TIME SAFETY: this runs on the audio thread, so it must not
+        // allocate. std::vector::assign() with the SAME size reuses the
+        // existing buffer, and the size only changes when the pattern does —
+        // which happens off-thread, via the pattern queue. The walk itself is
+        // a fixed number of multiplies over the step count: no locks, no I/O.
+        if (microtimingDepth > 0.0)
+        {
+            microtimingCycle = (microtimingCycle + 1) % 1024;
+            rebuildMicrotiming();
+        }
         /**
          * UI ACCENT OFFSET CYCLE BOUNDARY UPDATE
          * 
@@ -1185,8 +1248,27 @@ void SerpeAudioProcessor::triggerNote(juce::MidiBuffer& midiBuffer, int samplePo
     juce::MidiMessage noteOn = juce::MidiMessage::noteOn(1, noteNumber, velocity);
     midiBuffer.addEvent(noteOn, samplePosition);
     
-    // Calculate note duration (use 80% of step duration for musical notes)
-    int noteDuration = static_cast<int>(samplesPerStep * 0.8);
+    // Note duration = ARTICULATION. 80% of a step is the default (a slightly
+    // detached, drum-machine-ish read); an LS(…) suffix overrides it, which is
+    // really staccato-vs-legato rather than anything to do with placement:
+    //   LS(0.5) ≈ staccato · LS(1) ≈ tenuto · LS(1.5) overlaps into the next step.
+    double gate = 0.8;
+    if (hasLongShort)
+    {
+        // A range breathes between its ends across cycles; a single value is
+        // fixed. Deterministic per cycle so a take can be reproduced.
+        if (longShortMax > longShortMin && longShortDepth > 0.0)
+        {
+            serpe::microtiming::Rng rng (microtimingSeed + 7919, microtimingCycle);
+            const double t = rng.next();
+            gate = longShortMin + (longShortMax - longShortMin) * t * longShortDepth;
+        }
+        else
+        {
+            gate = longShortMin;
+        }
+    }
+    int noteDuration = static_cast<int>(samplesPerStep * juce::jlimit(0.05, 4.0, gate));
     if (noteDuration < 2048) noteDuration = 2048; // Minimum ~46ms at 44.1kHz for instrument compatibility
     
     // Debug counter for UI display
@@ -2061,6 +2143,18 @@ void SerpeAudioProcessor::parseAndApplyUPI(const juce::String& upiPattern, bool 
         
         // PHASE 2: Apply the parsed pattern via queue for phase-locking
         queuePatternUpdate(parseResult.pattern, parseResult.accentPattern, parseResult.hasAccentPattern, 0);
+
+        // ── Feel suffixes reach the engine here ──────────────────────────────
+        // PD(…) → where steps fire; LS(…) → how long notes last. Both default
+        // OFF when absent, so a pattern without them behaves exactly as before.
+        microtimingDepth = parseResult.hasMicrotiming ? parseResult.microtimingDepth : 0.0;
+        microtimingSeed  = parseResult.hasMicrotiming ? parseResult.microtimingSeed : 1;
+        microtimingCycle = 0;
+        hasLongShort   = parseResult.hasLongShort;
+        longShortMin   = parseResult.longShortMin;
+        longShortMax   = parseResult.longShortMax;
+        longShortDepth = parseResult.longShortDepth;
+        rebuildMicrotiming();
         
         // Store quantization metadata if present
         if (parseResult.hasQuantization)

@@ -28,9 +28,16 @@ UPIParser::ParseResult UPIParser::parse(const juce::String& input)
         return createError("Empty input");
     
     juce::String cleaned = cleanInput(input);
-    
-    // Check for accent pattern in curly braces
+
+    // ── Feel suffixes: PD(…) then LS(…) ──────────────────────────────────────
+    // Removed FIRST, like the accent prefix, so a '-' inside them (or a range)
+    // can never be mistaken for a pattern combination. Parity with the JS in
+    // packages/upi/src/upi.js.
     ParseResult result;
+    cleaned = extractMicrotiming(cleaned, result);
+    cleaned = extractLongShort(cleaned, result);
+
+    // Check for accent pattern in curly braces
     juce::String basePattern = cleaned;
     
     if (cleaned.contains("{") && cleaned.contains("}"))
@@ -1461,6 +1468,81 @@ bool UPIParser::isMorsePattern(const juce::String& input)
 
 //==============================================================================
 // String processing utilities
+
+/** Strip a trailing `PD(depth[, seed])`. depth accepts "20%" or "0.2". */
+juce::String UPIParser::extractMicrotiming(const juce::String& input, ParseResult& result)
+{
+    const int open = input.lastIndexOfIgnoreCase("PD(");
+    if (open < 0 || ! input.trim().endsWith(")")) return input;
+    const int close = input.indexOf(open, ")");
+    if (close < 0) return input;
+
+    juce::String body = input.substring(open + 3, close).trim();
+    juce::StringArray parts;
+    parts.addTokens(body, ",", "");
+    if (parts.size() < 1 || parts.size() > 2) return input;
+
+    juce::String depthTok = parts[0].trim();
+    const bool pct = depthTok.endsWith("%");
+    if (pct) depthTok = depthTok.dropLastCharacters(1);
+    if (depthTok.isEmpty() || ! depthTok.containsOnly("0123456789.")) return input;
+
+    double depth = depthTok.getDoubleValue();
+    if (pct) depth /= 100.0;
+    result.hasMicrotiming = true;
+    result.microtimingDepth = juce::jlimit(0.0, 1.0, depth);
+    result.microtimingSeed = (parts.size() == 2) ? parts[1].trim().getIntValue() : 1;
+    return input.substring(0, open).trim();
+}
+
+/** Strip a trailing `LS(ratio)` / `LS(min..max[, depth])`. A range with no
+    explicit depth means FULL depth — otherwise it would silently do nothing. */
+juce::String UPIParser::extractLongShort(const juce::String& input, ParseResult& result)
+{
+    const int open = input.lastIndexOfIgnoreCase("LS(");
+    if (open < 0 || ! input.trim().endsWith(")")) return input;
+    const int close = input.indexOf(open, ")");
+    if (close < 0) return input;
+
+    juce::String body = input.substring(open + 3, close).trim();
+    juce::StringArray parts;
+    parts.addTokens(body, ",", "");
+    if (parts.size() < 1 || parts.size() > 2) return input;
+
+    juce::String range = parts[0].trim();
+    double lo = 0.0, hi = 0.0;
+    const int dots = range.indexOf("..");
+    if (dots >= 0)
+    {
+        lo = range.substring(0, dots).trim().getDoubleValue();
+        hi = range.substring(dots + 2).trim().getDoubleValue();
+    }
+    else
+    {
+        lo = hi = range.getDoubleValue();
+    }
+    if (lo <= 0.0 && hi <= 0.0) return input;
+
+    double depth;
+    if (parts.size() == 2)
+    {
+        juce::String d = parts[1].trim();
+        const bool pct = d.endsWith("%");
+        if (pct) d = d.dropLastCharacters(1);
+        depth = d.getDoubleValue();
+        if (pct) depth /= 100.0;
+    }
+    else
+    {
+        depth = (hi > lo) ? 1.0 : 0.0;
+    }
+
+    result.hasLongShort = true;
+    result.longShortMin = juce::jmax(1.0, lo);
+    result.longShortMax = juce::jmax(result.longShortMin, hi);
+    result.longShortDepth = juce::jlimit(0.0, 1.0, depth);
+    return input.substring(0, open).trim();
+}
 
 juce::String UPIParser::cleanInput(const juce::String& input)
 {
