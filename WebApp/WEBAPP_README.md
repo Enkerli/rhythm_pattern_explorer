@@ -40,7 +40,8 @@ WebApp/
 ### Pattern Notation Examples
 ```
 E(3,8)                    # Euclidean: 10010010
-P(5,12,0)                 # Pentagon: 100100100100
+P(5,0)                    # Pentagon: 11111 (5 vertices, 5 steps)
+P(3,1,4)                  # Triangle x4: 010001000100 (expansion factor -> 3*4 steps)
 E(1,8)E>8                 # Progressive: 1→11111111
 E(8,8)B>1                 # Barlow dilution: 11111111→10000000
 E(3,8)+P(5,12)           # Combination

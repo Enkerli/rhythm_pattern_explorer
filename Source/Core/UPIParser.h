@@ -21,7 +21,7 @@
  * 
  * Supports the same pattern formats as the web application:
  * - Euclidean: E(3,8), E(5,16,2)
- * - Polygons: P(3,1), P(5,0,16)
+ * - Polygons: P(3,1), P(3,1,4)  (3rd arg = expansion factor: sides * factor steps)
  * - Binary: b10010010, 101010, 0x92:8
  * - Arrays: [0,3,6]:8
  * - Random: R(3,8), R(r,8)

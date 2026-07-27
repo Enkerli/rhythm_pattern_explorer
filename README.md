@@ -161,7 +161,10 @@ E(3,8)                    # Euclidean: 3 onsets in 8 steps → 10010010
 B(3,8)                    # Barlow indispensability: 3 onsets in 8 steps → 10001010
 W(3,8)                    # Wolrab (anti-Barlow): 3 onsets in 8 steps → 01100100
 D(3,8)                    # Dilcue (anti-Euclidean): 3 onsets in 8 steps → 01101001
-P(5,12,0)                 # Pentagon rhythm: 5 vertices in 12 steps with 0 offset
+P(5,0)                    # Pentagon: 5 vertices, its own 5 steps
+P(3,1,4)                  # Triangle x4: 3 vertices expanded over 3*4 = 12 steps
+                          #   (3rd arg is an EXPANSION FACTOR, not a step count;
+                          #    to re-grid onto N steps use `;N` instead)
 R(4,8,42)                 # Random: 4 onsets in 8 steps with seed 42
 ```
 
