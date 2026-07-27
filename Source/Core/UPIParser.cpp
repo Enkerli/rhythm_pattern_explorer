@@ -558,6 +558,30 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
         return createSuccess(pattern, "Array: " + cleaned);
     }
     
+    // ── Additive / aksak meters: A(2,2,2,3) ──────────────────────────────────
+    // A bar built from beat GROUPS, one onset starting each. The Balkan 9/8
+    // counted short-short-short-long is A(2,2,2,3). More general than the
+    // two-value L:/D: form, which can only say "short" or "long".
+    if (cleaned.startsWithIgnoreCase("a(") && cleaned.endsWith(")"))
+    {
+        juce::String body = cleaned.substring(2, cleaned.length() - 1).trim();
+        juce::StringArray groups;
+        groups.addTokens(body, ",", "");
+        std::vector<bool> pattern;
+        bool ok = groups.size() > 0;
+        for (const auto& gRaw : groups)
+        {
+            const juce::String g = gRaw.trim();
+            if (g.isEmpty() || ! g.containsOnly("0123456789")) { ok = false; break; }
+            const int len = g.getIntValue();
+            if (len < 1) { ok = false; break; }
+            pattern.push_back(true);
+            for (int i = 1; i < len; ++i) pattern.push_back(false);
+        }
+        if (ok && ! pattern.empty())
+            return createSuccess(pattern, "A(" + body.removeCharacters(" ") + ")");
+    }
+
     bool morseCheck = isMorsePattern(cleaned);
     
     if (morseCheck)
@@ -581,9 +605,13 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
             codeWithoutAccent = cleaned.substring(0, cleaned.length() - 3);
         }
         
-        if (codeWithoutAccent.startsWith("l:"))
+        // `L:s,l` is this engine's spelling; `D:s,l` is the webapp's (and the
+        // original Rhythm Pattern Explorer's documented "Custom Durations").
+        // Both are accepted everywhere so a pattern written in one place plays
+        // in the other — the divergence was silent and cost real confusion.
+        if (codeWithoutAccent.startsWith("l:") || codeWithoutAccent.startsWith("d:"))
         {
-            // Parse L:short,long pattern format
+            // Parse L:short,long / D:short,long pattern format
             juce::String params = codeWithoutAccent.substring(2).trim();
             int spacePos = params.indexOfChar(' ');
             if (spacePos > 0)
@@ -1336,7 +1364,8 @@ static bool validateMorsePattern(const juce::String& input)
     // dots/dashes/letters/digits/spaces; it never contains parentheses.
     if (cleaned.containsAnyOf("()")) return false;
 
-    bool result = cleaned.startsWith("m:") || cleaned.startsWith("l:") || cleaned.containsOnly(".-") ||
+    bool result = cleaned.startsWith("m:") || cleaned.startsWith("l:") || cleaned.startsWith("d:")
+                  || cleaned.containsOnly(".-") ||
                   cleaned.containsAnyOf("abcdefghijklmnopqrstuvwxyz");
     
     
@@ -2004,9 +2033,13 @@ std::vector<bool> UPIParser::parseAccentPattern(const juce::String& accentStr)
         }
         
         // Check for L: custom duration format first
-        if (codeWithoutAccent.startsWith("l:"))
+        // `L:s,l` is this engine's spelling; `D:s,l` is the webapp's (and the
+        // original Rhythm Pattern Explorer's documented "Custom Durations").
+        // Both are accepted everywhere so a pattern written in one place plays
+        // in the other — the divergence was silent and cost real confusion.
+        if (codeWithoutAccent.startsWith("l:") || codeWithoutAccent.startsWith("d:"))
         {
-            // Parse L:short,long pattern format
+            // Parse L:short,long / D:short,long pattern format
             juce::String params = codeWithoutAccent.substring(2).trim();
             int spacePos = params.indexOfChar(' ');
             if (spacePos > 0)

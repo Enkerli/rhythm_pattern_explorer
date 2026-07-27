@@ -471,6 +471,21 @@ void SerpeAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
     else
     {
         finalIsPlaying = internalPlaying;
+
+        // FREE-RUNNING TRANSPORT (standalone, or host-sync switched off).
+        // Without this the step branches below never run: they also require
+        // hasValidPosition, which only a HOST ever sets — so the standalone
+        // pressed play and sat on step 0 forever. Drive ppqPosition from our
+        // own sample clock instead, so "playing" means the same thing with or
+        // without a host.
+        if (finalIsPlaying)
+        {
+            const double bpmNow = (bpm > 0.0) ? bpm : 120.0;
+            ppqPosition = (currentSampleRate > 0.0)
+                        ? (static_cast<double> (absoluteSamplePosition) / currentSampleRate) * (bpmNow / 60.0)
+                        : 0.0;
+            hasValidPosition = true;   // we are the clock now
+        }
     }
 
     // Pattern updates are now handled via UPI input only
