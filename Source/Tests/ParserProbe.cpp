@@ -60,6 +60,7 @@ int main()
         // Polygons in a combination: shapes projected onto the target length,
         // never tiled. E(3,8)+P(4,0) is the README's own example.
         "P(3,0)", "P(4,0)", "E(3,8)+P(4,0)", "P(3,0)+P(5,0)", "P(3,0,8)+E(3,8)",
+        "P(3,1)+P(5,0)+P(2,5)", "E(3,8)+E(2,4)",
     };
     for (auto* in : inputs) probe (in);
     std::printf ("\n(compare against the webapp / `msuite upi` for the same strings)\n");

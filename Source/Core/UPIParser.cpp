@@ -246,17 +246,24 @@ UPIParser::ParseResult UPIParser::parseAfterFeel(const juce::String& cleanedInpu
                 return result;
             }
 
-            // General combination: union (+) / difference (-), LCM-expanded.
+            // General combination: union (+) / difference (-) on a shared cycle.
             //
-            // A BARE polygon is a shape, not a step pattern: P(3,0) means
+            // Every operand is a SHAPE spanning that cycle once, so each is
+            // PROJECTED onto the LCM — its onsets scaled to the new length —
+            // rather than repeated to fill it. This is the all-polygon rule
+            // above (P(3,0)+P(5,0) -> lcm 15) generalised to every term, and
+            // it is what makes combination a geometry: P(3,1)+P(5,0)+P(2,5)
+            // is perfectly balanced across 30 steps only because each polygon
+            // spans the cycle once. Tiling breaks that — a bare polygon
+            // repeated to fill the LCM is solid onsets — which is why the
+            // README's own example E(3,8)+P(4,0) came back as eight onsets
+            // instead of 10111010, and E(3,8)+P(3,0) as a 24-step drone
+            // instead of 100000001100000010100000.
+            //
+            // A bare polygon also has no step grid of its own: P(3,0) means
             // "three evenly spaced vertices", not the three-step pattern 111.
-            // Tiling one to fill the LCM turns every polygon into solid
-            // onsets, which is why the README's own example E(3,8)+P(4,0)
-            // came back as eight onsets instead of 10111010. So work out the
-            // target length first and PROJECT each bare polygon onto it
-            // (exactly what the all-polygon path above already does), while
-            // everything with a real step grid — including P(k,off,n), which
-            // states its own — keeps the LCM tiling it has always had.
+            // Its natural length here is its vertex count. Anything else —
+            // including P(k,off,n), which states its own — uses its step count.
             std::vector<ParseResult> parsed (terms.size());
             std::vector<int> naturalLen (terms.size(), 0);
             std::vector<bool> isBarePolygon (terms.size(), false);
@@ -286,9 +293,19 @@ UPIParser::ParseResult UPIParser::parseAfterFeel(const juce::String& cleanedInpu
 
             auto termPattern = [&] (size_t i) -> std::vector<bool>
             {
+                // Same scaling either way: a k-gon is just a pattern whose k
+                // onsets are its k steps, so parsePolygon's round(i*L/k) and
+                // the loop below agree.
                 if (isBarePolygon[i])
                     return parsePolygonForCombination (terms[i].second, targetLen).pattern;
-                return PatternUtils::expandToLCM (parsed[i].pattern, targetLen);
+
+                const auto& src = parsed[i].pattern;
+                const int n = juce::jmax (1, (int) src.size());
+                std::vector<bool> projected ((size_t) targetLen, false);
+                for (int j = 0; j < n; ++j)
+                    if (src[(size_t) j])
+                        projected[(size_t) (((int) std::llround ((double) j * targetLen / n)) % targetLen)] = true;
+                return projected;
             };
 
             ParseResult result = createSuccess (termPattern (0), "Combined: " + cleaned);
