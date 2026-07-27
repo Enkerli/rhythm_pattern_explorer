@@ -218,7 +218,12 @@ UPIParser::ParseResult UPIParser::parse(const juce::String& input)
     // - L: notation (L:1,3 .-) uses space to separate durations from morse code
     // - Transformation prefixes (rev, comp, etc.) may contain spaces
     // - Future patterns with internal spaces should be added to the exclusion list
-    if (cleaned.contains(" ") && !hasTransformationPrefix(cleaned) && !cleaned.startsWith("l:"))
+    // NOTE: every prefix whose syntax contains a SPACE must be excluded here,
+    // or it gets split and concatenated as separate patterns. `d:` is the
+    // webapp's spelling of `l:` and was missing — "D:2,3 ...-" was silently
+    // becoming "d:2,3" + "...-" and producing nonsense (0011110).
+    if (cleaned.contains(" ") && !hasTransformationPrefix(cleaned)
+        && !cleaned.startsWith("l:") && !cleaned.startsWith("d:"))
     {
         auto parts = tokenize(cleaned, " ");
         if (parts.size() > 1)
@@ -2015,7 +2020,8 @@ std::vector<bool> UPIParser::parseAccentPattern(const juce::String& accentStr)
     
     // Handle Morse code: .-- or .-. or L:1,3 .- or M:SOS{l} or SOS{w}
     if (trimmed.containsAnyOf(".-") || trimmed.containsAnyOf("abcdefghijklmnopqrstuvwxyz") || 
-        trimmed.startsWith("m:") || (trimmed.startsWith("l:") && trimmed.contains(" ")))
+        trimmed.startsWith("m:")
+        || ((trimmed.startsWith("l:") || trimmed.startsWith("d:")) && trimmed.contains(" ")))
     {
         // Check for accent suffix patterns: {l} or {w}
         char accentMode = 0;

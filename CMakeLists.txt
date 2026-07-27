@@ -235,6 +235,25 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
         COMMAND serpe_conformance
         COMMENT "Rhythm codec conformance (suite-wide leftmost-LSB vectors)")
 
+    # ── Parser probe: print what UPIParser returns for a list of inputs ──────
+    # Diagnostic, not a pass/fail test — it exists because "weird result" bug
+    # reports could not be diagnosed by reading the parser from outside.
+    juce_add_console_app(serpe_parser_probe PRODUCT_NAME "serpe_parser_probe")
+    target_sources(serpe_parser_probe PRIVATE
+        Source/Tests/ParserProbe.cpp
+        Source/Core/UPIParser.cpp
+        Source/Core/PatternEngine.cpp
+        Source/Core/PatternUtils.cpp
+        Source/Core/QuantizationEngine.cpp)
+    target_compile_definitions(serpe_parser_probe PRIVATE JUCE_USE_CURL=0)
+    juce_generate_juce_header(serpe_parser_probe)
+    target_include_directories(serpe_parser_probe PRIVATE Source/Core Source/Tests)
+    target_link_libraries(serpe_parser_probe
+        PRIVATE
+            juce::juce_core
+            juce::juce_recommended_config_flags
+            juce::juce_recommended_warning_flags)
+
     # ── Microtiming conformance (music-suite docs/SERPE_RECOVERY.md) ─────────
     # Locks Microtiming.h to the webapp's microtiming.js, vector for vector —
     # push/pull is felt, and a plugin that leans differently from the browser
