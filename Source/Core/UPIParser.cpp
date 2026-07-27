@@ -246,19 +246,63 @@ UPIParser::ParseResult UPIParser::parseAfterFeel(const juce::String& cleanedInpu
                 return result;
             }
 
-            // General combination: union (+) / difference (-), LCM-expanded by
-            // combinePatterns. isAddition = (op == '+').
-            auto result = parsePattern(terms[0].second);
-            if (!result.isValid()) return result;
+            // General combination: union (+) / difference (-), LCM-expanded.
+            //
+            // A BARE polygon is a shape, not a step pattern: P(3,0) means
+            // "three evenly spaced vertices", not the three-step pattern 111.
+            // Tiling one to fill the LCM turns every polygon into solid
+            // onsets, which is why the README's own example E(3,8)+P(4,0)
+            // came back as eight onsets instead of 10111010. So work out the
+            // target length first and PROJECT each bare polygon onto it
+            // (exactly what the all-polygon path above already does), while
+            // everything with a real step grid — including P(k,off,n), which
+            // states its own — keeps the LCM tiling it has always had.
+            std::vector<ParseResult> parsed (terms.size());
+            std::vector<int> naturalLen (terms.size(), 0);
+            std::vector<bool> isBarePolygon (terms.size(), false);
+            {
+                // A bare polygon: P(sides,offset) with no third argument. Its
+                // natural length is its vertex count.
+                std::regex barePolygonRegex (R"(^[Pp]\((\d+),(-?\d+)\)$)");
+                for (size_t i = 0; i < terms.size(); ++i)
+                {
+                    std::smatch m;
+                    std::string s = terms[i].second.trim().toStdString();
+                    if (std::regex_match (s, m, barePolygonRegex))
+                    {
+                        isBarePolygon[i] = true;
+                        naturalLen[i] = std::stoi (m[1].str());
+                        continue;
+                    }
+                    parsed[i] = parsePattern (terms[i].second);
+                    if (!parsed[i].isValid()) return parsed[i];
+                    naturalLen[i] = static_cast<int> (parsed[i].pattern.size());
+                }
+            }
+
+            int targetLen = juce::jmax (1, naturalLen[0]);
+            for (size_t i = 1; i < terms.size(); ++i)
+                targetLen = PatternUtils::lcm (targetLen, juce::jmax (1, naturalLen[i]));
+
+            auto termPattern = [&] (size_t i) -> std::vector<bool>
+            {
+                if (isBarePolygon[i])
+                    return parsePolygonForCombination (terms[i].second, targetLen).pattern;
+                return PatternUtils::expandToLCM (parsed[i].pattern, targetLen);
+            };
+
+            ParseResult result = createSuccess (termPattern (0), "Combined: " + cleaned);
             for (size_t i = 1; i < terms.size(); ++i)
             {
-                auto nextResult = parsePattern(terms[static_cast<int>(i)].second);
-                if (!nextResult.isValid()) return nextResult;
-                result.pattern = PatternUtils::combinePatterns(result.pattern, nextResult.pattern,
-                                                               terms[static_cast<int>(i)].first == '+');
+                auto next = termPattern (i);
+                const bool isAddition = (terms[i].first == '+');
+                for (int j = 0; j < targetLen; ++j)
+                    result.pattern[(size_t) j] = isAddition
+                        ? (result.pattern[(size_t) j] || next[(size_t) j])
+                        : (result.pattern[(size_t) j] && !next[(size_t) j]);
             }
             result.patternName = "Combined: " + cleaned;
-            result.stepCount = static_cast<int>(result.pattern.size());
+            result.stepCount = targetLen;
             return result;
         }
     }
