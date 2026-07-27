@@ -21,7 +21,7 @@ static void probe (const char* input)
     std::string bits;
     for (bool b : r.pattern) bits += (b ? '1' : '0');
 
-    std::printf ("%-26s ", input);
+    std::printf ("%-30s ", input);
     if (! r.isValid())
     {
         std::printf ("ERROR: %s\n", r.errorMessage.toRawUTF8());
@@ -38,32 +38,55 @@ static void probe (const char* input)
 int main()
 {
     std::printf ("=== UPIParser probe — what the C++ engine actually returns ===\n\n");
+    // NOTE ON VALUES: E(3,8)/tresillo/0x94 appear all over this codebase, so a
+    // parser can look correct on them through shorthand tables and special
+    // cases alone. Most inputs below deliberately use unfamiliar numbers
+    // (E(5,13), P(7,2), 0x2E, d201) that nothing can have memorised; the few
+    // canonical ones are kept where the point IS the canonical result.
     const std::vector<const char*> inputs {
-        // Baselines that are known to work
-        "E(3,8)", "M:SOS", "...-",
+        // Baselines
+        "E(3,8)", "E(5,13)", "E(7,16,3)", "M:CQ", "..-.",
         // The aksak notation
-        "A(2,2,2,3)", "A(2,2,3,2)", "A(2,2,3)",
-        // Custom durations, both spellings, and the failing trailing-dot case
+        "A(2,2,2,3)", "A(3,3,2)", "A(4,3,2,2)",
+        // Custom durations, both spellings, and the trailing-dot case
         "L:2,3 ...-", "D:2,3 ...-", "L:2,3 ...-.", "D:2,3 ...-.",
         "L:1,5 .-", "D:3,1 .-",
         // Feel suffixes, alone and attached
-        "E(3,8) PD(50%)", "E(3,8) PD(90%)", "A(2,2,2,3) PD(60%)",
-        "E(3,8) LS(0.5)", "E(3,8) LS(1.4..1.8, 70%)",
-        "E(3,8) LS(1.4..1.8) PD(30%)",
+        "E(5,13) PD(50%)", "E(5,13) PD(90%)", "A(3,3,2) PD(60%)",
+        "E(5,13) LS(0.5)", "E(5,13) LS(1.4..1.8, 70%)",
+        "E(5,13) LS(1.4..1.8) PD(30%)",
         // Things that must NOT be mistaken for the above. The generators B/W/D
         // share letters with Morse; `d…` is also the decimal prefix (that
         // collision is what ate "D:2,3 ...-"); and '+'/'-' between whole
         // patterns must still combine even though '-' is a Morse dash.
-        "PD(50%)", "B(3,8)", "W(3,8)", "D(3,8)",
-        "d73", "0x94:8", "E(3,8)+P(3,0)", "E(5,8)-E(3,8)", "1010-0011",
-        "E(3,8)+P(3,0) PD(40%)",
-        // Polygons in a combination: shapes projected onto the target length,
-        // never tiled. E(3,8)+P(4,0) is the README's own example.
-        "P(3,0)", "P(4,0)", "E(3,8)+P(4,0)", "P(3,0)+P(5,0)", "P(3,0,8)+E(3,8)",
-        "P(3,1)+P(5,0)+P(2,5)", "E(3,8)+E(2,4)",
+        "PD(50%)", "B(5,13)", "W(5,13)", "D(5,13)",
+        "E(5,13)+P(7,2)", "E(7,16)-E(3,16)", "1010-0011",
+        "E(5,13)+P(7,2) PD(40%)",
+        // Step counts are exactly what the notation asks for — no 8-step
+        // floor. Padding is `:N`'s job.
+        "d201", "d201:12", "0x2E", "0x2E:9", "b1011", "o17", "[0,2]", "[0,2]:8",
+        // Polygons in a combination: shapes projected onto the shared cycle,
+        // never tiled. E(3,8)+P(4,0) is the v0.02a README's own example.
+        "P(7,2)", "P(4,0)", "E(3,8)+P(4,0)", "P(3,0)+P(5,0)", "E(3,8)+P(3,0)",
+        "P(3,1)+P(5,0)+P(2,5)", "P(3,0)+P(5,1)-P(2,0)", "E(5,13)+E(2,4)",
         // Third polygon argument is an EXPANSION FACTOR (k*x steps), per the
-        // original webapp's "Triangle x4" help text. `;N` is the re-grid.
-        "P(3,1,4)", "P(3,0,8)", "P(3,0);8", "P(3,0)+P(5,1)-P(2,0)",
+        // original webapp's "Triangle x4" help text.
+        "P(3,1,4)", "P(7,2,2)",
+        // `;N` — Lascabettes angular quantization. Re-grids ANY pattern onto N
+        // steps by onset angle; `;-N` goes counter-clockwise. This is the
+        // arbitrary-step-count operator, which is why P()'s third argument is
+        // free to mean expansion. Upward re-grids are lossless; downward ones
+        // MERGE collisions, so onset counts can drop.
+        // E(3,8);5 is the direction check: its onsets are asymmetric, so
+        // clockwise and counter-clockwise genuinely differ. Symmetric
+        // sources (E(5,13), an all-onset polygon) give the same set both
+        // ways and would hide a broken sign.
+        "E(3,8);5", "E(3,8);-5", "E(5,13);8", "E(5,13);-8", "P(7,2);12",
+        "E(5,13);16", "E(5,13);4", "E(3,8);3",
+        "0x2E:9;6", "A(3,3,2);12", "M:CQ;10",
+        // …and it composes with combination and the feel suffixes.
+        "P(3,0)+P(5,0);16", "E(5,13);8 PD(30%)", "E(5,13);8 LS(2)",
+        "0x1", "0x10", "o10", "d5",
     };
     for (auto* in : inputs) probe (in);
     std::printf ("\n(compare against the webapp / `msuite upi` for the same strings)\n");

@@ -58,6 +58,12 @@ UPIParser::ParseResult UPIParser::parse(const juce::String& input)
     cleaned = extractMicrotiming(cleaned, feel);
     cleaned = extractLongShort(cleaned, feel);
 
+    // A feel suffix on its own ("PD(50%)") is not a pattern. Without this it
+    // fell through to the binary matcher and came back as a valid 0-step
+    // pattern named "Binary: ", which reads as success everywhere downstream.
+    if (cleaned.trim().isEmpty())
+        return createError("No pattern before the feel suffix: " + input.trim());
+
     ParseResult out = parseAfterFeel(cleaned);
 
     // ONE funnel for the feel flags. parseAfterFeel has eight return paths
@@ -173,6 +179,54 @@ UPIParser::ParseResult UPIParser::parseAfterFeel(const juce::String& cleanedInpu
         }
     }
     
+    // `;N` binds LOOSEST — looser than '+' and '-' — so it re-grids the WHOLE
+    // expression. Handled here, ahead of the combination split, for exactly
+    // that reason: "P(3,0)+P(5,0);16" is the 15-step combination re-gridded
+    // onto 16, not P(3,0) combined with P(5,0);16, which lands on
+    // lcm(3,16) = 48. The base re-enters parseAfterFeel so the combination
+    // (and everything else) resolves before the re-grid.
+    {
+        int depth = 0, semi = -1;
+        for (int i = 0; i < basePattern.length(); ++i)
+        {
+            const auto c = basePattern[i];
+            if (c == '(') ++depth;
+            else if (c == ')') --depth;
+            else if (c == ';' && depth == 0) { semi = i; break; }
+        }
+
+        juce::String tail = semi > 0 ? basePattern.substring (semi + 1).trim() : juce::String();
+        const bool ccw = tail.startsWith ("-");
+        const juce::String digits = ccw ? tail.substring (1) : tail;
+
+        if (semi > 0 && digits.isNotEmpty() && digits.containsOnly ("0123456789"))
+        {
+            auto baseResult = parseAfterFeel (basePattern.substring (0, semi).trim());
+            if (! baseResult.isValid()) return baseResult;
+
+            auto quant = QuantizationEngine::quantizePattern (baseResult.pattern, digits.getIntValue(), ! ccw);
+            if (quant.isValid)
+            {
+                auto out = createSuccess (quant.pattern,
+                                          baseResult.patternName + ";" + (ccw ? "-" : "")
+                                              + digits + (ccw ? juce::String::fromUTF8 ("↺")
+                                                              : juce::String::fromUTF8 ("↻")));
+                out.hasQuantization = true;
+                out.originalStepCount = quant.originalStepCount;
+                out.quantizedStepCount = quant.quantizedStepCount;
+                out.quantizationClockwise = quant.isClockwise;
+                out.originalOnsetCount = quant.originalOnsetCount;
+                out.quantizedOnsetCount = quant.quantizedOnsetCount;
+                if (result.hasAccentPattern)
+                {
+                    out.hasAccentPattern = true;
+                    out.accentPattern = result.accentPattern;
+                }
+                return out;
+            }
+        }
+    }
+
     // If we get here, it's not a progressive offset, so check for pattern
     // combinations. Split on TOP-LEVEL '+' and '-' (operators BETWEEN whole
     // patterns). '-' also appears inside patterns (P(3,-1), E(3,8,-2)), so only
@@ -888,9 +942,11 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
     if (cleaned.containsOnly("0123456789"))
     {
         uint64_t decimal = static_cast<uint64_t>(cleaned.getLargeIntValue());
-        // Calculate minimum steps needed to represent this decimal
-        int minSteps = decimal > 0 ? static_cast<int>(std::ceil(std::log2(static_cast<double>(decimal) + 1))) : 1;
-        int targetSteps = std::max(minSteps, 8); // At least 8 steps, or enough to represent the number
+        // Exactly the steps the number needs. This used to be floored at 8 —
+        // added back when everything in sight was an 8-step pattern — but
+        // padding is what `:N` is for, and a notation that yields 3 steps
+        // should give 3 steps. `73` is 7 steps, `73:12` is 12.
+        int targetSteps = decimal > 0 ? static_cast<int>(std::ceil(std::log2(static_cast<double>(decimal) + 1))) : 1;
         auto pattern = parseDecimal(decimal, targetSteps);
         return createSuccess(pattern, "Decimal: " + cleaned);
     }
@@ -987,12 +1043,11 @@ std::vector<bool> UPIParser::parseArray(const juce::String& arrayStr, int stepCo
     if (onsetPositions.empty())
         return {};
     
-    // If no explicit steps given, use max position + 1 or minimum of 8
+    // No explicit `:N` — the pattern is exactly long enough to hold its last
+    // onset. Formerly floored at 8; padding is what `:N` is for, so [0,2] is
+    // 3 steps and [0,2]:8 is 8.
     if (explicitSteps <= 0)
-    {
-        int maxPos = *std::max_element(onsetPositions.begin(), onsetPositions.end());
-        explicitSteps = std::max(maxPos + 1, 8);
-    }
+        explicitSteps = *std::max_element(onsetPositions.begin(), onsetPositions.end()) + 1;
     
     std::vector<bool> pattern(explicitSteps, false);
     for (int pos : onsetPositions)
@@ -1803,11 +1858,26 @@ UPIParser::ParseResult UPIParser::parseNumericPattern(const juce::String& input,
     // Calculate appropriate step count
     if (explicitSteps <= 0)
     {
-        if (info.base == NumericBase::Binary)
-            explicitSteps = content.length();
-        else
-            explicitSteps = decimal > 0 ? static_cast<int>(std::ceil(std::log2(decimal + 1))) : 1;
-        explicitSteps = std::max(explicitSteps, 8);
+        // The width is what the notation WROTE: one step per binary digit,
+        // three per octal digit, four per hex digit. Not the bit-width of the
+        // value — digits are packed little-endian, so `o10` and `0x10` have
+        // value 1 while stating six and eight steps, and their trailing zero
+        // digit is real (high steps that are empty). Only bare decimal, which
+        // has no digit width, is sized from the value.
+        //
+        // There is no 8-step floor. That was added back when everything in
+        // sight was an 8-step pattern; `:N` is how you ask for a length, and a
+        // notation that yields 3 steps should give 3 steps.
+        switch (info.base)
+        {
+            case NumericBase::Binary:      explicitSteps = content.length();     break;
+            case NumericBase::Octal:       explicitSteps = content.length() * 3; break;
+            case NumericBase::Hexadecimal: explicitSteps = content.length() * 4; break;
+            case NumericBase::Decimal:
+            default:
+                explicitSteps = decimal > 0 ? static_cast<int>(std::ceil(std::log2(decimal + 1))) : 1;
+                break;
+        }
     }
     
     auto pattern = parseDecimal(decimal, explicitSteps);
