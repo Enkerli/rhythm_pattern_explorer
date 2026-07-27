@@ -15,6 +15,7 @@
 #include "PolyConformanceVectors.h"
 #include "../Core/PolyParser.h"
 #include "../Core/PolyClock.h"
+#include "../Core/Microtiming.h"
 #include <iostream>
 #include <string>
 
@@ -161,6 +162,44 @@ void testPolyClockPolymeter() {
     }
 }
 
+/*
+ * Per-lane feel. `E(3,8) PD(90%) / E(3,8) PD(10%)` is the case that sent a
+ * real bug report: both lanes stayed audibly locked because the depth never
+ * left the parser. Two failures had to be fixed for it — UPIParser::parse
+ * recorded the flags on a ParseResult it then discarded, and PolyParser never
+ * copied them onto the lane — so both are pinned here.
+ */
+void testPerLaneFeel() {
+    auto r = PolyParser::parse(juce::String("E(3,8) PD(90%) / E(3,8) PD(10%)"));
+    expectTrue("poly PD", "parses", r.ok && r.lanes.size() == 2);
+    if (!r.ok || r.lanes.size() != 2) return;
+
+    expectTrue("poly PD", "lane 0 has microtiming", r.lanes[0].hasMicrotiming);
+    expectTrue("poly PD", "lane 1 has microtiming", r.lanes[1].hasMicrotiming);
+    expectEq("poly PD", "lane 0 depth", std::to_string(r.lanes[0].microtimingDepth), std::to_string(0.9));
+    expectEq("poly PD", "lane 1 depth", std::to_string(r.lanes[1].microtimingDepth), std::to_string(0.1));
+    // Same pattern in both lanes: the DEPTHS are the only thing that can make
+    // them lean apart, so identical steps here is the point, not a mistake.
+    expectEq("poly PD", "lane 0 steps", bits(r.lanes[0].steps), "10010010");
+    expectEq("poly PD", "lane 1 steps", bits(r.lanes[1].steps), "10010010");
+
+    // And the walks really do differ — equal depths would make this vacuous.
+    std::vector<double> a, b;
+    serpe::microtiming::microtiming(r.lanes[0].steps, r.lanes[0].microtimingDepth,
+                                    r.lanes[0].microtimingSeed, 0, a);
+    serpe::microtiming::microtiming(r.lanes[1].steps, r.lanes[1].microtimingDepth,
+                                    r.lanes[1].microtimingSeed, 0, b);
+    expectTrue("poly PD", "the two lanes' walks differ", a != b);
+
+    // A lane WITHOUT PD must stay dead on the grid even when its neighbour leans.
+    auto m = PolyParser::parse(juce::String("E(3,8) / E(3,8) PD(50%)"));
+    expectTrue("mixed poly PD", "parses", m.ok && m.lanes.size() == 2);
+    if (m.ok && m.lanes.size() == 2) {
+        expectTrue("mixed poly PD", "lane 0 straight", !m.lanes[0].hasMicrotiming);
+        expectTrue("mixed poly PD", "lane 1 leans", m.lanes[1].hasMicrotiming);
+    }
+}
+
 } // namespace
 
 int main() {
@@ -207,6 +246,9 @@ int main() {
 
     std::cout << "\n=== Poly-lane Scheduling — step lock / polymeter ===\n";
     testPolyClockPolymeter();
+
+    std::cout << "\n=== Per-lane feel (PD on a lane body) ===\n";
+    testPerLaneFeel();
 
     if (failures > 0) {
         std::cout << "\nFAIL: " << failures << " mismatch(es).\n";

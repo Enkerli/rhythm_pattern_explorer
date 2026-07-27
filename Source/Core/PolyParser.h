@@ -64,6 +64,14 @@ struct PolyLane
     bool hasProgressiveOffset = false;
     int progressiveInitialOffset = 0;
     int progressiveOffsetStep = 0;
+
+    // Per-lane feel, carried from this lane's own UPIParser::ParseResult.
+    // `E(3,8) PD(90%) / E(3,8) PD(10%)` is the whole point of putting PD on a
+    // lane: two lanes leaning by DIFFERENT amounts. Dropping it here is why
+    // those two lanes stayed audibly locked together.
+    bool hasMicrotiming = false;
+    double microtimingDepth = 0.0;
+    int microtimingSeed = 1;
 };
 
 struct PolyParseResult

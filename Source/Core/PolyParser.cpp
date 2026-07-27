@@ -232,6 +232,9 @@ PolyParseResult PolyParser::parse(const juce::String& input,
         lane.hasProgressiveOffset = parsed.hasProgressiveOffset;
         lane.progressiveInitialOffset = parsed.initialOffset;
         lane.progressiveOffsetStep = parsed.progressiveOffset;
+        lane.hasMicrotiming = parsed.hasMicrotiming;
+        lane.microtimingDepth = parsed.microtimingDepth;
+        lane.microtimingSeed = parsed.microtimingSeed;
         result.lanes.push_back(lane);
     }
 

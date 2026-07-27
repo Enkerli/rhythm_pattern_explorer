@@ -87,6 +87,13 @@ public:
     static ParseResult parse(const juce::String& input);
     static ParseResult parsePattern(const juce::String& input);
 
+    // Everything parse() does AFTER the feel suffixes have been stripped.
+    // Split out so parse() has exactly one return statement and can carry the
+    // feel flags onto whichever of this function's many returns wins — they
+    // used to be recorded on a local that was then thrown away, which is why
+    // PD()/LS() parsed cleanly and then did nothing in every DAW.
+    static ParseResult parseAfterFeel(const juce::String& cleanedInput);
+
     // Feel suffixes — strip and record; return the remaining pattern text.
     static juce::String extractMicrotiming(const juce::String& input, ParseResult& result);
     static juce::String extractLongShort(const juce::String& input, ParseResult& result);

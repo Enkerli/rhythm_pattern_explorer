@@ -112,4 +112,34 @@ inline void timingScales (const std::vector<double>& shift, std::vector<double>&
     }
 }
 
+/** Which step has actually arrived, given that step i fires at (i + shift[i])
+    rather than at i.
+
+    Offsetting the boundary TEST is what lets a note sit early or late without a
+    scheduling queue and without added latency: the step simply becomes current
+    a little sooner or later than its nominal position. Displacement is bounded
+    well under one step, so only the neighbours are ever in play.
+
+    `pos` is the continuous step position within the cycle (0 .. stepCount).
+    Shared by the mono path and every poly lane — one groove model, so a lane
+    cannot lean differently from the mono pattern that produced it. */
+inline int displacedIndex (double pos, int stepCount, const std::vector<double>& shift) noexcept
+{
+    if (stepCount <= 0) return 0;
+    const int nominal = static_cast<int> (pos) % stepCount;
+    if (shift.size() != static_cast<size_t> (stepCount))
+        return nominal;
+
+    const int next = (nominal + 1) % stepCount;
+    const double base = static_cast<double> (static_cast<int> (pos));
+
+    // Has the NEXT step already arrived early (negative shift)?
+    if (pos >= base + 1.0 + shift[(size_t) next])
+        return next;
+    // Has THIS step arrived yet (positive shift means it hasn't)?
+    if (pos < base + shift[(size_t) nominal])
+        return (nominal - 1 + stepCount) % stepCount;
+    return nominal;
+}
+
 } // namespace serpe::microtiming

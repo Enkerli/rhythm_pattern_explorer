@@ -50,8 +50,13 @@ int main()
         "E(3,8) PD(50%)", "E(3,8) PD(90%)", "A(2,2,2,3) PD(60%)",
         "E(3,8) LS(0.5)", "E(3,8) LS(1.4..1.8, 70%)",
         "E(3,8) LS(1.4..1.8) PD(30%)",
-        // Things that must NOT be mistaken for the above
+        // Things that must NOT be mistaken for the above. The generators B/W/D
+        // share letters with Morse; `d…` is also the decimal prefix (that
+        // collision is what ate "D:2,3 ...-"); and '+'/'-' between whole
+        // patterns must still combine even though '-' is a Morse dash.
         "PD(50%)", "B(3,8)", "W(3,8)", "D(3,8)",
+        "d73", "0x94:8", "E(3,8)+P(3,0)", "E(5,8)-E(3,8)", "1010-0011",
+        "E(3,8)+P(3,0) PD(40%)",
     };
     for (auto* in : inputs) probe (in);
     std::printf ("\n(compare against the webapp / `msuite upi` for the same strings)\n");

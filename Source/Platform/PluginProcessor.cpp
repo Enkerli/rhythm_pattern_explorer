@@ -1136,19 +1136,9 @@ void SerpeAudioProcessor::rebuildMicrotiming()
 int SerpeAudioProcessor::displacedStep (double pos, int stepCount) const
 {
     if (stepCount <= 0) return 0;
-    if (microtimingShift.size() != static_cast<size_t> (stepCount) || microtimingDepth <= 0.0)
+    if (microtimingDepth <= 0.0)
         return static_cast<int> (pos) % stepCount;
-
-    const int nominal = static_cast<int> (pos) % stepCount;
-    const int next    = (nominal + 1) % stepCount;
-
-    // Has the NEXT step already arrived early (negative shift)?
-    if (pos >= (static_cast<double> (static_cast<int> (pos)) + 1.0) + microtimingShift[(size_t) next])
-        return next;
-    // Has THIS step arrived yet (positive shift means it hasn't)?
-    if (pos < static_cast<double> (static_cast<int> (pos)) + microtimingShift[(size_t) nominal])
-        return (nominal - 1 + stepCount) % stepCount;
-    return nominal;
+    return serpe::microtiming::displacedIndex (pos, stepCount, microtimingShift);
 }
 
 void SerpeAudioProcessor::processStep(juce::MidiBuffer& midiBuffer, int samplePosition, int stepToProcess)
@@ -1431,6 +1421,14 @@ void SerpeAudioProcessor::parseAndApplyPolyUPI(const juce::String& upiPattern)
             lane.progressiveOffsetStep = 0;
         }
 
+        // This lane's own feel. PD lives on the LANE body, so two lanes over
+        // the same pattern can lean by different amounts — the thing poly PD
+        // is for.
+        lane.microtimingDepth = parsed.hasMicrotiming ? parsed.microtimingDepth : 0.0;
+        lane.microtimingSeed  = parsed.hasMicrotiming ? parsed.microtimingSeed : 1;
+        lane.microtimingCycle = 0;
+        rebuildLaneMicrotiming(lane);
+
         // New/changed lane pattern: start its step clock fresh so it doesn't
         // briefly report a stale step-boundary crossing.
         if (patternChangedForLane)
@@ -1507,6 +1505,24 @@ void SerpeAudioProcessor::triggerPolyNote(juce::MidiBuffer& midiBuffer, int samp
     addActiveNote(noteNumber, noteDuration, channel);
 }
 
+/**
+    Recompute one lane's microtiming walk. Same contract as the mono
+    rebuildMicrotiming(): safe on the audio thread only when `microtimingShift`
+    is already sized for the lane's pattern (which it is at a cycle boundary,
+    the only place processPolyLanes calls it).
+*/
+void SerpeAudioProcessor::rebuildLaneMicrotiming(PolyLaneRuntime& lane)
+{
+    const auto& pattern = lane.engine.getCurrentPattern();
+    if (lane.microtimingDepth <= 0.0 || pattern.empty())
+    {
+        lane.microtimingShift.assign(pattern.size(), 0.0);
+        return;
+    }
+    serpe::microtiming::microtiming(pattern, lane.microtimingDepth, lane.microtimingSeed,
+                                    lane.microtimingCycle, lane.microtimingShift);
+}
+
 void SerpeAudioProcessor::processPolyLanes(juce::MidiBuffer& midiBuffer, int numSamples, double ppqPosition)
 {
     for (int i = 0; i < kMaxPolyLanes; ++i)
@@ -1538,14 +1554,38 @@ void SerpeAudioProcessor::processPolyLanes(juce::MidiBuffer& midiBuffer, int num
             stepResult = computePolyLaneStep(ppqPosition, cycleLengthInBeats, laneSteps, lane.lastProcessedStep);
         }
 
-        if (stepResult.crossed)
+        // PD on this lane: displace the step BOUNDARY, exactly as the mono path
+        // does, so this lane leans by its own amount. `crossed` has to be
+        // re-derived here — the clock reports the nominal grid, and the whole
+        // point is that this lane no longer fires on it.
+        int laneStep = stepResult.step;
+        bool crossed = stepResult.crossed;
+        if (lane.microtimingDepth > 0.0
+            && lane.microtimingShift.size() == static_cast<size_t>(laneSteps))
+        {
+            laneStep = serpe::microtiming::displacedIndex(stepResult.posInCycle, laneSteps,
+                                                          lane.microtimingShift);
+            crossed = (laneStep != lane.lastProcessedStep);
+        }
+
+        if (crossed)
         {
             int samplePosition = static_cast<int>(stepResult.fractionalPos * numSamples);
             if (samplePosition >= numSamples) samplePosition = 0;
 
-            lane.lastProcessedStep = stepResult.step;
+            // Cycle boundary: draw the next pass of the walk, so the lean
+            // evolves bar to bar instead of repeating one fixed shape (which
+            // would just be swing). Allocation-free — the vector is already the
+            // right size.
+            if (lane.microtimingDepth > 0.0 && laneStep < lane.lastProcessedStep)
+            {
+                lane.microtimingCycle = (lane.microtimingCycle + 1) % 1024;
+                rebuildLaneMicrotiming(lane);
+            }
 
-            if (stepResult.step < laneSteps && pattern[static_cast<size_t>(stepResult.step)])
+            lane.lastProcessedStep = laneStep;
+
+            if (laneStep < laneSteps && pattern[static_cast<size_t>(laneStep)])
                 triggerPolyNote(midiBuffer, samplePosition, numSamples, i, false);
         }
     }
@@ -2124,6 +2164,16 @@ void SerpeAudioProcessor::parseAndApplyUPI(const juce::String& upiPattern, bool 
         return;
     }
     isPolyPattern = false;
+    // Leaving poly: retire the lanes too. Clearing only the flag left every
+    // lane still `active`, so getPolyLaneStep() kept reporting live lane
+    // playheads and the editor went on drawing the OLD poly panel over a
+    // pattern that is now mono.
+    for (auto& lane : polyLanes)
+    {
+        lane.active = false;
+        lane.lastProcessedStep = -1;
+        lane.source = {};
+    }
 
     // SAFETY CHECK: Complex pattern validation to prevent crashes
     try {

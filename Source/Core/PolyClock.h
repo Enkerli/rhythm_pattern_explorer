@@ -36,6 +36,10 @@ struct PolyStepResult
     bool crossed = false;        // did this lane cross into a new step since lastProcessedStep?
     int step = 0;                 // the step index it crossed into, if crossed
     double fractionalPos = 0.0;   // 0..1, this crossing's position within the current audio buffer
+    // The lane's continuous position within its own cycle (0 .. stepCount),
+    // always set — `crossed`/`step` are the NOMINAL grid, and a caller applying
+    // microtiming (PD) needs the raw position to re-derive the boundary itself.
+    double posInCycle = 0.0;
 };
 
 /**
@@ -55,6 +59,8 @@ inline PolyStepResult computePolyLaneStep(double ppqPosition, double cycleLength
     double stepsFromStart = ppqPosition / beatsPerLaneStep;
     double stepsInCurrentCycle = std::fmod(stepsFromStart, static_cast<double>(laneStepCount));
     if (stepsInCurrentCycle < 0.0) stepsInCurrentCycle += laneStepCount; // fmod can be negative pre-roll
+
+    r.posInCycle = stepsInCurrentCycle;
 
     int currentStep = static_cast<int>(stepsInCurrentCycle);
     if (currentStep != lastProcessedStep)
@@ -98,6 +104,8 @@ inline PolyStepResult computePolyLaneStepPolymeter(double ppqPosition, double ba
     double stepsFromStart = ppqPosition / baseStepBeats;
     double stepsInCurrentCycle = std::fmod(stepsFromStart, static_cast<double>(laneStepCount));
     if (stepsInCurrentCycle < 0.0) stepsInCurrentCycle += laneStepCount; // fmod can be negative pre-roll
+
+    r.posInCycle = stepsInCurrentCycle;
 
     int currentStep = static_cast<int>(stepsInCurrentCycle);
     if (currentStep != lastProcessedStep)

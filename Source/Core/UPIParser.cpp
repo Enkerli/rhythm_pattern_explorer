@@ -22,20 +22,71 @@ bool UPIParser::hasProgressiveOffsetEngine = false;
 PatternEngine* UPIParser::progressiveOffsetEngine = nullptr;
 
 //==============================================================================
+/**
+    Is this string Morse, where '.' and '-' are CONTENT rather than the
+    difference operator?
+
+    `L:2,3 ...-` happened to work only because its dash was last: the
+    combination splitter produced a single term and gave up. `L:2,3 ...-.`
+    split into "l:2,3 ..." minus "." and returned six silent steps. The
+    operator and the notation genuinely collide, so the notation wins wherever
+    it is unambiguous: an explicit `m:`/`l:`/`d:` prefix, or a body made of
+    nothing but dots, dashes and spaces.
+*/
+static bool isDotDashMorse(const juce::String& input)
+{
+    juce::String t = input.trim();
+    if (t.endsWith("{l}") || t.endsWith("{w}"))
+        t = t.substring(0, t.length() - 3).trim();
+    if (t.startsWith("m:") || t.startsWith("l:") || t.startsWith("d:"))
+        return true;
+    return t.isNotEmpty() && t.removeCharacters(" ").containsOnly(".-");
+}
+
 UPIParser::ParseResult UPIParser::parse(const juce::String& input)
 {
     if (input.trim().isEmpty())
         return createError("Empty input");
-    
+
     juce::String cleaned = cleanInput(input);
 
     // ── Feel suffixes: PD(…) then LS(…) ──────────────────────────────────────
     // Removed FIRST, like the accent prefix, so a '-' inside them (or a range)
     // can never be mistaken for a pattern combination. Parity with the JS in
     // packages/upi/src/upi.js.
+    ParseResult feel;
+    cleaned = extractMicrotiming(cleaned, feel);
+    cleaned = extractLongShort(cleaned, feel);
+
+    ParseResult out = parseAfterFeel(cleaned);
+
+    // ONE funnel for the feel flags. parseAfterFeel has eight return paths
+    // (progressive %, progressive +, polygon-LCM combination, general
+    // combination, stringed, single, and two error paths); recording the
+    // flags on a local and then returning a DIFFERENT ParseResult from one of
+    // those paths is exactly the bug that made PD()/LS() inert in every host
+    // while still parsing without an error. Carry them here, once, so a
+    // ninth return path can never reintroduce it.
+    if (feel.hasMicrotiming)
+    {
+        out.hasMicrotiming   = true;
+        out.microtimingDepth = feel.microtimingDepth;
+        out.microtimingSeed  = feel.microtimingSeed;
+    }
+    if (feel.hasLongShort)
+    {
+        out.hasLongShort    = true;
+        out.longShortMin    = feel.longShortMin;
+        out.longShortMax    = feel.longShortMax;
+        out.longShortDepth  = feel.longShortDepth;
+    }
+    return out;
+}
+
+UPIParser::ParseResult UPIParser::parseAfterFeel(const juce::String& cleanedInput)
+{
+    juce::String cleaned = cleanedInput;
     ParseResult result;
-    cleaned = extractMicrotiming(cleaned, result);
-    cleaned = extractLongShort(cleaned, result);
 
     // Check for accent pattern in curly braces
     juce::String basePattern = cleaned;
@@ -126,7 +177,7 @@ UPIParser::ParseResult UPIParser::parse(const juce::String& input)
     // combinations. Split on TOP-LEVEL '+' and '-' (operators BETWEEN whole
     // patterns). '-' also appears inside patterns (P(3,-1), E(3,8,-2)), so only
     // split at paren depth 0. '+' = union (OR), '-' = difference (AND-NOT).
-    if (basePattern.contains("+") || basePattern.contains("-"))
+    if ((basePattern.contains("+") || basePattern.contains("-")) && !isDotDashMorse(basePattern))
     {
         std::vector<std::pair<char, juce::String>> terms; // (operator, pattern)
         {
@@ -1605,11 +1656,21 @@ bool UPIParser::isNumericPattern(const juce::String& input, const NumericPattern
         return false;
     
     juce::String content = input.substring(info.prefix.length());
-    
+
     // Handle step count specification (e.g., "0xFF:16")
     if (content.contains(":"))
         content = content.upToFirstOccurrenceOf(":", false, false);
-    
+
+    // The digits are not optional. juce::String::containsOnly returns true for
+    // an empty string, so without this the decimal prefix "d" swallowed
+    // "d:2,3 ...-" whole: content became "" (everything after the FIRST colon
+    // is read as a step count), the value parsed as decimal 0, and the
+    // long/short Morse pattern came back as two silent steps named "d:2".
+    // That is why `D:s,l` misbehaved while the identical `L:s,l` was fine —
+    // "l" is not a numeric prefix, so nothing intercepted it.
+    if (content.isEmpty())
+        return false;
+
     return content.containsOnly(info.validChars);
 }
 

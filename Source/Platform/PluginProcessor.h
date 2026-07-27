@@ -396,9 +396,23 @@ private:
         bool hasProgressiveOffset = false;
         int progressiveOffsetStep = 0;    // amount to advance per trigger (0 = not progressive)
         int lastProcessedStep = -1;       // this lane's own step-boundary tracking, cycle-lock clock
+
+        // This lane's OWN microtiming walk (PD on the lane body). Per-lane by
+        // necessity: one shared walk would displace every lane identically,
+        // which is not a groove, just a latency — and is exactly why
+        // `E(3,8) PD(90%)/E(3,8) PD(10%)` sounded locked together. `shift` is
+        // sized to the lane's step count and rebuilt off the audio thread, or
+        // at a cycle boundary where it is already the right size and therefore
+        // allocation-free.
+        double microtimingDepth = 0.0;
+        int microtimingSeed = 1;
+        int microtimingCycle = 0;
+        std::vector<double> microtimingShift;
     };
     bool isPolyPattern = false;
     std::array<PolyLaneRuntime, kMaxPolyLanes> polyLanes;
+    /** Redraw one lane's own microtiming walk (the poly twin of rebuildMicrotiming). */
+    void rebuildLaneMicrotiming(PolyLaneRuntime& lane);
 
     juce::AudioParameterInt*    laneNoteParams[kMaxPolyLanes]    = {};
     juce::AudioParameterInt*    laneChannelParams[kMaxPolyLanes] = {};
