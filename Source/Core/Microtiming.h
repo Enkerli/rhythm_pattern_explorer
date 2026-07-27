@@ -56,6 +56,22 @@ private:
     uint32_t state;
 };
 
+/** How far one onset may be displaced (fractions of a step) and how hard the
+    walk pushes at a given depth — the two numbers that set how EXTREME the
+    feel gets. Must equal MAX_SHIFT / WALK_SCALE in microtiming.js; the
+    conformance vectors fail loudly if they drift apart.
+
+    Raised 2026-07-27 (0.35/0.5 -> 0.45/0.75) after playing it: at depth 0.9
+    the old numbers displaced onsets by 0.23 of a step on average and clipped
+    35% of them flat against the cap, flattening the walk into a square wave at
+    exactly the setting meant to be wildest.
+
+    kMaxShift cannot reach 0.5: that is where an onset arrives at its
+    neighbour's nominal position, and where displacedIndex()'s +-1-step
+    boundary test stops being well-defined. */
+inline constexpr double kMaxShift  = 0.45;
+inline constexpr double kWalkScale = 0.75;
+
 /** How strongly a position resists being moved. 1 = downbeat, pinned hardest. */
 inline double anchorAt (int pos, int n) noexcept
 {
@@ -72,7 +88,7 @@ inline double anchorAt (int pos, int n) noexcept
 inline void microtiming (const std::vector<bool>& steps,
                          double depth, int seed, int pass,
                          std::vector<double>& out,
-                         double maxShift = 0.35)
+                         double maxShift = kMaxShift)
 {
     const int n = static_cast<int> (steps.size());
     out.assign (static_cast<size_t> (std::max (0, n)), 0.0);
@@ -91,7 +107,7 @@ inline void microtiming (const std::vector<bool>& steps,
     {
         if (! steps[(size_t) pos]) continue;
         const double anchor = anchorAt (pos, n);
-        drift = drift * (1.0 - anchor) + (rng.next() * 2.0 - 1.0) * depth * 0.5;
+        drift = drift * (1.0 - anchor) + (rng.next() * 2.0 - 1.0) * depth * kWalkScale;
         const double d = std::max (-maxShift, std::min (maxShift, drift));
         out[(size_t) pos] = (pos == 0) ? 0.0 : d;  // downbeat is the reference
     }
