@@ -243,3 +243,42 @@ Mark items here as they land; this file — not the design doc — is the scope.
   clean (Enter = no-op re-parse, `0x94:8` = tresillo d73). **Pending device
   session:** by-ear scene/progressive advance in AUM (checklist §5) and a
   host-automated Tick pass.
+
+---
+
+## Engine archaeology — progressive offset, 2026-07-27 (read before "cleaning up")
+
+Found while porting progressive notation to JS. **Nothing was changed**; this
+is a record so the next person doesn't mistake a half-finished migration for
+dead code, or trust a path that isn't running.
+
+**`PatternEngine::triggerProgressiveOffset()` is never called.** It is defined
+(`PatternEngine.cpp:189`) and declared (`.h:61`) and that is all — a repo-wide
+search finds no caller. `setProgressiveOffset()` *is* called from the
+processor, so the offset is configured and then never advanced. The probe
+agrees: `E(3,8)%2` and `E(5,13)%5` return the **same pattern on every
+trigger**, where `E(1,8)>8` marches. So progressive OFFSET (`%N`, `+N`) looks
+non-functional in the engine today, while progressive TRANSFORM (`>N`) works.
+Not confirmed in a running host — there may be a path this search missed, and
+that check needs ears, not grep.
+
+**`ProgressiveManager` is NOT vestigial — it is mid-migration.** It is
+instantiated (`PluginProcessor.cpp:172`) and does real work: progressive state
+is saved to and loaded from the ValueTree through it, and cleared through it.
+But `applyProgressiveTransformation()` is a **stub returning the base
+pattern**, the real transform living in `UPIParser`; and the header carries
+`TEMPORARY: Disable ProgressiveManager to isolate legacy system` alongside
+`TRANSITION: Use ProgressiveManager if available, fallback to legacy for
+safety`. That is an interrupted move from a legacy system, with persistence
+already migrated and transformation not. Retiring any of it without finishing
+the migration would take state persistence with it.
+
+**Consequence for the JS port.** `@enkerli/upi`'s progressive offset may
+currently be the only *working* one in the suite, which is why its rotation
+direction has no live C++ behaviour to differential-test against. A
+PatternEngine-level harness is easy to write (the class is already linked into
+`serpe_parser_probe`: construct, `setPattern`, `setProgressiveOffset`, call
+`triggerProgressiveOffset` N times, print) — but it would exercise a function
+nothing in the plugin calls, so it would prove the intent, not the behaviour.
+The test that would actually settle direction is in-host: type `E(3,8)%2`,
+trigger it, and watch which way the onsets walk.
