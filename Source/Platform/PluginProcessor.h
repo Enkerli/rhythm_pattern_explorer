@@ -16,7 +16,6 @@
 #include "../Core/PolyParser.h"
 #include "../Core/PolyClock.h"
 #include "../Managers/SceneManager.h"
-#include "../Managers/ProgressiveManager.h"
 #include "../Managers/PresetManager.h"
 #include "PlatformSpecific.h"
 #include <atomic>
@@ -209,26 +208,9 @@ public:
     void updateUPIFromCurrentPattern();
     
     // Progressive offset support (universal for all patterns)
-    void resetProgressiveOffset() { 
-        if (progressiveManager) {
-            progressiveManager->resetProgressiveOffset(currentUPIInput);
-        }
-        progressiveOffset = 0; // Legacy fallback
-    }
-    void advanceProgressiveOffset() { 
-        // TEMPORARY: Disable ProgressiveManager to isolate legacy system
-        // if (progressiveManager) {
-        //     progressiveManager->triggerProgressive(currentUPIInput, patternEngine);
-        // }
-        progressiveOffset += progressiveStep; // Legacy fallback
-    }
-    int getProgressiveOffset() const { 
-        // TEMPORARY: Disable ProgressiveManager to isolate legacy system
-        // if (progressiveManager && progressiveManager->hasProgressiveState(currentUPIInput)) {
-        //     return progressiveManager->getProgressiveOffsetValue(currentUPIInput);
-        // }
-        return progressiveOffset; // Legacy fallback
-    }
+    void resetProgressiveOffset() { progressiveOffset = 0; }
+    void advanceProgressiveOffset() { progressiveOffset += progressiveStep; }
+    int getProgressiveOffset() const { return progressiveOffset; }
     
     // Scene information access for UI
     int getCurrentSceneIndex() const { 
@@ -242,21 +224,10 @@ public:
     
     // Progressive transformation access for UI  
     int getProgressiveTriggerCount() const;
-    bool hasProgressiveOffset() const { 
-        // TRANSITION: Use ProgressiveManager if available, fallback to legacy for safety
-        if (progressiveManager && progressiveManager->hasProgressiveState(currentUPIInput)) {
-            return progressiveManager->hasProgressiveOffset(currentUPIInput);
-        }
-        return patternEngine.hasProgressiveOffsetEnabled(); // Legacy fallback
-    }
+    bool hasProgressiveOffset() const { return patternEngine.hasProgressiveOffsetEnabled(); }
     
     // Progressive lengthening support (universal for all patterns)
-    void resetProgressiveLengthening() { 
-        if (progressiveManager) {
-            progressiveManager->resetProgressiveLengthening(currentUPIInput);
-        }
-        progressiveLengthening = 0; baseLengthPattern.clear(); // Legacy fallback
-    }
+    void resetProgressiveLengthening() { progressiveLengthening = 0; baseLengthPattern.clear(); }
     void advanceProgressiveLengthening();
     
     // Scene cycling support (universal for all patterns)
@@ -499,7 +470,6 @@ private:
     
     // New encapsulated management - TRANSITION: Running parallel with legacy for safety
     std::unique_ptr<SceneManager> sceneManager;
-    std::unique_ptr<ProgressiveManager> progressiveManager;
     
     // Thread safety
     juce::CriticalSection processingLock;

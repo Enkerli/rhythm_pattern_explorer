@@ -64,7 +64,6 @@ target_sources(Serpe PRIVATE
     Source/Core/AccentSequence.cpp
     Source/Core/PolyParser.cpp
     Source/Managers/PresetManager.cpp
-    Source/Managers/ProgressiveManager.cpp
     Source/Managers/SceneManager.cpp
     Source/Platform/PluginProcessor.cpp
     Source/WebUI/SerpeEditor.cpp
@@ -77,7 +76,6 @@ target_sources(Serpe PRIVATE
     Source/Core/PolyParser.h
     Source/Core/PolyClock.h
     Source/Managers/PresetManager.h
-    Source/Managers/ProgressiveManager.h
     Source/Managers/SceneManager.h
     Source/Platform/PluginProcessor.h
     Source/WebUI/SerpeEditor.h
