@@ -12,6 +12,29 @@ app, with its status in the new React WebView UI.
 
 **Status:** ✓ present & correct · ⚠ present but broken/partial · ✗ lost · ➕ new (added since redesign)
 
+> **Columns, as of 2026-07-27.** "Webapp" and "New UI" were separate
+> implementations when this ledger was written. They are now the SAME code:
+> `@enkerli/upi` in the music-suite monorepo, which the standalone webapp, the
+> plugin's WebView UI, and `msuite upi` all import. Read the two columns as one
+> — "the shared JS engine" — except where a row says otherwise.
+>
+> **Differential test, 2026-07-27 (this is measured, not read).** Every case in
+> the C++ parser probe (`serpe_parser_probe`, built by the normal cmake build)
+> was replayed through the JS engine via `node packages/cli/dist/cli.js upi`:
+>
+> ```
+> serpe_parser_probe | replay each input through `msuite upi` | diff the bits
+> ```
+>
+> **62 of 62 real patterns produced identical bit strings**, plus 2 inputs both
+> engines correctly reject. Covered: Euclidean · polygons incl. the `P(k,off,x)`
+> expansion factor · Barlow/Wolrab/Dilcue · Morse (`M:`, bare `.-`) · `A(...)`
+> additive/aksak · `L:`/`D:` long-short · `PD()` and `LS()` feel suffixes ·
+> multi-operand combination with LCM projection · `;N`/`;-N` quantization ·
+> every codec (hex/octal/decimal/binary/onset-array, with and without `:N`) ·
+> and the leftmost-LSB convention (`0x1` → `1000`, `d5` → `101`).
+> The notation gap that remains is **progressive** — see its row.
+
 **The structural cause** (drives most ✗/⚠): the new `upi.js` is a *subset*
 re-derivation. It (a) **rejects** notation the C++ engine accepts, so that input
 never reaches the engine in the plugin; (b) **diverges** from what the engine
@@ -42,10 +65,15 @@ actually plays (accent phase). Two corrections close most of this:
 | onset array `[0,3,6]:N` | ✓ | ✓ | ✓ | |
 | **Morse** (`.-`, `M:`, SOS/CQ, letter words) | ✓ `parseMorse*` | ✓ | ✓ (webapp) | ported to `upi.js` (`L:` custom durations still TODO) |
 | accents `{…}` (onset-cyclic) | ✓ | ✓ | ✓ | display now mirrors the audio's accent branch exactly (see Accents row + tail note) |
-| **progressive offset** `pat+N` / `pat%N` | ✓ | ✓ | ✓ plugin / ✗ webapp | plugin: raw send reaches engine; Enter/Advance/Tick/MIDI-in advance (2026-07-01). Webapp `upi.js` still rejects the notation (slider model only) |
-| **progressive transform** `pat>N` (B/W/E/D) | ✓ `applyProgressiveTransformation` | ✓ | ✓ plugin / ✗ webapp | same mechanism; `>` shift-case display verified via `getCycleStartOnsetCount` (see tail note). Webapp `upi.js` still doesn't parse `>` |
+| **progressive offset** `pat+N` / `pat%N` / `pat*N` | ✓ | ✓ | ✓ plugin / ✗ shared JS | Re-confirmed rejected by the shared engine 2026-07-27 (`E(3,8)%3`, `+2`, `*2` → REJECTED). **This is architectural, not an oversight:** progressive notation is *stateful* — it denotes a different pattern on every trigger, so a pure parse has nothing single to return. Closing it means a progressive-state layer in JS, not a parser tweak. In the plugin the C++ engine owns that state and the UI re-sends to advance (2026-07-01) |
+| **progressive transform** `pat>N` (B/W/E/D) | ✓ `applyProgressiveTransformation` | ✓ | ✓ plugin / ✗ shared JS | Same stateful reason; re-confirmed 2026-07-27 (`E(3,8)>5`, `B(3,8)>8` → REJECTED). `>` shift-case display verified via `getCycleStartOnsetCount` (tail note) |
 | **pattern combination** `pat+pat` / `pat-pat` (LCM) | ✓ (fixed `-`) | ✓ | ✓ (webapp) | engine `-` fixed; ported to `upi.js` (union/diff, polygon-LCM) |
 | shorthand names (`tresillo`, `tri/pent/hex…`) | ✓ (fixed) | ✓ | ✓ (webapp) | engine fixed (Morse order); ported to `upi.js` |
+| **`A(2,2,3,2)` additive / aksak** | ✓ | ✓ | ✓ | beat GROUPS, one onset each — the Balkan 9/8 is `A(2,2,2,3)`. More general than `L:`/`D:`, which only say short-or-long. JS landed 2026-07-26, C++ 07-27; bit-identical (differential above) |
+| **`L:s,l` / `D:s,l` custom durations** | ✓ | ✓ | ✓ | the two-value long/short form the ledger used to list as "TODO" on the Morse row; `D:` is accepted as an alias and reported as `L:` |
+| **`PD(n%)` feel** (participatory discrepancy) | ✓ | ✓ | ✓ | a micro-timing depth carried alongside the pattern, not a change to the bits — the differential confirms identical bits with the feel attached |
+| **`LS(lo..hi, n%)` long-short feel** | ✓ | ✓ | ✓ | as above; `LS(2)` and the range form both parse |
+| `P(k,off,x)` expansion factor | ✓ | ✓ | ✓ | `x` multiplies the step count (`P(7,2,2)` = 14 steps), distinct from tiling — the 07-27 combination fixes made bare polygons *project* onto the shared cycle rather than repeat |
 
 ## Generators / transforms
 
