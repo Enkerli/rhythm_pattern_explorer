@@ -35,6 +35,26 @@ static void probe (const char* input)
     std::printf ("  name=\"%s\"\n", r.patternName.toRawUTF8());
 }
 
+// Progressive notation (`pat>N`, `pat%N`, `pat+N`, `pat*N`) is STATEFUL: the
+// engine keeps per-pattern state and each parse() of the same string returns
+// the NEXT step. So the reference for a JS port is not one line but a
+// sequence — this prints `triggers` successive results, which is exactly what
+// a ported progressiveAt(n) has to reproduce (added 2026-07-27 to make that
+// port verifiable rather than asserted).
+static void probeProgressive (const char* input, int triggers)
+{
+    std::printf ("%-22s ", input);
+    for (int i = 0; i < triggers; ++i)
+    {
+        auto r = UPIParser::parse (juce::String (input));
+        if (! r.isValid()) { std::printf (" ERROR"); break; }
+        std::string bits;
+        for (bool b : r.pattern) bits += (b ? '1' : '0');
+        std::printf ("%s%s", (i ? " " : ""), bits.c_str());
+    }
+    std::printf ("\n");
+}
+
 int main()
 {
     std::printf ("=== UPIParser probe — what the C++ engine actually returns ===\n\n");
@@ -89,6 +109,18 @@ int main()
         "0x1", "0x10", "o10", "d5",
     };
     for (auto* in : inputs) probe (in);
+
+    // ── progressive: one line per input, `triggers` successive results ──────
+    std::printf ("\n=== progressive (stateful: each column is the next trigger) ===\n\n");
+    probeProgressive ("E(1,8)>8", 10);
+    probeProgressive ("B(1,17)>17", 8);
+    probeProgressive ("E(8,8)>1", 9);
+    probeProgressive ("W(1,13)>13", 6);
+    probeProgressive ("D(1,9)>9", 6);
+    probeProgressive ("E(3,8)%2", 6);
+    probeProgressive ("E(3,8)+3", 5);
+    probeProgressive ("E(5,13)%5", 5);
+
     std::printf ("\n(compare against the webapp / `msuite upi` for the same strings)\n");
     return 0;
 }
