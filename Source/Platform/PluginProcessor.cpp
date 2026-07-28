@@ -167,9 +167,7 @@ SerpeAudioProcessor::SerpeAudioProcessor()
     // Set up progressive offset engine for UPI parser
     UPIParser::setProgressiveOffsetEngine(&patternEngine);
     
-    // Initialize encapsulated managers - TRANSITION: Running parallel with legacy for safety
     sceneManager = std::make_unique<SceneManager>();
-    progressiveManager = std::make_unique<ProgressiveManager>();
     
     try {
         presetManager.installFactoryPresets();
@@ -776,12 +774,6 @@ void SerpeAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
     }
     state.setProperty("sceneProgressiveLengthening", sceneLengtheningString, nullptr);
     
-    // Save progressive transformation state (Phase 4: Progressive State Persistence)
-    if (progressiveManager)
-    {
-        progressiveManager->saveProgressiveStatesToValueTree(state);
-    }
-    
     // Convert ValueTree to XML and save to memory block
     if (auto xml = state.createXml())
         copyXmlToBinary(*xml, destData);
@@ -918,12 +910,6 @@ void SerpeAudioProcessor::setStateInformation (const void* data, int sizeInBytes
             sceneBaseLengthPatterns.clear();
             sceneBaseLengthPatterns.resize(sceneCount);
             
-            // Restore progressive transformation state (Phase 4: Progressive State Persistence)
-            if (progressiveManager)
-            {
-                progressiveManager->loadProgressiveStatesFromValueTree(state);
-            }
-            
             // Apply the restored UPI pattern after all state has been loaded
             // CRITICAL: Use originalUPIInput if available (contains full scene syntax)
             juce::String patternToRestore = originalUPIInput.isEmpty() ? currentUPIInput : originalUPIInput;
@@ -936,10 +922,6 @@ void SerpeAudioProcessor::setStateInformation (const void* data, int sizeInBytes
                 if (sceneManager) {
                     sceneManager->resetScenes();
                 }
-                if (progressiveManager) {
-                    progressiveManager->clearAllProgressiveStates();
-                }
-                
                 // CRITICAL FIX: Use setUPIInput instead of parseAndApplyUPI for proper scene initialization
                 // This ensures scene state is set up exactly like manual entry (Enter key behavior)
                 setUPIInput(patternToRestore);
@@ -1001,12 +983,6 @@ void SerpeAudioProcessor::setStateInformation (const void* data, int sizeInBytes
             sceneBasePatterns.clear();
             sceneProgressiveLengthening.clear();
             sceneBaseLengthPatterns.clear();
-            
-            // Clear progressive transformation state (won't exist in old format)
-            if (progressiveManager)
-            {
-                progressiveManager->clearAllProgressiveStates();
-            }
             
             // CRITICAL FIX: Use setUPIInput for proper scene initialization (legacy format)
             // Use originalUPIInput if available (contains full scene syntax)
