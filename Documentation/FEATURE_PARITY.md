@@ -33,7 +33,14 @@ app, with its status in the new React WebView UI.
 > multi-operand combination with LCM projection · `;N`/`;-N` quantization ·
 > every codec (hex/octal/decimal/binary/onset-array, with and without `:N`) ·
 > and the leftmost-LSB convention (`0x1` → `1000`, `d5` → `101`).
-> The notation gap that remains is **progressive** — see its row.
+> **Progressive closed 2026-07-27.** It was the last ✗: stateful notation the
+> pure parser could not represent. `@enkerli/upi/progressive.js` makes the
+> state *derivable* (a function of the trigger index) instead of stored, so
+> `progressiveAt(desc, n)` stays pure; the probe grew a progressive section
+> that prints N successive triggers, and the transform sequences are pinned
+> bit-for-bit. `msuite upi "E(1,8)>8" --triggers 9` now prints the progression
+> rather than "Unrecognised pattern". Two honest residuals are in the rows
+> below: offset *direction* and lengthening randomness.
 
 **The structural cause** (drives most ✗/⚠): the new `upi.js` is a *subset*
 re-derivation. It (a) **rejects** notation the C++ engine accepts, so that input
@@ -65,8 +72,8 @@ actually plays (accent phase). Two corrections close most of this:
 | onset array `[0,3,6]:N` | ✓ | ✓ | ✓ | |
 | **Morse** (`.-`, `M:`, SOS/CQ, letter words) | ✓ `parseMorse*` | ✓ | ✓ (webapp) | ported to `upi.js` (`L:` custom durations still TODO) |
 | accents `{…}` (onset-cyclic) | ✓ | ✓ | ✓ | display now mirrors the audio's accent branch exactly (see Accents row + tail note) |
-| **progressive offset** `pat+N` / `pat%N` / `pat*N` | ✓ | ✓ | ✓ plugin / ✗ shared JS | Re-confirmed rejected by the shared engine 2026-07-27 (`E(3,8)%3`, `+2`, `*2` → REJECTED). **This is architectural, not an oversight:** progressive notation is *stateful* — it denotes a different pattern on every trigger, so a pure parse has nothing single to return. Closing it means a progressive-state layer in JS, not a parser tweak. In the plugin the C++ engine owns that state and the UI re-sends to advance (2026-07-01) |
-| **progressive transform** `pat>N` (B/W/E/D) | ✓ `applyProgressiveTransformation` | ✓ | ✓ plugin / ✗ shared JS | Same stateful reason; re-confirmed 2026-07-27 (`E(3,8)>5`, `B(3,8)>8` → REJECTED). `>` shift-case display verified via `getCycleStartOnsetCount` (tail note) |
+| **progressive offset** `pat+N` / `pat%N` / `pat*N` | ✓ | ✓ | ✓ | **Closed 2026-07-27** — `@enkerli/upi` `progressive.js`. Offset is `initial + triggerCount × step` (PatternEngine's rule); trigger 1 is the un-rotated base. ⚠ The rotation **direction** is not differential-tested: offset state lives in PatternEngine (processor-side), which the parser probe cannot reach, so JS uses the package's own `rotate` for internal consistency. Lengthening (`*N`) appends bell-curve random steps — structurally equal, never bit-equal, because both sides are random by design |
+| **progressive transform** `pat>N` (B/W/E/D) | ✓ `applyProgressiveTransformation` | ✓ | ✓ | **Closed 2026-07-27, bit-identical.** `progressiveAt(desc, n)` reproduces the engine's own sequences verbatim — `E(1,8)>8`, `B(1,17)>17`, `E(8,8)>1` are pinned as vectors taken from `serpe_parser_probe` (which now prints N successive triggers). Includes the ±1-onset walk, the dilution direction, the transformer letter before `>` defaulting to Barlow, and the **loop back to base** on reaching the target |
 | **pattern combination** `pat+pat` / `pat-pat` (LCM) | ✓ (fixed `-`) | ✓ | ✓ (webapp) | engine `-` fixed; ported to `upi.js` (union/diff, polygon-LCM) |
 | shorthand names (`tresillo`, `tri/pent/hex…`) | ✓ (fixed) | ✓ | ✓ (webapp) | engine fixed (Morse order); ported to `upi.js` |
 | **`A(2,2,3,2)` additive / aksak** | ✓ | ✓ | ✓ | beat GROUPS, one onset each — the Balkan 9/8 is `A(2,2,2,3)`. More general than `L:`/`D:`, which only say short-or-long. JS landed 2026-07-26, C++ 07-27; bit-identical (differential above) |
