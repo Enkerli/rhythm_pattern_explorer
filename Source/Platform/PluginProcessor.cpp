@@ -1603,9 +1603,41 @@ void SerpeAudioProcessor::setUPIInput(const juce::String& upiPattern)
     // Add to history when pattern is entered (not when restored from state)
     addToUPIHistory(upiPattern.trim());
 
-    // Check for progressive syntax: scenes first (pattern|pattern|pattern), then pattern%N (offset), pattern*N (lengthening)
     juce::String pattern = upiPattern.trim();
-    
+
+    // PRECEDENCE: poly '/' binds loosest (Alex, 2026-07-28). A top-level '/'
+    // means the string is several parallel lanes, and everything else — scenes
+    // '|', progressive '%N' '*N' '>N' — belongs to a LANE, not to the whole
+    // string. So the lane split happens before any of the peeling below.
+    //
+    // Getting this backwards is what made `E(3,8)%2|E(3,8)*3/E(3,7)` misbehave:
+    // the scene/progressive layer went first, took everything after the last
+    // '*' as the lengthening amount, and getIntValue() turned "3/E(3,7)" into
+    // plain 3 — silently discarding a whole lane. The JS parser has always
+    // split on '/' first, so this also stops the two engines disagreeing about
+    // what the same string means.
+    if (PolyParser::splitLanes(pattern).size() > 1)
+    {
+        // Whole-string scene/progressive state cannot apply to a poly string;
+        // leaving it set would let a previous mono pattern's offset leak in.
+        sceneManager->resetScenes();
+        progressiveOffset = 0;
+        progressiveStep = 0;
+        progressiveLengthening = 0;
+        basePattern = "";
+        baseLengthPattern.clear();
+
+        // Keep the full text so Tick/MIDI re-trigger replays the lanes with
+        // their own per-lane progressive state (PolyParser::beforeLaneParse).
+        originalUPIInput = pattern;
+
+        parseAndApplyUPI(pattern, true);
+        currentUPIInput = upiPattern;
+        return;
+    }
+
+    // Check for progressive syntax: scenes first (pattern|pattern|pattern), then pattern%N (offset), pattern*N (lengthening)
+
     // Store original UPI input if it contains progressive/scene syntax for later Tick/MIDI advancement
     bool hasProgressiveTransformation = pattern.contains(">");
     bool hasScenes = pattern.contains("|");
@@ -1632,7 +1664,15 @@ void SerpeAudioProcessor::setUPIInput(const juce::String& upiPattern)
         }
     }
     
-    bool isProgressiveLengthening = !hasScenes && pattern.contains("*") && pattern.lastIndexOf("*") > 0;
+    // The tail after '*' must be a bare number, exactly as '%N' already
+    // requires. Without this, getIntValue() quietly read "3/E(3,7)" as 3 and
+    // the rest of the string vanished.
+    bool isProgressiveLengthening = false;
+    if (!hasScenes && pattern.contains("*") && pattern.lastIndexOf("*") > 0)
+    {
+        juce::String afterStar = pattern.substring(pattern.lastIndexOf("*") + 1).trim();
+        isProgressiveLengthening = afterStar.containsOnly("0123456789") && afterStar.isNotEmpty();
+    }
     
     if (hasScenes)
     {

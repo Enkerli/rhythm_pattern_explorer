@@ -252,6 +252,18 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
             juce::juce_recommended_config_flags
             juce::juce_recommended_warning_flags)
 
+    # ── Poly precedence ('/' binds loosest) ─────────────────────────────────
+    juce_add_console_app(serpe_poly_precedence PRODUCT_NAME "serpe_poly_precedence")
+    target_sources(serpe_poly_precedence PRIVATE Source/Tests/PolyPrecedenceTests.cpp
+        Source/Core/PolyParser.cpp Source/Core/UPIParser.cpp Source/Core/PatternEngine.cpp
+        Source/Core/PatternUtils.cpp Source/Core/QuantizationEngine.cpp
+        Source/Managers/SceneManager.cpp)
+    target_compile_definitions(serpe_poly_precedence PRIVATE JUCE_USE_CURL=0)
+    juce_generate_juce_header(serpe_poly_precedence)
+    target_include_directories(serpe_poly_precedence PRIVATE Source/Core Source/Managers Source/Tests)
+    target_link_libraries(serpe_poly_precedence PRIVATE juce::juce_core juce::juce_data_structures
+        juce::juce_recommended_config_flags juce::juce_recommended_warning_flags)
+
     # ── Microtiming conformance (music-suite docs/SERPE_RECOVERY.md) ─────────
     # Locks Microtiming.h to the webapp's microtiming.js, vector for vector —
     # push/pull is felt, and a plugin that leans differently from the browser

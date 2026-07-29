@@ -27,22 +27,12 @@ void SceneManager::initializeScenes(const juce::StringArray& scenes)
     {
         juce::String scenePattern = scene.trim();
         
-        // Check if this scene has progressive syntax - exact replica
-        bool hasProgressiveOffset = false;
-        if ((scenePattern.contains("%") && scenePattern.lastIndexOf("%") > 0) || (scenePattern.contains("+") && scenePattern.lastIndexOf("+") > 0)) 
-        {
-            if (scenePattern.contains("%") && scenePattern.lastIndexOf("%") > 0) {
-                int lastPercentIndex = scenePattern.lastIndexOf("%");
-                juce::String afterPercent = scenePattern.substring(lastPercentIndex + 1).trim();
-                hasProgressiveOffset = afterPercent.containsOnly("0123456789-") && afterPercent.isNotEmpty();
-            } else if (scenePattern.contains("+") && scenePattern.lastIndexOf("+") > 0) {
-                int lastPlusIndex = scenePattern.lastIndexOf("+");
-                juce::String afterPlus = scenePattern.substring(lastPlusIndex + 1).trim();
-                hasProgressiveOffset = afterPlus.containsOnly("0123456789-") && afterPlus.isNotEmpty();
-            }
-        }
-        
-        bool hasProgressiveLengthening = scenePattern.contains("*") && scenePattern.lastIndexOf("*") > 0;
+        // Detection lives in the two helpers below, so the rules cannot drift
+        // apart from each other. They used to be duplicated inline here, and
+        // the copies disagreed: the '*' one never checked that what followed
+        // was a number.
+        const bool hasProgressiveOffset = sceneHasProgressiveOffset(scenePattern);
+        const bool hasProgressiveLengthening = sceneHasProgressiveLengthening(scenePattern);
         
         if (hasProgressiveOffset) 
         {
@@ -286,7 +276,12 @@ bool SceneManager::sceneHasProgressiveOffset(const juce::String& scenePattern) c
 
 bool SceneManager::sceneHasProgressiveLengthening(const juce::String& scenePattern) const
 {
-    return scenePattern.contains("*") && scenePattern.lastIndexOf("*") > 0;
+    // The tail after '*' must be a bare number, exactly as sceneHasProgressiveOffset
+    // already requires of '%N'. Without this getIntValue() read "3/E(3,7)" as a
+    // plain 3 and silently dropped the poly lane behind it.
+    if (!scenePattern.contains("*") || scenePattern.lastIndexOf("*") <= 0) return false;
+    const auto afterStar = scenePattern.substring(scenePattern.lastIndexOf("*") + 1).trim();
+    return afterStar.containsOnly("0123456789") && afterStar.isNotEmpty();
 }
 
 juce::String SceneManager::getDebugInfo() const
