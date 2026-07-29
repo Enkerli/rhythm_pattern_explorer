@@ -2424,7 +2424,8 @@ void SerpeAudioProcessor::traceScene(SceneTrace::Site site)
     sceneTrace.record(site,
                       sceneManager->getCurrentSceneIndex(),
                       sceneManager->getCurrentSceneProgressiveOffset(),
-                      sceneManager->getCurrentSceneProgressiveLengthening());
+                      sceneManager->getCurrentSceneProgressiveLengthening(),
+                      patternEngine.getBinaryString());
 }
 
 void SerpeAudioProcessor::advanceScene()

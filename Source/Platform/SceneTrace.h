@@ -58,8 +58,13 @@ public:
         }
     }
 
-    /** Audio-thread safe. `index`/`offset`/`lengthening` are the state AFTER the step. */
-    void record (Site site, int index, int offset, int lengthening)
+    /**
+        Audio-thread safe. `index`/`offset`/`lengthening` are the state AFTER the
+        step, and `bits` is what the ENGINE actually holds at that moment — the
+        one field that separates "the scene never advanced" from "it advanced and
+        the display never followed".
+    */
+    void record (Site site, int index, int offset, int lengthening, const juce::String& bits)
     {
         const auto slot = cursor.fetch_add (1, std::memory_order_relaxed);
         auto& e = events[slot % kCapacity];
@@ -68,6 +73,12 @@ public:
         e.index       = static_cast<juce::int16> (index);
         e.offset      = static_cast<juce::int16> (offset);
         e.lengthening = static_cast<juce::int16> (lengthening);
+        e.steps       = static_cast<juce::int16> (bits.length());
+        // Fixed buffer, no allocation on the audio thread. Long patterns are
+        // truncated; the step count above still reports the true length.
+        const int n = juce::jmin (static_cast<int> (kBitsShown), bits.length());
+        for (int i = 0; i < n; ++i) e.bits[i] = bits[i] == '1' ? '1' : '0';
+        e.bits[n] = 0;
         e.valid       = true;
     }
 
@@ -89,7 +100,7 @@ public:
             << "A blank line separates events more than 250 ms apart, so one key\n"
             << "press or MIDI note is one block. Each block should contain exactly\n"
             << "ONE ADVANCE. More than one is the bug.\n\n"
-            << "    +ms  site                          scene  offset  length\n";
+            << "    +ms  site                          scene  offset  length  steps  engine pattern\n";
 
         juce::uint32 previousMs = 0;
         for (juce::uint32 i = first; i < total; ++i)
@@ -105,7 +116,9 @@ public:
                 << juce::String (siteName (e.site)).paddedRight (' ', 30)
                 << juce::String (e.index).paddedLeft (' ', 5)
                 << juce::String (e.offset).paddedLeft (' ', 8)
-                << juce::String (e.lengthening).paddedLeft (' ', 8) << "\n";
+                << juce::String (e.lengthening).paddedLeft (' ', 8)
+                << juce::String (e.steps).paddedLeft (' ', 7) << "  "
+                << juce::String (e.bits) << "\n";
         }
 
         if (total == 0)
@@ -139,6 +152,7 @@ public:
 
 private:
     static constexpr size_t kCapacity = 512;
+    static constexpr size_t kBitsShown = 32;
 
     struct Event
     {
@@ -147,6 +161,8 @@ private:
         juce::int16 index = 0;
         juce::int16 offset = 0;
         juce::int16 lengthening = 0;
+        juce::int16 steps = 0;
+        char bits[kBitsShown + 1] = {};
         bool valid = false;
     };
 
