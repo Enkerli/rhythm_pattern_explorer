@@ -72,7 +72,7 @@ actually plays (accent phase). Two corrections close most of this:
 | onset array `[0,3,6]:N` | ✓ | ✓ | ✓ | |
 | **Morse** (`.-`, `M:`, SOS/CQ, letter words) | ✓ `parseMorse*` | ✓ | ✓ (webapp) | ported to `upi.js` (`L:` custom durations still TODO) |
 | accents `{…}` (onset-cyclic) | ✓ | ✓ | ✓ | display now mirrors the audio's accent branch exactly (see Accents row + tail note) |
-| **progressive offset** `pat+N` / `pat%N` / `pat*N` | ✓ | ✓ | ✓ | **Closed 2026-07-27** — `@enkerli/upi` `progressive.js`. Offset is `initial + triggerCount × step` (PatternEngine's rule); trigger 1 is the un-rotated base. ⚠ The rotation **direction** is not differential-tested: offset state lives in PatternEngine (processor-side), which the parser probe cannot reach, so JS uses the package's own `rotate` for internal consistency. Lengthening (`*N`) appends bell-curve random steps — structurally equal, never bit-equal, because both sides are random by design |
+| **progressive offset** `pat+N` / `pat%N` / `pat*N` | ✓ | ✓ | ✓ | **Closed 2026-07-27; direction and phase settled 2026-07-28, now bit-identical.** The ⚠ here said the rotation direction could not be differential-tested because offset state lives in PatternEngine, which the parser probe cannot reach. A **poly lane** reaches it, so `serpe_poly_precedence` became the missing harness — and both halves turned out to be wrong. **Sign:** JS `rotate(p, +k)` equals C++ `rotatePattern(p, -k)`; the two helpers were written with opposite conventions. **Phase:** the engine shows offset N on the *first* trigger, not the un-rotated base, so the JS ran a trigger behind the plugin. JS moved to the engine (Alex: engine-authoritative). `E(3,8)%2` is now pinned as a vector: `10100100 00101001 01001010 10010010 10100100`. Lengthening (`*N`) took the same phase fix — trigger 1 is base + step, matching a scene entering `E(3,8)*3` at 11 steps — but stays structural, never bit-equal, because both sides are random by design |
 | **progressive transform** `pat>N` (B/W/E/D) | ✓ `applyProgressiveTransformation` | ✓ | ✓ | **Closed 2026-07-27, bit-identical.** `progressiveAt(desc, n)` reproduces the engine's own sequences verbatim — `E(1,8)>8`, `B(1,17)>17`, `E(8,8)>1` are pinned as vectors taken from `serpe_parser_probe` (which now prints N successive triggers). Includes the ±1-onset walk, the dilution direction, the transformer letter before `>` defaulting to Barlow, and the **loop back to base** on reaching the target |
 | **pattern combination** `pat+pat` / `pat-pat` (LCM) | ✓ (fixed `-`) | ✓ | ✓ (webapp) | engine `-` fixed; ported to `upi.js` (union/diff, polygon-LCM) |
 | shorthand names (`tresillo`, `tri/pent/hex…`) | ✓ (fixed) | ✓ | ✓ (webapp) | engine fixed (Morse order); ported to `upi.js` |
@@ -247,6 +247,15 @@ Mark items here as they land; this file — not the design doc — is the scope.
 ---
 
 ## Engine archaeology — progressive offset, 2026-07-27 (read before "cleaning up")
+
+> **RESOLVED 2026-07-28.** `triggerProgressiveOffset()` now has a caller: the
+> poly lane path calls it once per trigger (Serpe `f1917a1`), so the engine's
+> own progressive-offset machinery is live rather than configured-and-ignored.
+> That also supplied the harness this section says was missing, and settled
+> both the rotation sign and the phase — see the `pat%N` row above. The mono
+> path still rotates via the processor's own `progressiveOffset` int rather
+> than the engine's, so the duplication described below is real but now only
+> half of it is inert. Kept because the reasoning still applies.
 
 Found while porting progressive notation to JS. **Nothing was changed**; this
 is a record so the next person doesn't mistake a half-finished migration for
