@@ -187,6 +187,8 @@ public:
     juce::String getCurrentUPIInput() const { return currentUPIInput; } // Alias for compatibility
     void parseAndApplyUPI(const juce::String& upiPattern, bool resetAccentPosition = true);
     void applyCurrentScenePattern();
+    /** Scene rotation/lengthening — runs after the queued base pattern lands. */
+    void applySceneProgressiveTransform();
     
     // Background color persistence
     int getCurrentBackgroundColor() const { return currentBackgroundColor; }
@@ -213,14 +215,8 @@ public:
     int getProgressiveOffset() const { return progressiveOffset; }
     
     // Scene information access for UI
-    int getCurrentSceneIndex() const { 
-        // TRANSITION: Use SceneManager if available, fallback to legacy for safety
-        return sceneManager ? sceneManager->getCurrentSceneIndex() : currentSceneIndex; 
-    }
-    int getSceneCount() const { 
-        // TRANSITION: Use SceneManager if available, fallback to legacy for safety
-        return sceneManager ? sceneManager->getSceneCount() : static_cast<int>(scenePatterns.size()); 
-    }
+    int getCurrentSceneIndex() const { return sceneManager->getCurrentSceneIndex(); }
+    int getSceneCount() const { return sceneManager->getSceneCount(); }
     
     // Progressive transformation access for UI  
     int getProgressiveTriggerCount() const;
@@ -231,15 +227,7 @@ public:
     void advanceProgressiveLengthening();
     
     // Scene cycling support (universal for all patterns)
-    void resetScenes() { 
-        currentSceneIndex = 0; 
-        scenePatterns.clear(); 
-        sceneProgressiveOffsets.clear();
-        sceneProgressiveSteps.clear();
-        sceneBasePatterns.clear();
-        sceneProgressiveLengthening.clear();
-        sceneBaseLengthPatterns.clear();
-    }
+    void resetScenes() { sceneManager->resetScenes(); }
     void advanceScene();
     
     // Accent system access for UI and processing
@@ -457,18 +445,9 @@ private:
     std::vector<bool> baseLengthPattern; // Original pattern for lengthening
     std::mt19937 randomGenerator;   // For bell curve random step generation
     
-    // Scene cycling support (works for any pattern)
-    juce::StringArray scenePatterns; // List of patterns to cycle through - LEGACY, being replaced
-    int currentSceneIndex = 0;      // Current scene position - LEGACY, being replaced
-    
-    // Per-scene progressive state tracking - LEGACY, being replaced
-    std::vector<int> sceneProgressiveOffsets;     // Current offset for each scene
-    std::vector<int> sceneProgressiveSteps;       // Step size for each scene
-    std::vector<juce::String> sceneBasePatterns;  // Base pattern for each scene
-    std::vector<int> sceneProgressiveLengthening; // Current lengthening for each scene
-    std::vector<std::vector<bool>> sceneBaseLengthPatterns; // Base patterns for lengthening
-    
-    // New encapsulated management - TRANSITION: Running parallel with legacy for safety
+    // Scene cycling support (works for any pattern). SceneManager owns all of
+    // it — patterns, current index, per-scene progressive state, persistence.
+    // Constructed in the constructor and never released, so it is always valid.
     std::unique_ptr<SceneManager> sceneManager;
     
     // Thread safety
