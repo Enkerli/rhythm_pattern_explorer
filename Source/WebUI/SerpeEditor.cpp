@@ -159,6 +159,10 @@ void SerpeEditor::resized() { webView.setBounds (getLocalBounds()); }
 
 void SerpeEditor::timerCallback()
 {
+    // TEMPORARY (SceneTrace.h): message-thread flush, before the pageReady gate
+    // so it still runs if the WebUI never reports in.
+    proc.flushSceneTrace();
+
     if (!pageReady) return;
     sendTransport();
     sendEngineState();   // re-pushes only when the pattern/accents actually change

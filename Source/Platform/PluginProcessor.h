@@ -18,6 +18,7 @@
 #include "../Managers/SceneManager.h"
 #include "../Managers/PresetManager.h"
 #include "PlatformSpecific.h"
+#include "SceneTrace.h"   // TEMPORARY instrumentation - see that file
 #include <atomic>
 #include <array>
 #include "../Core/Microtiming.h"
@@ -226,6 +227,9 @@ public:
     
     // Scene cycling support (universal for all patterns)
     void resetScenes() { sceneManager->resetScenes(); }
+    /** TEMPORARY: message thread only (the editor timer calls it). */
+    void flushSceneTrace() { sceneTrace.writeTraceIfChanged(); }
+    void traceScene(SceneTrace::Site site);
     void advanceScene();
     
     // Accent system access for UI and processing
@@ -447,6 +451,10 @@ private:
     // it — patterns, current index, per-scene progressive state, persistence.
     // Constructed in the constructor and never released, so it is always valid.
     std::unique_ptr<SceneManager> sceneManager;
+
+    // TEMPORARY: records the order of scene trigger events. Delete with
+    // SceneTrace.h once the multiple-advance bug is fixed.
+    SceneTrace sceneTrace;
     
     // Thread safety
     juce::CriticalSection processingLock;

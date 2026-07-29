@@ -320,6 +320,7 @@ void SerpeAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
                     // CRITICAL FIX WITH ERROR PROTECTION: If we have scenes, handle scene advancement first
                     // This prevents double/triple advancement when scenes contain progressive transformations
                     try {
+                        traceScene(SceneTrace::TickEdge);   // TEMPORARY
                         advanceScene();
                         applyCurrentScenePattern(); 
                         triggerNeeded = true;
@@ -1602,6 +1603,8 @@ void SerpeAudioProcessor::setUPIInput(const juce::String& upiPattern)
     
     // Add to history when pattern is entered (not when restored from state)
     addToUPIHistory(upiPattern.trim());
+
+    if (upiPattern.contains("|")) traceScene(SceneTrace::UpiSubmit);   // TEMPORARY
     
     // Check for progressive syntax: scenes first (pattern|pattern|pattern), then pattern%N (offset), pattern*N (lengthening)
     juce::String pattern = upiPattern.trim();
@@ -1656,6 +1659,7 @@ void SerpeAudioProcessor::setUPIInput(const juce::String& upiPattern)
 
         if (isSameSequence && !running.isEmpty())
         {
+            traceScene(SceneTrace::UpiSameSequence);   // TEMPORARY
             // Same sequence - advance to next scene
             advanceScene();
 
@@ -1665,6 +1669,7 @@ void SerpeAudioProcessor::setUPIInput(const juce::String& upiPattern)
             // New scene sequence - SceneManager parses each scene's progressive
             // syntax and initialises its per-scene state.
             sceneManager->initializeScenes(scenes);
+            traceScene(SceneTrace::UpiNewSequence);   // TEMPORARY
         }
 
         // Parse and apply the current scene pattern using per-scene progressive state
@@ -2234,6 +2239,7 @@ void SerpeAudioProcessor::checkMidiInputForTriggers(juce::MidiBuffer& midiMessag
                     if (hasScenes) {
                         // CRITICAL FIX WITH ERROR PROTECTION: If we have scenes, handle scene advancement first
                         // This prevents double/triple advancement when scenes contain progressive transformations
+                        traceScene(SceneTrace::MidiNote);   // TEMPORARY
                         advanceScene();
                         applyCurrentScenePattern(); 
                         triggerNeeded = true;
@@ -2411,6 +2417,16 @@ double SerpeAudioProcessor::calculateAutoPatternLength(const std::vector<bool>& 
     return baseLength;
 }
 
+// TEMPORARY (SceneTrace.h): one place that snapshots the scene state, so every
+// trace line is directly comparable.
+void SerpeAudioProcessor::traceScene(SceneTrace::Site site)
+{
+    sceneTrace.record(site,
+                      sceneManager->getCurrentSceneIndex(),
+                      sceneManager->getCurrentSceneProgressiveOffset(),
+                      sceneManager->getCurrentSceneProgressiveLengthening());
+}
+
 void SerpeAudioProcessor::advanceScene()
 {
     if (sceneManager->hasScenes())
@@ -2418,6 +2434,7 @@ void SerpeAudioProcessor::advanceScene()
         // Advances the current scene's progressive state, then moves to the
         // next scene. See SceneManager::advanceScene.
         sceneManager->advanceScene();
+        traceScene(SceneTrace::AdvanceScene);   // TEMPORARY
 
         // Notify UI that pattern has changed for accent map updates
         patternChanged.store(true);
@@ -2429,6 +2446,8 @@ void SerpeAudioProcessor::applyCurrentScenePattern()
 {
     if (sceneManager->hasScenes())
     {
+        traceScene(SceneTrace::ApplyScene);   // TEMPORARY
+
         juce::String basePattern = sceneManager->getCurrentSceneBasePattern();
         int progressiveOffset = sceneManager->getCurrentSceneProgressiveOffset();
         int progressiveLengthening = sceneManager->getCurrentSceneProgressiveLengthening();
