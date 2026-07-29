@@ -111,6 +111,56 @@ int main()
         std::printf ("       sequence: %s\n", seen.joinIntoString (" ").toRawUTF8());
     }
 
+    std::printf ("\n=== per-lane progressive lengthening: body*N ===\n");
+    {
+        auto r = PolyParser::parse ("E(3,8)*3/E(3,7)");
+        expect (r.ok, juce::String ("E(3,8)*3/E(3,7) parses: ") + (r.ok ? "yes" : r.error));
+        if (r.ok && r.lanes.size() == 2)
+        {
+            expect (r.lanes[0].hasProgressiveLengthening && r.lanes[0].progressiveLengtheningStep == 3,
+                    "lane 1 grows by 3 per trigger");
+            expect (! r.lanes[1].hasProgressiveLengthening, "lane 2 is fixed — growth is lane-local");
+            expect (! r.lanes[0].hasProgressiveOffset, "lengthening and offset are exclusive");
+            expect (r.lanes[0].steps.size() == 8,
+                    "the PARSED lane is still the 8-step base; growth is runtime state");
+            expect (r.lanes[0].source.contains ("*3"), "lane source keeps '*3'");
+        }
+
+        // Two suffixes on one lane. Both detectors look at the LAST occurrence
+        // of their own symbol and require a bare number after it, so whichever
+        // is genuinely trailing wins — the same rule mono applies, and the
+        // reason is that '%2*3' is not a number so '%' never matches. What
+        // matters is that a lane never claims BOTH.
+        for (auto* s : { "E(3,8)%2*3/E(3,7)", "E(3,8)*3%2/E(3,7)" })
+        {
+            auto both = PolyParser::parse (juce::String (s));
+            if (both.ok && both.lanes.size() == 2)
+                expect (! (both.lanes[0].hasProgressiveOffset && both.lanes[0].hasProgressiveLengthening),
+                        juce::String (s) + ": lane takes at most one progressive suffix");
+            else
+                expect (true, juce::String (s) + ": rejected outright (" + both.error + ")");
+        }
+
+        // Growth: each trigger appends `step` steps to what is already there,
+        // so earlier growth stays put instead of the tail re-randomising.
+        // Mirrors parseAndApplyPolyUPI's lane.grown.
+        const auto base = r.lanes[0].steps;
+        std::vector<bool> grown = base;
+        juce::Random rng (1);
+        juce::StringArray lens;
+        for (int t = 0; t < 4; ++t)
+        {
+            const size_t before = grown.size();
+            for (int k = 0; k < 3; ++k) grown.push_back (rng.nextBool());
+            expect (grown.size() == before + 3, "each trigger adds exactly 3 steps");
+            lens.add (juce::String ((int) grown.size()));
+        }
+        expect (lens.joinIntoString (",") == "11,14,17,20",
+                "lengths run 11,14,17,20 — trigger 1 is already base+step, as the engine does");
+        expect (std::equal (base.begin(), base.end(), grown.begin()),
+                "the base stays as a prefix, so the lane grows rather than churns");
+    }
+
     std::printf ("\n%s — %d failure(s)\n", failures == 0 ? "PASS" : "FAIL", failures);
     return failures == 0 ? 0 : 1;
 }

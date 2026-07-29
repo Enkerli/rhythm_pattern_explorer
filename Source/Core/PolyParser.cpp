@@ -222,6 +222,8 @@ PolyParseResult PolyParser::parse(const juce::String& input,
         const juce::String laneBodyWithSuffix = src;
         bool laneHasPercentOffset = false;
         int lanePercentStep = 0;
+        bool laneHasLengthening = false;
+        int laneLengthenStep = 0;
         {
             const int pc = src.lastIndexOfChar('%');
             if (pc > 0)
@@ -232,6 +234,23 @@ PolyParseResult PolyParser::parse(const juce::String& input,
                     laneHasPercentOffset = true;
                     lanePercentStep = after.getIntValue();
                     src = src.substring(0, pc).trim();
+                }
+            }
+            // `body*N` — this lane grows by N steps per trigger. Only when the
+            // offset did not already claim a suffix: a lane carries one or the
+            // other, as mono does.
+            if (! laneHasPercentOffset)
+            {
+                const int st = src.lastIndexOfChar('*');
+                if (st > 0)
+                {
+                    const juce::String after = src.substring(st + 1).trim();
+                    if (after.isNotEmpty() && after.containsOnly("0123456789"))
+                    {
+                        laneHasLengthening = true;
+                        laneLengthenStep = after.getIntValue();
+                        src = src.substring(0, st).trim();
+                    }
                 }
             }
         }
@@ -269,6 +288,13 @@ PolyParseResult PolyParser::parse(const juce::String& input,
             lane.progressiveInitialOffset = parsed.initialOffset;
             lane.progressiveOffsetStep = parsed.progressiveOffset;
         }
+        // At most one progressive suffix per lane. UPIParser understands the
+        // '%N' spelling too, so `E(3,8)%2*3` could otherwise come back flagged
+        // for BOTH — the '*' strip leaves "E(3,8)%2" for UPIParser, which then
+        // reports an offset of its own. Offset wins, which is the order the
+        // runtime and the mono path both apply.
+        lane.hasProgressiveLengthening = laneHasLengthening && ! lane.hasProgressiveOffset;
+        lane.progressiveLengtheningStep = lane.hasProgressiveLengthening ? laneLengthenStep : 0;
         lane.hasMicrotiming = parsed.hasMicrotiming;
         lane.microtimingDepth = parsed.microtimingDepth;
         lane.microtimingSeed = parsed.microtimingSeed;

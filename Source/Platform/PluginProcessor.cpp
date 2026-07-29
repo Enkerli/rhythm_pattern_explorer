@@ -1305,6 +1305,8 @@ void SerpeAudioProcessor::parseAndApplyPolyUPI(const juce::String& upiPattern)
 
             lane.hasProgressiveOffset = true;
             lane.progressiveOffsetStep = parsed.progressiveOffsetStep;
+            lane.hasProgressiveLengthening = false;
+            lane.grown.clear();
 
             // Rotate from the freshly parsed base every time, never from the
             // already-rotated pattern, so the offsets cannot compound.
@@ -1312,11 +1314,32 @@ void SerpeAudioProcessor::parseAndApplyPolyUPI(const juce::String& upiPattern)
             lane.engine.setPattern(PatternUtils::rotatePattern(parsed.steps,
                                                               -lane.engine.getCurrentOffset()));
         }
+        else if (parsed.hasProgressiveLengthening)
+        {
+            lane.engine.setProgressiveOffset(false);
+            lane.hasProgressiveOffset = false;
+            lane.progressiveOffsetStep = 0;
+            lane.hasProgressiveLengthening = true;
+            lane.progressiveLengtheningStep = parsed.progressiveLengtheningStep;
+
+            // Same restart/advance rule as the offset above. A new lane body
+            // starts one step of growth in — the engine's phase for '*N',
+            // which is why a scene entering E(3,8)*3 plays 11 steps and not 8.
+            if (patternChangedForLane || lane.grown.empty())
+                lane.grown = parsed.steps;
+
+            auto extra = generateBellCurveRandomSteps(parsed.progressiveLengtheningStep);
+            lane.grown.insert(lane.grown.end(), extra.begin(), extra.end());
+            lane.engine.setPattern(lane.grown);
+        }
         else
         {
             lane.engine.setProgressiveOffset(false);
             lane.hasProgressiveOffset = false;
             lane.progressiveOffsetStep = 0;
+            lane.hasProgressiveLengthening = false;
+            lane.progressiveLengtheningStep = 0;
+            lane.grown.clear();
             lane.engine.setPattern(parsed.steps);
         }
 

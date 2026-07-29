@@ -65,6 +65,12 @@ struct PolyLane
     int progressiveInitialOffset = 0;
     int progressiveOffsetStep = 0;
 
+    // Progressive LENGTHENING (`body*N`) — this lane grows by N steps per
+    // trigger. Mutually exclusive with the offset above, the same way the mono
+    // path treats them (offset wins if a lane somehow carries both).
+    bool hasProgressiveLengthening = false;
+    int progressiveLengtheningStep = 0;
+
     // Per-lane feel, carried from this lane's own UPIParser::ParseResult.
     // `E(3,8) PD(90%) / E(3,8) PD(10%)` is the whole point of putting PD on a
     // lane: two lanes leaning by DIFFERENT amounts. Dropping it here is why

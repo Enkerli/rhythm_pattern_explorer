@@ -354,6 +354,14 @@ private:
         PolyOffset offset;                // Keil micro-timing offset (@ms / @frac), none = dead on the grid
         bool hasProgressiveOffset = false;
         int progressiveOffsetStep = 0;    // amount to advance per trigger (0 = not progressive)
+
+        // Progressive LENGTHENING (`body*N`) for this lane. `grown` is the
+        // pattern as it stands, extended by `step` fresh steps per trigger —
+        // kept rather than recomputed so earlier growth STAYS put and the lane
+        // actually grows, instead of re-randomising its whole tail each time.
+        bool hasProgressiveLengthening = false;
+        int progressiveLengtheningStep = 0;
+        std::vector<bool> grown;
         int lastProcessedStep = -1;       // this lane's own step-boundary tracking, cycle-lock clock
 
         // This lane's OWN microtiming walk (PD on the lane body). Per-lane by
