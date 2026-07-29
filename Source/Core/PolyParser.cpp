@@ -17,6 +17,46 @@
 namespace
 {
     constexpr int kMaxMs = 50;
+
+    /**
+     * Strip an optional "name=" label. Shared by parse() and laneScenes() so
+     * the two cannot disagree about where a lane body starts — the kind of
+     * duplication that has already caused two bugs in this grammar.
+     */
+    juce::String stripLabel(const juce::String& src, juce::String& labelOut)
+    {
+        const int eq = src.indexOfChar('=');
+        if (eq <= 0) return src;
+
+        juce::String candidate = src.substring(0, eq).trimEnd();
+        bool validLabel = candidate.isNotEmpty() && juce::CharacterFunctions::isLetter(candidate[0]) != 0;
+        for (int k = 1; validLabel && k < candidate.length(); ++k)
+        {
+            auto ch = candidate[k];
+            if (! (juce::CharacterFunctions::isLetterOrDigit(ch) || ch == '_' || ch == '-'))
+                validLabel = false;
+        }
+        juce::String after = src.substring(eq + 1).trimStart();
+        if (validLabel && after.isNotEmpty())
+        {
+            labelOut = candidate;
+            return after;
+        }
+        return src;
+    }
+
+    /** A lane body split on '|'. No chain gives a one-element array. */
+    juce::StringArray splitScenes(const juce::String& laneBody)
+    {
+        juce::StringArray out;
+        for (auto& sc : juce::StringArray::fromTokens(laneBody, "|", ""))
+        {
+            auto t = sc.trim();
+            if (t.isNotEmpty()) out.add(t);
+        }
+        if (out.isEmpty()) out.add(laneBody.trim());
+        return out;
+    }
     // MAX_FRAC = 1/8, compared as num/den <= 1/8  <=>  num*8 <= den (den > 0).
 }
 
@@ -165,8 +205,23 @@ PolyParser::OffsetParse PolyParser::parseOffset(const juce::String& laneSrc)
 }
 
 //==============================================================================
+std::vector<juce::StringArray> PolyParser::laneScenes(const juce::String& input)
+{
+    std::vector<juce::StringArray> out;
+    for (auto& raw : splitLanes(input.trim()))
+    {
+        juce::String label;
+        juce::String body = stripLabel(raw, label);
+        auto off = parseOffset(body);
+        // A bad '@' is parse()'s error to report; here just take the body as-is.
+        out.push_back(splitScenes(off.hasError ? body : off.rest));
+    }
+    return out;
+}
+
 PolyParseResult PolyParser::parse(const juce::String& input,
-                                   const std::function<void(int)>& beforeLaneParse)
+                                   const std::function<void(int)>& beforeLaneParse,
+                                   const std::vector<int>& sceneIndices)
 {
     PolyParseResult result;
     auto lanesSrc = splitLanes(input.trim());
@@ -181,25 +236,7 @@ PolyParseResult PolyParser::parse(const juce::String& input,
         juce::String src = lanesSrc[i];
         juce::String label = "lane" + juce::String(i + 1);
 
-        // Optional "name=" label: ^([A-Za-z][\w-]*)\s*=\s*(.+)$
-        int eq = src.indexOfChar('=');
-        if (eq > 0)
-        {
-            juce::String candidate = src.substring(0, eq).trimEnd();
-            bool validLabel = candidate.isNotEmpty() && juce::CharacterFunctions::isLetter(candidate[0]) != 0;
-            for (int k = 1; validLabel && k < candidate.length(); ++k)
-            {
-                auto ch = candidate[k];
-                if (! (juce::CharacterFunctions::isLetterOrDigit(ch) || ch == '_' || ch == '-'))
-                    validLabel = false;
-            }
-            juce::String after = src.substring(eq + 1).trimStart();
-            if (validLabel && after.isNotEmpty())
-            {
-                label = candidate;
-                src = after;
-            }
-        }
+        src = stripLabel(src, label);
 
         auto off = parseOffset(src);
         if (off.hasError)
@@ -210,6 +247,16 @@ PolyParseResult PolyParser::parse(const juce::String& input,
             return result;
         }
         src = off.rest;
+
+        // Scenes belong to a LANE ('/' binds loosest), so each lane cycles its
+        // own chain. The caller owns the per-lane scene position and passes it
+        // in; parse() stays pure and just resolves the requested scene.
+        const auto scenes = splitScenes(src);
+        const int sceneCount = scenes.size();
+        int sceneIndex = 0;
+        if (i < static_cast<int>(sceneIndices.size()) && sceneCount > 0)
+            sceneIndex = ((sceneIndices[static_cast<size_t>(i)] % sceneCount) + sceneCount) % sceneCount;
+        src = scenes[sceneIndex];
 
         // Per-lane progressive offset, `body%N` (docs/SERPE_POLY.md 2.5:
         // '/' binds loosest, so '%N' is the LANE's, not the whole string's).
@@ -270,6 +317,8 @@ PolyParseResult PolyParser::parse(const juce::String& input,
 
         PolyLane lane;
         lane.label = label;
+        lane.sceneCount = sceneCount;
+        lane.sceneIndex = sceneIndex;
         lane.steps = parsed.pattern;
         lane.offset = off.offset;
         // Keep the '%N' in `source`: the processor compares it against the

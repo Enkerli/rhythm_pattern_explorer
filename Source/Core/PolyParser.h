@@ -52,6 +52,11 @@ struct PolyOffset
 struct PolyLane
 {
     juce::String label;
+    // How many scenes this lane cycles through ('|' inside the lane). 1 when
+    // the lane has no chain. The steps/progressive fields below describe the
+    // scene that was asked for via parse()'s sceneIndices.
+    int sceneCount = 1;
+    int sceneIndex = 0;
     std::vector<bool> steps;
     PolyOffset offset;         // the Keil micro-timing offset (@ms / @frac) — NOT the below
     juce::String source;       // lane body after stripping label + offset
@@ -101,7 +106,16 @@ public:
      * tests omit it (none of the vectors use progressive syntax).
      */
     static PolyParseResult parse(const juce::String& input,
-                                  const std::function<void(int)>& beforeLaneParse = {});
+                                  const std::function<void(int)>& beforeLaneParse = {},
+                                  const std::vector<int>& sceneIndices = {});
+
+    /**
+     * Each lane's scene chain, after the label and '@' offset are stripped.
+     * A lane with no '|' yields a one-element array, so callers can treat
+     * every lane the same. Lets the caller advance its own per-lane scene
+     * state BEFORE parse(), then tell parse() which scene each lane is on.
+     */
+    static std::vector<juce::StringArray> laneScenes(const juce::String& input);
 
     /**
      * Split poly notation into lane strings on TOP-LEVEL '/', respecting

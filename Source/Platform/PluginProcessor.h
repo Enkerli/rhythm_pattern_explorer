@@ -361,7 +361,21 @@ private:
         // actually grows, instead of re-randomising its whole tail each time.
         bool hasProgressiveLengthening = false;
         int progressiveLengtheningStep = 0;
-        std::vector<bool> grown;
+
+        // Scenes are per LANE ('/' binds loosest), and every lane advances its
+        // OWN chain on every trigger — so a 2-scene lane against a 3-scene one
+        // takes 6 triggers to come back round. That independence is the whole
+        // reason to put a chain on a lane rather than on the string.
+        juce::StringArray sceneChain;     // this lane's scenes, as typed
+        int sceneIndex = 0;
+        // Progressive state is per (lane, scene): scene 2 keeps growing while
+        // scene 1 keeps rotating, each remembering where it got to. Sized to
+        // sceneChain, so index by sceneIndex.
+        // How many times each scene has been entered. Progressive state is
+        // DERIVED from this (offset = step * visits) rather than accumulated,
+        // so it cannot drift out of step with the scene it belongs to.
+        std::vector<int> sceneVisits;
+        std::vector<std::vector<bool>> sceneGrown;  // grown pattern per scene
         int lastProcessedStep = -1;       // this lane's own step-boundary tracking, cycle-lock clock
 
         // This lane's OWN microtiming walk (PD on the lane body). Per-lane by

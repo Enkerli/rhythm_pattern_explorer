@@ -1242,6 +1242,36 @@ void SerpeAudioProcessor::clearAllActiveNotes(juce::MidiBuffer& midiBuffer)
 
 void SerpeAudioProcessor::parseAndApplyPolyUPI(const juce::String& upiPattern)
 {
+    // Advance each lane's OWN scene chain first, so parse() below resolves the
+    // scene this lane is now on. Every lane steps on every trigger and they do
+    // not have to be the same length: two scenes against three come back round
+    // together only every six triggers, which is the point of putting a chain
+    // on a lane instead of on the whole string.
+    const auto chains = PolyParser::laneScenes(upiPattern);
+    std::vector<int> sceneIndices;
+    sceneIndices.reserve(chains.size());
+    for (size_t i = 0; i < chains.size(); ++i)
+    {
+        if (i >= static_cast<size_t>(kMaxPolyLanes)) break;
+        auto& lane = polyLanes[i];
+        const int n = juce::jmax(1, chains[i].size());
+
+        if (lane.sceneChain != chains[i])
+        {
+            // A new chain starts on its first scene rather than advancing into
+            // it, so what you typed is what you hear on the first trigger.
+            lane.sceneChain = chains[i];
+            lane.sceneIndex = 0;
+            lane.sceneVisits.assign(static_cast<size_t>(n), 0);
+            lane.sceneGrown.assign(static_cast<size_t>(n), {});
+        }
+        else
+        {
+            lane.sceneIndex = (lane.sceneIndex + 1) % n;
+        }
+        sceneIndices.push_back(lane.sceneIndex);
+    }
+
     auto poly = PolyParser::parse(upiPattern, [this](int laneIndex)
     {
         // Bind THIS lane's own engine before UPIParser::parse runs, so any
@@ -1249,7 +1279,7 @@ void SerpeAudioProcessor::parseAndApplyPolyUPI(const juce::String& upiPattern)
         // own PatternEngine's offset state, not another lane's.
         if (laneIndex >= 0 && laneIndex < kMaxPolyLanes)
             UPIParser::setProgressiveOffsetEngine(&polyLanes[static_cast<size_t>(laneIndex)].engine);
-    });
+    }, sceneIndices);
     UPIParser::setProgressiveOffsetEngine(&patternEngine); // restore the mono binding
 
     if (!poly.ok)
@@ -1274,8 +1304,18 @@ void SerpeAudioProcessor::parseAndApplyPolyUPI(const juce::String& upiPattern)
             continue;
         }
         const auto& parsed = poly.lanes[static_cast<size_t>(i)];
-        bool wasActive = lane.active;
-        bool patternChangedForLane = !wasActive || lane.source != parsed.source;
+
+        // Which scene of THIS lane we are on, and how many times we have now
+        // entered it. Progressive state is derived from that count.
+        const size_t sc = static_cast<size_t>(juce::jlimit(0, juce::jmax(0, (int) lane.sceneVisits.size() - 1),
+                                                           lane.sceneIndex));
+        if (sc < lane.sceneVisits.size()) lane.sceneVisits[sc]++;
+        const int visits = sc < lane.sceneVisits.size() ? lane.sceneVisits[sc] : 1;
+
+        // Whether THIS lane is now sounding a different pattern than last
+        // block — a new body, a different scene of the same chain, or a lane
+        // that was not playing at all. Only used to restart the step clock.
+        const bool patternChangedForLane = !lane.active || lane.source != parsed.source;
 
         lane.active = true;
         lane.source = parsed.source;
@@ -1298,21 +1338,20 @@ void SerpeAudioProcessor::parseAndApplyPolyUPI(const juce::String& upiPattern)
         // music-suite docs/CODE_CENSUS.md). This is what connects it.
         if (parsed.hasProgressiveOffset)
         {
-            if (patternChangedForLane)
-                lane.engine.setProgressiveOffset(true, parsed.progressiveInitialOffset, parsed.progressiveOffsetStep);
-            else
-                lane.engine.triggerProgressiveOffset();
-
+            // offset = step * visits, so the FIRST visit is already one step
+            // in — the engine's phase for '%N'. Deriving it from the visit
+            // count rather than accumulating means a scene picks up exactly
+            // where it left off when the chain comes back round to it.
+            const int offset = parsed.progressiveOffsetStep * visits;
+            lane.engine.setProgressiveOffset(true, offset, parsed.progressiveOffsetStep);
             lane.hasProgressiveOffset = true;
             lane.progressiveOffsetStep = parsed.progressiveOffsetStep;
             lane.hasProgressiveLengthening = false;
-            lane.grown.clear();
 
             // Rotate from the freshly parsed base every time, never from the
             // already-rotated pattern, so the offsets cannot compound.
             // Negative rotation for clockwise progression, as the mono path does.
-            lane.engine.setPattern(PatternUtils::rotatePattern(parsed.steps,
-                                                              -lane.engine.getCurrentOffset()));
+            lane.engine.setPattern(PatternUtils::rotatePattern(parsed.steps, -offset));
         }
         else if (parsed.hasProgressiveLengthening)
         {
@@ -1322,15 +1361,20 @@ void SerpeAudioProcessor::parseAndApplyPolyUPI(const juce::String& upiPattern)
             lane.hasProgressiveLengthening = true;
             lane.progressiveLengtheningStep = parsed.progressiveLengtheningStep;
 
-            // Same restart/advance rule as the offset above. A new lane body
-            // starts one step of growth in — the engine's phase for '*N',
-            // which is why a scene entering E(3,8)*3 plays 11 steps and not 8.
-            if (patternChangedForLane || lane.grown.empty())
-                lane.grown = parsed.steps;
-
-            auto extra = generateBellCurveRandomSteps(parsed.progressiveLengtheningStep);
-            lane.grown.insert(lane.grown.end(), extra.begin(), extra.end());
-            lane.engine.setPattern(lane.grown);
+            // Growth is per SCENE and appended, so scene 2 keeps the length it
+            // reached while scene 1 was playing, and earlier growth stays put
+            // instead of the tail re-randomising.
+            if (sc < lane.sceneGrown.size())
+            {
+                if (lane.sceneGrown[sc].empty()) lane.sceneGrown[sc] = parsed.steps;
+                auto extra = generateBellCurveRandomSteps(parsed.progressiveLengtheningStep);
+                lane.sceneGrown[sc].insert(lane.sceneGrown[sc].end(), extra.begin(), extra.end());
+                lane.engine.setPattern(lane.sceneGrown[sc]);
+            }
+            else
+            {
+                lane.engine.setPattern(parsed.steps);
+            }
         }
         else
         {
@@ -1339,7 +1383,6 @@ void SerpeAudioProcessor::parseAndApplyPolyUPI(const juce::String& upiPattern)
             lane.progressiveOffsetStep = 0;
             lane.hasProgressiveLengthening = false;
             lane.progressiveLengtheningStep = 0;
-            lane.grown.clear();
             lane.engine.setPattern(parsed.steps);
         }
 

@@ -161,6 +161,80 @@ int main()
                 "the base stays as a prefix, so the lane grows rather than churns");
     }
 
+    std::printf ("\n=== per-lane scenes: A|B/C ===\n");
+    {
+        // Scenes belong to a lane, so the chain splits INSIDE a lane.
+        auto chains = PolyParser::laneScenes ("E(3,8)|E(5,8)/E(3,7)");
+        expect (chains.size() == 2, "two lanes");
+        if (chains.size() == 2)
+        {
+            expect (chains[0].size() == 2 && chains[0][0] == "E(3,8)" && chains[0][1] == "E(5,8)",
+                    "lane 1 cycles two scenes");
+            expect (chains[1].size() == 1 && chains[1][0] == "E(3,7)",
+                    "lane 2 has one scene, reported as a chain of one");
+        }
+        // A label and an '@' offset belong to the LANE, outside the chain.
+        auto labelled = PolyParser::laneScenes ("kick=E(3,8)|E(5,8)@+12ms/E(3,7)");
+        if (labelled.size() == 2)
+            expect (labelled[0].size() == 2 && labelled[0][0] == "E(3,8)",
+                    "label and @offset are stripped before the chain is split");
+
+        // parse() resolves whichever scene the caller says the lane is on.
+        for (int idx = 0; idx < 3; ++idx)
+        {
+            auto r = PolyParser::parse ("E(3,8)|E(5,8)/E(3,7)", {}, { idx, 0 });
+            const int wantOnsets = (idx % 2 == 0) ? 3 : 5;
+            int got = 0;
+            if (r.ok) for (bool b : r.lanes[0].steps) if (b) ++got;
+            expect (r.ok && got == wantOnsets,
+                    "sceneIndex " + juce::String (idx) + " -> lane 1 has "
+                      + juce::String (got) + " onsets (wrap is modulo)");
+            if (r.ok)
+                expect (r.lanes[0].sceneCount == 2 && r.lanes[1].sceneCount == 1,
+                        "scene counts are reported per lane");
+        }
+
+        // Independent chains: 2 scenes against 3 realign only every 6 triggers.
+        auto a = PolyParser::laneScenes ("E(3,8)|E(5,8)/E(3,7)|E(5,7)|E(2,7)");
+        if (a.size() == 2)
+        {
+            const int n0 = a[0].size(), n1 = a[1].size();
+            expect (n0 == 2 && n1 == 3, "chains may differ in length");
+            int together = 0;
+            for (int t = 1; t <= 6; ++t) if ((t % n0) == 0 && (t % n1) == 0) ++together;
+            expect (together == 1, "2 against 3 comes back round once in six triggers");
+        }
+
+        // A scene may carry its own progressive suffix — the suffix strip runs
+        // on the RESOLVED scene, not on the whole chain.
+        auto prog = PolyParser::parse ("E(3,8)%2|E(3,8)*3/E(3,7)", {}, { 0, 0 });
+        expect (prog.ok && prog.lanes[0].hasProgressiveOffset && prog.lanes[0].progressiveOffsetStep == 2,
+                "scene 1 of lane 1 carries %2");
+        auto prog2 = PolyParser::parse ("E(3,8)%2|E(3,8)*3/E(3,7)", {}, { 1, 0 });
+        expect (prog2.ok && prog2.lanes[0].hasProgressiveLengthening && prog2.lanes[0].progressiveLengtheningStep == 3,
+                "scene 2 of the same lane carries *3 — per scene, not per lane");
+    }
+
+    std::printf ("\n=== the three strings Alex reported as unrecognised ===\n");
+    for (auto* input : { "E(3,17)%2/E(3,5)|E(3,8)*3",
+                         "E(3,17)/E(3,5)%2",
+                         "E(3,8)%2|E(3,8)*3/E(3,7)" })
+    {
+        // Every scene of every lane must resolve, not just the first.
+        const auto chains = PolyParser::laneScenes (juce::String (input));
+        int maxScenes = 1;
+        for (const auto& c : chains) maxScenes = juce::jmax (maxScenes, c.size());
+        bool allOk = true;
+        juce::String firstError;
+        for (int t = 0; t < maxScenes * 2; ++t)
+        {
+            std::vector<int> idx (chains.size(), t);
+            auto r = PolyParser::parse (juce::String (input), {}, idx);
+            if (! r.ok) { allOk = false; firstError = r.error; break; }
+        }
+        expect (allOk, juce::String (input) + (allOk ? " parses on every scene" : " -> " + firstError));
+    }
+
     std::printf ("\n%s — %d failure(s)\n", failures == 0 ? "PASS" : "FAIL", failures);
     return failures == 0 ? 0 : 1;
 }
