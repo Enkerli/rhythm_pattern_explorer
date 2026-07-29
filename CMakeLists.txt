@@ -80,7 +80,6 @@ target_sources(Serpe PRIVATE
     Source/Platform/PluginProcessor.h
     Source/WebUI/SerpeEditor.h
     Source/Platform/PlatformSpecific.h
-    Source/Platform/SceneTrace.h
     Source/Platform/DebugConfig.h
 )
 
