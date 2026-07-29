@@ -1280,25 +1280,44 @@ void SerpeAudioProcessor::parseAndApplyPolyUPI(const juce::String& upiPattern)
         lane.active = true;
         lane.source = parsed.source;
         lane.offset = parsed.offset;
-        lane.engine.setPattern(parsed.steps);
 
         // Configure this lane's OWN progressive-offset state — mirrors the
         // mono path's patternEngine.setProgressiveOffset call exactly, just
         // once per lane instead of once globally.
+        //
+        // parseAndApplyPolyUPI runs on EVERY parse, so this is also where a
+        // lane advances: a changed lane body restarts the offset, an unchanged
+        // one steps it. `patternChangedForLane` already draws exactly that
+        // line, which is why it is used here in place of the old needsSetup
+        // check (that compared the step size, so re-entering the same string
+        // never restarted, and nothing ever advanced).
+        //
+        // NOTE: triggerProgressiveOffset() and getCurrentOffset() had no
+        // callers anywhere before this — the engine-side progressive-offset
+        // machinery was set up, never advanced and never read (census C in
+        // music-suite docs/CODE_CENSUS.md). This is what connects it.
         if (parsed.hasProgressiveOffset)
         {
-            bool needsSetup = !lane.engine.hasProgressiveOffsetEnabled()
-                             || lane.engine.getProgressiveOffsetValue() != parsed.progressiveOffsetStep;
-            if (needsSetup)
+            if (patternChangedForLane)
                 lane.engine.setProgressiveOffset(true, parsed.progressiveInitialOffset, parsed.progressiveOffsetStep);
+            else
+                lane.engine.triggerProgressiveOffset();
+
             lane.hasProgressiveOffset = true;
             lane.progressiveOffsetStep = parsed.progressiveOffsetStep;
+
+            // Rotate from the freshly parsed base every time, never from the
+            // already-rotated pattern, so the offsets cannot compound.
+            // Negative rotation for clockwise progression, as the mono path does.
+            lane.engine.setPattern(PatternUtils::rotatePattern(parsed.steps,
+                                                              -lane.engine.getCurrentOffset()));
         }
         else
         {
             lane.engine.setProgressiveOffset(false);
             lane.hasProgressiveOffset = false;
             lane.progressiveOffsetStep = 0;
+            lane.engine.setPattern(parsed.steps);
         }
 
         // This lane's own feel. PD lives on the LANE body, so two lanes over

@@ -211,6 +211,31 @@ PolyParseResult PolyParser::parse(const juce::String& input,
         }
         src = off.rest;
 
+        // Per-lane progressive offset, `body%N` (docs/SERPE_POLY.md 2.5:
+        // '/' binds loosest, so '%N' is the LANE's, not the whole string's).
+        // `%N` is shorthand for the `@initial#step` spelling with both equal
+        // — the same meaning it has in a mono pattern, where the first
+        // trigger already shows offset N.
+        //
+        // Stripped here rather than taught to UPIParser, so mono is untouched:
+        // in a mono string the processor still owns '%N'.
+        const juce::String laneBodyWithSuffix = src;
+        bool laneHasPercentOffset = false;
+        int lanePercentStep = 0;
+        {
+            const int pc = src.lastIndexOfChar('%');
+            if (pc > 0)
+            {
+                const juce::String after = src.substring(pc + 1).trim();
+                if (after.isNotEmpty() && after.containsOnly("0123456789-"))
+                {
+                    laneHasPercentOffset = true;
+                    lanePercentStep = after.getIntValue();
+                    src = src.substring(0, pc).trim();
+                }
+            }
+        }
+
         if (beforeLaneParse) beforeLaneParse(i);
         auto parsed = UPIParser::parse(src);
         if (! parsed.isValid())
@@ -228,10 +253,22 @@ PolyParseResult PolyParser::parse(const juce::String& input,
         lane.label = label;
         lane.steps = parsed.pattern;
         lane.offset = off.offset;
-        lane.source = src;
-        lane.hasProgressiveOffset = parsed.hasProgressiveOffset;
-        lane.progressiveInitialOffset = parsed.initialOffset;
-        lane.progressiveOffsetStep = parsed.progressiveOffset;
+        // Keep the '%N' in `source`: the processor compares it against the
+        // previous parse to tell "new pattern" (restart the offset) from
+        // "re-trigger" (advance it), and E(3,8)%2 must not look like E(3,8).
+        lane.source = laneBodyWithSuffix;
+        if (laneHasPercentOffset)
+        {
+            lane.hasProgressiveOffset = true;
+            lane.progressiveInitialOffset = lanePercentStep;
+            lane.progressiveOffsetStep = lanePercentStep;
+        }
+        else
+        {
+            lane.hasProgressiveOffset = parsed.hasProgressiveOffset;
+            lane.progressiveInitialOffset = parsed.initialOffset;
+            lane.progressiveOffsetStep = parsed.progressiveOffset;
+        }
         lane.hasMicrotiming = parsed.hasMicrotiming;
         lane.microtimingDepth = parsed.microtimingDepth;
         lane.microtimingSeed = parsed.microtimingSeed;

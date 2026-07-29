@@ -13,6 +13,8 @@
 #include <JuceHeader.h>
 #include "../Core/PolyParser.h"
 #include "../Managers/SceneManager.h"
+#include "../Core/PatternEngine.h"
+#include "../Core/PatternUtils.h"
 #include <cstdio>
 
 static int failures = 0;
@@ -64,6 +66,50 @@ int main()
     expectScene ("E(3,8)*3", "E(3,8)", 0, 3);
     expectScene ("E(3,8)%2", "E(3,8)", 2, 0);
     expectScene ("E(3,8)", "E(3,8)", 0, 0);
+
+    std::printf ("\n=== per-lane progressive offset: body%%N ===\n");
+    {
+        // '%N' on a lane is that lane's own progressive offset, and is
+        // shorthand for '@N#N' — the first trigger already shows offset N,
+        // matching what '%N' means in a mono pattern.
+        auto r = PolyParser::parse ("E(3,8)%2/E(3,7)");
+        expect (r.ok, juce::String ("E(3,8)%2/E(3,7)parses: ") + (r.ok ? "yes" : r.error));
+        if (r.ok && r.lanes.size() == 2)
+        {
+            expect (r.lanes[0].hasProgressiveOffset && r.lanes[0].progressiveOffsetStep == 2
+                      && r.lanes[0].progressiveInitialOffset == 2,
+                    "lane 1 carries progressive offset step 2");
+            expect (! r.lanes[1].hasProgressiveOffset, "lane 2 is static — the offset is lane-local");
+            expect (r.lanes[0].steps.size() == 8 && r.lanes[1].steps.size() == 7,
+                    "lane bodies keep their own lengths (8 and 7)");
+            expect (r.lanes[0].source.contains ("%2"),
+                    "lane source keeps '%2' so a re-parse is distinguishable from E(3,8)");
+            expect (r.lcm == 56, juce::String ("grid is lcm(8,7)=56, got ") + juce::String (r.lcm));
+        }
+
+        // The sequence the processor drives: restart on a new body, advance
+        // on a re-trigger, always rotating the FRESH base so offsets cannot
+        // compound. Mirrors parseAndApplyPolyUPI.
+        const auto base = PolyParser::parse ("E(3,8)%2/E(3,7)").lanes[0].steps;
+        PatternEngine eng;
+        eng.setProgressiveOffset (true, 2, 2);
+        auto bits = [] (const std::vector<bool>& v)
+        {
+            juce::String s; for (bool b : v) s << (b ? '1' : '0'); return s;
+        };
+        juce::StringArray seen;
+        for (int t = 0; t < 5; ++t)
+        {
+            if (t > 0) eng.triggerProgressiveOffset();
+            seen.add (bits (PatternUtils::rotatePattern (base, -eng.getCurrentOffset())));
+        }
+        // E(3,8) rotated by 2 each trigger: period 4 on an 8-step pattern.
+        expect (seen[0] != bits (base), "trigger 1 is already rotated (offset 2), as mono '%2' is");
+        expect (seen[4] == seen[0], "rotating by 2 on 8 steps has period 4, so trigger 5 repeats trigger 1");
+        for (const auto& s : seen)
+            expect (s.length() == 8, "rotation preserves length: " + s);
+        std::printf ("       sequence: %s\n", seen.joinIntoString (" ").toRawUTF8());
+    }
 
     std::printf ("\n%s — %d failure(s)\n", failures == 0 ? "PASS" : "FAIL", failures);
     return failures == 0 ? 0 : 1;
