@@ -2450,41 +2450,61 @@ void SerpeAudioProcessor::applyCurrentScenePattern()
         traceScene(SceneTrace::ApplyScene);   // TEMPORARY
 
         juce::String basePattern = sceneManager->getCurrentSceneBasePattern();
-        int progressiveOffset = sceneManager->getCurrentSceneProgressiveOffset();
-        int progressiveLengthening = sceneManager->getCurrentSceneProgressiveLengthening();
-        
+
         // Double B notation like B(3,21)B>17 should work fine - let UPIParser handle it
-        
-        // Parse the base pattern first
+
+        // Parse the base pattern. NOTE: this only ENQUEUES the pattern — it does
+        // not reach patternEngine until processPatternUpdates() drains the queue
+        // on the audio thread.
+        //
+        // So the scene's rotation/lengthening CANNOT be applied here. It used to
+        // be, and it lost the race: the transform ran against whatever pattern
+        // the engine still held, and was then overwritten when the queued base
+        // arrived. Occasionally the drain landed in between and the transform
+        // stuck for a moment, which is why the display showed brief glimpses of
+        // the other scene instead of failing outright (Alex, 2026-07-28).
+        //
+        // This is the same bug that was already found and fixed for the
+        // NON-scene progressive offset — see the comment in
+        // processPatternUpdates(). That fix was never applied to the scene path.
+        // The transform now lives there too, after the base is set.
         parseAndApplyUPI(basePattern, true);
         // currentStep.store(0); // REMOVED: Using derived indices
-        
-        // Apply progressive transformations if any
-        if (progressiveOffset != 0)
-        {
-            // Apply progressive offset by rotating the generated pattern
-            auto currentPattern = patternEngine.getCurrentPattern();
-            // Use negative rotation for clockwise progression (positive offset = clockwise)
-            auto rotatedPattern = PatternUtils::rotatePattern(currentPattern, -progressiveOffset);
-            patternEngine.setPattern(rotatedPattern);
+    }
+}
+
+//==============================================================================
+/**
+    Apply the current scene's progressive transformation to the pattern the
+    engine now holds. MUST run after the queued base pattern has been set —
+    see applyCurrentScenePattern() for why.
+*/
+void SerpeAudioProcessor::applySceneProgressiveTransform()
+{
+    if (!sceneManager->hasScenes()) return;
+
+    const int sceneOffset = sceneManager->getCurrentSceneProgressiveOffset();
+    const int sceneLengthening = sceneManager->getCurrentSceneProgressiveLengthening();
+
+    if (sceneOffset != 0)
+    {
+        auto currentPattern = patternEngine.getCurrentPattern();
+        // Negative rotation for clockwise progression (positive offset = clockwise)
+        patternEngine.setPattern(PatternUtils::rotatePattern(currentPattern, -sceneOffset));
+    }
+    else if (sceneLengthening != 0)
+    {
+        auto currentPattern = patternEngine.getCurrentPattern();
+
+        // The scene keeps the pattern it grows from, so repeated drains extend
+        // the same base instead of re-growing a already-grown one.
+        auto sceneBaseLengthPattern = sceneManager->getCurrentSceneBaseLengthPattern();
+        if (sceneBaseLengthPattern.empty()) {
+            sceneManager->setCurrentSceneBaseLengthPattern(currentPattern);
+            sceneBaseLengthPattern = currentPattern;
         }
-        else if (progressiveLengthening != 0)
-        {
-            // Apply progressive lengthening
-            auto currentPattern = patternEngine.getCurrentPattern();
-            
-            // Store or retrieve the base pattern for this scene
-            auto sceneBaseLengthPattern = sceneManager->getCurrentSceneBaseLengthPattern();
-            if (sceneBaseLengthPattern.empty()) {
-                // First time - store the base pattern in SceneManager
-                sceneManager->setCurrentSceneBaseLengthPattern(currentPattern);
-                sceneBaseLengthPattern = currentPattern;
-            }
-            
-            // Apply lengthening to the stored base pattern
-            auto lengthenedPattern = lengthenPattern(sceneBaseLengthPattern, progressiveLengthening);
-            patternEngine.setPattern(lengthenedPattern);
-        }
+
+        patternEngine.setPattern(lengthenPattern(sceneBaseLengthPattern, sceneLengthening));
     }
 }
 
@@ -2723,7 +2743,16 @@ void SerpeAudioProcessor::processPatternUpdates()
         //
         // SOLUTION: Move progressive rotation here, after base pattern is applied from queue.
         // This ensures rotation persists and is applied on every audio buffer cycle.
-        if (progressiveOffset != 0) {
+        //
+        // 2026-07-28: scenes have per-scene progressive state and lost this same
+        // race — the fix above was never applied to them. They take priority
+        // here because the processor-level progressiveOffset is left over from
+        // whatever non-scene pattern was typed before the chain, and applying
+        // both would rotate twice.
+        if (sceneManager->hasScenes()) {
+            applySceneProgressiveTransform();
+        }
+        else if (progressiveOffset != 0) {
             auto currentPattern = patternEngine.getCurrentPattern();
             auto rotatedPattern = PatternUtils::rotatePattern(currentPattern, -progressiveOffset);
             patternEngine.setPattern(rotatedPattern);

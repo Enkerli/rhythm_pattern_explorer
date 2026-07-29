@@ -188,6 +188,8 @@ public:
     juce::String getCurrentUPIInput() const { return currentUPIInput; } // Alias for compatibility
     void parseAndApplyUPI(const juce::String& upiPattern, bool resetAccentPosition = true);
     void applyCurrentScenePattern();
+    /** Scene rotation/lengthening — runs after the queued base pattern lands. */
+    void applySceneProgressiveTransform();
     
     // Background color persistence
     int getCurrentBackgroundColor() const { return currentBackgroundColor; }
