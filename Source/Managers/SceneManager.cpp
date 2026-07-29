@@ -136,6 +136,84 @@ void SceneManager::resetScenes()
 }
 
 //==============================================================================
+// Persistence
+
+namespace
+{
+    /** The format the processor used: values joined by commas, empty when none. */
+    template <typename T, typename Fn>
+    juce::String joinCsv(const T& items, Fn toString)
+    {
+        juce::String out;
+        for (size_t i = 0; i < items.size(); ++i)
+        {
+            if (i > 0) out += ",";
+            out += toString(items[i]);
+        }
+        return out;
+    }
+
+    std::vector<int> splitInts(const juce::String& csv)
+    {
+        std::vector<int> out;
+        if (csv.isEmpty()) return out;
+        for (const auto& token : juce::StringArray::fromTokens(csv, ",", ""))
+            out.push_back(token.getIntValue());
+        return out;
+    }
+}
+
+void SceneManager::saveStateTo(juce::ValueTree& state) const
+{
+    state.setProperty("currentSceneIndex", currentSceneIndex, nullptr);
+    state.setProperty("sceneCount", static_cast<int>(scenePatterns.size()), nullptr);
+
+    juce::String patterns;
+    for (int i = 0; i < scenePatterns.size(); ++i)
+    {
+        if (i > 0) patterns += ",";
+        patterns += scenePatterns[i];
+    }
+    state.setProperty("scenePatterns", patterns, nullptr);
+
+    const auto intToString = [] (int v) { return juce::String(v); };
+    state.setProperty("sceneProgressiveOffsets",    joinCsv(sceneProgressiveOffsets, intToString), nullptr);
+    state.setProperty("sceneProgressiveSteps",      joinCsv(sceneProgressiveSteps, intToString), nullptr);
+    state.setProperty("sceneBasePatterns",          joinCsv(sceneBasePatterns, [] (const juce::String& s) { return s; }), nullptr);
+    state.setProperty("sceneProgressiveLengthening", joinCsv(sceneProgressiveLengthening, intToString), nullptr);
+}
+
+void SceneManager::restoreStateFrom(const juce::ValueTree& state)
+{
+    resetScenes();
+
+    currentSceneIndex = state.getProperty("currentSceneIndex", 0);
+
+    const juce::String patterns = state.getProperty("scenePatterns", juce::String());
+    if (patterns.isNotEmpty())
+        scenePatterns = juce::StringArray::fromTokens(patterns, ",", "");
+
+    sceneProgressiveOffsets     = splitInts(state.getProperty("sceneProgressiveOffsets", juce::String()));
+    sceneProgressiveSteps       = splitInts(state.getProperty("sceneProgressiveSteps", juce::String()));
+    sceneProgressiveLengthening = splitInts(state.getProperty("sceneProgressiveLengthening", juce::String()));
+
+    const juce::String basePatterns = state.getProperty("sceneBasePatterns", juce::String());
+    if (basePatterns.isNotEmpty())
+        for (const auto& p : juce::StringArray::fromTokens(basePatterns, ",", ""))
+            sceneBasePatterns.push_back(p);
+
+    // Lengthening base patterns are regenerated on first use, not persisted;
+    // they only need to be the right size to be indexed safely.
+    const int savedSceneCount = state.getProperty("sceneCount", 0);
+    sceneBaseLengthPatterns.assign(static_cast<size_t>(juce::jmax(0, savedSceneCount)), std::vector<bool>());
+
+    // A truncated or hand-edited session must not leave us indexing past the
+    // end of the parallel arrays later.
+    if (currentSceneIndex < 0 || currentSceneIndex >= scenePatterns.size())
+        currentSceneIndex = 0;
+}
+
+//==============================================================================
 // Per-Scene Progressive State Management
 
 bool SceneManager::currentSceneHasProgressiveFeatures() const

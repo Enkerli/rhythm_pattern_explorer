@@ -734,46 +734,8 @@ void SerpeAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
     state.setProperty("currentAccentPattern", accentPatternString, nullptr);
     
     // Save scene state (Phase 5: Scene State Persistence)
-    state.setProperty("currentSceneIndex", currentSceneIndex, nullptr);
-    state.setProperty("sceneCount", static_cast<int>(scenePatterns.size()), nullptr);
-    
-    // Save scene patterns as comma-separated string
-    juce::String scenePatternsString;
-    for (int i = 0; i < scenePatterns.size(); ++i) {
-        if (i > 0) scenePatternsString += ",";
-        scenePatternsString += scenePatterns[i];
-    }
-    state.setProperty("scenePatterns", scenePatternsString, nullptr);
-    
-    // Save per-scene progressive state
-    juce::String sceneOffsetsString;
-    for (int i = 0; i < sceneProgressiveOffsets.size(); ++i) {
-        if (i > 0) sceneOffsetsString += ",";
-        sceneOffsetsString += juce::String(sceneProgressiveOffsets[i]);
-    }
-    state.setProperty("sceneProgressiveOffsets", sceneOffsetsString, nullptr);
-    
-    juce::String sceneStepsString;
-    for (int i = 0; i < sceneProgressiveSteps.size(); ++i) {
-        if (i > 0) sceneStepsString += ",";
-        sceneStepsString += juce::String(sceneProgressiveSteps[i]);
-    }
-    state.setProperty("sceneProgressiveSteps", sceneStepsString, nullptr);
-    
-    juce::String sceneBasePatternsString;
-    for (int i = 0; i < sceneBasePatterns.size(); ++i) {
-        if (i > 0) sceneBasePatternsString += ",";
-        sceneBasePatternsString += sceneBasePatterns[i];
-    }
-    state.setProperty("sceneBasePatterns", sceneBasePatternsString, nullptr);
-    
-    juce::String sceneLengtheningString;
-    for (int i = 0; i < sceneProgressiveLengthening.size(); ++i) {
-        if (i > 0) sceneLengtheningString += ",";
-        sceneLengtheningString += juce::String(sceneProgressiveLengthening[i]);
-    }
-    state.setProperty("sceneProgressiveLengthening", sceneLengtheningString, nullptr);
-    
+    sceneManager->saveStateTo(state);
+
     // Convert ValueTree to XML and save to memory block
     if (auto xml = state.createXml())
         copyXmlToBinary(*xml, destData);
@@ -856,60 +818,8 @@ void SerpeAudioProcessor::setStateInformation (const void* data, int sizeInBytes
             }
             
             // Restore scene state (Phase 5: Scene State Persistence)
-            currentSceneIndex = state.getProperty("currentSceneIndex", 0);
-            int sceneCount = state.getProperty("sceneCount", 0);
-            
-            // Restore scene patterns from comma-separated string
-            juce::String scenePatternsString = state.getProperty("scenePatterns", juce::String());
-            scenePatterns.clear();
-            if (!scenePatternsString.isEmpty()) {
-                auto sceneArray = juce::StringArray::fromTokens(scenePatternsString, ",", "");
-                for (const auto& scene : sceneArray) {
-                    scenePatterns.add(scene);
-                }
-            }
-            
-            // Restore per-scene progressive state
-            juce::String sceneOffsetsString = state.getProperty("sceneProgressiveOffsets", juce::String());
-            sceneProgressiveOffsets.clear();
-            if (!sceneOffsetsString.isEmpty()) {
-                auto offsetArray = juce::StringArray::fromTokens(sceneOffsetsString, ",", "");
-                for (const auto& offset : offsetArray) {
-                    sceneProgressiveOffsets.push_back(offset.getIntValue());
-                }
-            }
-            
-            juce::String sceneStepsString = state.getProperty("sceneProgressiveSteps", juce::String());
-            sceneProgressiveSteps.clear();
-            if (!sceneStepsString.isEmpty()) {
-                auto stepsArray = juce::StringArray::fromTokens(sceneStepsString, ",", "");
-                for (const auto& step : stepsArray) {
-                    sceneProgressiveSteps.push_back(step.getIntValue());
-                }
-            }
-            
-            juce::String sceneBasePatternsString = state.getProperty("sceneBasePatterns", juce::String());
-            sceneBasePatterns.clear();
-            if (!sceneBasePatternsString.isEmpty()) {
-                auto basePatternsArray = juce::StringArray::fromTokens(sceneBasePatternsString, ",", "");
-                for (const auto& basePattern : basePatternsArray) {
-                    sceneBasePatterns.push_back(basePattern);
-                }
-            }
-            
-            juce::String sceneLengtheningString = state.getProperty("sceneProgressiveLengthening", juce::String());
-            sceneProgressiveLengthening.clear();
-            if (!sceneLengtheningString.isEmpty()) {
-                auto lengtheningArray = juce::StringArray::fromTokens(sceneLengtheningString, ",", "");
-                for (const auto& lengthening : lengtheningArray) {
-                    sceneProgressiveLengthening.push_back(lengthening.getIntValue());
-                }
-            }
-            
-            // Initialize sceneBaseLengthPatterns with correct size
-            sceneBaseLengthPatterns.clear();
-            sceneBaseLengthPatterns.resize(sceneCount);
-            
+            sceneManager->restoreStateFrom(state);
+
             // Apply the restored UPI pattern after all state has been loaded
             // CRITICAL: Use originalUPIInput if available (contains full scene syntax)
             juce::String patternToRestore = originalUPIInput.isEmpty() ? currentUPIInput : originalUPIInput;
@@ -976,13 +886,7 @@ void SerpeAudioProcessor::setStateInformation (const void* data, int sizeInBytes
             accentPatternManuallyModified = false;
             
             // Initialize scene state (won't exist in old format)
-            currentSceneIndex = 0;
-            scenePatterns.clear();
-            sceneProgressiveOffsets.clear();
-            sceneProgressiveSteps.clear();
-            sceneBasePatterns.clear();
-            sceneProgressiveLengthening.clear();
-            sceneBaseLengthPatterns.clear();
+            sceneManager->resetScenes();
             
             // CRITICAL FIX: Use setUPIInput for proper scene initialization (legacy format)
             // Use originalUPIInput if available (contains full scene syntax)
@@ -1739,103 +1643,33 @@ void SerpeAudioProcessor::setUPIInput(const juce::String& upiPattern)
         // Scene cycling detection
         
         // Check if this is the same scene sequence or a new one
-        bool isSameSequence = (scenes.size() == scenePatterns.size());
+        const auto& running = sceneManager->getScenePatterns();
+        bool isSameSequence = (scenes.size() == running.size());
         if (isSameSequence) {
             for (int i = 0; i < scenes.size(); ++i) {
-                if (scenes[i].trim() != scenePatterns[i]) {
+                if (scenes[i].trim() != running[i]) {
                     isSameSequence = false;
                     break;
                 }
             }
         }
-        
-        if (isSameSequence && !scenePatterns.isEmpty())
+
+        if (isSameSequence && !running.isEmpty())
         {
             // Same sequence - advance to next scene
             advanceScene();
-            
+
         }
         else
         {
-            // New scene sequence - reset and initialize per-scene progressive state
-            scenePatterns.clear();
-            sceneProgressiveOffsets.clear();
-            sceneProgressiveSteps.clear();
-            sceneBasePatterns.clear();
-            sceneProgressiveLengthening.clear();
-            sceneBaseLengthPatterns.clear();
-            
-            // Parse each scene and initialize its progressive state  
-            // CRITICAL: Store original scene patterns with accent syntax intact
-            for (const auto& scene : scenes) {
-                juce::String scenePattern = scene.trim();
-                scenePatterns.add(scenePattern);
-                
-                // Check if this scene has progressive syntax
-                bool hasProgressiveOffset = false;
-                if ((scenePattern.contains("%") && scenePattern.lastIndexOf("%") > 0) || (scenePattern.contains("+") && scenePattern.lastIndexOf("+") > 0)) {
-                    if (scenePattern.contains("%") && scenePattern.lastIndexOf("%") > 0) {
-                        int lastPercentIndex = scenePattern.lastIndexOf("%");
-                        juce::String afterPercent = scenePattern.substring(lastPercentIndex + 1).trim();
-                        hasProgressiveOffset = afterPercent.containsOnly("0123456789-");
-                    } else if (scenePattern.contains("+") && scenePattern.lastIndexOf("+") > 0) {
-                        int lastPlusIndex = scenePattern.lastIndexOf("+");
-                        juce::String afterPlus = scenePattern.substring(lastPlusIndex + 1).trim();
-                        hasProgressiveOffset = afterPlus.containsOnly("0123456789-");
-                    }
-                }
-                bool hasProgressiveLengthening = scenePattern.contains("*") && scenePattern.lastIndexOf("*") > 0;
-                
-                if (hasProgressiveOffset) {
-                    // Parse offset syntax: pattern%N or pattern+N
-                    int symbolIndex = -1;
-                    if (scenePattern.contains("%")) {
-                        symbolIndex = scenePattern.lastIndexOf("%");
-                    } else if (scenePattern.contains("+")) {
-                        symbolIndex = scenePattern.lastIndexOf("+");
-                    }
-                    juce::String basePattern = scenePattern.substring(0, symbolIndex).trim();
-                    juce::String offsetStr = scenePattern.substring(symbolIndex + 1).trim();
-                    int step = offsetStr.getIntValue();
-                    
-                    sceneBasePatterns.push_back(basePattern);
-                    sceneProgressiveSteps.push_back(step);
-                    sceneProgressiveOffsets.push_back(step); // Start with first offset
-                    sceneProgressiveLengthening.push_back(0);
-                    sceneBaseLengthPatterns.push_back(std::vector<bool>());
-                } else if (hasProgressiveLengthening) {
-                    // Parse lengthening syntax: pattern*N
-                    int starIndex = scenePattern.lastIndexOf("*");
-                    juce::String basePattern = scenePattern.substring(0, starIndex).trim();
-                    juce::String lengthStr = scenePattern.substring(starIndex + 1).trim();
-                    int lengthStep = lengthStr.getIntValue();
-                    
-                    sceneBasePatterns.push_back(basePattern);
-                    sceneProgressiveSteps.push_back(lengthStep);
-                    sceneProgressiveOffsets.push_back(0);
-                    sceneProgressiveLengthening.push_back(lengthStep); // Start with first lengthening
-                    sceneBaseLengthPatterns.push_back(std::vector<bool>()); // Will be filled when pattern is generated
-                } else {
-                    // Simple pattern without progressive syntax
-                    sceneBasePatterns.push_back(scenePattern);
-                    sceneProgressiveSteps.push_back(0);
-                    sceneProgressiveOffsets.push_back(0);
-                    sceneProgressiveLengthening.push_back(0);
-                    sceneBaseLengthPatterns.push_back(std::vector<bool>());
-                }
-            }
-            
-            currentSceneIndex = 0;
-            
-            
-            // TRANSITION: Initialize SceneManager with same data as legacy system
-            if (sceneManager) {
-                sceneManager->initializeScenes(scenes);
-            }
+            // New scene sequence - SceneManager parses each scene's progressive
+            // syntax and initialises its per-scene state.
+            sceneManager->initializeScenes(scenes);
         }
-        
+
         // Parse and apply the current scene pattern using per-scene progressive state
-        if (!scenePatterns.isEmpty() && currentSceneIndex < scenePatterns.size()) {
+        if (sceneManager->getSceneCount() > 0
+            && sceneManager->getCurrentSceneIndex() < sceneManager->getSceneCount()) {
             applyCurrentScenePattern();
         }
     }
@@ -1931,15 +1765,9 @@ void SerpeAudioProcessor::setUPIInput(const juce::String& upiPattern)
         progressiveLengthening = 0;
         basePattern = "";
         baseLengthPattern.clear();
-        scenePatterns.clear();
-        currentSceneIndex = 0;
         lastProgressiveTransformUPI.clear(); // next `>` entry is fresh
         UPIParser::resetAllProgressiveStates();
-
-        // TRANSITION: Reset SceneManager in parallel with legacy system
-        if (sceneManager) {
-            sceneManager->resetScenes();
-        }
+        sceneManager->resetScenes();
         parseAndApplyUPI(pattern, true);
         // currentStep.store(0); // REMOVED: Using derived indices
     }
@@ -2585,44 +2413,12 @@ double SerpeAudioProcessor::calculateAutoPatternLength(const std::vector<bool>& 
 
 void SerpeAudioProcessor::advanceScene()
 {
-    // TRANSITION: Use SceneManager if available, with legacy fallback for safety
-    if (sceneManager && sceneManager->hasScenes()) 
+    if (sceneManager->hasScenes())
     {
-        // NEW: Use SceneManager
+        // Advances the current scene's progressive state, then moves to the
+        // next scene. See SceneManager::advanceScene.
         sceneManager->advanceScene();
-        
-        // Keep legacy system in sync for transition safety
-        currentSceneIndex = sceneManager->getCurrentSceneIndex();
-        
-        // Update legacy vectors to match SceneManager state (for safety during transition)
-        if (currentSceneIndex < static_cast<int>(sceneProgressiveSteps.size()) && 
-            currentSceneIndex < scenePatterns.size()) 
-        {
-            // This ensures legacy system stays in sync if anything still uses it
-            // The progressive state is managed by SceneManager now
-        }
-        
-        // Notify UI that pattern has changed for accent map updates
-        patternChanged.store(true);
-        
-    }
-    else if (!scenePatterns.isEmpty() && currentSceneIndex < static_cast<int>(sceneProgressiveSteps.size()))
-    {
-        // LEGACY: Fall back to original logic if SceneManager not available or no scenes
-        // First, advance the progressive state for the current scene if it has progressive syntax
-        if (sceneProgressiveSteps[currentSceneIndex] != 0) {
-            if (sceneProgressiveOffsets[currentSceneIndex] != 0) {
-                // Progressive offset scene
-                sceneProgressiveOffsets[currentSceneIndex] += sceneProgressiveSteps[currentSceneIndex];
-            } else if (sceneProgressiveLengthening[currentSceneIndex] != 0) {
-                // Progressive lengthening scene
-                sceneProgressiveLengthening[currentSceneIndex] += sceneProgressiveSteps[currentSceneIndex];
-            }
-        }
-        
-        // Then advance to next scene in the sequence, cycling back to 0 when reaching the end
-        currentSceneIndex = (currentSceneIndex + 1) % scenePatterns.size();
-        
+
         // Notify UI that pattern has changed for accent map updates
         patternChanged.store(true);
         
@@ -2631,10 +2427,8 @@ void SerpeAudioProcessor::advanceScene()
 
 void SerpeAudioProcessor::applyCurrentScenePattern()
 {
-    // TRANSITION: Use SceneManager data if available, fall back to legacy
-    if (sceneManager && sceneManager->hasScenes())
+    if (sceneManager->hasScenes())
     {
-        // NEW: Use SceneManager for scene pattern application
         juce::String basePattern = sceneManager->getCurrentSceneBasePattern();
         int progressiveOffset = sceneManager->getCurrentSceneProgressiveOffset();
         int progressiveLengthening = sceneManager->getCurrentSceneProgressiveLengthening();
@@ -2670,50 +2464,6 @@ void SerpeAudioProcessor::applyCurrentScenePattern()
             // Apply lengthening to the stored base pattern
             auto lengthenedPattern = lengthenPattern(sceneBaseLengthPattern, progressiveLengthening);
             patternEngine.setPattern(lengthenedPattern);
-        }
-    }
-    else
-    {
-        // LEGACY: Fall back to original logic
-        if (currentSceneIndex >= static_cast<int>(sceneBasePatterns.size())) {
-            return; // Safety check
-        }
-        
-        juce::String basePattern = sceneBasePatterns[currentSceneIndex];
-        int progressiveOffset = sceneProgressiveOffsets[currentSceneIndex];
-        int progressiveLengthening = sceneProgressiveLengthening[currentSceneIndex];
-        
-        // Double B notation like B(3,21)B>17 should work fine - let UPIParser handle it (legacy fallback)
-        
-        // Parse the base pattern first
-        parseAndApplyUPI(basePattern, true);
-        // currentStep.store(0); // REMOVED: Using derived indices
-        
-        // Apply progressive transformations if any
-        if (progressiveOffset != 0)
-        {
-            // Apply progressive offset by rotating the generated pattern
-            auto currentPattern = patternEngine.getCurrentPattern();
-            // Use negative rotation for clockwise progression (positive offset = clockwise)
-            auto rotatedPattern = PatternUtils::rotatePattern(currentPattern, -progressiveOffset);
-            patternEngine.setPattern(rotatedPattern);
-            
-        }
-        else if (progressiveLengthening != 0)
-        {
-            // Apply progressive lengthening
-            auto currentPattern = patternEngine.getCurrentPattern();
-            
-            // Store or retrieve the base pattern for this scene
-            if (sceneBaseLengthPatterns[currentSceneIndex].empty()) {
-                // First time - store the base pattern
-                sceneBaseLengthPatterns[currentSceneIndex] = currentPattern;
-            }
-            
-            // Apply lengthening to the stored base pattern
-            auto lengthenedPattern = lengthenPattern(sceneBaseLengthPatterns[currentSceneIndex], progressiveLengthening);
-            patternEngine.setPattern(lengthenedPattern);
-            
         }
     }
 }

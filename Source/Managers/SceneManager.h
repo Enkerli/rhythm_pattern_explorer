@@ -68,6 +68,22 @@ public:
      * Reset all scene state
      */
     void resetScenes();
+
+    /**
+     * The scene patterns as typed, for comparing a resubmitted chain against
+     * the running one (same chain = advance, new chain = start over)
+     */
+    const juce::StringArray& getScenePatterns() const { return scenePatterns; }
+
+    //==============================================================================
+    // Persistence
+    //
+    // The manager owns its own state, rather than the processor reaching in.
+    // The property names and the comma-separated format are unchanged from when
+    // the processor did this, so sessions saved by older builds still load.
+
+    void saveStateTo(juce::ValueTree& state) const;
+    void restoreStateFrom(const juce::ValueTree& state);
     
     //==============================================================================
     // Per-Scene Progressive State Management
