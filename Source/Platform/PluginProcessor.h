@@ -500,6 +500,13 @@ private:
     // Constructed in the constructor and never released, so it is always valid.
     std::unique_ptr<SceneManager> sceneManager;
     
+    // Sequence of the most recently enqueued pattern update, so the audio-thread
+    // drain can echo it into the dataflow trace. Diagnostic only: read and
+    // written solely by the tracing calls, and never consulted by the engine.
+    std::atomic<int> queuedSeq { 0 };
+    // Per-lane seq for the traced `laneScenes` channel, same diagnostic-only role.
+    std::array<int, kMaxPolyLanes> polyLaneSeq {};
+
     // Thread safety
     juce::CriticalSection processingLock;
     

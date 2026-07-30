@@ -28,6 +28,7 @@
 */
 
 #include "PluginProcessor.h"
+#include "DataflowTrace.h"
 #include "../WebUI/SerpeEditor.h"
 #include "PlatformSpecific.h"
 #include <fstream>
@@ -1283,6 +1284,19 @@ void SerpeAudioProcessor::parseAndApplyPolyUPI(const juce::String& upiPattern)
         sceneIndices.push_back(lane.sceneIndex);
     }
 
+    // Dataflow trace, sender side: the scene index this lane is being asked for.
+    // Poly does NOT go through the pattern-update queue — it sets each lane's
+    // engine directly — so without this channel a poly session records nothing at
+    // all, which the first probe run showed immediately.
+    if (auto& tr = DataflowTrace::instance(); tr.enabled())
+        for (size_t i = 0; i < sceneIndices.size(); ++i)
+        {
+            const auto payload = juce::String (sceneIndices[i]);
+            polyLaneSeq[i] = tr.nextSeq ("laneScenes");
+            tr.record ("within-binary", "out", "laneScenes", polyLaneSeq[i], payload,
+                       "lane" + juce::String ((int) i + 1) + " -> scene " + payload);
+        }
+
     auto poly = PolyParser::parse(upiPattern, [this](int laneIndex)
     {
         // Bind THIS lane's own engine before UPIParser::parse runs, so any
@@ -1404,6 +1418,19 @@ void SerpeAudioProcessor::parseAndApplyPolyUPI(const juce::String& upiPattern)
         lane.microtimingSeed  = parsed.hasMicrotiming ? parsed.microtimingSeed : 1;
         lane.microtimingCycle = 0;
         rebuildLaneMicrotiming(lane);
+
+        // Dataflow trace, receiver side: what this lane is ACTUALLY sounding once
+        // its scene is resolved and any rotation or lengthening applied. Pairing
+        // this with the sender above is what proves the transform survived the
+        // trip — the class of bug that hid the scene race for months.
+        if (auto& tr = DataflowTrace::instance(); tr.enabled() && i < (int) polyLaneSeq.size())
+        {
+            const auto got = DataflowTrace::bits (lane.engine.getCurrentPattern());
+            tr.record ("within-binary", "in", "laneScenes", polyLaneSeq[(size_t) i],
+                       juce::String (lane.sceneIndex),
+                       "lane" + juce::String (i + 1) + " " + juce::String (got.length())
+                         + " steps " + got.substring (0, 20));
+        }
 
         // New/changed lane pattern: start its step clock fresh so it doesn't
         // briefly report a stale step-boundary crossing.
@@ -2841,6 +2868,16 @@ void SerpeAudioProcessor::processPatternUpdates()
 {
     PatternUpdate update;
     while (patternUpdateQueue.dequeue(update)) {
+        // Receiver side, recorded BEFORE the transforms below run — so the trace
+        // shows what arrived, and a later CORRUPTED verdict points at the
+        // transform rather than at the queue.
+        if (auto& tr = DataflowTrace::instance(); tr.enabled())
+        {
+            const auto bitsIn = DataflowTrace::bits (update.rhythmPattern);
+            tr.record ("within-binary", "in", "queuedPatternUpdate",
+                       queuedSeq.load (std::memory_order_acquire), bitsIn,
+                       juce::String ((int) update.rhythmPattern.size()) + " steps " + bitsIn.substring (0, 24));
+        }
         // Simple pattern update - derived indices use DAW-synchronized ticks
         // Base remains at 0 since transport tick is DAW-synchronized
         baseTickRhythm.store(0);
@@ -2887,6 +2924,20 @@ void SerpeAudioProcessor::processPatternUpdates()
 void SerpeAudioProcessor::queuePatternUpdate(const std::vector<bool>& rhythmPattern, const std::vector<bool>& accentPattern, bool hasAccent, int accentPhaseOffset)
 {
     PatternUpdate update(rhythmPattern, accentPattern, hasAccent, accentPhaseOffset);
+
+    // Dataflow trace, sender side. This is the channel whose race went unseen for
+    // months: the transform was applied before the queued base arrived, so the
+    // base overwrote it. A trace pairs this seq with the drain's, which makes the
+    // trip provable instead of inferred (music-suite docs/DATAFLOW_AUDIT.md).
+    auto& tr = DataflowTrace::instance();
+    const int seq = tr.enabled() ? tr.nextSeq ("queuedPatternUpdate") : 0;
+    queuedSeq.store (seq, std::memory_order_release);
+    if (tr.enabled())
+    {
+        const auto bitsOut = DataflowTrace::bits (rhythmPattern);
+        tr.record ("within-binary", "out", "queuedPatternUpdate", seq, bitsOut,
+                   juce::String ((int) rhythmPattern.size()) + " steps " + bitsOut.substring (0, 24));
+    }
     
     // Try to enqueue the update
     if (!patternUpdateQueue.enqueue(update)) {

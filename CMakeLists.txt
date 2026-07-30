@@ -283,6 +283,23 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
             juce::juce_recommended_config_flags
             juce::juce_recommended_warning_flags)
 
+    # ── Headless dataflow probe (music-suite docs/DATAFLOW_AUDIT.md) ─────────
+    # Drives the REAL processor offline and writes a trace + the MIDI it made,
+    # the way Vane's RenderProbe turns a subjective report into numbers. Links
+    # the plugin's shared-code target, so it exercises the same code the DAW
+    # loads — not a reimplementation of it.
+    juce_add_console_app(serpe_dataflow_probe PRODUCT_NAME "serpe_dataflow_probe")
+    target_sources(serpe_dataflow_probe PRIVATE Source/Tests/DataflowProbe.cpp)
+    target_compile_definitions(serpe_dataflow_probe PRIVATE JUCE_USE_CURL=0)
+    juce_generate_juce_header(serpe_dataflow_probe)
+    target_include_directories(serpe_dataflow_probe PRIVATE Source/Core Source/Platform Source/Managers)
+    # juce_audio_plugin_client comes along because the shared code's JuceHeader
+    # includes it; the wrapper's own entry points live in sources this target does
+    # not compile, so there is no clash with main().
+    target_link_libraries(serpe_dataflow_probe PRIVATE Serpe
+        juce::juce_audio_plugin_client
+        juce::juce_recommended_config_flags juce::juce_recommended_warning_flags)
+
     # ── Poly precedence ('/' binds loosest) ─────────────────────────────────
     juce_add_console_app(serpe_poly_precedence PRODUCT_NAME "serpe_poly_precedence")
     target_sources(serpe_poly_precedence PRIVATE Source/Tests/PolyPrecedenceTests.cpp
