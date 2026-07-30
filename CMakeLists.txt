@@ -159,13 +159,18 @@ if(NPXCMD)
     add_custom_command(
         OUTPUT  "${WEBUI_BUILD}/bundle.js"
         COMMAND "${CMAKE_COMMAND}" -E make_directory "${WEBUI_BUILD}"
+        # Build tag, written now so it reflects THIS bundle (see the script).
+        COMMAND "${CMAKE_COMMAND}" -DOUT=${WEBUI_BUILD}/build-tag.js
+                    -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/write-build-tag.cmake"
         COMMAND "${NPXCMD}" esbuild "${WEBUI_DIR}/main.jsx"
                     --bundle --conditions=source "--inject:${WEBUI_DIR}/react-globals.js"
+                    "--inject:${WEBUI_BUILD}/build-tag.js"
                     --loader:.css=text --loader:.svg=dataurl
                     "--banner:js=/*! Bundles WEBMIDI.js (c) Jean-Philippe Cote, Apache-2.0, https://webmidijs.org - see @enkerli/webmidi/THIRD_PARTY_LICENSES.md */"
                     "--define:process.env.NODE_ENV=\"production\"" --minify
                     "--outfile=${WEBUI_BUILD}/bundle.js"
-        DEPENDS ${WEBUI_SRC}
+        DEPENDS
+            "${CMAKE_CURRENT_SOURCE_DIR}/cmake/write-build-tag.cmake" ${WEBUI_SRC}
         WORKING_DIRECTORY "${WEBUI_DIR}"
         COMMENT "Bundling Serpe WebUI with esbuild"
         VERBATIM)
