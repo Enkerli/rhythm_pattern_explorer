@@ -127,9 +127,35 @@ endif()
 
 find_program(NPXCMD npx)
 if(NPXCMD)
-    file(GLOB_RECURSE WEBUI_SRC
+    # The app's own files...
+    file(GLOB_RECURSE WEBUI_SRC CONFIGURE_DEPENDS
         "${WEBUI_DIR}/main.jsx" "${WEBUI_DIR}/*.js"
         "${WEBUI_DIR}/engine/*.js" "${WEBUI_DIR}/styles/*.css" "${WEBUI_DIR}/assets/*.svg")
+
+    # ...AND the monorepo packages it imports. esbuild runs with
+    # --conditions=source, so @enkerli/upi and friends resolve to their SOURCE,
+    # which means packages/*/src is genuinely an input to this bundle.
+    #
+    # Listing only ${WEBUI_DIR} let the bundle go stale silently: on 2026-07-29
+    # packages/upi/src/poly.js gained per-lane scene support, nothing under
+    # apps/serpe changed, so esbuild never re-ran and the plugin shipped
+    # tonight's C++ with the previous night's JS. The UI reported
+    # "lane1: Unrecognised pattern" for a string the engine parses fine — a
+    # display disagreeing with the engine, which is the worst way to be wrong.
+    #
+    # CONFIGURE_DEPENDS so a NEW file in either place is picked up too: a plain
+    # GLOB is evaluated once at configure time and would miss it.
+    get_filename_component(_suite_root "${WEBUI_DIR}/../.." ABSOLUTE)
+    if(EXISTS "${_suite_root}/packages")
+        file(GLOB_RECURSE WEBUI_PKG_SRC CONFIGURE_DEPENDS "${_suite_root}/packages/*/src/*.js")
+        list(APPEND WEBUI_SRC ${WEBUI_PKG_SRC})
+        list(LENGTH WEBUI_PKG_SRC _n_pkg)
+        message(STATUS "Serpe WebUI: watching ${_n_pkg} monorepo package sources for rebuilds")
+    else()
+        message(WARNING
+            "Serpe WebUI: no packages/ found at ${_suite_root} — the bundle will NOT rebuild "
+            "when @enkerli/* sources change, so it can silently ship stale JS.")
+    endif()
     add_custom_command(
         OUTPUT  "${WEBUI_BUILD}/bundle.js"
         COMMAND "${CMAKE_COMMAND}" -E make_directory "${WEBUI_BUILD}"
