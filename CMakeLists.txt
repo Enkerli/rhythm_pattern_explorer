@@ -288,6 +288,16 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
     # the way Vane's RenderProbe turns a subjective report into numbers. Links
     # the plugin's shared-code target, so it exercises the same code the DAW
     # loads — not a reimplementation of it.
+    # macOS only, for now. The probe links the plugin's shared code, so it drags
+    # in juce_gui_extra (the WebView editor) — and juce_add_console_app does not
+    # carry the GTK/WebKit link configuration that juce_add_plugin sets up, so on
+    # Linux it fails at gtk/gtk.h. That broke CI on 2026-07-30 and this guard is
+    # the honest fix until the probe stops needing the editor at all: the right
+    # answer is to split the processor out of the shared-code target so a
+    # headless probe can link the engine without the UI, which is a bigger change
+    # than a diagnostic tool should force. Its findings so far are
+    # platform-independent, so nothing is lost by not running it on Linux.
+    if(APPLE)
     juce_add_console_app(serpe_dataflow_probe PRODUCT_NAME "serpe_dataflow_probe")
     target_sources(serpe_dataflow_probe PRIVATE Source/Tests/DataflowProbe.cpp)
     target_compile_definitions(serpe_dataflow_probe PRIVATE JUCE_USE_CURL=0)
@@ -299,6 +309,7 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
     target_link_libraries(serpe_dataflow_probe PRIVATE Serpe
         juce::juce_audio_plugin_client
         juce::juce_recommended_config_flags juce::juce_recommended_warning_flags)
+    endif()
 
     # ── Poly precedence ('/' binds loosest) ─────────────────────────────────
     juce_add_console_app(serpe_poly_precedence PRODUCT_NAME "serpe_poly_precedence")
