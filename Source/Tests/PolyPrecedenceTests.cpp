@@ -215,6 +215,13 @@ int main()
                 "scene 2 of the same lane carries *3 — per scene, not per lane");
     }
 
+    std::printf ("\n=== progressive TRANSFORM in a lane: body>N ===\n");
+    for (auto* input : { "E(7,16)>16/E(1,17)>17", "E(7,16)E>16/E(1,17)E>17" })
+    {
+        auto r = PolyParser::parse (juce::String (input));
+        expect (r.ok, juce::String (input) + (r.ok ? " parses" : " -> " + r.error));
+    }
+
     std::printf ("\n=== the three strings Alex reported as unrecognised ===\n");
     for (auto* input : { "E(3,17)%2/E(3,5)|E(3,8)*3",
                          "E(3,17)/E(3,5)%2",
