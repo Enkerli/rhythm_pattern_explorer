@@ -22,6 +22,13 @@
 #include "../Platform/DataflowTrace.h"
 #include <cstdio>
 
+/**
+ * The probe's own editor factory: none. The plugin's real one lives in
+ * Source/WebUI/EditorFactory.cpp and is not compiled here, which is precisely
+ * what keeps juce_gui_extra — and on Linux, GTK — out of this binary.
+ */
+juce::AudioProcessorEditor* SerpeAudioProcessor::createEditor() { return nullptr; }
+
 namespace
 {
 constexpr double kSampleRate = 48000.0;

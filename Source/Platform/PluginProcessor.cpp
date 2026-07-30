@@ -29,7 +29,6 @@
 
 #include "PluginProcessor.h"
 #include "DataflowTrace.h"
-#include "../WebUI/SerpeEditor.h"
 #include "PlatformSpecific.h"
 #include <fstream>
 #include <algorithm>
@@ -679,10 +678,9 @@ bool SerpeAudioProcessor::hasEditor() const
     return true;
 }
 
-juce::AudioProcessorEditor* SerpeAudioProcessor::createEditor()
-{
-    return new SerpeEditor (*this);
-}
+// createEditor() lives in Source/WebUI/EditorFactory.cpp — it is the engine's
+// only dependency on the UI, and keeping it here forced juce_gui_extra on every
+// headless consumer. See that file.
 
 //==============================================================================
 void SerpeAudioProcessor::getStateInformation (juce::MemoryBlock& destData)

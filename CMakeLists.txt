@@ -67,6 +67,7 @@ target_sources(Serpe PRIVATE
     Source/Managers/SceneManager.cpp
     Source/Platform/PluginProcessor.cpp
     Source/WebUI/SerpeEditor.cpp
+    Source/WebUI/EditorFactory.cpp
     # Header-only — listed so they show in the Xcode navigator
     Source/Core/PatternEngine.h
     Source/Core/PatternUtils.h
@@ -288,28 +289,52 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
     # the way Vane's RenderProbe turns a subjective report into numbers. Links
     # the plugin's shared-code target, so it exercises the same code the DAW
     # loads — not a reimplementation of it.
-    # macOS only, for now. The probe links the plugin's shared code, so it drags
-    # in juce_gui_extra (the WebView editor) — and juce_add_console_app does not
-    # carry the GTK/WebKit link configuration that juce_add_plugin sets up, so on
-    # Linux it fails at gtk/gtk.h. That broke CI on 2026-07-30 and this guard is
-    # the honest fix until the probe stops needing the editor at all: the right
-    # answer is to split the processor out of the shared-code target so a
-    # headless probe can link the engine without the UI, which is a bigger change
-    # than a diagnostic tool should force. Its findings so far are
-    # platform-independent, so nothing is lost by not running it on Linux.
-    if(APPLE)
+    # ── Headless dataflow probe (music-suite docs/DATAFLOW_AUDIT.md) ─────────
+    # Compiles the ENGINE sources with JUCE_WEB_BROWSER=0. That flag is what
+    # guards juce_gui_extra's GTK/WebKit includes on Linux
+    # ((JUCE_LINUX || JUCE_BSD) && JUCE_WEB_BROWSER), so with it off the probe
+    # builds on a runner with no webkit2gtk dev packages — the thing that broke
+    # CI when the probe linked the plugin's shared code and inherited the editor.
+    #
+    # This only works because createEditor() moved to Source/WebUI/EditorFactory.cpp:
+    # while it lived in PluginProcessor.cpp the engine included SerpeEditor.h, which
+    # uses WebBrowserComponent, and no flag could have compiled that away.
+    #
+    # juce_audio_processors_headless would be the tidier dependency, but it does
+    # not ship AudioProcessorValueTreeState and this processor is built on it.
+    #
+    # It compiles the same processor the DAW loads rather than linking a prebuilt
+    # copy of it: the plugin's shared code is built against the full modules, and
+    # mixing the two variants in one link is what the headless module exists to
+    # avoid. The sources are the plugin's own, so there is no second engine to
+    # drift — only a second compilation of it.
+    #
+    # createEditor() is supplied by the probe itself (see DataflowProbe.cpp); the
+    # plugin gets the real one from Source/WebUI/EditorFactory.cpp.
     juce_add_console_app(serpe_dataflow_probe PRODUCT_NAME "serpe_dataflow_probe")
-    target_sources(serpe_dataflow_probe PRIVATE Source/Tests/DataflowProbe.cpp)
-    target_compile_definitions(serpe_dataflow_probe PRIVATE JUCE_USE_CURL=0)
+    target_sources(serpe_dataflow_probe PRIVATE
+        Source/Tests/DataflowProbe.cpp
+        Source/Platform/PluginProcessor.cpp
+        Source/Core/PatternEngine.cpp
+        Source/Core/PatternUtils.cpp
+        Source/Core/QuantizationEngine.cpp
+        Source/Core/UPIParser.cpp
+        Source/Core/AccentSequence.cpp
+        Source/Core/PolyParser.cpp
+        Source/Managers/PresetManager.cpp
+        Source/Managers/SceneManager.cpp)
+    target_compile_definitions(serpe_dataflow_probe PRIVATE
+        JUCE_USE_CURL=0 JUCE_WEB_BROWSER=0 SERPE_DESKTOP=1
+        JucePlugin_Name="Serpe" JucePlugin_IsSynth=0 JucePlugin_IsMidiEffect=1
+        JucePlugin_WantsMidiInput=1 JucePlugin_ProducesMidiOutput=1)
     juce_generate_juce_header(serpe_dataflow_probe)
     target_include_directories(serpe_dataflow_probe PRIVATE Source/Core Source/Platform Source/Managers)
-    # juce_audio_plugin_client comes along because the shared code's JuceHeader
-    # includes it; the wrapper's own entry points live in sources this target does
-    # not compile, so there is no clash with main().
-    target_link_libraries(serpe_dataflow_probe PRIVATE Serpe
-        juce::juce_audio_plugin_client
+    target_link_libraries(serpe_dataflow_probe PRIVATE
+        juce::juce_audio_processors
+        juce::juce_audio_basics
+        juce::juce_data_structures
+        juce::juce_dsp
         juce::juce_recommended_config_flags juce::juce_recommended_warning_flags)
-    endif()
 
     # ── Poly precedence ('/' binds loosest) ─────────────────────────────────
     juce_add_console_app(serpe_poly_precedence PRODUCT_NAME "serpe_poly_precedence")
