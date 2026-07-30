@@ -32,6 +32,36 @@ SerpeEditor::provideResource (const juce::String& path)
     return std::nullopt;
 }
 
+// ── Build stamps ──────────────────────────────────────────────────────────────
+/**
+ * JS run before the page loads, publishing the NATIVE side's build stamps. The
+ * WebUI bundle stamps itself at bundle time; this is the other half, and the
+ * pair is what makes a mismatch visible at a glance:
+ *
+ *   UI older than the binary  the bundle was not re-bundled in that build — the
+ *                             dependency gap that shipped a two-day-old bundle
+ *                             on 2026-07-29, whose UI rejected a string its own
+ *                             engine parsed
+ *   both old                  the freshly built plugin never replaced the
+ *                             installed one — DrawnQurve, whose
+ *                             COPY_PLUGIN_AFTER_BUILD was hardcoded FALSE
+ *
+ * `binary` is the running bundle's own file time: the honest answer to "when was
+ * the thing I am running produced", needing no build-system support and adding
+ * no rebuild churn. `compiled` is this translation unit's compile time, which
+ * moves whenever the embedded UI does (it includes the BinaryData header).
+ */
+static juce::String buildStampScript()
+{
+    const auto self = juce::File::getSpecialLocation (juce::File::currentApplicationFile);
+    const auto when = self.exists()
+        ? self.getLastModificationTime().formatted ("%Y-%m-%d %H:%M")
+        : juce::String ("unknown");
+    return "window.__CPP_BUILD_TAG__ = " + juce::JSON::toString (when)
+         + "; window.__CPP_COMPILED__ = "
+         + juce::JSON::toString (juce::String (__DATE__ " " __TIME__)) + ";";
+}
+
 // ── Options builder ───────────────────────────────────────────────────────────
 
 juce::WebBrowserComponent::Options SerpeEditor::buildOptions (SerpeEditor* owner)
@@ -43,6 +73,7 @@ juce::WebBrowserComponent::Options SerpeEditor::buildOptions (SerpeEditor* owner
     return WebBrowserComponent::Options{}
         .withResourceProvider ([] (const juce::String& path) { return SerpeEditor::provideResource (path); },
             WebBrowserComponent::getResourceProviderRoot())
+        .withUserScript (buildStampScript())
         .withNativeIntegrationEnabled()
        #if JUCE_MAC
         .withKeepPageLoadedWhenBrowserIsHidden()

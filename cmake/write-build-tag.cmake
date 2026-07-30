@@ -29,8 +29,24 @@ set(_body "globalThis.__BUILD_TAG__ = \"${_tag} UTC\";
     if (!document.body || document.getElementById('es-build-tag')) return;
     const el = document.createElement('div');
     el.id = 'es-build-tag';
-    el.textContent = 'build ' + globalThis.__BUILD_TAG__;
-    el.title = 'Build tag \\u2014 confirms which bundle is running';
+    // BOTH halves. The UI stamp comes from this file; the native ones are
+    // published by the editor's user script before the page loads. Showing them
+    // together is the point — a discrepancy is the thing worth seeing, and
+    // there have been several (Alex, 2026-07-30).
+    const ui = globalThis.__BUILD_TAG__;
+    const cpp = globalThis.__CPP_BUILD_TAG__;
+    // UI newer than the binary means the bundle was rebuilt but never got
+    // embedded and relinked, so what is running is not what was just built.
+    const stale = cpp && cpp !== 'unknown' && ui.slice(0, 16) > cpp.slice(0, 16);
+    el.textContent = cpp ? ('UI ' + ui + '  \\u00b7  bin ' + cpp + (stale ? '  \\u26a0' : ''))
+                         : ('UI ' + ui + '  \\u00b7  bin \\u2014');
+    el.title = cpp
+      ? ('WebUI bundle built ' + ui + '\\nBinary produced ' + cpp
+         + '\\nThis TU compiled ' + (globalThis.__CPP_COMPILED__ || '?')
+         + (stale ? '\\n\\nWARNING: the bundle is newer than the binary running it — '
+                  + 'rebuild and reinstall, or you are looking at an older UI than you built.'
+                  : ''))
+      : 'WebUI bundle built ' + ui + ' \\u2014 no native stamp (webapp, or an older plugin build)';
     el.style.cssText = 'position:fixed;right:6px;bottom:4px;z-index:2147483000;'
       + 'font:10px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;'
       + 'color:var(--es-fg-muted,#8a8a8a);opacity:.55;pointer-events:none;'
