@@ -316,7 +316,18 @@ void SerpeAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
                 
                 bool triggerNeeded = false;
                 
-                if (hasScenes) {
+                // POLY FIRST: '/' binds loosest, so a '|' inside a lane is that
+                // LANE's chain and the mono scene path knows nothing about it.
+                // Taking that path anyway did nothing while still setting
+                // triggerNeeded, so parseAndApplyUPI never ran and poly lanes
+                // never advanced on a tick (Alex: "does not advance on MIDI note
+                // in", 2026-07-29). setUPIInput got this precedence on the same
+                // day; these two trigger sites did not.
+                if (PolyParser::splitLanes(upiToProcess).size() > 1) {
+                    parseAndApplyUPI(upiToProcess, true);   // routes to the poly path
+                    triggerNeeded = true;
+                }
+                else if (hasScenes) {
                     // CRITICAL FIX WITH ERROR PROTECTION: If we have scenes, handle scene advancement first
                     // This prevents double/triple advancement when scenes contain progressive transformations
                     try {
@@ -2356,7 +2367,12 @@ void SerpeAudioProcessor::checkMidiInputForTriggers(juce::MidiBuffer& midiMessag
                 bool triggerNeeded = false;
                 
                 try {
-                    if (hasScenes) {
+                    // POLY FIRST — see the tick path above for why.
+                    if (PolyParser::splitLanes(upiToProcess).size() > 1) {
+                        parseAndApplyUPI(upiToProcess, true);   // routes to the poly path
+                        triggerNeeded = true;
+                    }
+                    else if (hasScenes) {
                         // CRITICAL FIX WITH ERROR PROTECTION: If we have scenes, handle scene advancement first
                         // This prevents double/triple advancement when scenes contain progressive transformations
                         advanceScene();

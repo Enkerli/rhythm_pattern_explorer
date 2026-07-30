@@ -271,6 +271,34 @@ public:
         return lane.active ? lane.lastProcessedStep : -1;
     }
 
+    /**
+     * What this lane is ACTUALLY sounding, as a binary string — rotated by its
+     * progressive offset, grown by its lengthening, and resolved to the scene
+     * the lane is currently on. The editor used to draw lane rows from the
+     * WebUI's own parse of the typed text, which meant a chain always displayed
+     * its first scene while the engine cycled behind it (Alex, 2026-07-29).
+     * Empty when the lane is inactive.
+     */
+    juce::String getPolyLanePattern(int laneIndex) const
+    {
+        if (laneIndex < 0 || laneIndex >= kMaxPolyLanes) return {};
+        const auto& lane = polyLanes[static_cast<size_t>(laneIndex)];
+        if (!lane.active) return {};
+        return lane.engine.getBinaryString();
+    }
+
+    /** Which scene of its own chain this lane is on, and how many it has. */
+    int getPolyLaneSceneIndex(int laneIndex) const
+    {
+        if (laneIndex < 0 || laneIndex >= kMaxPolyLanes) return 0;
+        return polyLanes[static_cast<size_t>(laneIndex)].sceneIndex;
+    }
+    int getPolyLaneSceneCount(int laneIndex) const
+    {
+        if (laneIndex < 0 || laneIndex >= kMaxPolyLanes) return 0;
+        return polyLanes[static_cast<size_t>(laneIndex)].sceneChain.size();
+    }
+
 private:
     //==============================================================================
     // Pattern Engine

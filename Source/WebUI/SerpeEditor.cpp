@@ -302,7 +302,7 @@ void SerpeEditor::sendPolyState()
         return;
     }
 
-    juce::Array<juce::var> steps;
+    juce::Array<juce::var> steps, patterns, sceneIndices, sceneCounts;
     bool changed = !lastPolyActive;
     for (int i = 0; i < SerpeAudioProcessor::kMaxPolyLanes; ++i)
     {
@@ -310,6 +310,20 @@ void SerpeEditor::sendPolyState()
         steps.add (s);
         if (s != lastPolySteps[static_cast<size_t> (i)]) changed = true;
         lastPolySteps[static_cast<size_t> (i)] = s;
+
+        // The lane's ACTUAL pattern, so the panel draws what is sounding
+        // instead of the WebUI's own parse of the typed text. Without this a
+        // scene chain displayed its first scene forever while the engine
+        // cycled (Alex, 2026-07-29). Patterns must take part in the change
+        // check too: a scene advance changes the pattern, and on a lane whose
+        // step happens to land the same the push would otherwise be skipped.
+        const auto pat = proc.getPolyLanePattern (i);
+        patterns.add (pat);
+        if (pat != lastPolyPatterns[static_cast<size_t> (i)]) changed = true;
+        lastPolyPatterns[static_cast<size_t> (i)] = pat;
+
+        sceneIndices.add (proc.getPolyLaneSceneIndex (i));
+        sceneCounts.add (proc.getPolyLaneSceneCount (i));
     }
     lastPolyActive = true;
     if (!changed) return;
@@ -317,5 +331,8 @@ void SerpeEditor::sendPolyState()
     webView.emitEventIfBrowserIsVisible ("polyState", makeObj ({
         { "active", true },
         { "steps",  juce::var (steps) },
+        { "patterns", juce::var (patterns) },
+        { "sceneIndices", juce::var (sceneIndices) },
+        { "sceneCounts", juce::var (sceneCounts) },
     }));
 }
