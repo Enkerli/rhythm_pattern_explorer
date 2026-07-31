@@ -48,7 +48,16 @@ struct Session
  * and it is the path that failed for poly until 2026-07-30, when MIDI-in did not
  * advance a lane's scene chain at all.
  */
-juce::MidiMessageSequence run (SerpeAudioProcessor& proc, const Session& s)
+/** Bit string for a pattern, leftmost = first step = LSB (INTENT D1). */
+juce::String bits (const std::vector<bool>& v)
+{
+    juce::String s;
+    for (bool b : v) s << (b ? '1' : '0');
+    return s;
+}
+
+juce::MidiMessageSequence run (SerpeAudioProcessor& proc, const Session& s,
+                               juce::StringArray* perTrigger = nullptr)
 {
     juce::MidiMessageSequence captured;
     juce::AudioBuffer<float> audio (2, kBlock);
@@ -73,6 +82,13 @@ juce::MidiMessageSequence run (SerpeAudioProcessor& proc, const Session& s)
             captured.addEvent (m);
         }
         seconds += kBlock / kSampleRate;
+
+        // The pattern the engine is actually on, per trigger. This is what
+        // makes progressive PHASE observable: trigger 1 must be the bare base
+        // for every operator (INTENT D6, base-first since 2026-07-30), and a
+        // MIDI file alone cannot show that.
+        if (perTrigger != nullptr)
+            perTrigger->add (bits (proc.getPatternEngine().getCurrentPattern()));
 
         // Flush from this thread: the probe IS the message thread here, and
         // flushing per trigger keeps the ring far from overflowing.
@@ -120,6 +136,11 @@ int main (int argc, char** argv)
     outDir.createDirectory();
 
     const std::vector<Session> sessions {
+        // Mono progressive offset and lengthening — the two paths changed on
+        // 2026-07-30 for base-first, and until then exercised by no probe at
+        // all. Trigger 1 must print the bare base in both.
+        { "serpe-mono-offset", "E(3,8)%2", 5 },
+        { "serpe-mono-lengthen", "E(3,8)*3", 4 },
         // The chain that started all of this: a scene chain inside a poly lane,
         // with a progressive lengthening on the second scene.
         { "serpe-poly-scenes", "E(3,8)|E(3,8)*3/E(3,7)", 8 },
@@ -138,7 +159,8 @@ int main (int argc, char** argv)
 
         SerpeAudioProcessor proc;
         proc.prepareToPlay (kSampleRate, kBlock);
-        const auto midi = run (proc, s);
+        juce::StringArray perTrigger;
+        const auto midi = run (proc, s, &perTrigger);
         tr.flush();
         proc.releaseResources();
 
@@ -154,6 +176,8 @@ int main (int argc, char** argv)
 
         // An empty trace means the probe recorded nothing — which would let the
         // audit report a clean bill of health from no evidence. Fail loudly.
+        if (! perTrigger.isEmpty())
+            std::printf ("  per-trigger: %s\n", perTrigger.joinIntoString (" ").toRawUTF8());
         if (lines <= 0) { std::printf ("  FAIL: no trace events recorded\n"); ++failures; }
         if (midi.getNumEvents() == 0) std::printf ("  NOTE: no MIDI produced (pattern may not have fired in %d blocks)\n", s.triggers);
     }

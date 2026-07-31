@@ -1361,11 +1361,15 @@ void SerpeAudioProcessor::parseAndApplyPolyUPI(const juce::String& upiPattern)
         // music-suite docs/CODE_CENSUS.md). This is what connects it.
         if (parsed.hasProgressiveOffset)
         {
-            // offset = step * visits, so the FIRST visit is already one step
-            // in — the engine's phase for '%N'. Deriving it from the visit
-            // count rather than accumulating means a scene picks up exactly
-            // where it left off when the chain comes back round to it.
-            const int offset = parsed.progressiveOffsetStep * visits;
+            // offset = step * (visits - 1), so the FIRST visit to a scene is
+            // the bare base and growth starts on the second. Deriving it from
+            // the visit count rather than accumulating means a scene picks up
+            // exactly where it left off when the chain comes back round to it.
+            //
+            // `visits` is 1-based (see above), so the -1 is what puts trigger 1
+            // at offset 0. Was `step * visits` until 2026-07-30, matching the
+            // mono path's old one-step-in phase; both moved together.
+            const int offset = parsed.progressiveOffsetStep * (visits - 1);
             lane.engine.setProgressiveOffset(true, offset, parsed.progressiveOffsetStep);
             lane.hasProgressiveOffset = true;
             lane.progressiveOffsetStep = parsed.progressiveOffsetStep;
@@ -1390,8 +1394,19 @@ void SerpeAudioProcessor::parseAndApplyPolyUPI(const juce::String& upiPattern)
             if (sc < lane.sceneGrown.size())
             {
                 if (lane.sceneGrown[sc].empty()) lane.sceneGrown[sc] = parsed.steps;
-                auto extra = generateBellCurveRandomSteps(parsed.progressiveLengtheningStep);
-                lane.sceneGrown[sc].insert(lane.sceneGrown[sc].end(), extra.begin(), extra.end());
+
+                // The FIRST visit to a scene plays the bare base; growth starts
+                // on the second. A lane entering `E(3,8)*3` gives 8 steps, then
+                // 11, then 14 — it used to give 11 immediately and never 8.
+                // Changed 2026-07-30 alongside the mono path.
+                //
+                // Gated on `visits` rather than on sceneGrown being empty so an
+                // empty base pattern still grows rather than re-seeding forever.
+                if (visits > 1)
+                {
+                    auto extra = generateBellCurveRandomSteps(parsed.progressiveLengtheningStep);
+                    lane.sceneGrown[sc].insert(lane.sceneGrown[sc].end(), extra.begin(), extra.end());
+                }
                 lane.engine.setPattern(lane.sceneGrown[sc]);
             }
             else
@@ -1858,11 +1873,19 @@ void SerpeAudioProcessor::setUPIInput(const juce::String& upiPattern)
         }
         else
         {
-            // New progressive pattern - reset and start
+            // New progressive pattern - reset and start AT THE BASE.
+            //
+            // This used to be `progressiveOffset = newStep` ("Start with first
+            // offset"), so the un-rotated base was never heard. Changed
+            // 2026-07-30: what you typed is what you hear on trigger 1, for
+            // every progressive operator. `>N` always behaved this way; `%N`,
+            // `+N` and `*N` did not, and nobody had chosen that — it was three
+            // code paths written at different times. See INTENT D6 and
+            // docs/PROGRESSIVE_PHASE.md in the monorepo.
             basePattern = newBasePattern;
             progressiveStep = newStep;
-            progressiveOffset = newStep; // Start with first offset
-            
+            progressiveOffset = 0;
+
         }
         
         // Parse the base pattern first
@@ -1898,9 +1921,13 @@ void SerpeAudioProcessor::setUPIInput(const juce::String& upiPattern)
             parseAndApplyUPI(basePattern);
             baseLengthPattern = patternEngine.getCurrentPattern();
             
-            // Apply initial lengthening immediately (don't wait for second trigger)
-            advanceProgressiveLengthening();
-            
+            // No initial lengthening: trigger 1 is the bare base, and growth
+            // starts on trigger 2. This line used to call
+            // advanceProgressiveLengthening() here, commented "don't wait for
+            // second trigger", which made `E(3,8)*3` play 11 steps immediately
+            // and never 8. Changed 2026-07-30 for one rule across every
+            // progressive operator — see the note on progressiveOffset above.
+
         }
         
         // Apply current lengthened pattern

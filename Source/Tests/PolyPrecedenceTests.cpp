@@ -92,7 +92,9 @@ int main()
         // compound. Mirrors parseAndApplyPolyUPI.
         const auto base = PolyParser::parse ("E(3,8)%2/E(3,7)").lanes[0].steps;
         PatternEngine eng;
-        eng.setProgressiveOffset (true, 2, 2);
+        // initial 0, not 2: trigger 1 is the bare base. Mirrors
+        // parseAndApplyPolyUPI's `step * (visits - 1)` since visits is 1-based.
+        eng.setProgressiveOffset (true, 0, 2);
         auto bits = [] (const std::vector<bool>& v)
         {
             juce::String s; for (bool b : v) s << (b ? '1' : '0'); return s;
@@ -104,7 +106,7 @@ int main()
             seen.add (bits (PatternUtils::rotatePattern (base, -eng.getCurrentOffset())));
         }
         // E(3,8) rotated by 2 each trigger: period 4 on an 8-step pattern.
-        expect (seen[0] != bits (base), "trigger 1 is already rotated (offset 2), as mono '%2' is");
+        expect (seen[0] == bits (base), "trigger 1 is the BARE BASE, as mono '%2' now is (base-first, 2026-07-30)");
         expect (seen[4] == seen[0], "rotating by 2 on 8 steps has period 4, so trigger 5 repeats trigger 1");
         for (const auto& s : seen)
             expect (s.length() == 8, "rotation preserves length: " + s);
@@ -150,13 +152,18 @@ int main()
         juce::StringArray lens;
         for (int t = 0; t < 4; ++t)
         {
+            // t == 0 is the first visit: the bare base, no growth yet. Mirrors
+            // parseAndApplyPolyUPI's `if (visits > 1)` guard.
             const size_t before = grown.size();
-            for (int k = 0; k < 3; ++k) grown.push_back (rng.nextBool());
-            expect (grown.size() == before + 3, "each trigger adds exactly 3 steps");
+            if (t > 0)
+            {
+                for (int k = 0; k < 3; ++k) grown.push_back (rng.nextBool());
+                expect (grown.size() == before + 3, "each trigger after the first adds exactly 3 steps");
+            }
             lens.add (juce::String ((int) grown.size()));
         }
-        expect (lens.joinIntoString (",") == "11,14,17,20",
-                "lengths run 11,14,17,20 — trigger 1 is already base+step, as the engine does");
+        expect (lens.joinIntoString (",") == "8,11,14,17",
+                "lengths run 8,11,14,17 — trigger 1 is the BARE BASE (base-first, 2026-07-30)");
         expect (std::equal (base.begin(), base.end(), grown.begin()),
                 "the base stays as a prefix, so the lane grows rather than churns");
     }
