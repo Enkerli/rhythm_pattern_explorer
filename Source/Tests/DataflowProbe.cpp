@@ -83,12 +83,59 @@ juce::MidiMessageSequence run (SerpeAudioProcessor& proc, const Session& s,
         }
         seconds += kBlock / kSampleRate;
 
+        // One settle block before sampling.
+        //
+        // processBlock drains the pattern queue at its TOP (processPatternUpdates,
+        // before checkMidiInputForTriggers), so a '%N' rotation enqueued by this
+        // trigger does not reach the engine until the NEXT block --- deliberate,
+        // it is what stops the queued base from overwriting the rotation. '*N'
+        // by contrast sets the engine directly and lands at once.
+        //
+        // Sampling immediately after the trigger therefore read '%N' one step
+        // behind '*N' and made a correct engine look inconsistent. Draining
+        // first reports what both operators have actually settled on.
+        {
+            juce::MidiBuffer settle;
+            audio.clear();
+            proc.processBlock (audio, settle);
+            for (const auto meta : settle)
+            {
+                auto m = meta.getMessage();
+                m.setTimeStamp (seconds + meta.samplePosition / kSampleRate);
+                captured.addEvent (m);
+            }
+            seconds += kBlock / kSampleRate;
+        }
+
         // The pattern the engine is actually on, per trigger. This is what
         // makes progressive PHASE observable: trigger 1 must be the bare base
         // for every operator (INTENT D6, base-first since 2026-07-30), and a
         // MIDI file alone cannot show that.
+        //
+        // A POLY pattern's lanes each own their own PatternEngine, so the
+        // processor's mono patternEngine says nothing about them --- it holds
+        // whatever was last parsed and sits there looking static. Printing it
+        // for a poly session invited exactly the wrong conclusion, so read the
+        // lanes instead.
         if (perTrigger != nullptr)
-            perTrigger->add (bits (proc.getPatternEngine().getCurrentPattern()));
+        {
+            if (proc.getIsPolyPattern())
+            {
+                juce::StringArray lanes;
+                for (int i = 0; i < 4; ++i)
+                {
+                    const auto p = proc.getPolyLanePattern (i);
+                    if (p.isEmpty()) break;
+                    lanes.add (p);
+                }
+                perTrigger->add (lanes.isEmpty() ? juce::String ("(no lanes)")
+                                                 : lanes.joinIntoString ("+"));
+            }
+            else
+            {
+                perTrigger->add (bits (proc.getPatternEngine().getCurrentPattern()));
+            }
+        }
 
         // Flush from this thread: the probe IS the message thread here, and
         // flushing per trigger keeps the ring far from overflowing.

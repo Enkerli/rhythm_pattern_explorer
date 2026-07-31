@@ -213,6 +213,11 @@ public:
     void resetProgressiveOffset() { progressiveOffset = 0; }
     void advanceProgressiveOffset() { progressiveOffset += progressiveStep; }
     int getProgressiveOffset() const { return progressiveOffset; }
+
+    /** Advance a MONO `%N`/`+N`/`*N` for a re-trigger. Returns true if it did.
+        Shared by the tick edge and the MIDI-note path so the two cannot drift
+        apart again — that drift was the bug (see the definition). */
+    bool advanceMonoProgressiveForTrigger(const juce::String& upiToProcess);
     
     // Scene information access for UI
     int getCurrentSceneIndex() const { return sceneManager->getCurrentSceneIndex(); }

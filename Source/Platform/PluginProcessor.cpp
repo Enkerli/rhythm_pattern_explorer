@@ -354,6 +354,13 @@ void SerpeAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
                         triggerNeeded = true;
                     }
                 }
+                // Mono '%N' / '+N' / '*N'. Missing here until 2026-07-31, which
+                // is why a tick left a rotating pattern frozen on trigger 1 —
+                // it fell through to the plain re-parse below, which does not
+                // touch progressive state. Same call as the MIDI path.
+                else if (advanceMonoProgressiveForTrigger(upiToProcess)) {
+                    triggerNeeded = true;
+                }
                 
                 // For regular patterns without scenes or progressive transformations
                 if (!triggerNeeded) {
@@ -2437,6 +2444,11 @@ void SerpeAudioProcessor::checkMidiInputForTriggers(juce::MidiBuffer& midiMessag
                         parseAndApplyUPI(upiToProcess, false); // false = preserve accents
                         triggerNeeded = true;
                     }
+                    // Mono '%N' / '+N' / '*N' — see the tick path. Alex plays
+                    // these by holding a note, so this was the reported symptom.
+                    else if (advanceMonoProgressiveForTrigger(upiToProcess)) {
+                        triggerNeeded = true;
+                    }
                     
                     // For regular patterns without scenes or progressive transformations
                     if (!triggerNeeded) {
@@ -2487,6 +2499,92 @@ void SerpeAudioProcessor::checkMidiInputForTriggers(juce::MidiBuffer& midiMessag
     }
 }
 
+
+namespace
+{
+/** True when the tail after the LAST `ch` is a bare number, e.g. "E(3,8)%2".
+    Guards against `pat+pat` (combination) being read as an offset — the same
+    check setUPIInput makes, kept identical on purpose. */
+bool hasNumericTail (const juce::String& pattern, juce::juce_wchar ch, bool allowNegative)
+{
+    const int i = pattern.lastIndexOf (juce::String::charToString (ch));
+    if (i <= 0) return false;
+    const auto tail = pattern.substring (i + 1).trim();
+    return tail.isNotEmpty() && tail.containsOnly (allowNegative ? "0123456789-" : "0123456789");
+}
+} // namespace
+
+/*
+    Advance a mono progressive pattern on a re-trigger.
+
+    THE BUG THIS FIXES. `%N`, `+N` and `*N` never advanced from the tick edge or
+    from MIDI note-in — only from the editor, which calls setUPIInput. Both
+    trigger sites branched on poly, then '|', then '>', and nothing else, so a
+    bare `E(3,8)%2` fell through to parseAndApplyUPI, which re-parses the string
+    but does not touch progressive state. The pattern sat frozen on trigger 1.
+
+    Proven by serpe_dataflow_probe printing the engine pattern per trigger:
+    five triggers of E(3,8)%2 gave 10010010 five times, while E(1,8)>8 in the
+    same run advanced correctly. Not a phase problem --- the 2026-07-30
+    base-first change only moved where it was stuck.
+
+    WHY A SHARED FUNCTION rather than a branch copied into both sites: the bug
+    IS two trigger sites having drifted from a third implementation. INTENT L5
+    ("two copies of a rule will drift") names this exact failure, and it has now
+    cost the same file three separate incidents --- the '*N' numeric guard, the
+    queue race fixed for mono and not scenes, and this. One definition, three
+    callers.
+
+    NOT HANDLED HERE, deliberately:
+      · poly    lanes carry their own progressive state, advanced per lane
+      · scenes  '|' advances through SceneManager, which owns its phase
+      · '>'     steps through the UPIParser map on each re-parse, so plain
+                parseAndApplyUPI already advances it
+    Each returns false so the caller falls through to its existing branch.
+
+    THREAD: called from processBlock (audio thread) by both callers. It does
+    what those sites already do --- parseAndApplyUPI, or a vector assign --- and
+    deliberately does NOT call setUPIInput, which starts with addToUPIHistory
+    and would both allocate and spam the history on every note.
+
+    @returns true if this pattern had mono progressive state and it advanced.
+*/
+bool SerpeAudioProcessor::advanceMonoProgressiveForTrigger (const juce::String& upiToProcess)
+{
+    if (PolyParser::splitLanes (upiToProcess).size() > 1) return false;  // poly owns it
+    if (upiToProcess.contains ("|")) return false;                       // scenes own it
+
+    // '%' is preferred, '+' is the legacy spelling; both are offsets, and both
+    // require a numeric tail.
+    if (hasNumericTail (upiToProcess, '%', true) || hasNumericTail (upiToProcess, '+', true))
+    {
+        // progressiveStep is 0 until setUPIInput has seen this pattern once.
+        // Without that guard a trigger arriving before any parse would advance
+        // by nothing and still claim it handled the pattern.
+        if (progressiveStep == 0 || basePattern.isEmpty()) return false;
+
+        advanceProgressiveOffset();
+        // Re-parse the BASE (no '%N' tail). The rotation itself is applied in
+        // processPatternUpdates once the queued base lands --- applying it here
+        // would be overwritten by that queued update, which is the race the
+        // "CRITICAL FIX" comment there describes.
+        parseAndApplyUPI (basePattern);
+        patternChanged.store (true);
+        return true;
+    }
+
+    if (hasNumericTail (upiToProcess, '*', false))
+    {
+        if (progressiveLengthening <= 0 || baseLengthPattern.empty()) return false;
+
+        advanceProgressiveLengthening();          // appends to baseLengthPattern
+        patternEngine.setPattern (baseLengthPattern);
+        patternChanged.store (true);
+        return true;
+    }
+
+    return false;
+}
 
 void SerpeAudioProcessor::advanceProgressiveLengthening()
 {
