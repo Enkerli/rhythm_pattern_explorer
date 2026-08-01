@@ -214,11 +214,50 @@ juce::StringArray notePairs (const juce::MidiMessageSequence& seq)
     return pairs;
 }
 
+/**
+    Write the captured sequence as a playable .mid.
+
+    UNITS, and this was wrong from the probe's first commit until 2026-08-01:
+    `run()` timestamps events in SECONDS, but MidiFile::writeTo interprets a
+    sequence's timestamps as TICKS. With 960 ticks per quarter note, a whole
+    second was being written as 1/960th of one — so every artifact collapsed
+    into a few milliseconds, several notes deep, and the accent-poly file put
+    all 34 note-ons inside 0.004 beats.
+
+    Nothing downstream noticed, because the analyser reads the JSONL trace and
+    the probe only ever counted MIDI events. The files were checked for
+    existence and event count, never for timing. That is the whole point of
+    these artifacts ("checked later, by ear or by analysis") quietly not
+    working, which is L4 again: a step that reports success while producing
+    nothing usable.
+
+    Converted here rather than in `run()` so the capture stays in real time and
+    only the file-writing boundary deals in ticks.
+*/
 void writeMidi (const juce::File& out, const juce::MidiMessageSequence& seq)
 {
+    constexpr int    kTicksPerQuarter = 960;
+    constexpr double kBpm             = 120.0;   // the processor's default
+    const double ticksPerSecond = kTicksPerQuarter * kBpm / 60.0;
+
+    juce::MidiMessageSequence ticks;
+    for (int i = 0; i < seq.getNumEvents(); ++i)
+    {
+        auto m = seq.getEventPointer (i)->message;
+        m.setTimeStamp (m.getTimeStamp() * ticksPerSecond);
+        ticks.addEvent (m);
+    }
+    ticks.updateMatchedPairs();
+
+    // State the tempo in the file, so anything opening it reads the same clock
+    // the conversion above assumed instead of guessing 120 itself.
+    juce::MidiMessageSequence meta;
+    meta.addEvent (juce::MidiMessage::tempoMetaEvent ((int) (60'000'000.0 / kBpm)));
+
     juce::MidiFile mf;
-    mf.setTicksPerQuarterNote (960);
-    mf.addTrack (seq);
+    mf.setTicksPerQuarterNote (kTicksPerQuarter);
+    mf.addTrack (meta);
+    mf.addTrack (ticks);
     out.deleteFile();
     if (auto stream = std::unique_ptr<juce::FileOutputStream> (out.createOutputStream()))
         mf.writeTo (*stream);
