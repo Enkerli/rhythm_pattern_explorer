@@ -270,6 +270,21 @@ std::pair<juce::StringArray, juce::StringArray> runTwoInstances (const char* upi
         juce::MidiBuffer settle;
         audio.clear();
         p.processBlock (audio, settle);
+        // Poly lanes own their engines; the processor's mono patternEngine
+        // holds whatever was last parsed and says nothing about them. Reading
+        // it for a poly roundtrip would compare two identical irrelevancies
+        // and pass no matter what the lanes did.
+        if (p.getIsPolyPattern())
+        {
+            juce::StringArray lanes;
+            for (int i = 0; i < 4; ++i)
+            {
+                const auto pat = p.getPolyLanePattern (i);
+                if (pat.isEmpty()) break;
+                lanes.add (pat);
+            }
+            if (! lanes.isEmpty()) return lanes.joinIntoString ("+");
+        }
         return bits (p.getPatternEngine().getCurrentPattern());
     };
 
@@ -316,6 +331,20 @@ RoundTrip runStateRoundTrip (const char* upi, int triggers)
         juce::MidiBuffer settle;
         audio.clear();
         p.processBlock (audio, settle);
+        // Poly lanes own their engines; the processor's mono patternEngine
+        // keeps the DEFAULT pattern for a poly string, so reading it compares
+        // two identical irrelevancies and passes whatever the lanes did.
+        if (p.getIsPolyPattern())
+        {
+            juce::StringArray lanes;
+            for (int i = 0; i < 4; ++i)
+            {
+                const auto pat = p.getPolyLanePattern (i);
+                if (pat.isEmpty()) break;
+                lanes.add (pat);
+            }
+            if (! lanes.isEmpty()) return lanes.joinIntoString ("+");
+        }
         return bits (p.getPatternEngine().getCurrentPattern());
     };
 
@@ -539,8 +568,13 @@ int main (int argc, char** argv)
     }
 
     // Save/restore round trip: does a reopened project resume, or restart?
+    //
+    // Both a mono and a POLY pattern, because they persist by different routes:
+    // mono through progressiveTransform, a lane through its own copy plus the
+    // sceneVisits that its offset is derived from. Until 2026-08-01 only mono
+    // was saved at all, so a reopened project restarted every lane.
+    for (const char* upi : { "E(1,8)>8", "E(1,8)>8/E(3,7)%2" })
     {
-        const char* upi = "E(1,8)>8";
         const auto rt = runStateRoundTrip (upi, 4);
         std::printf ("\n%-22s %-26s save -> new instance -> restore\n", "serpe-state-roundtrip", upi);
         std::printf ("  saved instance's next step: %s\n", rt.saved.toRawUTF8());

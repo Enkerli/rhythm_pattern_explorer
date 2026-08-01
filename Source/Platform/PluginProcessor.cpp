@@ -762,12 +762,49 @@ void SerpeAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
     // has always been saved; until 2026-08-01 the state it keys into lived in
     // process-wide statics, so a reloaded project restored the key and then read
     // whatever the process happened to hold. Both halves travel together now.
-    //
-    // Mono only, deliberately: a poly lane's state is rebuilt by the parse that
-    // setStateInformation itself triggers, so restoring into lanes needs a
-    // defined point AFTER that parse. Doing it half-right would be worse than
-    // not yet — noted rather than guessed at.
     progressiveTransform.saveTo(state);
+
+    // Poly lane state. The "defined point AFTER that parse" this comment used
+    // to defer to now exists — setStateInformation restores lanes immediately
+    // after setUPIInput, in the same place and for the same reason the mono
+    // map does (a `>N` parse ADVANCES the progression, so restoring first
+    // resumes one step late).
+    //
+    // Three things per lane, and they are not interchangeable:
+    //   sceneVisits   progressive OFFSET is derived from this (offset =
+    //                 step * (visits-1)), so the visit count IS the offset state
+    //   sceneGrown    progressive LENGTHENING, per scene, already-grown
+    //   progressive   the `>N` transform map, this lane's own since F1a
+    if (isPolyPattern)
+    {
+        juce::ValueTree lanesNode("polyLanes");
+        for (size_t i = 0; i < polyLanes.size(); ++i)
+        {
+            const auto& lane = polyLanes[i];
+            if (!lane.active) continue;
+
+            juce::ValueTree ln("lane");
+            ln.setProperty("index", (int) i, nullptr);
+            ln.setProperty("sceneIndex", lane.sceneIndex, nullptr);
+
+            juce::StringArray visits;
+            for (int v : lane.sceneVisits) visits.add(juce::String(v));
+            ln.setProperty("sceneVisits", visits.joinIntoString(","), nullptr);
+
+            juce::StringArray grown;
+            for (const auto& pat : lane.sceneGrown)
+            {
+                juce::String bits;
+                for (bool b : pat) bits << (b ? '1' : '0');
+                grown.add(bits);
+            }
+            ln.setProperty("sceneGrown", grown.joinIntoString("\n"), nullptr);
+
+            lane.progressive.saveTo(ln);   // writes its own property on this node
+            lanesNode.appendChild(ln, nullptr);
+        }
+        state.appendChild(lanesNode, nullptr);
+    }
 
     // Convert ValueTree to XML and save to memory block
     if (auto xml = state.createXml())
@@ -892,6 +929,53 @@ void SerpeAudioProcessor::setStateInformation (const void* data, int sizeInBytes
                     const auto it = progressiveTransform.patterns.find(currentProgressivePatternKey);
                     if (it != progressiveTransform.patterns.end() && !it->second.empty())
                         patternEngine.setPattern(it->second);
+                }
+
+                // Poly lanes, restored HERE for exactly the mono reason above:
+                // setUPIInput just rebuilt every lane from scratch, and a lane
+                // carrying `>N` advanced while it did. Anything written before
+                // that call would have been overwritten; anything written after
+                // it lands on the lanes the reopened project actually has.
+                const auto lanesNode = state.getChildWithName("polyLanes");
+                if (lanesNode.isValid())
+                {
+                    for (int c = 0; c < lanesNode.getNumChildren(); ++c)
+                    {
+                        const auto ln = lanesNode.getChild(c);
+                        const int idx = ln.getProperty("index", -1);
+                        if (idx < 0 || idx >= (int) polyLanes.size()) continue;
+                        auto& lane = polyLanes[(size_t) idx];
+
+                        lane.sceneIndex = ln.getProperty("sceneIndex", lane.sceneIndex);
+
+                        // sceneVisits is the offset state (offset = step *
+                        // (visits-1)), so it is restored into the EXISTING
+                        // vector without resizing — the parse above sized it to
+                        // this lane's scene chain, and a saved chain of a
+                        // different length belongs to a pattern that is no
+                        // longer loaded.
+                        const juce::String visits = ln.getProperty("sceneVisits", juce::String());
+                        if (visits.isNotEmpty())
+                        {
+                            const auto parts = juce::StringArray::fromTokens(visits, ",", "");
+                            for (int i = 0; i < parts.size() && i < (int) lane.sceneVisits.size(); ++i)
+                                lane.sceneVisits[(size_t) i] = parts[i].getIntValue();
+                        }
+
+                        const juce::String grown = ln.getProperty("sceneGrown", juce::String());
+                        if (grown.isNotEmpty())
+                        {
+                            const auto rows = juce::StringArray::fromLines(grown);
+                            for (int i = 0; i < rows.size() && i < (int) lane.sceneGrown.size(); ++i)
+                            {
+                                std::vector<bool> pat;
+                                for (int k = 0; k < rows[i].length(); ++k) pat.push_back(rows[i][k] == '1');
+                                lane.sceneGrown[(size_t) i] = pat;
+                            }
+                        }
+
+                        lane.progressive.restoreFrom(ln);
+                    }
                 }
             }
 
