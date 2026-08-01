@@ -83,6 +83,20 @@ struct PolyLane
     bool hasMicrotiming = false;
     double microtimingDepth = 0.0;
     int microtimingSeed = 1;
+
+    // This lane's own accent layer — the `{…}` prefix on the lane body.
+    // ACCENTS ARE PER-LANE (INTENT §D8): '/' binds loosest, so a brace belongs
+    // to the lane it is written in, exactly as scenes and `%N *N >N` do.
+    // `{1001010}E(5,8)/E(1,17)>17` accents lane 1 only; each lane gets its own
+    // with `{101}E(3,8)/{11}E(3,7)`. Both splitters have always split on '/'
+    // BEFORE any accent parsing, so this is what the grammar already said —
+    // dropping the field here is what made poly play flat (F2, 2026-08-01).
+    //
+    // Like mono, the layer is indexed by ONSET, not by step, so an accent
+    // pattern whose length is coprime with the lane's onset count precesses
+    // across cycles instead of repeating.
+    bool hasAccentPattern = false;
+    std::vector<bool> accentPattern;
 };
 
 struct PolyParseResult

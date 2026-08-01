@@ -1253,9 +1253,14 @@ void SerpeAudioProcessor::clearAllActiveNotes(juce::MidiBuffer& midiBuffer)
 // ============================================================================
 // Kept structurally separate from the mono pattern/timing code above: a
 // plain (non-'/') UPI string never calls any of this, so mono behaviour is
-// unaffected by construction, not just by testing. v1 scope, deliberately:
-// unaccented (flat velocity) — accent parity is separate roadmap work
-// (music-suite docs/PRIORITIES.md §2), not part of "make the lanes sound".
+// unaffected by construction, not just by testing.
+//
+// ACCENTS: per-lane, and live since 2026-08-01 (music-suite
+// docs/SERPE_DAW_FINDINGS_2026-08.md F2 — they were flat until then, which
+// Alex hit in Logic). A `{…}` belongs to the lane it is written in, because
+// '/' binds loosest (INTENT §D4/§D8); the accent itself is the same louder-
+// and-transposed note mono makes, off the same accentVelocity/
+// accentPitchOffset params, applied to THAT lane's own note.
 
 void SerpeAudioProcessor::parseAndApplyPolyUPI(const juce::String& upiPattern)
 {
@@ -1439,6 +1444,12 @@ void SerpeAudioProcessor::parseAndApplyPolyUPI(const juce::String& upiPattern)
         lane.microtimingCycle = 0;
         rebuildLaneMicrotiming(lane);
 
+        // This lane's own accent layer. Per-lane, like everything else inside a
+        // lane ('/' binds loosest — INTENT §D4, and §D8 for accents in
+        // particular): `{1001010}E(5,8)/E(1,17)>17` accents lane 1 alone.
+        lane.hasAccentPattern = parsed.hasAccentPattern && ! parsed.accentPattern.empty();
+        lane.accentPattern = parsed.accentPattern;
+
         // Dataflow trace, receiver side: what this lane is ACTUALLY sounding once
         // its scene is resolved and any rotation or lengthening applied. Pairing
         // this with the sender above is what proves the transform survived the
@@ -1491,15 +1502,36 @@ double SerpeAudioProcessor::computePolyCycleLengthInBeats(const std::vector<bool
     }
 }
 
-void SerpeAudioProcessor::triggerPolyNote(juce::MidiBuffer& midiBuffer, int samplePosition, int numSamples, int laneIndex, bool /*isAccented*/)
+void SerpeAudioProcessor::triggerPolyNote(juce::MidiBuffer& midiBuffer, int samplePosition, int numSamples, int laneIndex, bool isAccented)
 {
     auto& lane = polyLanes[static_cast<size_t>(laneIndex)];
     bool muted = laneMuteParams[laneIndex] && laneMuteParams[laneIndex]->get();
     if (muted) return;
 
-    int noteNumber = laneNoteParams[laneIndex] ? laneNoteParams[laneIndex]->get() : 36;
+    // An accent is louder AND a different note number, exactly as mono
+    // (triggerNote above): same accentVelocity/accentPitchOffset params, so one
+    // rack setting covers both paths. The base note is THIS LANE's own
+    // laneNote param — the accent transposes whatever the lane is routed to,
+    // it does not fall back to a hardcoded 36.
+    int baseNoteNumber = laneNoteParams[laneIndex] ? laneNoteParams[laneIndex]->get() : 36;
     int channel = laneChannelParams[laneIndex] ? laneChannelParams[laneIndex]->get() : 1;
-    float velocity = unaccentedVelocityParam ? unaccentedVelocityParam->get() : 0.8f;
+
+    int noteNumber = baseNoteNumber;
+    float velocity;
+    if (isAccented)
+    {
+        velocity = accentVelocityParam ? accentVelocityParam->get() : 1.0f;
+        int pitchOffset = accentPitchOffsetParam ? accentPitchOffsetParam->get() : 5;
+        // laneNote runs to 127 and the offset to +12, so the sum can leave MIDI
+        // range; mono never hits this because its own note param is the same
+        // 0..127 but nobody has parked it at the top. Clamp rather than emit a
+        // message JUCE would assert on.
+        noteNumber = juce::jlimit(0, 127, baseNoteNumber + pitchOffset);
+    }
+    else
+    {
+        velocity = unaccentedVelocityParam ? unaccentedVelocityParam->get() : 0.8f;
+    }
 
     // Per-lane micro-timing offset + the shared base lag (docs/SERPE_POLY.md
     // §3b/§8.1): every onset is scheduled `lag` ms late by default so a
@@ -1609,7 +1641,26 @@ void SerpeAudioProcessor::processPolyLanes(juce::MidiBuffer& midiBuffer, int num
             lane.lastProcessedStep = laneStep;
 
             if (laneStep < laneSteps && pattern[static_cast<size_t>(laneStep)])
-                triggerPolyNote(midiBuffer, samplePosition, numSamples, i, false);
+            {
+                // This lane's accent, from ITS OWN layer and its own onset
+                // count. Onset-indexed like mono (shouldOnsetBeAccented), so an
+                // accent pattern coprime with the lane's onset count precesses
+                // across cycles rather than repeating — {10}E(5,8) is the whole
+                // reason the accent layer has its own length.
+                //
+                // The count is DERIVED from the clock (polyLaneOnsetIndex), not
+                // incremented here: an onset counter per lane would be exactly
+                // the mutable-counter drift CLAUDE.md's accent-swirling section
+                // was written about.
+                bool accented = false;
+                if (lane.hasAccentPattern && !lane.accentPattern.empty())
+                {
+                    const long long onset = polyLaneOnsetIndex(pattern, laneStep, stepResult.posFromStart);
+                    const auto size = static_cast<long long>(lane.accentPattern.size());
+                    accented = lane.accentPattern[static_cast<size_t>(((onset % size) + size) % size)];
+                }
+                triggerPolyNote(midiBuffer, samplePosition, numSamples, i, accented);
+            }
         }
     }
 }

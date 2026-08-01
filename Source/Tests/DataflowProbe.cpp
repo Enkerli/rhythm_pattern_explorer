@@ -40,6 +40,20 @@ struct Session
     const char* name;
     const char* upi;
     int triggers;
+
+    // Blocks to run AFTER the triggers with no MIDI in — just the transport
+    // running. A trigger is one 512-sample block (~11ms), so a handful of them
+    // covers a fraction of one step: enough to watch progressive state advance,
+    // nowhere near enough to hear a pattern. Anything about what the pattern
+    // SOUNDS like (accents, most obviously) needs the clock to actually run,
+    // and 750 blocks is ~8s, two cycles of the 8-beat default at 120bpm.
+    int idleBlocks = 0;
+
+    // How many distinct (note number, velocity) pairs the session must emit.
+    // 0 = don't check. This is the accent assertion: an accent is a LOUDER,
+    // TRANSPOSED note (INTENT §D8 / F3), so a pattern with accents that lands
+    // on only one pair is playing flat — exactly the poly bug of 2026-08-01.
+    int expectPairs = 0;
 };
 
 /**
@@ -148,17 +162,56 @@ juce::MidiMessageSequence run (SerpeAudioProcessor& proc, const Session& s,
     // reported it as DROPPED. That was the harness, not the plugin: a tail
     // enqueue with no drain is not a lost message. Verified by this fix removing
     // the finding, which is the discipline the whole tool is for.
-    for (int i = 0; i < 2; ++i)
+    //
+    // Then s.idleBlocks of plain transport, captured like everything else: the
+    // only way a session hears more than the first step of its own pattern.
+    for (int i = 0; i < 2 + s.idleBlocks; ++i)
     {
         juce::MidiBuffer empty;
         audio.clear();
         proc.processBlock (audio, empty);
+        for (const auto meta : empty)
+        {
+            auto m = meta.getMessage();
+            m.setTimeStamp (seconds + meta.samplePosition / kSampleRate);
+            captured.addEvent (m);
+        }
+        seconds += kBlock / kSampleRate;
         DataflowTrace::instance().flush();
     }
 
     proc.setInternalPlaying (false);
     captured.updateMatchedPairs();
     return captured;
+}
+
+/**
+ * The distinct (note number, velocity) pairs among a session's note-ons, with
+ * how many times each was heard, in first-heard order. What an accent actually
+ * IS on the wire: an accented onset arrives as note+accentPitchOffset at
+ * accentVelocity, so ONE pair means flat and two or more mean the accent layer
+ * reached the output.
+ *
+ * The counts matter as much as the count of pairs: two pairs where one appears
+ * once is a stuck note, not an accent pattern.
+ */
+juce::StringArray notePairs (const juce::MidiMessageSequence& seq)
+{
+    juce::StringArray pairs;
+    std::vector<int> counts;
+    for (int i = 0; i < seq.getNumEvents(); ++i)
+    {
+        const auto& m = seq.getEventPointer (i)->message;
+        if (! m.isNoteOn()) continue;
+        const auto pair = "note " + juce::String (m.getNoteNumber())
+                        + " vel " + juce::String (m.getVelocity());
+        const int at = pairs.indexOf (pair);
+        if (at < 0) { pairs.add (pair); counts.push_back (1); }
+        else ++counts[(size_t) at];
+    }
+    for (int i = 0; i < pairs.size(); ++i)
+        pairs.set (i, pairs[i] + " x" + juce::String (counts[(size_t) i]));
+    return pairs;
 }
 
 void writeMidi (const juce::File& out, const juce::MidiMessageSequence& seq)
@@ -195,6 +248,20 @@ int main (int argc, char** argv)
         { "serpe-mono-transform", "E(1,8)>8", 8 },
         // Per-lane progressive offset, added 2026-07-29.
         { "serpe-lane-offset", "E(3,8)%2/E(3,7)", 6 },
+        // Accents, both paths, added 2026-08-01. These run the transport
+        // (idleBlocks) rather than only triggering: an accent is a property of
+        // the SEQUENCE of onsets, so a session that never reaches its second
+        // onset cannot tell an accent layer from a flat one.
+        //
+        // Mono is the reference — it always worked (F3): {10010} over E(5,8)'s
+        // five onsets accents the 1st and 4th, so both a plain and an accented
+        // pair must appear.
+        { "serpe-accent-mono", "{10010}E(5,8)", 2, 750, 2 },
+        // The poly case Alex hit in Logic (F2): flat until 2026-08-01, when the
+        // lane's own `{…}` started reaching triggerPolyNote. The brace belongs
+        // to LANE 1 ('/' binds loosest — INTENT §D4/§D8), so lane 1 alternates
+        // accented and plain while lane 2 stays plain throughout.
+        { "serpe-accent-poly", "{1001010}E(5,8)/E(1,17)>17", 2, 750, 2 },
     };
 
     int failures = 0;
@@ -225,6 +292,20 @@ int main (int argc, char** argv)
         // audit report a clean bill of health from no evidence. Fail loudly.
         if (! perTrigger.isEmpty())
             std::printf ("  per-trigger: %s\n", perTrigger.joinIntoString (" ").toRawUTF8());
+
+        if (s.expectPairs > 0)
+        {
+            const auto pairs = notePairs (midi);
+            std::printf ("  note/velocity pairs (%d): %s\n", pairs.size(),
+                         pairs.joinIntoString (", ").toRawUTF8());
+            if (pairs.size() < s.expectPairs)
+            {
+                std::printf ("  FAIL: expected at least %d distinct pair(s) — accents are not reaching the output\n",
+                             s.expectPairs);
+                ++failures;
+            }
+        }
+
         if (lines <= 0) { std::printf ("  FAIL: no trace events recorded\n"); ++failures; }
         if (midi.getNumEvents() == 0) std::printf ("  NOTE: no MIDI produced (pattern may not have fired in %d blocks)\n", s.triggers);
     }

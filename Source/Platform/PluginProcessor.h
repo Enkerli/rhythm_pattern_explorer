@@ -422,6 +422,13 @@ private:
         int microtimingSeed = 1;
         int microtimingCycle = 0;
         std::vector<double> microtimingShift;
+
+        // This lane's own accent layer (the `{…}` written on THIS lane —
+        // INTENT §D8, accents are per-lane because '/' binds loosest). Indexed
+        // by cumulative onset like mono's, and derived from the lane clock at
+        // trigger time rather than counted, so it cannot drift.
+        bool hasAccentPattern = false;
+        std::vector<bool> accentPattern;
     };
     bool isPolyPattern = false;
     std::array<PolyLaneRuntime, kMaxPolyLanes> polyLanes;

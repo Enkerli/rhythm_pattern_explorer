@@ -347,6 +347,13 @@ PolyParseResult PolyParser::parse(const juce::String& input,
         lane.hasMicrotiming = parsed.hasMicrotiming;
         lane.microtimingDepth = parsed.microtimingDepth;
         lane.microtimingSeed = parsed.microtimingSeed;
+        // The `{…}` layer this lane carries, straight from its own parse. The
+        // split on '/' already happened, so a leading brace reached UPIParser
+        // as part of THIS lane's body and belongs to it (PolyParser.h, INTENT
+        // §D8) — the JS reference has carried the same per-lane field since it
+        // was written (poly.js's `accentPattern`).
+        lane.hasAccentPattern = parsed.hasAccentPattern;
+        lane.accentPattern = parsed.accentPattern;
         result.lanes.push_back(lane);
     }
 

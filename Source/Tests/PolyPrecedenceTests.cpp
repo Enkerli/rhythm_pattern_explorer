@@ -12,6 +12,7 @@
 */
 #include <JuceHeader.h>
 #include "../Core/PolyParser.h"
+#include "../Core/PolyClock.h"
 #include "../Managers/SceneManager.h"
 #include "../Core/PatternEngine.h"
 #include "../Core/PatternUtils.h"
@@ -227,6 +228,77 @@ int main()
     {
         auto r = PolyParser::parse (juce::String (input));
         expect (r.ok, juce::String (input) + (r.ok ? " parses" : " -> " + r.error));
+    }
+
+    std::printf ("\n=== accents belong to a LANE (INTENT D8) ===\n");
+    {
+        // The string Alex played in Logic. '/' binds loosest, so the split
+        // happens first and the brace reaches UPIParser as part of lane 1's own
+        // body — it accents lane 1 and says nothing about lane 2. The JS
+        // reference (poly.js) has carried exactly this per-lane field since it
+        // was written; the C++ parsed it and threw it away, which is why poly
+        // played flat (SERPE_DAW_FINDINGS_2026-08 F2).
+        auto r = PolyParser::parse ("{1001010}E(5,8)/E(1,17)>17");
+        expect (r.ok, juce::String ("{1001010}E(5,8)/E(1,17)>17 parses: ") + (r.ok ? "yes" : r.error));
+        if (r.ok && r.lanes.size() == 2)
+        {
+            juce::String acc;
+            for (bool b : r.lanes[0].accentPattern) acc << (b ? '1' : '0');
+            expect (r.lanes[0].hasAccentPattern && acc == "1001010",
+                    "lane 1 carries the accent layer as typed, got [" + acc + "]");
+            expect (! r.lanes[1].hasAccentPattern,
+                    "lane 2 is unaccented — a leading brace is NOT global");
+        }
+
+        // Each lane may carry its own, which is the spelling for accenting more
+        // than one lane.
+        auto two = PolyParser::parse ("{101}E(3,8)/{11}E(3,7)");
+        if (two.ok && two.lanes.size() == 2)
+        {
+            expect (two.lanes[0].hasAccentPattern && two.lanes[0].accentPattern.size() == 3,
+                    "lane 1 has its own 3-step accent layer");
+            expect (two.lanes[1].hasAccentPattern && two.lanes[1].accentPattern.size() == 2,
+                    "lane 2 has its own 2-step accent layer — lengths are independent");
+        }
+    }
+
+    std::printf ("\n=== a lane's accent index is DERIVED, and cumulative ===\n");
+    {
+        // polyLaneOnsetIndex is the poly twin of the mono getCurrentOnsetCount:
+        // full cycles from the clock, the partial cycle from the pattern. No
+        // counter is incremented anywhere, which is what keeps a lane from
+        // drifting out of step with its own accent layer (CLAUDE.md).
+        const std::vector<bool> e58 { 1,0,1,1,0,1,1,0 };   // E(5,8), 5 onsets
+        expect (polyLaneOnsetIndex (e58, 0, 0.0) == 0, "first onset of the run is index 0");
+        expect (polyLaneOnsetIndex (e58, 5, 5.4) == 3, "step 5 of cycle 1 follows 3 onsets");
+        expect (polyLaneOnsetIndex (e58, 0, 8.0) == 5, "cycle 2 starts at onset 5, not back at 0");
+        expect (polyLaneOnsetIndex (e58, 2, 18.3) == 11, "cycle 3, step 2 -> 5+5+1 = 11");
+        expect (polyLaneOnsetIndex (e58, 0, -0.5) == 0, "a negative (pre-roll) position stays on cycle 0");
+        expect (polyLaneOnsetIndex ({ 0,0,0,0 }, 2, 9.0) == 0, "a silent lane has no onsets to count");
+
+        // PD moves the step boundary, so the step being sounded can be on the
+        // far side of the cycle line from the nominal clock. Both directions
+        // reconcile to the cycle the LANE is actually in.
+        expect (polyLaneOnsetIndex (e58, 0, 7.9) == 5,
+                "PD pulling step 0 early is cycle 2's first onset, not cycle 1's sixth");
+        expect (polyLaneOnsetIndex (e58, 6, 8.05) == 4,
+                "PD holding step 6 late is still cycle 1's last onset (index 4)");
+
+        // And the accent that comes out of it: {1001010} over E(5,8)'s onsets.
+        // 7 against 5 is the point — the layer PRECESSES, so cycle 2 is not a
+        // repeat of cycle 1. Onsets accented at k % 7 in {0,3,5}.
+        const std::vector<bool> layer { 1,0,0,1,0,1,0 };
+        juce::String heard;
+        for (int cycle = 0; cycle < 2; ++cycle)
+            for (int step = 0; step < 8; ++step)
+            {
+                if (! e58[(size_t) step]) continue;
+                const auto onset = polyLaneOnsetIndex (e58, step, cycle * 8.0 + step);
+                heard << (layer[(size_t) (onset % (long long) layer.size())] ? '1' : '0');
+            }
+        // k accented iff k%7 in {0,3,5}: 0,3,5 then 7 — and onset 7 is in the
+        // SECOND cycle, which a per-cycle (non-cumulative) index would miss.
+        expect (heard == "1001010100", "two cycles of accents read " + heard + " (expected 1001010100)");
     }
 
     std::printf ("\n=== the three strings Alex reported as unrecognised ===\n");

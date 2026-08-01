@@ -29,6 +29,7 @@
 #pragma once
 
 #include <cmath>
+#include <vector>
 
 //==============================================================================
 struct PolyStepResult
@@ -40,7 +41,60 @@ struct PolyStepResult
     // always set — `crossed`/`step` are the NOMINAL grid, and a caller applying
     // microtiming (PD) needs the raw position to re-derive the boundary itself.
     double posInCycle = 0.0;
+    // The same position measured from the START of the transport, in this
+    // lane's own steps, and NOT wrapped — so a caller can tell which cycle the
+    // lane is on. Accents need that: the layer is indexed by cumulative onset,
+    // so cycle 2's first onset must not read as cycle 1's.
+    double posFromStart = 0.0;
 };
+
+/**
+ * How many onsets this lane has played BEFORE the step it is now on, counted
+ * from the start of the transport.
+ *
+ * Derived, never accumulated (CLAUDE.md, "derived indices"): full cycles come
+ * from @p posFromStart, the partial cycle from the pattern itself, so a lane
+ * cannot drift out of step with its own accent layer however long it runs.
+ * This is the poly twin of the mono getCurrentOnsetCount(), which does the same
+ * arithmetic against transportTick.
+ *
+ * @p stepInCycle is the step about to sound — the onset ON it is not counted,
+ * so the very first onset of a run gets accent index 0, as mono does. It may
+ * differ from the nominal grid position by one step when the caller applies
+ * microtiming (PD), which is reconciled below.
+ */
+inline long long polyLaneOnsetIndex (const std::vector<bool>& pattern, int stepInCycle,
+                                     double posFromStart) noexcept
+{
+    const int n = static_cast<int> (pattern.size());
+    if (n <= 0) return 0;
+
+    int onsetsPerCycle = 0;
+    for (bool b : pattern) if (b) ++onsetsPerCycle;
+    if (onsetsPerCycle == 0) return 0;
+
+    long long cycle = static_cast<long long> (std::floor (posFromStart / static_cast<double> (n)));
+
+    // PD displaces the step BOUNDARY, so a lane can be sounding step 0 of the
+    // next cycle while the nominal clock is still in this one (or the reverse,
+    // holding the last step past the line). The displacement is bounded well
+    // under one step, so a gap of more than half the pattern can only mean the
+    // wrap: without this the onset index jumps by a whole cycle's worth for one
+    // onset, and that one onset takes the wrong accent.
+    double inCycle = std::fmod (posFromStart, static_cast<double> (n));
+    if (inCycle < 0.0) inCycle += n;
+    const int nominal = static_cast<int> (inCycle);
+    if (nominal - stepInCycle > n / 2)      ++cycle;   // displaced forward, over the line
+    else if (stepInCycle - nominal > n / 2) --cycle;   // held back, still in the old cycle
+
+    if (cycle < 0) cycle = 0; // pre-roll: a negative ppq is still cycle 0
+
+    int before = 0;
+    for (int i = 0; i < stepInCycle && i < n; ++i)
+        if (pattern[static_cast<size_t> (i)]) ++before;
+
+    return cycle * onsetsPerCycle + before;
+}
 
 /**
  * Where is this lane's clock right now, and did it just cross a step
@@ -61,6 +115,7 @@ inline PolyStepResult computePolyLaneStep(double ppqPosition, double cycleLength
     if (stepsInCurrentCycle < 0.0) stepsInCurrentCycle += laneStepCount; // fmod can be negative pre-roll
 
     r.posInCycle = stepsInCurrentCycle;
+    r.posFromStart = stepsFromStart;
 
     int currentStep = static_cast<int>(stepsInCurrentCycle);
     if (currentStep != lastProcessedStep)
@@ -106,6 +161,7 @@ inline PolyStepResult computePolyLaneStepPolymeter(double ppqPosition, double ba
     if (stepsInCurrentCycle < 0.0) stepsInCurrentCycle += laneStepCount; // fmod can be negative pre-roll
 
     r.posInCycle = stepsInCurrentCycle;
+    r.posFromStart = stepsFromStart;
 
     int currentStep = static_cast<int>(stepsInCurrentCycle);
     if (currentStep != lastProcessedStep)
