@@ -43,7 +43,7 @@ static bool isDotDashMorse(const juce::String& input)
     return t.isNotEmpty() && t.removeCharacters(" ").containsOnly(".-");
 }
 
-UPIParser::ParseResult UPIParser::parse(const juce::String& input)
+UPIParser::ParseResult UPIParser::parse(const juce::String& input, ProgressiveTransformState& progressive)
 {
     if (input.trim().isEmpty())
         return createError("Empty input");
@@ -64,7 +64,7 @@ UPIParser::ParseResult UPIParser::parse(const juce::String& input)
     if (cleaned.trim().isEmpty())
         return createError("No pattern before the feel suffix: " + input.trim());
 
-    ParseResult out = parseAfterFeel(cleaned);
+    ParseResult out = parseAfterFeel(cleaned, progressive);
 
     // ONE funnel for the feel flags. parseAfterFeel has eight return paths
     // (progressive %, progressive +, polygon-LCM combination, general
@@ -89,7 +89,7 @@ UPIParser::ParseResult UPIParser::parse(const juce::String& input)
     return out;
 }
 
-UPIParser::ParseResult UPIParser::parseAfterFeel(const juce::String& cleanedInput)
+UPIParser::ParseResult UPIParser::parseAfterFeel(const juce::String& cleanedInput, ProgressiveTransformState& progressive)
 {
     juce::String cleaned = cleanedInput;
     ParseResult result;
@@ -131,7 +131,7 @@ UPIParser::ParseResult UPIParser::parseAfterFeel(const juce::String& cleanedInpu
                 int offsetValue = afterPercent.getIntValue();
                 
                 // Parse the base pattern
-                auto baseResult = parsePattern(basePatternOnly);
+                auto baseResult = parsePattern(basePatternOnly, progressive);
                 if (baseResult.isValid())
                 {
                     baseResult.hasProgressiveOffset = true;
@@ -162,7 +162,7 @@ UPIParser::ParseResult UPIParser::parseAfterFeel(const juce::String& cleanedInpu
                 
                 
                 // Parse the base pattern
-                auto baseResult = parsePattern(basePatternOnly);
+                auto baseResult = parsePattern(basePatternOnly, progressive);
                 if (baseResult.isValid())
                 {
                     // Don't apply the offset here - that's handled by the PatternEngine
@@ -201,7 +201,7 @@ UPIParser::ParseResult UPIParser::parseAfterFeel(const juce::String& cleanedInpu
 
         if (semi > 0 && digits.isNotEmpty() && digits.containsOnly ("0123456789"))
         {
-            auto baseResult = parseAfterFeel (basePattern.substring (0, semi).trim());
+            auto baseResult = parseAfterFeel (basePattern.substring (0, semi).trim(), progressive);
             if (! baseResult.isValid()) return baseResult;
 
             auto quant = QuantizationEngine::quantizePattern (baseResult.pattern, digits.getIntValue(), ! ccw);
@@ -335,7 +335,7 @@ UPIParser::ParseResult UPIParser::parseAfterFeel(const juce::String& cleanedInpu
                         naturalLen[i] = std::stoi (m[1].str());
                         continue;
                     }
-                    parsed[i] = parsePattern (terms[i].second);
+                    parsed[i] = parsePattern (terms[i].second, progressive);
                     if (!parsed[i].isValid()) return parsed[i];
                     naturalLen[i] = static_cast<int> (parsed[i].pattern.size());
                 }
@@ -397,7 +397,7 @@ UPIParser::ParseResult UPIParser::parseAfterFeel(const juce::String& cleanedInpu
             std::vector<bool> stringed;
             for (const auto& part : parts)
             {
-                auto result = parsePattern(part.trim());
+                auto result = parsePattern(part.trim(), progressive);
                 if (result.isValid())
                 {
                     stringed.insert(stringed.end(), result.pattern.begin(), result.pattern.end());
@@ -413,7 +413,7 @@ UPIParser::ParseResult UPIParser::parseAfterFeel(const juce::String& cleanedInpu
     }
     
     // Parse as single pattern (using basePattern without accents)
-    auto patternResult = parsePattern(basePattern);
+    auto patternResult = parsePattern(basePattern, progressive);
     if (patternResult.isValid())
     {
         patternResult.type = ParseResult::Single;
@@ -429,19 +429,19 @@ UPIParser::ParseResult UPIParser::parseAfterFeel(const juce::String& cleanedInpu
     return patternResult;
 }
 
-UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
+UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input, ProgressiveTransformState& progressive)
 {
     juce::String cleaned = cleanInput(input);
 
     // Shorthand names FIRST — they are letters, so the (greedy) Morse matcher
     // below would otherwise swallow "tresillo"/"cinquillo"/"tri"/… as Morse.
-    if (cleaned == "tri")       return parsePattern("P(3,0)");
-    if (cleaned == "pent")      return parsePattern("P(5,0)");
-    if (cleaned == "hex")       return parsePattern("P(6,0)");
-    if (cleaned == "hept")      return parsePattern("P(7,0)");
-    if (cleaned == "oct")       return parsePattern("P(8,0)");
-    if (cleaned == "tresillo")  return parsePattern("E(3,8)");
-    if (cleaned == "cinquillo") return parsePattern("E(5,8)");
+    if (cleaned == "tri")       return parsePattern("P(3,0)", progressive);
+    if (cleaned == "pent")      return parsePattern("P(5,0)", progressive);
+    if (cleaned == "hex")       return parsePattern("P(6,0)", progressive);
+    if (cleaned == "hept")      return parsePattern("P(7,0)", progressive);
+    if (cleaned == "oct")       return parsePattern("P(8,0)", progressive);
+    if (cleaned == "tresillo")  return parsePattern("E(3,8)", progressive);
+    if (cleaned == "cinquillo") return parsePattern("E(5,8)", progressive);
 
     // Handle transformations first
     if (cleaned.startsWith("~") || cleaned.startsWith("inv "))
@@ -450,7 +450,7 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
             cleaned.substring(1).trim() : 
             cleaned.substring(4).trim();
         
-        auto baseResult = parsePattern(basePattern);
+        auto baseResult = parsePattern(basePattern, progressive);
         if (baseResult.isValid())
         {
             auto inverted = PatternUtils::invertPattern(baseResult.pattern);
@@ -460,7 +460,7 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
     
     if (cleaned.startsWith("rev "))
     {
-        auto baseResult = parsePattern(cleaned.substring(4).trim());
+        auto baseResult = parsePattern(cleaned.substring(4).trim(), progressive);
         if (baseResult.isValid())
         {
             auto reversed = PatternUtils::reversePattern(baseResult.pattern);
@@ -470,7 +470,7 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
     
     if (cleaned.startsWith("comp "))
     {
-        auto baseResult = parsePattern(cleaned.substring(5).trim());
+        auto baseResult = parsePattern(cleaned.substring(5).trim(), progressive);
         if (baseResult.isValid())
         {
             auto complement = PatternUtils::complementPattern(baseResult.pattern);
@@ -484,7 +484,7 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
         auto parts = tokenize(cleaned, "@");
         if (parts.size() == 2)
         {
-            auto baseResult = parsePattern(parts[0].trim());
+            auto baseResult = parsePattern(parts[0].trim(), progressive);
             int rotationSteps = parts[1].trim().getIntValue();
             if (baseResult.isValid())
             {
@@ -505,7 +505,7 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
  
             
             // Parse the base pattern first
-            auto baseResult = parsePattern(quantParams.patternPart);
+            auto baseResult = parsePattern(quantParams.patternPart, progressive);
             if (baseResult.isValid())
             {
                 // Apply quantization to the parsed pattern
@@ -591,13 +591,13 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input)
             
             
             
-            auto baseResult = parsePattern(basePattern);
+            auto baseResult = parsePattern(basePattern, progressive);
             if (baseResult.isValid())
             {
                 
                 
                 // Apply progressive transformation with target onset count
-                auto transformed = applyProgressiveTransformation(baseResult.pattern, transformerType, targetOnsets);
+                auto transformed = applyProgressiveTransformation(baseResult.pattern, transformerType, targetOnsets, progressive);
                 
                 
                 auto result = createSuccess(transformed, "Progressive: " + cleaned);
@@ -1907,40 +1907,12 @@ UPIParser::ParseResult UPIParser::parsePolygonForCombination(const juce::String&
     return createError("Invalid polygon pattern: " + polygonStr);
 }
 
-// Progressive transformation state - stores current pattern for each key
-static std::map<juce::String, std::vector<bool>> progressivePatterns;
-static std::map<juce::String, int> progressiveAccessCount; // Track access frequency for cleanup
-static std::map<juce::String, int> progressiveStepCount; // Track current step number for each pattern
-static const int MAX_PROGRESSIVE_STATES = 100; // Limit to prevent unbounded growth
-
-// Cleanup function to prevent unbounded growth
-static void cleanupProgressiveStates()
-{
-    if (progressivePatterns.size() <= MAX_PROGRESSIVE_STATES) return;
-    
-    
-    // Find least frequently used patterns
-    std::vector<std::pair<int, juce::String>> accessCounts;
-    for (const auto& pair : progressiveAccessCount)
-    {
-        accessCounts.push_back({pair.second, pair.first});
-    }
-    
-    // Sort by access count (ascending - least used first)
-    std::sort(accessCounts.begin(), accessCounts.end());
-    
-    // Remove the least used patterns (keep only the most recent half)
-    int toRemove = static_cast<int>(progressivePatterns.size()) - (MAX_PROGRESSIVE_STATES / 2);
-    for (int i = 0; i < toRemove && i < accessCounts.size(); ++i)
-    {
-        const juce::String& keyToRemove = accessCounts[i].second;
-        progressivePatterns.erase(keyToRemove);
-        progressiveAccessCount.erase(keyToRemove);
-        progressiveStepCount.erase(keyToRemove);
-    }
-    
-}
-
+// Progressive transformation state used to live HERE, as three file-scope
+// statics — one map per process, keyed by pattern text. That is F1: every
+// instance in a DAW shared them, a new project inherited the last one's
+// leftovers, and the project file could not reach the copy that mattered.
+// It now lives in ProgressiveTransformState, owned by the caller and passed in.
+// See ProgressiveTransformState.h for the measurements that settled it.
 /**
  * Applies progressive transformation to a base pattern, stepping through onset counts.
  * 
@@ -1958,7 +1930,7 @@ static void cleanupProgressiveStates()
  * @param targetOnsets  Target number of onsets to progress toward
  * @return Next pattern in the progressive sequence
  */
-std::vector<bool> UPIParser::applyProgressiveTransformation(const std::vector<bool>& basePattern, char transformerType, int targetOnsets)
+std::vector<bool> UPIParser::applyProgressiveTransformation(const std::vector<bool>& basePattern, char transformerType, int targetOnsets, ProgressiveTransformState& progressive)
 {
     // Create a unique key for this progressive pattern
     // Key format: "basePattern + transformerType + targetOnsets"
@@ -1968,28 +1940,28 @@ std::vector<bool> UPIParser::applyProgressiveTransformation(const std::vector<bo
     
     // Check if cleanup is needed before proceeding
     // Prevents unbounded growth of progressive state maps
-    cleanupProgressiveStates();
+    progressive.evictIfNeeded();
     
     // Track access for LRU cleanup
     // More frequently accessed patterns are kept longer
-    progressiveAccessCount[patternKey]++;
+    progressive.accessCount[patternKey]++;
     
     // Initialize or get the current pattern state
     std::vector<bool> currentPattern;
     
-    if (progressivePatterns.find(patternKey) == progressivePatterns.end())
+    if (progressive.patterns.find(patternKey) == progressive.patterns.end())
     {
         // First time - return base pattern directly without transformation
         // This ensures the user sees the starting pattern on initial trigger
-        progressivePatterns[patternKey] = basePattern;
-        progressiveStepCount[patternKey] = 1; // UI shows step 1 for base pattern
+        progressive.patterns[patternKey] = basePattern;
+        progressive.stepCount[patternKey] = 1; // UI shows step 1 for base pattern
         return basePattern;
     }
     else
     {
         // Get the current state from previous transformation
         // This continues the progressive sequence from where it left off
-        currentPattern = progressivePatterns[patternKey];
+        currentPattern = progressive.patterns[patternKey];
     }
     
     int currentOnsets = PatternUtils::countOnsets(currentPattern);
@@ -1998,8 +1970,8 @@ std::vector<bool> UPIParser::applyProgressiveTransformation(const std::vector<bo
     // This creates continuous cycling behavior for live performance
     if (currentOnsets == targetOnsets)
     {
-        progressivePatterns[patternKey] = basePattern;
-        progressiveStepCount[patternKey] = 1; // Reset UI to step 1
+        progressive.patterns[patternKey] = basePattern;
+        progressive.stepCount[patternKey] = 1; // Reset UI to step 1
         return basePattern;
     }
     
@@ -2065,41 +2037,20 @@ std::vector<bool> UPIParser::applyProgressiveTransformation(const std::vector<bo
     
     // Store the result for the next step 
     // This becomes the current pattern for the next transformation call
-    progressivePatterns[patternKey] = result;
+    progressive.patterns[patternKey] = result;
     
     // Increment step counter to reflect what we're about to return
     // This ensures the UI shows the correct step number (1-based)
     // Step 1 = base pattern, Step 2 = first transformation, etc.
-    progressiveStepCount[patternKey]++;
+    progressive.stepCount[patternKey]++;
     
     
     return result;
 }
 
-void UPIParser::resetProgressiveState(const juce::String& patternKey)
-{
-    progressivePatterns.erase(patternKey);
-    progressiveAccessCount.erase(patternKey);
-    progressiveStepCount.erase(patternKey);
-}
-
-void UPIParser::resetAllProgressiveStates()
-{
-    progressivePatterns.clear();
-    progressiveAccessCount.clear();
-    progressiveStepCount.clear();
-}
-
-int UPIParser::getProgressiveStepCount(const juce::String& patternKey)
-{
-    auto it = progressiveStepCount.find(patternKey);
-    if (it != progressiveStepCount.end())
-    {
-        // Return the current step count directly
-        return it->second;
-    }
-    return 1; // Default to step 1 if not found
-}
+// resetProgressiveState / resetAllProgressiveStates / getProgressiveStepCount
+// are now ProgressiveTransformState::forget / clear / stepCountFor, called on
+// the state the caller owns.
 
 //==============================================================================
 // Error handling

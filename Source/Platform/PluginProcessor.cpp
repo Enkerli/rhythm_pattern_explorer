@@ -726,6 +726,11 @@ void SerpeAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
     state.setProperty("originalUPIInput", originalUPIInput, nullptr);
     state.setProperty("lastParsedUPI", lastParsedUPI, nullptr);
     state.setProperty("currentProgressivePatternKey", currentProgressivePatternKey, nullptr);
+    // The "last `>`-transform TYPED" marker has to travel with the progressive
+    // state below, or the restore is undone the moment it is used: setUPIInput
+    // clears progressive state when the text differs from this marker, and on a
+    // reload an empty marker makes every pattern look freshly typed.
+    state.setProperty("lastProgressiveTransformUPI", lastProgressiveTransformUPI, nullptr);
     state.setProperty("basePattern", basePattern, nullptr);
     
     // Save baseLengthPattern as string
@@ -752,6 +757,17 @@ void SerpeAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
     
     // Save scene state (Phase 5: Scene State Persistence)
     sceneManager->saveStateTo(state);
+
+    // Save progressive-transform state (F1). currentProgressivePatternKey above
+    // has always been saved; until 2026-08-01 the state it keys into lived in
+    // process-wide statics, so a reloaded project restored the key and then read
+    // whatever the process happened to hold. Both halves travel together now.
+    //
+    // Mono only, deliberately: a poly lane's state is rebuilt by the parse that
+    // setStateInformation itself triggers, so restoring into lanes needs a
+    // defined point AFTER that parse. Doing it half-right would be worse than
+    // not yet — noted rather than guessed at.
+    progressiveTransform.saveTo(state);
 
     // Convert ValueTree to XML and save to memory block
     if (auto xml = state.createXml())
@@ -837,6 +853,11 @@ void SerpeAudioProcessor::setStateInformation (const void* data, int sizeInBytes
             // Restore scene state (Phase 5: Scene State Persistence)
             sceneManager->restoreStateFrom(state);
 
+            // The "last `>`-transform TYPED" marker (F1). Goes back BEFORE the
+            // setUPIInput below, for the reason given where it is saved; the
+            // progressive state itself goes back AFTER it — see there.
+            lastProgressiveTransformUPI = state.getProperty("lastProgressiveTransformUPI", juce::String());
+
             // Apply the restored UPI pattern after all state has been loaded
             // CRITICAL: Use originalUPIInput if available (contains full scene syntax)
             juce::String patternToRestore = originalUPIInput.isEmpty() ? currentUPIInput : originalUPIInput;
@@ -852,8 +873,28 @@ void SerpeAudioProcessor::setStateInformation (const void* data, int sizeInBytes
                 // CRITICAL FIX: Use setUPIInput instead of parseAndApplyUPI for proper scene initialization
                 // This ensures scene state is set up exactly like manual entry (Enter key behavior)
                 setUPIInput(patternToRestore);
+
+                // Progressive-transform state goes back AFTER that call, not
+                // before (F1). setUPIInput re-parses, and a `>N` parse ADVANCES
+                // the progression — so restoring first meant the reopened
+                // project resumed one step LATE. Measured, not reasoned:
+                // serpe-state-roundtrip in the dataflow probe caught it, saved
+                // instance on 11101011 against a restored one on 11111011.
+                //
+                // The saved map also holds the pattern that state describes, so
+                // the engine is put back on it here: parsing above left the
+                // engine on the base (the map was empty while it ran), and
+                // without this the plugin would sound the base until the next
+                // trigger even though its state says otherwise.
+                progressiveTransform.restoreFrom(state);
+                if (currentProgressivePatternKey.isNotEmpty())
+                {
+                    const auto it = progressiveTransform.patterns.find(currentProgressivePatternKey);
+                    if (it != progressiveTransform.patterns.end() && !it->second.empty())
+                        patternEngine.setPattern(it->second);
+                }
             }
-            
+
             updateTiming();
         }
         // Fallback: handle old XML format for backward compatibility
@@ -1307,7 +1348,17 @@ void SerpeAudioProcessor::parseAndApplyPolyUPI(const juce::String& upiPattern)
                        "lane" + juce::String ((int) i + 1) + " -> scene " + payload);
         }
 
-    auto poly = PolyParser::parse(upiPattern, [this](int laneIndex)
+    auto poly = PolyParser::parse(upiPattern,
+        // Lane i's own progressive-transform state. This is the F1a fix: two
+        // lanes written identically now keep separate `>N` counters instead of
+        // taking alternate steps of one shared sequence.
+        [this](int laneIndex) -> ProgressiveTransformState&
+        {
+            jassert(laneIndex >= 0 && laneIndex < kMaxPolyLanes);
+            const int i = juce::jlimit(0, kMaxPolyLanes - 1, laneIndex);
+            return polyLanes[static_cast<size_t>(i)].progressive;
+        },
+        [this](int laneIndex)
     {
         // Bind THIS lane's own engine before UPIParser::parse runs, so any
         // `@initial#step` progressive syntax in this lane reads/writes its
@@ -1999,7 +2050,7 @@ void SerpeAudioProcessor::setUPIInput(const juce::String& upiPattern)
         // different pattern (or anything non-progressive) since this one, reset so
         // it begins at step 1 instead of silently continuing where it left off.
         if (pattern != lastProgressiveTransformUPI)
-            UPIParser::resetAllProgressiveStates();
+            progressiveTransform.clear();
         lastProgressiveTransformUPI = pattern;
         parseAndApplyUPI(pattern, true);
     }
@@ -2012,7 +2063,7 @@ void SerpeAudioProcessor::setUPIInput(const juce::String& upiPattern)
         basePattern = "";
         baseLengthPattern.clear();
         lastProgressiveTransformUPI.clear(); // next `>` entry is fresh
-        UPIParser::resetAllProgressiveStates();
+        progressiveTransform.clear();
         sceneManager->resetScenes();
         parseAndApplyUPI(pattern, true);
         // currentStep.store(0); // REMOVED: Using derived indices
@@ -2248,7 +2299,7 @@ void SerpeAudioProcessor::parseAndApplyUPI(const juce::String& upiPattern, bool 
             currentProgressivePatternKey = upiPattern;
         }
         
-        auto parseResult = UPIParser::parse(upiPattern);
+        auto parseResult = UPIParser::parse(upiPattern, progressiveTransform);
     
     if (parseResult.isValid())
     {
@@ -2835,7 +2886,7 @@ int SerpeAudioProcessor::getProgressiveTriggerCount() const
     // For progressive transformations with ">" syntax, get step count from UPIParser
     if (!currentProgressivePatternKey.isEmpty())
     {
-        return UPIParser::getProgressiveStepCount(currentProgressivePatternKey);
+        return progressiveTransform.stepCountFor(currentProgressivePatternKey);
     }
     
     // Fall back to PatternEngine's trigger count for old "@#" syntax

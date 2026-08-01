@@ -28,6 +28,7 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "ProgressiveTransformState.h"
 #include <vector>
 #include <functional>
 
@@ -111,15 +112,28 @@ struct PolyParseResult
 class PolyParser
 {
 public:
+    /** Hands back the `>N` bookkeeping belonging to lane `laneIndex`. */
+    using LaneProgressiveState = std::function<ProgressiveTransformState&(int laneIndex)>;
+
     /**
+     * laneState(i) supplies lane i's OWN progressive-transform state, which is
+     * what makes two lanes over the same text independent. It is REQUIRED, not
+     * defaulted: every lane used to parse against one process-wide map keyed by
+     * pattern text, so `E(1,8)>8/E(1,8)>8` advanced a single shared counter once
+     * per lane and the two identical lanes came apart on trigger 1 (F1a,
+     * measured 2026-08-01). A default argument here would let that come back
+     * silently — see ProgressiveTransformState.h.
+     *
      * beforeLaneParse(laneIndex), if given, runs right before this lane's
      * body goes through UPIParser::parse — the caller's chance to bind a
      * per-lane PatternEngine via UPIParser::setProgressiveOffsetEngine so
      * `@initial#step` progressive syntax reads/writes THAT lane's own state
-     * rather than whatever engine was last bound globally. Conformance
-     * tests omit it (none of the vectors use progressive syntax).
+     * rather than whatever engine was last bound globally. (That binding is
+     * still a process-wide static; it is re-bound before every lane, so it does
+     * not carry state between parses the way the maps did.)
      */
     static PolyParseResult parse(const juce::String& input,
+                                  const LaneProgressiveState& laneState,
                                   const std::function<void(int)>& beforeLaneParse = {},
                                   const std::vector<int>& sceneIndices = {});
 

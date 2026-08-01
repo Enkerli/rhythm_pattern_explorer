@@ -13,10 +13,27 @@
 #include <JuceHeader.h>
 #include "../Core/PolyParser.h"
 #include "../Core/PolyClock.h"
+#include "../Core/ProgressiveTransformState.h"
+#include <array>
+#include <memory>
 #include "../Managers/SceneManager.h"
 #include "../Core/PatternEngine.h"
 #include "../Core/PatternUtils.h"
 #include <cstdio>
+
+/**
+ * Fresh, isolated per-lane progressive state for one parse. Each call gets its
+ * own storage, so no test here can inherit another's progression — which is the
+ * property the whole F1 fix is about, applied to the tests themselves.
+ */
+static PolyParser::LaneProgressiveState freshLaneStates()
+{
+    auto store = std::make_shared<std::array<ProgressiveTransformState, 8>>();
+    return [store] (int i) -> ProgressiveTransformState&
+    {
+        return (*store)[static_cast<size_t> (juce::jlimit (0, 7, i))];
+    };
+}
 
 static int failures = 0;
 
@@ -73,7 +90,7 @@ int main()
         // '%N' on a lane is that lane's own progressive offset, and is
         // shorthand for '@N#N' — the first trigger already shows offset N,
         // matching what '%N' means in a mono pattern.
-        auto r = PolyParser::parse ("E(3,8)%2/E(3,7)");
+        auto r = PolyParser::parse ("E(3,8)%2/E(3,7)", freshLaneStates());
         expect (r.ok, juce::String ("E(3,8)%2/E(3,7)parses: ") + (r.ok ? "yes" : r.error));
         if (r.ok && r.lanes.size() == 2)
         {
@@ -91,7 +108,7 @@ int main()
         // The sequence the processor drives: restart on a new body, advance
         // on a re-trigger, always rotating the FRESH base so offsets cannot
         // compound. Mirrors parseAndApplyPolyUPI.
-        const auto base = PolyParser::parse ("E(3,8)%2/E(3,7)").lanes[0].steps;
+        const auto base = PolyParser::parse ("E(3,8)%2/E(3,7)", freshLaneStates()).lanes[0].steps;
         PatternEngine eng;
         // initial 0, not 2: trigger 1 is the bare base. Mirrors
         // parseAndApplyPolyUPI's `step * (visits - 1)` since visits is 1-based.
@@ -116,7 +133,7 @@ int main()
 
     std::printf ("\n=== per-lane progressive lengthening: body*N ===\n");
     {
-        auto r = PolyParser::parse ("E(3,8)*3/E(3,7)");
+        auto r = PolyParser::parse ("E(3,8)*3/E(3,7)", freshLaneStates());
         expect (r.ok, juce::String ("E(3,8)*3/E(3,7) parses: ") + (r.ok ? "yes" : r.error));
         if (r.ok && r.lanes.size() == 2)
         {
@@ -136,7 +153,7 @@ int main()
         // matters is that a lane never claims BOTH.
         for (auto* s : { "E(3,8)%2*3/E(3,7)", "E(3,8)*3%2/E(3,7)" })
         {
-            auto both = PolyParser::parse (juce::String (s));
+            auto both = PolyParser::parse (juce::String (s), freshLaneStates());
             if (both.ok && both.lanes.size() == 2)
                 expect (! (both.lanes[0].hasProgressiveOffset && both.lanes[0].hasProgressiveLengthening),
                         juce::String (s) + ": lane takes at most one progressive suffix");
@@ -190,7 +207,7 @@ int main()
         // parse() resolves whichever scene the caller says the lane is on.
         for (int idx = 0; idx < 3; ++idx)
         {
-            auto r = PolyParser::parse ("E(3,8)|E(5,8)/E(3,7)", {}, { idx, 0 });
+            auto r = PolyParser::parse ("E(3,8)|E(5,8)/E(3,7)", freshLaneStates(), {}, { idx, 0 });
             const int wantOnsets = (idx % 2 == 0) ? 3 : 5;
             int got = 0;
             if (r.ok) for (bool b : r.lanes[0].steps) if (b) ++got;
@@ -215,10 +232,10 @@ int main()
 
         // A scene may carry its own progressive suffix — the suffix strip runs
         // on the RESOLVED scene, not on the whole chain.
-        auto prog = PolyParser::parse ("E(3,8)%2|E(3,8)*3/E(3,7)", {}, { 0, 0 });
+        auto prog = PolyParser::parse ("E(3,8)%2|E(3,8)*3/E(3,7)", freshLaneStates(), {}, { 0, 0 });
         expect (prog.ok && prog.lanes[0].hasProgressiveOffset && prog.lanes[0].progressiveOffsetStep == 2,
                 "scene 1 of lane 1 carries %2");
-        auto prog2 = PolyParser::parse ("E(3,8)%2|E(3,8)*3/E(3,7)", {}, { 1, 0 });
+        auto prog2 = PolyParser::parse ("E(3,8)%2|E(3,8)*3/E(3,7)", freshLaneStates(), {}, { 1, 0 });
         expect (prog2.ok && prog2.lanes[0].hasProgressiveLengthening && prog2.lanes[0].progressiveLengtheningStep == 3,
                 "scene 2 of the same lane carries *3 — per scene, not per lane");
     }
@@ -226,7 +243,7 @@ int main()
     std::printf ("\n=== progressive TRANSFORM in a lane: body>N ===\n");
     for (auto* input : { "E(7,16)>16/E(1,17)>17", "E(7,16)E>16/E(1,17)E>17" })
     {
-        auto r = PolyParser::parse (juce::String (input));
+        auto r = PolyParser::parse (juce::String (input), freshLaneStates());
         expect (r.ok, juce::String (input) + (r.ok ? " parses" : " -> " + r.error));
     }
 
@@ -238,7 +255,7 @@ int main()
         // reference (poly.js) has carried exactly this per-lane field since it
         // was written; the C++ parsed it and threw it away, which is why poly
         // played flat (SERPE_DAW_FINDINGS_2026-08 F2).
-        auto r = PolyParser::parse ("{1001010}E(5,8)/E(1,17)>17");
+        auto r = PolyParser::parse ("{1001010}E(5,8)/E(1,17)>17", freshLaneStates());
         expect (r.ok, juce::String ("{1001010}E(5,8)/E(1,17)>17 parses: ") + (r.ok ? "yes" : r.error));
         if (r.ok && r.lanes.size() == 2)
         {
@@ -252,7 +269,7 @@ int main()
 
         // Each lane may carry its own, which is the spelling for accenting more
         // than one lane.
-        auto two = PolyParser::parse ("{101}E(3,8)/{11}E(3,7)");
+        auto two = PolyParser::parse ("{101}E(3,8)/{11}E(3,7)", freshLaneStates());
         if (two.ok && two.lanes.size() == 2)
         {
             expect (two.lanes[0].hasAccentPattern && two.lanes[0].accentPattern.size() == 3,
@@ -315,7 +332,7 @@ int main()
         for (int t = 0; t < maxScenes * 2; ++t)
         {
             std::vector<int> idx (chains.size(), t);
-            auto r = PolyParser::parse (juce::String (input), {}, idx);
+            auto r = PolyParser::parse (juce::String (input), freshLaneStates(), {}, idx);
             if (! r.ok) { allOk = false; firstError = r.error; break; }
         }
         expect (allOk, juce::String (input) + (allOk ? " parses on every scene" : " -> " + firstError));

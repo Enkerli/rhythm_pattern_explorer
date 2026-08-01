@@ -18,6 +18,20 @@
 #include "../Core/Microtiming.h"
 #include <iostream>
 #include <string>
+#include <array>
+#include <memory>
+
+/**
+ * Fresh, isolated per-lane progressive state for one parse. None of these
+ * vectors uses `>N`, but the parameter is required precisely so that a call
+ * site cannot quietly share state with another (see ProgressiveTransformState.h).
+ */
+static PolyParser::LaneProgressiveState freshLaneStates() {
+    auto store = std::make_shared<std::array<ProgressiveTransformState, 8>>();
+    return [store](int i) -> ProgressiveTransformState& {
+        return (*store)[static_cast<size_t>(juce::jlimit(0, 7, i))];
+    };
+}
 
 namespace {
 
@@ -170,7 +184,7 @@ void testPolyClockPolymeter() {
  * copied them onto the lane — so both are pinned here.
  */
 void testPerLaneFeel() {
-    auto r = PolyParser::parse(juce::String("E(3,8) PD(90%) / E(3,8) PD(10%)"));
+    auto r = PolyParser::parse(juce::String("E(3,8) PD(90%) / E(3,8) PD(10%)"), freshLaneStates());
     expectTrue("poly PD", "parses", r.ok && r.lanes.size() == 2);
     if (!r.ok || r.lanes.size() != 2) return;
 
@@ -192,7 +206,7 @@ void testPerLaneFeel() {
     expectTrue("poly PD", "the two lanes' walks differ", a != b);
 
     // A lane WITHOUT PD must stay dead on the grid even when its neighbour leans.
-    auto m = PolyParser::parse(juce::String("E(3,8) / E(3,8) PD(50%)"));
+    auto m = PolyParser::parse(juce::String("E(3,8) / E(3,8) PD(50%)"), freshLaneStates());
     expectTrue("mixed poly PD", "parses", m.ok && m.lanes.size() == 2);
     if (m.ok && m.lanes.size() == 2) {
         expectTrue("mixed poly PD", "lane 0 straight", !m.lanes[0].hasMicrotiming);
@@ -207,7 +221,7 @@ int main() {
     std::cout << kPolyConformanceVectors.size() << " vectors (leftmost = LSB)\n";
 
     for (const auto& v : kPolyConformanceVectors) {
-        auto result = PolyParser::parse(juce::String(v.input));
+        auto result = PolyParser::parse(juce::String(v.input), freshLaneStates());
 
         expectTrue(v.input, "ok", result.ok == v.ok);
         if (!v.ok) {

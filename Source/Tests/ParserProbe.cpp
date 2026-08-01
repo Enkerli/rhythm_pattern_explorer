@@ -17,7 +17,10 @@
 
 static void probe (const char* input)
 {
-    auto r = UPIParser::parse (juce::String (input));
+    // A throwaway state per probe: these are one-off parses, and giving each
+    // its own is now the only way to be sure one line cannot affect the next.
+    ProgressiveTransformState progressive;
+    auto r = UPIParser::parse (juce::String (input), progressive);
     std::string bits;
     for (bool b : r.pattern) bits += (b ? '1' : '0');
 
@@ -44,9 +47,14 @@ static void probe (const char* input)
 static void probeProgressive (const char* input, int triggers)
 {
     std::printf ("%-22s ", input);
+    // ONE state across the whole sequence — that is what makes this a sequence
+    // rather than `triggers` identical parses. It is also per CALL now, so two
+    // entries with the same pattern text no longer contaminate each other, as
+    // they did while the state was process-wide (F1).
+    ProgressiveTransformState progressive;
     for (int i = 0; i < triggers; ++i)
     {
-        auto r = UPIParser::parse (juce::String (input));
+        auto r = UPIParser::parse (juce::String (input), progressive);
         if (! r.isValid()) { std::printf (" ERROR"); break; }
         std::string bits;
         for (bool b : r.pattern) bits += (b ? '1' : '0');

@@ -10,6 +10,7 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "ProgressiveTransformState.h"
 #include <vector>
 #include <string>
 #include <regex>
@@ -84,15 +85,31 @@ public:
     
     //==============================================================================
     // Main parsing functions
-    static ParseResult parse(const juce::String& input);
-    static ParseResult parsePattern(const juce::String& input);
+    /**
+     * Parse a UPI string. `progressive` is the caller's OWN `>N` bookkeeping —
+     * the processor's for a mono pattern, the lane's own for a poly lane.
+     *
+     * NO DEFAULT ARGUMENT, on purpose (ProgressiveTransformState.h, INTENT L5):
+     * a defaulted parameter would let a future call site fall back to shared
+     * state without anyone noticing, which is the shape of the bug this
+     * parameter exists to kill. Two call sites is a cheap price for the
+     * compiler visiting both.
+     */
+    static ParseResult parse(const juce::String& input, ProgressiveTransformState& progressive);
+
+    /**
+     * One pattern term. Takes the same state, because the `>N` progressive
+     * branch lives here rather than in parseAfterFeel — and because this
+     * function recurses into itself for the named patterns (tresillo, hex, …).
+     */
+    static ParseResult parsePattern(const juce::String& input, ProgressiveTransformState& progressive);
 
     // Everything parse() does AFTER the feel suffixes have been stripped.
     // Split out so parse() has exactly one return statement and can carry the
     // feel flags onto whichever of this function's many returns wins — they
     // used to be recorded on a local that was then thrown away, which is why
     // PD()/LS() parsed cleanly and then did nothing in every DAW.
-    static ParseResult parseAfterFeel(const juce::String& cleanedInput);
+    static ParseResult parseAfterFeel(const juce::String& cleanedInput, ProgressiveTransformState& progressive);
 
     // Feel suffixes — strip and record; return the remaining pattern text.
     static juce::String extractMicrotiming(const juce::String& input, ParseResult& result);
@@ -158,17 +175,18 @@ private:
     // Polygon combination helper
     static ParseResult parsePolygonForCombination(const juce::String& polygonStr, int targetSteps);
     
-    // Progressive transformation helpers
-    static std::vector<bool> applyProgressiveTransformation(const std::vector<bool>& basePattern, char transformerType, int targetOnsets);
+    // Progressive transformation helpers. The state is the caller's — see parse().
+    static std::vector<bool> applyProgressiveTransformation(const std::vector<bool>& basePattern, char transformerType, int targetOnsets, ProgressiveTransformState& progressive);
     static std::vector<bool> diluteByBarlow(const std::vector<bool>& pattern, int targetOnsets, const std::vector<std::pair<int, double>>& indispensabilityTable, bool wolrabMode);
     static std::vector<bool> concentrateByBarlow(const std::vector<bool>& pattern, int targetOnsets, const std::vector<std::pair<int, double>>& indispensabilityTable, bool wolrabMode);
     static double calculateBarlowIndispensability(int position, int stepCount);
-    static void resetProgressiveState(const juce::String& patternKey);
-    
+
 public:
-    static void resetAllProgressiveStates();
-    static int getProgressiveStepCount(const juce::String& patternKey);
-    
+    // resetProgressiveState / resetAllProgressiveStates / getProgressiveStepCount
+    // used to live here and reach into the process-wide maps. They are now
+    // ProgressiveTransformState::forget / clear / stepCountFor, called on the
+    // state you own — there is no longer any "all" to reset, which is the point.
+
     // Progressive offset engine support
     static void setProgressiveOffsetEngine(class PatternEngine* engine);
     static int getCurrentProgressiveOffset();

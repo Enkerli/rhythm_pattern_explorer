@@ -61,6 +61,7 @@ target_sources(Serpe PRIVATE
     Source/Core/PatternUtils.cpp
     Source/Core/QuantizationEngine.cpp
     Source/Core/UPIParser.cpp
+    Source/Core/ProgressiveTransformState.cpp
     Source/Core/AccentSequence.cpp
     Source/Core/PolyParser.cpp
     Source/Managers/PresetManager.cpp
@@ -272,6 +273,7 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
     target_sources(serpe_parser_probe PRIVATE
         Source/Tests/ParserProbe.cpp
         Source/Core/UPIParser.cpp
+        Source/Core/ProgressiveTransformState.cpp
         Source/Core/PatternEngine.cpp
         Source/Core/PatternUtils.cpp
         Source/Core/QuantizationEngine.cpp)
@@ -281,6 +283,10 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
     target_link_libraries(serpe_parser_probe
         PRIVATE
             juce::juce_core
+            # ProgressiveTransformState saves/restores through a juce::ValueTree,
+            # which lives in juce_data_structures. The probe never calls those two
+            # methods, but it compiles the header that declares them.
+            juce::juce_data_structures
             juce::juce_recommended_config_flags
             juce::juce_recommended_warning_flags)
 
@@ -319,6 +325,7 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
         Source/Core/PatternUtils.cpp
         Source/Core/QuantizationEngine.cpp
         Source/Core/UPIParser.cpp
+        Source/Core/ProgressiveTransformState.cpp
         Source/Core/AccentSequence.cpp
         Source/Core/PolyParser.cpp
         Source/Managers/PresetManager.cpp
@@ -340,6 +347,7 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
     juce_add_console_app(serpe_poly_precedence PRODUCT_NAME "serpe_poly_precedence")
     target_sources(serpe_poly_precedence PRIVATE Source/Tests/PolyPrecedenceTests.cpp
         Source/Core/PolyParser.cpp Source/Core/UPIParser.cpp Source/Core/PatternEngine.cpp
+        Source/Core/ProgressiveTransformState.cpp
         Source/Core/PatternUtils.cpp Source/Core/QuantizationEngine.cpp
         Source/Managers/SceneManager.cpp)
     target_compile_definitions(serpe_poly_precedence PRIVATE JUCE_USE_CURL=0)
@@ -374,6 +382,7 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
         Source/Tests/PolyConformanceTests.cpp
         Source/Core/PolyParser.cpp
         Source/Core/UPIParser.cpp
+        Source/Core/ProgressiveTransformState.cpp
         Source/Core/PatternEngine.cpp
         Source/Core/PatternUtils.cpp
         Source/Core/QuantizationEngine.cpp)
@@ -383,6 +392,9 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
     target_link_libraries(serpe_poly_conformance
         PRIVATE
             juce::juce_core
+            # As for serpe_parser_probe: ProgressiveTransformState's save/restore
+            # go through a juce::ValueTree, which lives in juce_data_structures.
+            juce::juce_data_structures
             juce::juce_recommended_config_flags
             juce::juce_recommended_warning_flags)
     add_test(NAME poly_conformance COMMAND serpe_poly_conformance)

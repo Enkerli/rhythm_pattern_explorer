@@ -220,6 +220,7 @@ std::vector<juce::StringArray> PolyParser::laneScenes(const juce::String& input)
 }
 
 PolyParseResult PolyParser::parse(const juce::String& input,
+                                   const LaneProgressiveState& laneState,
                                    const std::function<void(int)>& beforeLaneParse,
                                    const std::vector<int>& sceneIndices)
 {
@@ -303,7 +304,9 @@ PolyParseResult PolyParser::parse(const juce::String& input,
         }
 
         if (beforeLaneParse) beforeLaneParse(i);
-        auto parsed = UPIParser::parse(src);
+        // THIS lane's own '>N' bookkeeping. Sharing one map across lanes is
+        // what made two identical lanes diverge (PolyParser.h, F1a).
+        auto parsed = UPIParser::parse(src, laneState(i));
         if (! parsed.isValid())
         {
             result.ok = false;

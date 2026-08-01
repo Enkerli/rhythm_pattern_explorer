@@ -429,6 +429,14 @@ private:
         // trigger time rather than counted, so it cannot drift.
         bool hasAccentPattern = false;
         std::vector<bool> accentPattern;
+
+        // This lane's OWN `>N` progressive bookkeeping, alongside its accent
+        // layer and its microtiming walk for the same reason all three are here:
+        // a lane's state is the LANE's. Every lane used to parse against one
+        // process-wide map keyed by pattern text, so `E(1,8)>8/E(1,8)>8` had two
+        // lanes advancing a single counter and they came apart on trigger 1
+        // (SERPE_DAW_FINDINGS_2026-08 F1a, measured before the fix).
+        ProgressiveTransformState progressive;
     };
     bool isPolyPattern = false;
     std::array<PolyLaneRuntime, kMaxPolyLanes> polyLanes;
@@ -477,7 +485,21 @@ private:
     juce::String lastProgressiveTransformUPI; // Last `>`-transform TYPED, so a fresh entry resets its step state (tick still advances)
     juce::String lastParsedUPI;
     juce::String currentProgressivePatternKey; // Track current progressive pattern for step counting
-    
+
+    /**
+     * THIS INSTANCE's `>N` progressive bookkeeping, for the mono path. (Poly
+     * lanes each own theirs — see PolyLaneRuntime::progressive.)
+     *
+     * It used to be file-scope statics in UPIParser.cpp, one map per process:
+     * two tracks running the same pattern text fought over one counter, and a
+     * newly opened project inherited whatever the previous one left behind.
+     * `currentProgressivePatternKey` right above has always been saved with the
+     * project — the KEY, into state the project file could not reach. This is
+     * the other half, and it is saved next to it now (F1).
+     */
+    ProgressiveTransformState progressiveTransform;
+
+
     // Background color persistence
     int currentBackgroundColor = 0; // Default to Dark background
     

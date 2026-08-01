@@ -54,6 +54,14 @@ struct Session
     // TRANSPOSED note (INTENT §D8 / F3), so a pattern with accents that lands
     // on only one pair is playing flat — exactly the poly bug of 2026-08-01.
     int expectPairs = 0;
+
+    // Poly only: on every trigger, every lane must be sounding the SAME pattern.
+    // For a string whose lanes are written identically (`E(1,8)>8/E(1,8)>8`)
+    // that IS the definition of correct, and it is what F1a broke — the lanes
+    // shared one progressive counter keyed by pattern text, so a single trigger
+    // advanced it once per lane and the lanes came apart at trigger 1.
+    // (Field last so the aggregate initialisers above keep their meaning.)
+    bool expectLanesEqual = false;
 };
 
 /**
@@ -215,6 +223,122 @@ juce::StringArray notePairs (const juce::MidiMessageSequence& seq)
 }
 
 /**
+ * TWO processors, the same progressive pattern, triggers interleaved A B A B.
+ *
+ * The test whose absence let F1 survive. Every probe session until now built
+ * ONE processor, and process-wide state is invisible to a single instance by
+ * construction — the bug needs a second one to show at all. A DAW always has
+ * more than one: two tracks running `E(1,8)>8` shared a step counter keyed by
+ * pattern text, so each fought the other's advance, and a new project inherited
+ * whatever the last one left behind (SERPE_DAW_FINDINGS_2026-08 F1).
+ *
+ * Correct behaviour is the boring one: two instances that never met produce the
+ * SAME sequence from the same text. Interleaving is what makes a shared counter
+ * visible — A takes the odd steps and B the even ones.
+ *
+ * Returns each instance's per-trigger pattern, A first.
+ */
+std::pair<juce::StringArray, juce::StringArray> runTwoInstances (const char* upi, int triggers)
+{
+    SerpeAudioProcessor a, b;
+    a.prepareToPlay (kSampleRate, kBlock);
+    b.prepareToPlay (kSampleRate, kBlock);
+    a.setUPIInput (juce::String (upi));
+    b.setUPIInput (juce::String (upi));
+    a.setInternalPlaying (true);
+    b.setInternalPlaying (true);
+
+    juce::AudioBuffer<float> audio (2, kBlock);
+    auto trigger = [&audio] (SerpeAudioProcessor& p)
+    {
+        juce::MidiBuffer midi;
+        midi.addEvent (juce::MidiMessage::noteOn (1, 36, 0.8f), 0);
+        midi.addEvent (juce::MidiMessage::noteOff (1, 36), 32);
+        audio.clear();
+        p.processBlock (audio, midi);
+        // Settle, for the same reason run() does: a '%N' rotation enqueued by
+        // this trigger only reaches the engine on the next block.
+        juce::MidiBuffer settle;
+        audio.clear();
+        p.processBlock (audio, settle);
+        return bits (p.getPatternEngine().getCurrentPattern());
+    };
+
+    juce::StringArray seenA, seenB;
+    for (int i = 0; i < triggers; ++i)
+    {
+        seenA.add (trigger (a));   // interleaved, not batched: A B A B
+        seenB.add (trigger (b));
+    }
+
+    a.setInternalPlaying (false);
+    b.setInternalPlaying (false);
+    a.releaseResources();
+    b.releaseResources();
+    return { seenA, seenB };
+}
+
+/**
+ * Save a progressed instance, restore it into a FRESH one, and ask both for
+ * their next step.
+ *
+ * The other half of F1. Per-instance state stops two plugins fighting, but a
+ * project that reopens still has to land where it was saved — and until
+ * 2026-08-01 it could not, because `currentProgressivePatternKey` was saved
+ * while the map it keys into lived in process-wide statics. A restored session
+ * resumed from whatever the process happened to be holding.
+ *
+ * Prints three sequences: the saved instance's next step, the restored one's,
+ * and a fresh instance's (the control — that one MUST restart at the base, or
+ * the comparison proves nothing).
+ */
+struct RoundTrip { juce::String saved, restored, fresh; };
+
+RoundTrip runStateRoundTrip (const char* upi, int triggers)
+{
+    juce::AudioBuffer<float> audio (2, kBlock);
+    auto trigger = [&audio] (SerpeAudioProcessor& p)
+    {
+        juce::MidiBuffer midi;
+        midi.addEvent (juce::MidiMessage::noteOn (1, 36, 0.8f), 0);
+        midi.addEvent (juce::MidiMessage::noteOff (1, 36), 32);
+        audio.clear();
+        p.processBlock (audio, midi);
+        juce::MidiBuffer settle;
+        audio.clear();
+        p.processBlock (audio, settle);
+        return bits (p.getPatternEngine().getCurrentPattern());
+    };
+
+    SerpeAudioProcessor a;
+    a.prepareToPlay (kSampleRate, kBlock);
+    a.setUPIInput (juce::String (upi));
+    a.setInternalPlaying (true);
+    for (int i = 0; i < triggers; ++i) trigger (a);
+
+    juce::MemoryBlock blob;
+    a.getStateInformation (blob);
+
+    SerpeAudioProcessor b;
+    b.prepareToPlay (kSampleRate, kBlock);
+    b.setStateInformation (blob.getData(), (int) blob.getSize());
+    b.setInternalPlaying (true);
+
+    SerpeAudioProcessor c;   // control: never saw the save
+    c.prepareToPlay (kSampleRate, kBlock);
+    c.setUPIInput (juce::String (upi));
+    c.setInternalPlaying (true);
+
+    RoundTrip r;
+    r.saved    = trigger (a);
+    r.restored = trigger (b);
+    r.fresh    = trigger (c);
+
+    for (auto* p : { &a, &b, &c }) { p->setInternalPlaying (false); p->releaseResources(); }
+    return r;
+}
+
+/**
     Write the captured sequence as a playable .mid.
 
     UNITS, and this was wrong from the probe's first commit until 2026-08-01:
@@ -301,6 +425,13 @@ int main (int argc, char** argv)
         // to LANE 1 ('/' binds loosest — INTENT §D4/§D8), so lane 1 alternates
         // accented and plain while lane 2 stays plain throughout.
         { "serpe-accent-poly", "{1001010}E(5,8)/E(1,17)>17", 2, 750, 2 },
+        // F1a: two IDENTICAL lanes must stay identical. They share nothing but
+        // their text, which is exactly what the progressive map was keyed by —
+        // so before the per-lane state landed, each trigger advanced one shared
+        // counter twice and the lanes diverged at trigger 1. The JS reference is
+        // measured (polyLaneAt, 2026-08-01) and says 10000000/10000000 then
+        // 10000001/10000001.
+        { "serpe-poly-shared-key", "E(1,8)>8/E(1,8)>8", 4, 0, 0, true },
     };
 
     int failures = 0;
@@ -332,6 +463,24 @@ int main (int argc, char** argv)
         if (! perTrigger.isEmpty())
             std::printf ("  per-trigger: %s\n", perTrigger.joinIntoString (" ").toRawUTF8());
 
+        if (s.expectLanesEqual)
+        {
+            // perTrigger holds "lane1+lane2+…" for a poly session.
+            for (const auto& entry : perTrigger)
+            {
+                auto lanes = juce::StringArray::fromTokens (entry, "+", "");
+                bool same = true;
+                for (int k = 1; k < lanes.size(); ++k) if (lanes[k] != lanes[0]) same = false;
+                if (! same)
+                {
+                    std::printf ("  FAIL: lanes diverged (%s) — identical lanes must stay identical\n",
+                                 entry.toRawUTF8());
+                    ++failures;
+                    break;
+                }
+            }
+        }
+
         if (s.expectPairs > 0)
         {
             const auto pairs = notePairs (midi);
@@ -347,6 +496,43 @@ int main (int argc, char** argv)
 
         if (lines <= 0) { std::printf ("  FAIL: no trace events recorded\n"); ++failures; }
         if (midi.getNumEvents() == 0) std::printf ("  NOTE: no MIDI produced (pattern may not have fired in %d blocks)\n", s.triggers);
+    }
+
+    // Instance isolation. Not a Session: it needs two processors, which is the
+    // whole point — one instance cannot see process-wide state (F1).
+    {
+        const char* upi = "E(1,8)>8";
+        const auto [seenA, seenB] = runTwoInstances (upi, 4);
+        std::printf ("\n%-22s %-26s two instances, triggers interleaved\n", "serpe-two-instances", upi);
+        std::printf ("  instance A: %s\n", seenA.joinIntoString (" ").toRawUTF8());
+        std::printf ("  instance B: %s\n", seenB.joinIntoString (" ").toRawUTF8());
+        if (seenA != seenB)
+        {
+            std::printf ("  FAIL: two instances of the same pattern produced different sequences —\n"
+                         "        progressive state is shared across the process (F1)\n");
+            ++failures;
+        }
+    }
+
+    // Save/restore round trip: does a reopened project resume, or restart?
+    {
+        const char* upi = "E(1,8)>8";
+        const auto rt = runStateRoundTrip (upi, 4);
+        std::printf ("\n%-22s %-26s save -> new instance -> restore\n", "serpe-state-roundtrip", upi);
+        std::printf ("  saved instance's next step: %s\n", rt.saved.toRawUTF8());
+        std::printf ("  restored instance's next  : %s\n", rt.restored.toRawUTF8());
+        std::printf ("  fresh instance's next     : %s   (control — must differ)\n", rt.fresh.toRawUTF8());
+        if (rt.restored == rt.fresh)
+        {
+            std::printf ("  FAIL: the restored instance is indistinguishable from a fresh one —\n"
+                         "        progressive state did not survive the project file (F1)\n");
+            ++failures;
+        }
+        else if (rt.restored != rt.saved)
+        {
+            std::printf ("  FAIL: restored resumed at a DIFFERENT step than the instance it was saved from\n");
+            ++failures;
+        }
     }
 
     std::printf ("\n%s — artifacts in %s\n", failures ? "FAIL" : "OK",
