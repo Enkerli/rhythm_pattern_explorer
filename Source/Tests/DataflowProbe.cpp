@@ -62,6 +62,15 @@ struct Session
     // advanced it once per lane and the lanes came apart at trigger 1.
     // (Field last so the aggregate initialisers above keep their meaning.)
     bool expectLanesEqual = false;
+
+    // The exact per-trigger reading this session must produce, space separated
+    // ("lane1+lane2" per trigger for poly). Empty = don't check.
+    //
+    // expectLanesEqual alone is not enough and this is why: when a lane's `>N`
+    // was being rotated by the trigger index, BOTH lanes were rotated equally,
+    // so "lanes agree" passed while every value was wrong. Agreement is not
+    // correctness — pin the values.
+    const char* expectPerTrigger = nullptr;
 };
 
 /**
@@ -431,7 +440,11 @@ int main (int argc, char** argv)
         // counter twice and the lanes diverged at trigger 1. The JS reference is
         // measured (polyLaneAt, 2026-08-01) and says 10000000/10000000 then
         // 10000001/10000001.
-        { "serpe-poly-shared-key", "E(1,8)>8/E(1,8)>8", 4, 0, 0, true },
+        // Values are mono's own transform sequence, which matches the JS
+        // reference exactly (JS trigger n+1, since the probe samples after a
+        // settle block). A lane's `>N` must equal mono's `>N`.
+        { "serpe-poly-shared-key", "E(1,8)>8/E(1,8)>8", 4, 0, 0, true,
+          "10000001+10000001 10001001+10001001 10101001+10101001 10101011+10101011" },
     };
 
     int failures = 0;
@@ -478,6 +491,17 @@ int main (int argc, char** argv)
                     ++failures;
                     break;
                 }
+            }
+        }
+
+        if (s.expectPerTrigger != nullptr)
+        {
+            const auto got = perTrigger.joinIntoString (" ");
+            if (got != juce::String (s.expectPerTrigger))
+            {
+                std::printf ("  FAIL: per-trigger mismatch\n    expected: %s\n    got:      %s\n",
+                             s.expectPerTrigger, got.toRawUTF8());
+                ++failures;
             }
         }
 

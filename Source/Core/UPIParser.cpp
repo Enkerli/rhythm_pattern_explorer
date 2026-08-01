@@ -602,7 +602,13 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input, Progre
                 
                 auto result = createSuccess(transformed, "Progressive: " + cleaned);
                 
-                // Mark as progressive transformation so the UI knows to track progression steps
+                // Mark as progressive transformation so the UI knows to track progression steps.
+                //
+                // hasProgressiveOffset here means "count my steps", not "rotate
+                // me" — the pattern returned above is ALREADY the transformed
+                // one. Anything that rotates by progressiveOffset must check
+                // hasProgressiveTransform first and leave this alone.
+                result.hasProgressiveTransform = true;
                 result.hasProgressiveOffset = true;
                 result.initialOffset = 0;  // Progressive transformations don't use offset
                 result.progressiveOffset = 1;  // Each trigger advances by 1 step

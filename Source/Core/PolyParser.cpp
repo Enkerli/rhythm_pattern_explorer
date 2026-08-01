@@ -334,6 +334,22 @@ PolyParseResult PolyParser::parse(const juce::String& input,
             lane.progressiveInitialOffset = lanePercentStep;
             lane.progressiveOffsetStep = lanePercentStep;
         }
+        else if (parsed.hasProgressiveTransform)
+        {
+            // `E(1,8)>8` in a lane. UPIParser already returned the TRANSFORMED
+            // pattern and set hasProgressiveOffset purely so the mono path can
+            // count steps — there is nothing to rotate. Inheriting it here made
+            // the runtime rotate each lane by one extra step per trigger, so a
+            // lane's `>N` came out as the correct transform spun by the trigger
+            // index: E(1,8)>8 gave 11000000, 01100010, 00110101 where mono and
+            // the JS reference both give 10000001, 10001001, 10101001.
+            //
+            // Found 2026-08-01 by diffing the probe's poly and mono transform
+            // sessions; Alex had heard it in a DAW without isolating it.
+            lane.hasProgressiveOffset = false;
+            lane.progressiveInitialOffset = 0;
+            lane.progressiveOffsetStep = 0;
+        }
         else
         {
             lane.hasProgressiveOffset = parsed.hasProgressiveOffset;

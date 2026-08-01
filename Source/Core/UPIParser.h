@@ -50,7 +50,16 @@ public:
         int progressiveOffset = 0;
         
         
-        // Progressive transformation tracking
+        // Progressive transformation tracking.
+        //
+        // hasProgressiveTransform distinguishes `base>N` from `base%N`. Both
+        // set hasProgressiveOffset above — a transform does so only to make the
+        // mono path track its step count, NOT because anything should be
+        // rotated. Reading the offset flag alone cannot tell the two apart, and
+        // the poly lane path did exactly that until 2026-08-01: it took the
+        // transform's `progressiveOffset = 1` as a real rotation step and spun
+        // every lane by one extra position per trigger.
+        bool hasProgressiveTransform = false;
         juce::String progressivePatternKey;
         
         // Accent pattern support
