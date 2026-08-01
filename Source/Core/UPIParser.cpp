@@ -18,8 +18,6 @@
 
 //==============================================================================
 // Progressive offset engine support - static members
-bool UPIParser::hasProgressiveOffsetEngine = false;
-PatternEngine* UPIParser::progressiveOffsetEngine = nullptr;
 
 //==============================================================================
 /**
@@ -641,14 +639,12 @@ UPIParser::ParseResult UPIParser::parsePattern(const juce::String& input, Progre
             int progressiveOffset = hasProgressiveOffset ? std::stoi(match[5].str()) : 0;
             
             // Use current progressive offset if this is a progressive pattern and engine is tracking state
+            // Read the offset from the engine THIS parse belongs to (the
+            // processor's for mono, the lane's for a lane) rather than from a
+            // process-wide pointer — see ProgressiveTransformState::offsetEngine.
             int effectiveOffset = initialOffset;
-            if (hasProgressiveOffset && hasProgressiveOffsetEngine)
-            {
-                effectiveOffset = getCurrentProgressiveOffset();
-            }
-            else
-            {
-            }
+            if (hasProgressiveOffset && progressive.offsetEngine != nullptr)
+                effectiveOffset = progressive.offsetEngine->getCurrentOffset();
             
             auto pattern = parseEuclidean(onsets, steps, effectiveOffset);
             auto result = createSuccess(pattern, "E(" + juce::String(onsets) + "," + juce::String(steps) + 
@@ -2079,23 +2075,6 @@ UPIParser::ParseResult UPIParser::createSuccess(const std::vector<bool>& pattern
     return result;
 }
 
-//==============================================================================
-// Progressive offset engine support - implementation
-
-void UPIParser::setProgressiveOffsetEngine(PatternEngine* engine)
-{
-    progressiveOffsetEngine = engine;
-    hasProgressiveOffsetEngine = (engine != nullptr);
-}
-
-int UPIParser::getCurrentProgressiveOffset()
-{
-    if (hasProgressiveOffsetEngine && progressiveOffsetEngine != nullptr)
-    {
-        return progressiveOffsetEngine->getCurrentOffset();
-    }
-    return 0;
-}
 
 //==============================================================================
 std::vector<bool> UPIParser::parseAccentPattern(const juce::String& accentStr)

@@ -165,7 +165,8 @@ SerpeAudioProcessor::SerpeAudioProcessor()
     patternEngine.generateEuclideanPattern(3, 8);
     
     // Set up progressive offset engine for UPI parser
-    UPIParser::setProgressiveOffsetEngine(&patternEngine);
+    // This instance's own binding, on this instance's own state.
+    progressiveTransform.offsetEngine = &patternEngine;
     
     sceneManager = std::make_unique<SceneManager>();
     
@@ -1445,12 +1446,19 @@ void SerpeAudioProcessor::parseAndApplyPolyUPI(const juce::String& upiPattern)
         [this](int laneIndex)
     {
         // Bind THIS lane's own engine before UPIParser::parse runs, so any
-        // `@initial#step` progressive syntax in this lane reads/writes its
-        // own PatternEngine's offset state, not another lane's.
+        // `@initial#step` progressive syntax in this lane reads its own
+        // PatternEngine's offset state, not another lane's.
+        //
+        // No "restore the mono binding" afterwards any more: the binding lives
+        // on each owner's own ProgressiveTransformState, so a lane setting its
+        // engine cannot disturb the processor's — which is the whole reason it
+        // moved off the process-wide statics.
         if (laneIndex >= 0 && laneIndex < kMaxPolyLanes)
-            UPIParser::setProgressiveOffsetEngine(&polyLanes[static_cast<size_t>(laneIndex)].engine);
+        {
+            auto& ln = polyLanes[static_cast<size_t>(laneIndex)];
+            ln.progressive.offsetEngine = &ln.engine;
+        }
     }, sceneIndices);
-    UPIParser::setProgressiveOffsetEngine(&patternEngine); // restore the mono binding
 
     if (!poly.ok)
     {

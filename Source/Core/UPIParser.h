@@ -197,10 +197,9 @@ public:
     // state you own — there is no longer any "all" to reset, which is the point.
 
     // Progressive offset engine support
-    static void setProgressiveOffsetEngine(class PatternEngine* engine);
-    static int getCurrentProgressiveOffset();
-    static bool hasProgressiveOffsetEngine;
-    static class PatternEngine* progressiveOffsetEngine;
+    // setProgressiveOffsetEngine / getCurrentProgressiveOffset and their two
+    // statics are gone (2026-08-01). The binding is now
+    // ProgressiveTransformState::offsetEngine, set by whoever owns the state.
     
     // String processing utilities
     static juce::String cleanInput(const juce::String& input);

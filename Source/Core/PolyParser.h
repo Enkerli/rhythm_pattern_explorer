@@ -126,7 +126,7 @@ public:
      *
      * beforeLaneParse(laneIndex), if given, runs right before this lane's
      * body goes through UPIParser::parse — the caller's chance to bind a
-     * per-lane PatternEngine via UPIParser::setProgressiveOffsetEngine so
+     * per-lane PatternEngine on that lane's ProgressiveTransformState so
      * `@initial#step` progressive syntax reads/writes THAT lane's own state
      * rather than whatever engine was last bound globally. (That binding is
      * still a process-wide static; it is re-bound before every lane, so it does

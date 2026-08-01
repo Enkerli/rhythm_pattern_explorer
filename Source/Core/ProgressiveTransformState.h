@@ -45,6 +45,19 @@ struct ProgressiveTransformState
     std::map<juce::String, int> stepCount;    // 1-based; step 1 IS the base (INTENT D6)
     std::map<juce::String, int> accessCount;  // LRU bookkeeping for evictIfNeeded()
 
+    /** The engine a `%N` parse should read its current offset from.
+        NOT saved --- a runtime binding, not state, so saveTo/restoreFrom ignore it.
+
+        This was a pair of file-scope statics in UPIParser
+        (hasProgressiveOffsetEngine / progressiveOffsetEngine) until 2026-08-01:
+        a PROCESS-WIDE pointer to a PER-INSTANCE object, rebound before every
+        lane parse and never cleared by the destructor. Two plugins in one DAW
+        meant the second constructor silently stole the first's binding, and
+        destroying either left the survivor parsing through a dangling pointer.
+        It lives here because this struct is already the thing each owner ---
+        processor or lane --- holds one of. */
+    class PatternEngine* offsetEngine = nullptr;
+
     /**
      * Cap on distinct keys before least-used entries are dropped. UNCHANGED at
      * 100 from the process-wide version: a per-instance map could justify a much
