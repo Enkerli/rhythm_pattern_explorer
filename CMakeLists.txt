@@ -246,6 +246,20 @@ target_link_libraries(Serpe
 # execute it on the macOS host — guard the whole block to non-iOS builds.
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
     enable_testing()
+    # `*N` growth: the engine's generated material against the JS reference's.
+    juce_add_console_app(serpe_lengthening_conformance PRODUCT_NAME "serpe_lengthening_conformance")
+    target_sources(serpe_lengthening_conformance PRIVATE
+        Source/Tests/LengtheningConformanceTests.cpp
+        Source/Core/PatternUtils.cpp)
+    target_compile_definitions(serpe_lengthening_conformance PRIVATE JUCE_USE_CURL=0)
+    juce_generate_juce_header(serpe_lengthening_conformance)
+    target_include_directories(serpe_lengthening_conformance PRIVATE Source/Core Source/Tests)
+    target_link_libraries(serpe_lengthening_conformance
+        PRIVATE
+            juce::juce_core
+            juce::juce_recommended_config_flags
+            juce::juce_recommended_warning_flags)
+
     juce_add_console_app(serpe_conformance PRODUCT_NAME "serpe_conformance")
     target_sources(serpe_conformance PRIVATE
         Source/Tests/RhythmConformanceTests.cpp

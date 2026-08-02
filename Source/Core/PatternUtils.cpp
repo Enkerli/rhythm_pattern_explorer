@@ -314,6 +314,63 @@ namespace PatternUtils
         return std::max(1, std::min(steps - 1, onsets));
     }
     
+    uint32_t seedFromSteps (const std::vector<bool>& steps, int salt)
+    {
+        uint32_t h = 0x811c9dc5u ^ static_cast<uint32_t> (salt);
+        for (size_t i = 0; i < steps.size(); ++i)
+        {
+            h ^= steps[i] ? 1u : 0u;
+            h = static_cast<uint32_t> (h * 0x01000193u);
+        }
+        return h;
+    }
+
+    std::vector<bool> bellCurveRandomSteps (int numSteps, uint32_t seed)
+    {
+        std::vector<bool> out (static_cast<size_t> (std::max (0, numSteps)), false);
+        if (numSteps <= 0) return out;
+
+        Mulberry32 rng (seed);
+        int onsets = 0;
+
+        if (numSteps == 1)
+        {
+            // One step has no distribution to speak of — a coin flip. ONE draw,
+            // and `< 0.5`, not a uniform_int_distribution: the draw count and
+            // the comparison both have to match the JS or every later chunk
+            // lands on a different part of the stream.
+            onsets = rng.next() < 0.5 ? 0 : 1;
+        }
+        else
+        {
+            // Box-Muller, exactly as rhythm.js writes it: TWO draws, u then v,
+            // rejecting zero. Centred on half the steps with sigma (n-1)/6, so
+            // +/-3 sigma spans the range — extremes rare but reachable.
+            double u = 0.0, v = 0.0;
+            while (u == 0.0) u = rng.next();
+            while (v == 0.0) v = rng.next();
+            const double g = (numSteps / 2.0)
+                + ((numSteps - 1) / 6.0) * std::sqrt (-2.0 * std::log (u))
+                  * std::cos (2.0 * juce::MathConstants<double>::pi * v);
+            onsets = static_cast<int> (std::round (g));
+            onsets = std::max (0, std::min (numSteps, onsets));
+        }
+
+        // Fisher-Yates over the positions, high index down, `floor(r*(i+1))` —
+        // n-1 draws. std::shuffle would consume a different number in a
+        // different order.
+        std::vector<int> pos (static_cast<size_t> (numSteps));
+        for (int i = 0; i < numSteps; ++i) pos[static_cast<size_t> (i)] = i;
+        for (int i = numSteps - 1; i > 0; --i)
+        {
+            const int j = static_cast<int> (std::floor (rng.next() * (i + 1)));
+            std::swap (pos[static_cast<size_t> (i)], pos[static_cast<size_t> (j)]);
+        }
+        for (int i = 0; i < onsets && i < numSteps; ++i)
+            out[static_cast<size_t> (pos[static_cast<size_t> (i)])] = true;
+        return out;
+    }
+
     //==============================================================================
     // Pattern Format Conversion
     //==============================================================================

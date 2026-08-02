@@ -100,6 +100,48 @@ namespace PatternUtils
     
     /** Generates bell curve distributed onset count for random patterns */
     int bellCurveOnsetCount(int steps, std::mt19937& randomEngine);
+
+    //==============================================================================
+    // Seeded RNG — the JS reference's, bit for bit
+    //
+    // `@enkerli/upi` seeds progressive lengthening from the pattern so far, so a
+    // trigger names a pattern rather than a length (2026-08-02). These mirror
+    // packages/upi/src/rng.js and rhythm.js EXACTLY so the plugin grows a `*N`
+    // lane the same way the webapp and the CLI do — same mulberry32, same FNV-1a
+    // seed, same Box-Muller, same Fisher-Yates, and the same NUMBER of draws in
+    // the same order, which is what actually decides whether two streams agree.
+    //
+    // Deliberately not std::mt19937 / std::normal_distribution / std::shuffle:
+    // all three are implementation-defined, so they would not even match across
+    // two C++ standard libraries, let alone match JavaScript.
+    //==============================================================================
+
+    /** mulberry32 — packages/upi/src/rng.js. */
+    struct Mulberry32
+    {
+        /** The seed is MIXED, exactly as rng.js does it — golden-ratio and
+            a second constant for the `pass` term (0 here). Taking the seed raw
+            produces a valid-looking but completely different stream, which is
+            how this first went wrong. */
+        explicit Mulberry32 (uint32_t seed, uint32_t pass = 0)
+            : s (static_cast<uint32_t> (seed * 0x9e3779b1u + pass * 0x85ebca6bu)) {}
+        /** One draw in [0,1), matching the JS bit pattern. */
+        double next()
+        {
+            s = static_cast<uint32_t> (s + 0x6d2b79f5u);
+            uint32_t t = s;
+            t = static_cast<uint32_t> ((t ^ (t >> 15)) * (t | 1u));
+            t ^= static_cast<uint32_t> (t + (t ^ (t >> 7)) * (t | 61u));
+            return static_cast<double> ((t ^ (t >> 14)) >> 0) / 4294967296.0;
+        }
+        uint32_t s;
+    };
+
+    /** FNV-1a over the step bits, salted — rng.js seedFromSteps. */
+    uint32_t seedFromSteps (const std::vector<bool>& steps, int salt);
+
+    /** rhythm.js bellCurveRandomSteps, with an explicit seed. */
+    std::vector<bool> bellCurveRandomSteps (int numSteps, uint32_t seed);
     
     //==============================================================================
     // Pattern Format Conversion

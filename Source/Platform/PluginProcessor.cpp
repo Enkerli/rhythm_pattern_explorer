@@ -126,9 +126,9 @@ SerpeAudioProcessor::SerpeAudioProcessor()
                       #endif
                        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
                      #endif
-                       ), randomGenerator(std::random_device{}()), parameters(*this, nullptr, "RhythmPatternExplorer", createParameterLayout())
+                       ), parameters(*this, nullptr, "RhythmPatternExplorer", createParameterLayout())
 #else
-     : randomGenerator(std::random_device{}()), parameters(*this, nullptr, "RhythmPatternExplorer", createParameterLayout())
+     : parameters(*this, nullptr, "RhythmPatternExplorer", createParameterLayout())
 #endif
 {
 #if JUCE_IOS
@@ -1559,7 +1559,12 @@ void SerpeAudioProcessor::parseAndApplyPolyUPI(const juce::String& upiPattern)
                 // empty base pattern still grows rather than re-seeding forever.
                 if (visits > 1)
                 {
-                    auto extra = generateBellCurveRandomSteps(parsed.progressiveLengtheningStep);
+                    // Same rule per lane per scene — the seed comes from that
+                    // lane's own accumulated pattern, so lanes grow
+                    // independently (D5) and reproducibly.
+                    auto extra = PatternUtils::bellCurveRandomSteps(
+                        parsed.progressiveLengtheningStep,
+                        PatternUtils::seedFromSteps(lane.sceneGrown[sc], parsed.progressiveLengtheningStep));
                     lane.sceneGrown[sc].insert(lane.sceneGrown[sc].end(), extra.begin(), extra.end());
                 }
                 lane.engine.setPattern(lane.sceneGrown[sc]);
@@ -2784,56 +2789,27 @@ void SerpeAudioProcessor::advanceProgressiveLengthening()
 {
     if (progressiveLengthening > 0 && !baseLengthPattern.empty())
     {
-        // Generate random steps using bell curve distribution
-        auto randomSteps = generateBellCurveRandomSteps(progressiveLengthening);
+        // Seeded from the pattern SO FAR, so this lane grows the same way in the
+        // plugin, the webapp and the CLI (2026-08-02). Stateless on purpose:
+        // seeding off the accumulated pattern means appending needs no trigger
+        // ordinal, which is what kept this a local change instead of a rewrite
+        // of the lengthening state and the saved-state format.
+        auto randomSteps = PatternUtils::bellCurveRandomSteps(
+            progressiveLengthening,
+            PatternUtils::seedFromSteps(baseLengthPattern, progressiveLengthening));
         
         // Append the random steps to the pattern
         baseLengthPattern.insert(baseLengthPattern.end(), randomSteps.begin(), randomSteps.end());
     }
 }
 
-std::vector<bool> SerpeAudioProcessor::generateBellCurveRandomSteps(int numSteps)
-{
-    std::vector<bool> randomSteps(numSteps, false);
-    
-    if (numSteps <= 0) return randomSteps;
-    
-    int onsets;
-    
-    if (numSteps == 1) {
-        // Special case for *1: randomly choose 0 or 1 onset (50/50 chance)
-        std::uniform_int_distribution<int> coinFlip(0, 1);
-        onsets = coinFlip(randomGenerator);
-    } else {
-        // Use bell curve distribution to determine number of onsets (avoid extremes)
-        std::normal_distribution<double> distribution(numSteps / 2.0, (numSteps - 1) / 6.0);
-        onsets = static_cast<int>(std::round(distribution(randomGenerator)));
-        
-        // Clamp to valid range [0, numSteps] to allow empty or full patterns
-        onsets = juce::jmax(0, juce::jmin(numSteps, onsets));
-    }
-    
-    // Randomly distribute the onsets
-    std::vector<int> positions;
-    for (int i = 0; i < numSteps; ++i)
-    {
-        positions.push_back(i);
-    }
-    
-    std::shuffle(positions.begin(), positions.end(), randomGenerator);
-    
-    for (int i = 0; i < onsets && i < positions.size(); ++i)
-    {
-        randomSteps[positions[i]] = true;
-    }
-    
-    return randomSteps;
-}
-
 std::vector<bool> SerpeAudioProcessor::lengthenPattern(const std::vector<bool>& pattern, int additionalSteps)
 {
+    // Scene lengthening, third and last growth site. Same seeded rule as the
+    // other two: the chunk comes from the pattern it is being appended to.
     auto lengthened = pattern;
-    auto randomSteps = generateBellCurveRandomSteps(additionalSteps);
+    auto randomSteps = PatternUtils::bellCurveRandomSteps(
+        additionalSteps, PatternUtils::seedFromSteps(pattern, additionalSteps));
     lengthened.insert(lengthened.end(), randomSteps.begin(), randomSteps.end());
     return lengthened;
 }

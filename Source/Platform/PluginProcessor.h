@@ -562,7 +562,10 @@ private:
     // Progressive lengthening support (works for any pattern)
     int progressiveLengthening = 0; // How many steps to add each time
     std::vector<bool> baseLengthPattern; // Original pattern for lengthening
-    std::mt19937 randomGenerator;   // For bell curve random step generation
+    // The unseeded std::mt19937 that used to drive lengthening is gone
+    // (2026-08-02): growth is now seeded from the pattern so far, in
+    // PatternUtils, so the plugin and the JS reference agree. It fed nothing
+    // else — that was the whole of its job.
     
     // Scene cycling support (works for any pattern). SceneManager owns all of
     // it — patterns, current index, per-scene progressive state, persistence.
@@ -654,7 +657,6 @@ private:
     
     
     // Pattern manipulation
-    std::vector<bool> generateBellCurveRandomSteps(int numSteps);
     std::vector<bool> lengthenPattern(const std::vector<bool>& pattern, int additionalSteps);
     
     
