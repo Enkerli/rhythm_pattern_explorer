@@ -508,8 +508,8 @@ void SerpeAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
     // Pattern updates are now handled via UPI input only
     
     // Update timing if pattern length parameters changed
-    static int lastPatternLengthUnit = 1; // Default to Beats
-    static float lastPatternLengthValue = 8.0f;
+    auto& lastPatternLengthUnit = blkLastPatternLengthUnit;
+    auto& lastPatternLengthValue = blkLastPatternLengthValue;
     bool patternLengthChanged = false;
     
     int currentPatternLengthUnit = patternLengthUnitParam->getIndex();
@@ -523,7 +523,7 @@ void SerpeAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
     }
     
     // Update timing if BPM or pattern length changed - but preserve currentSample ratio
-    static float lastBPM = 120.0f;
+    auto& lastBPM = blkLastBPM;
     bool bpmChanged = std::abs(currentBPM - lastBPM) > 0.1f;
     
     if (bpmChanged || patternLengthChanged) {
@@ -541,7 +541,7 @@ void SerpeAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
     
 
     // FIRST STEP FIX: Track if we've processed step 0 in this buffer
-    static bool processedFirstStepThisBuffer = false;
+    auto& processedFirstStepThisBuffer = blkProcessedFirstStepThisBuffer;
     if (!finalIsPlaying) processedFirstStepThisBuffer = false; // Reset when not playing
 
     // TRANSPORT-SYNCED TIMING: Use DAW's ppqPosition for perfect alignment
@@ -625,7 +625,7 @@ void SerpeAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
         transportTick.store(dawSynchronizedTick);
         
         // Track the last processed step to detect boundaries
-        static int lastProcessedStep = -1;
+        auto& lastProcessedStep = blkLastProcessedStep;
         
         // Only trigger if we've moved to a new step since last buffer
         if (currentBufferStep != lastProcessedStep)

@@ -34,6 +34,35 @@ namespace
 constexpr double kSampleRate = 48000.0;
 constexpr int    kBlock      = 512;
 
+
+/**
+ * A host transport, minimally. The DAW-synchronised step path in processBlock
+ * only runs when getPlayHead() reports a valid position, so a probe without one
+ * silently exercises the internal-timing path instead — which is how a
+ * host-only bug stays invisible to a headless test. Advances ppq by exactly one
+ * block per call, at a fixed tempo.
+ */
+class FakePlayHead : public juce::AudioPlayHead
+{
+public:
+    FakePlayHead (double sr, int blockSize, double bpm)
+        : ppqPerBlock ((blockSize / sr) * (bpm / 60.0)), tempo (bpm) {}
+
+    juce::Optional<juce::AudioPlayHead::PositionInfo> getPosition() const override
+    {
+        juce::AudioPlayHead::PositionInfo p;
+        p.setBpm (tempo);
+        p.setPpqPosition (ppq);
+        p.setIsPlaying (true);
+        p.setTimeSignature (juce::AudioPlayHead::TimeSignature { 4, 4 });
+        return p;
+    }
+    void advance() { ppq += ppqPerBlock; }
+
+private:
+    double ppqPerBlock, tempo, ppq = 0.0;
+};
+
 /** One scripted session: a pattern, then N triggers delivered as MIDI notes. */
 struct Session
 {
@@ -563,6 +592,62 @@ int main (int argc, char** argv)
         {
             std::printf ("  FAIL: two instances of the same pattern produced different sequences —\n"
                          "        progressive state is shared across the process (F1)\n");
+            ++failures;
+        }
+    }
+
+    // F5 — the S1 runaway. Alex's Bitwig capture had 57 notes in 8 beats with
+    // gaps clustering at audio-BUFFER multiples, not musical subdivisions. His
+    // Suitest.dawproject holds TWO Serpe instances (both CLAP), which is the
+    // condition this reproduces: processBlock tracks the last step it played in
+    // a function-local `static int lastProcessedStep`, so every instance in the
+    // process shares ONE. Each sees "the step changed" on almost every block
+    // because the other keeps overwriting it, and fires.
+    //
+    // Same shape as F1 and the offset-engine pointer: per-instance state in a
+    // process-wide place, invisible to any test that builds one processor.
+    {
+        const char* upi = "E(3,8)";
+        const int blocks = 240;                       // ~2.5s at 512/48k
+        auto countNotes = [&] (int instances)
+        {
+            std::vector<std::unique_ptr<SerpeAudioProcessor>> procs;
+            std::vector<std::unique_ptr<FakePlayHead>> heads;
+            for (int i = 0; i < instances; ++i)
+            {
+                procs.push_back (std::make_unique<SerpeAudioProcessor>());
+                heads.push_back (std::make_unique<FakePlayHead> (kSampleRate, kBlock, 120.0));
+                procs.back()->setPlayHead (heads.back().get());
+                procs.back()->prepareToPlay (kSampleRate, kBlock);
+                procs.back()->setUPIInput (juce::String (upi));
+                procs.back()->setInternalPlaying (true);
+            }
+            juce::AudioBuffer<float> audio (2, kBlock);
+            int first = 0;
+            for (int b = 0; b < blocks; ++b)
+                for (size_t i = 0; i < procs.size(); ++i)
+                {
+                    juce::MidiBuffer midi;
+                    audio.clear();
+                    procs[i]->processBlock (audio, midi);
+                    heads[i]->advance();
+                    if (i == 0)
+                        for (const auto m : midi) if (m.getMessage().isNoteOn()) ++first;
+                }
+            for (auto& p : procs) { p->setInternalPlaying (false); p->releaseResources(); }
+            return first;
+        };
+
+        const int alone = countNotes (1);
+        const int withNeighbour = countNotes (2);
+        std::printf ("\n%-22s %-26s %d blocks\n", "serpe-two-instance-rate", upi, blocks);
+        std::printf ("  instance A alone      : %3d note-ons\n", alone);
+        std::printf ("  instance A + a second : %3d note-ons\n", withNeighbour);
+        if (withNeighbour > alone * 2)
+        {
+            std::printf ("  FAIL: a second instance multiplied A's note rate (%dx) — a shared\n"
+                         "        step tracker is firing A on blocks it should sit out (F5)\n",
+                         alone > 0 ? withNeighbour / alone : withNeighbour);
             ++failures;
         }
     }

@@ -541,6 +541,20 @@ private:
     
     
     // Progressive offset support (works for any pattern)
+    // Per-instance processBlock bookkeeping. These were FUNCTION-LOCAL STATICS
+    // inside processBlock until 2026-08-02, which made them process-wide: every
+    // Serpe in a DAW shared one copy, so instance A's BPM change looked like no
+    // change to instance B, and A's step boundary was B's too.
+    //
+    // Same class as the progressive maps (SERPE_DAW_FINDINGS F1) and the offset
+    // engine pointer — per-instance state in a process-wide place, invisible to
+    // any test that builds one processor. Found while investigating F5.
+    int   blkLastPatternLengthUnit = 1;      // Beats
+    float blkLastPatternLengthValue = 8.0f;
+    float blkLastBPM = 120.0f;
+    bool  blkProcessedFirstStepThisBuffer = false;
+    int   blkLastProcessedStep = -1;
+
     int progressiveOffset = 0;      // Current accumulated offset
     int progressiveStep = 0;        // How much to advance each time
     juce::String basePattern;       // Pattern without progressive syntax
