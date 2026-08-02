@@ -333,7 +333,7 @@ void SerpeEditor::sendPolyState()
         return;
     }
 
-    juce::Array<juce::var> steps, patterns, sceneIndices, sceneCounts;
+    juce::Array<juce::var> steps, patterns, sceneIndices, sceneCounts, triggers;
     bool changed = !lastPolyActive;
     for (int i = 0; i < SerpeAudioProcessor::kMaxPolyLanes; ++i)
     {
@@ -355,6 +355,15 @@ void SerpeEditor::sendPolyState()
 
         sceneIndices.add (proc.getPolyLaneSceneIndex (i));
         sceneCounts.add (proc.getPolyLaneSceneCount (i));
+
+        // The trigger ordinal the UI shows. Part of the change check: on a
+        // progressive lane the pattern usually changes with it, but not
+        // always — `E(3,8)%8` on an 8-step lane returns to where it started
+        // every 8th trigger, and the readout must still move.
+        const int tg = proc.getPolyLaneTriggerIndex (i);
+        triggers.add (tg);
+        if (tg != lastPolyTriggers[static_cast<size_t> (i)]) changed = true;
+        lastPolyTriggers[static_cast<size_t> (i)] = tg;
     }
     lastPolyActive = true;
     if (!changed) return;
@@ -363,6 +372,7 @@ void SerpeEditor::sendPolyState()
         { "active", true },
         { "steps",  juce::var (steps) },
         { "patterns", juce::var (patterns) },
+        { "triggers", juce::var (triggers) },
         { "sceneIndices", juce::var (sceneIndices) },
         { "sceneCounts", juce::var (sceneCounts) },
     }));

@@ -304,6 +304,27 @@ public:
         return polyLanes[static_cast<size_t>(laneIndex)].sceneChain.size();
     }
 
+    /** How many times this lane has been triggered on the scene it is
+        currently sounding, 1-based — trigger 1 is the bare base (INTENT D6).
+
+        This is the number the UI shows, and it is READ from the engine rather
+        than counted alongside it: a display that keeps its own tally drifts
+        from the thing it describes, which is how a rotating pattern once sat
+        frozen for a week without anyone noticing (DESIGN_BRIEF §3.2).
+
+        `sceneVisits` is the right source because it is already what progressive
+        OFFSET is derived from (offset = step * (visits - 1)), so the readout
+        and the sound cannot disagree by construction. */
+    int getPolyLaneTriggerIndex(int laneIndex) const
+    {
+        if (laneIndex < 0 || laneIndex >= kMaxPolyLanes) return 0;
+        const auto& lane = polyLanes[static_cast<size_t>(laneIndex)];
+        if (!lane.active) return 0;
+        const size_t sc = static_cast<size_t>(juce::jlimit(0, juce::jmax(0, (int) lane.sceneVisits.size() - 1),
+                                                           lane.sceneIndex));
+        return sc < lane.sceneVisits.size() ? lane.sceneVisits[sc] : 0;
+    }
+
 private:
     //==============================================================================
     // Pattern Engine

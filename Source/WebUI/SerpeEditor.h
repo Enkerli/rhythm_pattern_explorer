@@ -59,6 +59,7 @@ private:
     std::array<int, SerpeAudioProcessor::kMaxPolyLanes> lastPolySteps {
         { -2, -2, -2, -2, -2, -2 } };
     std::array<juce::String, 6> lastPolyPatterns {};   // for change-detecting polyState pushes
+    std::array<int, SerpeAudioProcessor::kMaxPolyLanes> lastPolyTriggers {};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SerpeEditor)
 };
