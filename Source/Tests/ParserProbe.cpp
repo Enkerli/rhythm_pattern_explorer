@@ -11,6 +11,8 @@
       ./build/serpe_parser_probe_artefacts/Release/serpe_parser_probe
 */
 #include "UPIParser.h"
+#include "PatternEngine.h"
+#include "PatternUtils.h"
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -38,12 +40,31 @@ static void probe (const char* input)
     std::printf ("  name=\"%s\"\n", r.patternName.toRawUTF8());
 }
 
-// Progressive notation (`pat>N`, `pat%N`, `pat+N`, `pat*N`) is STATEFUL: the
-// engine keeps per-pattern state and each parse() of the same string returns
-// the NEXT step. So the reference for a JS port is not one line but a
-// sequence — this prints `triggers` successive results, which is exactly what
-// a ported progressiveAt(n) has to reproduce (added 2026-07-27 to make that
-// port verifiable rather than asserted).
+// PROGRESSIVE NOTATION COMES IN TWO KINDS, AND THEY LIVE IN DIFFERENT LAYERS.
+// Getting that wrong is what made three rows of this probe meaningless.
+//
+//   `pat>N`, `pat*N`  — LENGTHENING / TRANSFORM. Stateful IN THE PARSER:
+//                       ProgressiveTransformState holds the grown pattern and
+//                       each parse() of the same string returns the next step.
+//                       probeProgressive below is the right instrument.
+//
+//   `pat%N`, `pat+N`  — PROGRESSIVE OFFSET. NOT applied by the parser at all.
+//                       UPIParser returns the BARE BASE plus the step size
+//                       (initialOffset / progressiveOffset) and leaves the
+//                       rotation to the caller: PatternEngine tracks the
+//                       offset, the processor rotates by -offset (negative =
+//                       clockwise). Use probeProgressiveOffset.
+//
+// Running the second kind through the first printed the SAME pattern on every
+// trigger — three rows that read as reference vectors and could never match a
+// port that does advance. A JS/C++ comparison against them would show three
+// "divergences" that are really one instrument reading the wrong layer, and
+// the honest risk is that someone reconciles them by breaking the JS.
+
+// Lengthening/transform: one state across the whole sequence, which is what
+// makes this a sequence rather than `triggers` identical parses. Per CALL, so
+// two entries with the same pattern text cannot contaminate each other as they
+// did while the state was process-wide (F1).
 static void probeProgressive (const char* input, int triggers)
 {
     std::printf ("%-22s ", input);
@@ -59,6 +80,38 @@ static void probeProgressive (const char* input, int triggers)
         std::string bits;
         for (bool b : r.pattern) bits += (b ? '1' : '0');
         std::printf ("%s%s", (i ? " " : ""), bits.c_str());
+    }
+    std::printf ("\n");
+}
+
+// Progressive OFFSET, driven the way the plugin drives it: the real
+// bookkeeping (PatternEngine::triggerProgressiveOffset / getCurrentOffset) and
+// the real rotation (PatternUtils::rotatePattern), rather than a second copy of
+// either. Rotates from the freshly parsed BASE every trigger — the poly path's
+// approach — so the offsets cannot compound; the mono path rotates the already
+// rotated pattern by -N each time, which for a pure rotation is the same
+// sequence.
+//
+// PHASE, per INTENT D6 and PatternEngine.cpp: trigger 1 is the BARE BASE. So
+// the offset is stepped AFTER each print, not before.
+static void probeProgressiveOffset (const char* input, int triggers)
+{
+    std::printf ("%-22s ", input);
+    ProgressiveTransformState progressive;
+    auto base = UPIParser::parse (juce::String (input), progressive);
+    if (! base.isValid())            { std::printf (" ERROR: %s\n", base.errorMessage.toRawUTF8()); return; }
+    if (! base.hasProgressiveOffset) { std::printf (" NOT a progressive offset\n"); return; }
+
+    PatternEngine engine;
+    engine.setProgressiveOffset (true, base.initialOffset, base.progressiveOffset);
+    for (int i = 0; i < triggers; ++i)
+    {
+        // Negative rotation for clockwise progression, as both paths do.
+        auto rotated = PatternUtils::rotatePattern (base.pattern, -engine.getCurrentOffset());
+        std::string bits;
+        for (bool b : rotated) bits += (b ? '1' : '0');
+        std::printf ("%s%s", (i ? " " : ""), bits.c_str());
+        engine.triggerProgressiveOffset();
     }
     std::printf ("\n");
 }
@@ -125,9 +178,14 @@ int main()
     probeProgressive ("E(8,8)>1", 9);
     probeProgressive ("W(1,13)>13", 6);
     probeProgressive ("D(1,9)>9", 6);
-    probeProgressive ("E(3,8)%2", 6);
-    probeProgressive ("E(3,8)+3", 5);
-    probeProgressive ("E(5,13)%5", 5);
+
+    // Progressive OFFSET — a different layer, so a different instrument.
+    std::printf ("\n=== progressive offset (rotation; parser returns the base, engine rotates) ===\n\n");
+    probeProgressiveOffset ("E(3,8)%2", 6);
+    probeProgressiveOffset ("E(3,8)+3", 5);
+    probeProgressiveOffset ("E(5,13)%5", 5);
+    probeProgressiveOffset ("E(7,16)%3", 5);
+    probeProgressiveOffset ("P(3,1,4)%2", 6);  // a polygon rotates like anything else
 
     std::printf ("\n(compare against the webapp / `msuite upi` for the same strings)\n");
     return 0;

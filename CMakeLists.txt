@@ -260,6 +260,30 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
             juce::juce_recommended_config_flags
             juce::juce_recommended_warning_flags)
 
+    # `%N` / `+N` rotation: the engine's offsets against the JS reference's.
+    # Needs UPIParser (to recognise the notation) AND PatternEngine (which owns
+    # the offset) — the split between those two is exactly what the parser
+    # probe got wrong for a year, so the test drives both.
+    juce_add_console_app(serpe_progressive_offset_conformance PRODUCT_NAME "serpe_progressive_offset_conformance")
+    target_sources(serpe_progressive_offset_conformance PRIVATE
+        Source/Tests/ProgressiveOffsetConformanceTests.cpp
+        Source/Core/UPIParser.cpp
+        Source/Core/ProgressiveTransformState.cpp
+        Source/Core/PatternEngine.cpp
+        Source/Core/PatternUtils.cpp
+        Source/Core/QuantizationEngine.cpp)
+    target_compile_definitions(serpe_progressive_offset_conformance PRIVATE JUCE_USE_CURL=0)
+    juce_generate_juce_header(serpe_progressive_offset_conformance)
+    target_include_directories(serpe_progressive_offset_conformance PRIVATE Source/Core Source/Tests)
+    target_link_libraries(serpe_progressive_offset_conformance
+        PRIVATE
+            juce::juce_core
+            # ProgressiveTransformState saves/restores through a juce::ValueTree.
+            juce::juce_data_structures
+            juce::juce_recommended_config_flags
+            juce::juce_recommended_warning_flags)
+    add_test(NAME progressive_offset_conformance COMMAND serpe_progressive_offset_conformance)
+
     juce_add_console_app(serpe_conformance PRODUCT_NAME "serpe_conformance")
     target_sources(serpe_conformance PRIVATE
         Source/Tests/RhythmConformanceTests.cpp
